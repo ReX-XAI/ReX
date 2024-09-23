@@ -7,31 +7,33 @@
 </picture>
 
 <!--- BADGES: START --->
+
 [![CI Pipeline](https://github.com/kellino/ReX/actions/workflows/ci-pipeline.yml/badge.svg)](https://github.com/kellino/ReX/actions/workflows/ci-pipeline.yml)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/kellino/ReX.jl/blob/main/LICENSE)
+
 <!--- BADGES: END --->
 <hr/>
 
 # Setup
 
-The following instructions assume ```conda```
+The following instructions assume `conda`
 
-``` bash
+```bash
 conda create -n rex python=3.10
 conda activate rex
 pip install .
 ```
 
-onnxruntime-gpu can cause problems. Either install it manually or edit the pyproject.toml to read "onnxruntime >= 1.17.0" rather than 
+onnxruntime-gpu can cause problems. Either install it manually or edit the pyproject.toml to read "onnxruntime >= 1.17.0" rather than
 "onnxruntime-gpu >= 1.17.0"
 
-This should install an executable ```rex``` in your path.
+This should install an executable `rex` in your path.
 
 # Simple Usage
 
-``` bash
+```bash
 # with spatial search (the default)
-rex <path_to_image> --model <path_to_model> 
+rex <path_to_image> --model <path_to_model>
 
 # with linear search
 rex <path_to_image> --model <path_to_model> --strategy linear
@@ -40,7 +42,7 @@ rex <path_to_image> --model <path_to_model> --strategy linear
 rex <path_to_image> --model <path_to_model> --output <path_and_extension>
 
 # to view an interactive responsibility landscape
-rex <path_to_image> --model <path_to_model>  --surface 
+rex <path_to_image> --model <path_to_model>  --surface
 
 # to save a responsibility landscape
 rex <path_to_image> --model <path_to_model>  --surface <path_and_extension>
@@ -49,10 +51,35 @@ rex <path_to_image> --model <path_to_model>  --surface <path_and_extension>
 rex <path_to_image> --model <path_to_model> --strategy multi
 ```
 
-# Database
-To store all output in a sqlite database, use 
+# Onnx format
 
-``` bash
+ReX natively understands onnx files.
+Train or download a model (e.g. [Resnet50](https://github.com/onnx/models/blob/main/validated/vision/classification/resnet/model/resnet50-v1-7.onnx)) and, from this directory, run:
+
+```bash
+rex imgs/dog.jpg --model resnet50-v1-7.onnx -vv --output dog_exp.jpg
+```
+
+To view an interactive plot for the responsibility map, run:
+
+```bash
+rex imgs/dog.jpg --model resnet50-v1-7.onnx -vv --surface
+```
+
+# PyTorch
+
+ReX also works with PyTorch. See the sample script in `scripts/`
+
+```bash
+rex imgs/dog.jpg --script scripts/pytorch.py -vv --output dog_exp.jpg
+
+```
+
+# Database
+
+To store all output in a sqlite database, use
+
+```bash
 rex <path_to_image> --model <path_to_model> -db <name_of_db_and_extension>
 ```
 
@@ -60,58 +87,56 @@ ReX will create the db if it does not already exist. It will append to any db wi
 restarting an experiment.
 
 # Config
-ReX looks for the config file <rex.toml> in the current working directory and then ```$HOME/.config/rex.toml``` on unix-like systems.
 
-If you want to use a custom location, use 
+ReX looks for the config file <rex.toml> in the current working directory and then `$HOME/.config/rex.toml` on unix-like systems.
 
-``` bash
+If you want to use a custom location, use
+
+```bash
 rex <path_to_image> --model <path_to_model> --config <path_to_config>
 ```
 
-An example config file is included in the repo as ```example.rex.toml```. Rename this to ```rex.toml``` if you wish to use it. 
-
+An example config file is included in the repo as `example.rex.toml`. Rename this to `rex.toml` if you wish to use it.
 
 # Command line usage
 
 ```
-usage: ReX [-h] [--output OUTPUT] [-c CONFIG] [--batch] [--processed] [--process_script PROCESS_SCRIPT] [-v] [--surface [SURFACE]]
-           [--contour [CONTOUR]] [--heatmap [HEATMAP]] [--targets TARGETS [TARGETS ...]] [--model MODEL] [--dims DIMS DIMS] [--strategy STRATEGY]
-           [--database DATABASE] [--iters ITERS] [--predictions PREDICTIONS] [--thorough] [--analyze] [--analyse] [--show-all]
+usage: ReX [-h] [--output [OUTPUT]] [-c CONFIG] [--processed]
+           [--script SCRIPT] [-v] [--surface [SURFACE]] [--heatmap [HEATMAP]]
+           [--model MODEL] [--strategy STRATEGY] [--database DATABASE]
+           [--iters ITERS] [--analyze] [--analyse] [--show-all] [--mode MODE]
            filename
 
 Explaining AI through causal reasoning
 
 positional arguments:
-  filename              file to be processed, assumes that file is 3 channel (RGB or BRG)
+  filename              file to be processed, assumes that file is 3 channel
+                        (RGB or BRG)
 
 options:
   -h, --help            show this help message and exit
-  --output OUTPUT       save explanation to <output>. Requires a cv2 compatible file extension
+  --output [OUTPUT]     show minimal explanation, optionally saved to
+                        <OUTPUT>. Requires a PIL compatible file extension
   -c CONFIG, --config CONFIG
                         config file to use for rex
-  --batch               send batched calls to the model
   --processed           don't perform any processing with rex itself
-  --process_script PROCESS_SCRIPT
-                        preprocessing script
-  -v, --verbose         verbosity level, either -v or -vv
+  --script SCRIPT       custom loading and preprocessing script, for us with pytorch
+  -v, --verbose         verbosity level, either -v or -vv, or -vvv
   --surface [SURFACE]   surface plot, optionally saved to <SURFACE>
-  --contour [CONTOUR]   contour plot, optionally saved to <CONTOUR>
   --heatmap [HEATMAP]   heatmap plot, optionally saved to <HEATMAP>
-  --targets TARGETS [TARGETS ...]
-                        optional label(s) to use as ground truth
-  --model MODEL         model, must be tensorflow or onnx compatible
-  --dims DIMS DIMS      image dimensions for resizing
+  --model MODEL         model, must be onnx format
   --strategy STRATEGY, -s STRATEGY
-                        explanation strategy, one of < multi | spatial | linear | spotlight >
+                        explanation strategy, one of < multi | spatial |
+                        linear | spotlight >
   --database DATABASE, -db DATABASE
-                        store output in sqlite database <DATABASE>, creating db if necessary
-  --iters ITERS         manually override the number of iterations set in the config file
-  --predictions PREDICTIONS 
-                        manually overrride the number of subpredictions to consider when generating responsibility maps
-  --thorough            if no_predictions is greater than 1, this follows each prediction to create a complete responsibility map
-  --analyze             calculate insertion/deletion curves
-  --analyse             calculate insertion/deletion curves
-  --show-all            produce a complete breakdown of the image
+                        store output in sqlite database <DATABASE>, creating
+                        db if necessary
+  --iters ITERS         manually override the number of iterations set in the
+                        config file
+  --analyze             area, entropy different and insertion/deletion curves
+  --analyse             area, entropy different and insertion/deletion curves
+  --mode MODE, -m MODE  assist ReX with your input type, one of <tabular>,
+                        <spectral>, <RGB>, <L>
 
 ```
 
@@ -120,7 +145,7 @@ options:
 Some options from the config file can be overridden at the command line when calling ReX. In particular, you
 can change the number of iterations of the algorithm
 
-``` bash
+```bash
 rex <path_to_image> --model <path_to_model>  --iters 5
 ```
 
@@ -129,42 +154,41 @@ rex <path_to_image> --model <path_to_model>  --iters 5
 ReX by default tries to make reasonable guesses for image preprocessing. If the image has already been resized appropriately for the model, then
 use the processed flag
 
-``` bash
+```bash
 rex <path_to_image> --model <path_to_model> --processed
 ```
 
-ReX will still normalize the image and convert it into a numpy array. In the event the the model input is single channel and the image is multi-channel, then ReX will try to convert the image to greyscale. If you want to avoid this, then pass in a greyscale image. 
+ReX will still normalize the image and convert it into a numpy array. In the event the the model input is single channel and the image is multi-channel, then ReX will try to convert the image to greyscale. If you want to avoid this, then pass in a greyscale image.
 
 ## Preprocess Script
 
-If you have very specific requirements for preprocessing, you can write a standalone function, ```preprocess(array)``` which ReX will try to load dynamically and call
+If you have very specific requirements for preprocessing, you can write a standalone function, `preprocess(array)` which ReX will try to load dynamically and call
 
-``` bash
+```bash
 rex <path_to_image> --model <path_to_model> --process_script <path_to_script.py>
 ```
 
-An example is included in ```scripts/example_preprocess.py```
+An example is included in `scripts/example_preprocess.py`
 
 # Explanation
 
 An explanation for a ladybird. This explanation was produced with 20 iterations, using the default masking colour (0). The minimal, sufficient explanation itself
-is pretty printed using the settings in ```[rex.visual]``` in ```rex.toml```
+is pretty printed using the settings in `[rex.visual]` in `rex.toml`
 
 ![ladybird](imgs/ladybird.jpg "Original Image") ![responsibility map](assets/ladybird_rm.png "Responsibility Map") ![minimal explanation](assets/ladybird_301.png "Explanation")
 
-Setting ```raw = true``` in ```rex.toml``` produces the image which was actually classified by the model.
+Setting `raw = true` in `rex.toml` produces the image which was actually classified by the model.
 
 ![ladybird raw](assets/ladybird_301_raw.png)
 
-
 # Multiple Explanations
 
-``` bash
+```bash
 rex imgs/peacock.jpg --model resnet50-v1-7.onnx --strategy multi --output peacock.png
 ```
 
-The number of explanations found depends on the model and some of the settings in ```rex.toml```
-<img src="imgs/peacock.jpg" alt="peacock" width="200"/>  ![peacock 1](assets/peacock_84_00.png) ![peacock 2](assets/peacock_84_01.png) ![peacock 3](assets/peacock_84_02.png)
+The number of explanations found depends on the model and some of the settings in `rex.toml`
+<img src="imgs/peacock.jpg" alt="peacock" width="200"/> ![peacock 1](assets/peacock_84_00.png) ![peacock 2](assets/peacock_84_01.png) ![peacock 3](assets/peacock_84_02.png)
 
 # Occluded Images
 
@@ -174,25 +198,23 @@ The number of explanations found depends on the model and some of the settings i
 
 ![bus_explanation](assets/bus_757.png)
 
-
 # Explanation Quality
 
-``` bash
-rex imgs/ladybird.jpg --model resnet50-v1-7.onnx --analyse
+```bash
+rex imgs/ladybird.jpg --script scripts/pytorch.py --analyse
+
+INFO:ReX:area 0.000399, entropy difference 6.751189, insertion curve 0.964960, deletion curve 0.046096
 ```
 
-![id curve](assets/id_curve.png)
-
-
 # Submaps
-``` bash
+
+```bash
 rex imgs/lizard.jpg --model resnet50-v1-7.onnx --predictions 5 --surface lizard_subs.png
 ```
 
 ![lizard](imgs/lizard.jpg)
 
 ![lizard_rm](assets/lizard_subs.png)
-
 
 # How to Contribute
 
