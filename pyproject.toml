@@ -1,0 +1,73 @@
+[project]
+name = "ReX-AI"
+version = "0.1.2"
+description = "causal Responsibility-based eXplanations of black-box-classifiers"
+authors = [{name = "David Kelly", email = "dkellino@gmail.com"}]
+readme = "README.md"
+dependencies = [
+    "numba >= 0.57",
+    "numpy == 1.26.4",
+    "scipy >= 1.10",
+    "imutils >= 0.5.4",
+    "toml >= 0.10",
+    "anytree >= 2.8.0",
+    "fastcache >= 1.1.0",
+    "tqdm >= 4.65.0",
+    "sqlalchemy >= 2.0.16",
+    "matplotlib >= 3.7.1",
+    "onnxruntime >= 1.18.0",
+    "scikit-image >= 0.21.0",
+    "pandas >= 2.2.0",
+    "pillow >= 10.3.0",
+    "torch >= 2.4.0"
+]
+requires-python = ">= 3.10"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+exclude = []
+namespaces = false
+
+[project.scripts]
+rex = "rex_ai.rex:main"
+
+[tool.black]
+line-length = 88
+include = '\.pyi?$'
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+]
+
+[tool.mypy]
+ignore_missing_imports = true
+
+
+[tool.ruff]
+line-length = 80
+
+[tool.coverage.report]
+include= [
+    "rex_ai/*.py",
+]
+
+[tool.coverage.run]
+relative_files = true
+
+[tool.pylyzer.python]
+path = "~/.miniconda3/envs/rex/bin/python"
+
+[tool.pyright]
+include = ["rex_ai"]
+exclude = ["**/__pycache__"]
+
+reportMissingImports = "error"
+reportMissingTypeStubs = false
+pythonVersion = "3.11"

@@ -1,0 +1,34 @@
+** Notes
+
+   - (-) Optimisation
+      at the moment, we choose the smallest partition (by area) to explore, but we should actually
+      choose that which minimises area but maximises responsibility. Do the two always coincide?
+
+   - (-) Remove hard edges
+     the causal algorithm divides the image with hard edges, which introduce new (harsh) gradients into
+     the image. Bad for the model. We should offer the option to soften the edges of the boxes (probably
+     with a gaussian blur).
+
+   - (x) Different Segmentation
+     rather than rectangles, we could segment the image with a segmentation algorithm (such as slic), then
+     group them to be used by the responsibility algorithm.
+   -- did this and it didn't work very well, so removed code
+
+   - (-) Better naming
+     we use strings to keep track of the names and current working partition in the resp algorithm. Change this
+     to a binary representation (not too difficult, as it always ranges 0-3). A very small optimisation.
+
+   - combinations
+     when applying powerset of combinations, we wipe the mask clean every time, but this is slightly wasteful. If we
+     do things in the correct order, we can minimise the number of times we need to wipe clean the mask.
+
+   - (-) Add blended base into adaptive sampling.
+
+   - (-) Reimplement and check multi-rex.
+
+   - (!) Regression Fix masking value for values other than 0.
+     We could just reply on a user to input a sensible value, but this is probably a risky business, as I've got it wrong 
+     multiple times myself
+   -- check that it still works for spectral data
+
+   - (x) Regression. Resize option in config file is broken. 
