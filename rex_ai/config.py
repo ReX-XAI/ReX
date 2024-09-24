@@ -14,8 +14,9 @@ import numpy as np
 import toml  # type: ignore
 
 
+from rex_ai.distributions import str2distribution
 from rex_ai.prediction import Prediction
-from rex_ai.distributions import Distribution, str2distribution
+from rex_ai.distributions import Distribution
 
 CAUSAL = Enum("CAUSAL", ["Responsibility"])
 
@@ -122,7 +123,7 @@ class CausalArgs(Args):
         self.search_limit: Optional[int] = None
         self.mask_value = 0
         self.confidence_filter = 0.0
-        self.min_box_size: int = 25
+        self.min_box_size: int = 10
         self.segmentation = False
         self.data_location: Optional[str] = None
         self.target: Optional[Prediction] = None
@@ -131,7 +132,7 @@ class CausalArgs(Args):
         self.blend = 0.0
         self.weighted: bool = False
         self.iters = 30
-        self.concentrate = True
+        self.concentrate = False
         # queue management
         self.queue_len = 1
         self.queue_style = Queue.Area
@@ -154,8 +155,11 @@ class CausalArgs(Args):
 
 def get_config_file(path):
     """parses toml file into dictionary"""
-    file_args = toml.load(path)
-    return file_args
+    try:
+        file_args = toml.load(path)
+        return file_args
+    except Exception:
+        return FileNotFoundError
 
 
 def cmdargs():
@@ -340,36 +344,35 @@ def get_all_args(path=None):
     args = CausalArgs()
     args.config_location = path
 
-    # CAUSAL
     try:
         config_file_args = get_config_file(path)
 
-        fa = config_file_args["causal"]
-        if "tree_depth" in fa:
-            args.tree_depth = fa["tree_depth"]
-        if "search_limit" in fa:
-            args.search_limit = fa["search_limit"]
-        if "weighted" in fa:
-            args.weighted = fa["weighted"]
-        if "queue_len" in fa:
-            ql = fa["queue_len"]
+        causal_dict = config_file_args["causal"]
+        # print(causal_dict)
+        if "tree_depth" in causal_dict:
+            args.tree_depth = causal_dict["tree_depth"]
+        if "search_limit" in causal_dict:
+            args.search_limit = causal_dict["search_limit"]
+        if "weighted" in causal_dict:
+            args.weighted = causal_dict["weighted"]
+        if "queue_len" in causal_dict:
+            ql = causal_dict["queue_len"]
             if ql != "all":
-                args.queue_len = fa["queue_len"]
-        if "queue_style" in fa:
-            args.queue_style = match_queue_style(fa["queue_style"])
-        if "iters" in fa:
-            args.iters = fa["iters"]
-        if "min_box_size" in fa:
-            args.min_box_size = fa["min_box_size"]
-        if "confidence_filter" in fa:
-            args.confidence_filter = fa["confidence_filter"]
-        if "segmentation" in fa:
-            args.segmentation = fa["segmentation"]
-        if "concentrate" in fa:
-            args.concentrate = fa["concentrate"]
+                args.queue_len = causal_dict["queue_len"]
+        if "queue_style" in causal_dict:
+            args.queue_style = match_queue_style(causal_dict["queue_style"])
+        if "iters" in causal_dict:
+            args.iters = causal_dict["iters"]
+        if "min_box_size" in causal_dict:
+            args.min_box_size = causal_dict["min_box_size"]
+        if "confidence_filter" in causal_dict:
+            args.confidence_filter = causal_dict["confidence_filter"]
+        if "segmentation" in causal_dict:
+            args.segmentation = causal_dict["segmentation"]
+        if "concentrate" in causal_dict:
+            args.concentrate = causal_dict["concentrate"]
 
-        # get subdictionary
-        dist = fa["distribution"]
+        dist = causal_dict["distribution"]
         d = dist["distribution"]
         args.distribution = str2distribution(d)
         if "dist_args" in dist:
@@ -448,12 +451,12 @@ def get_all_args(path=None):
         args.spotlight_objective_function = get_objective_function(multi_dict)  # type: ignore
 
 
-        eval_dict = explain_dict["evalutation"]
+        eval_dict = explain_dict["evaluation"]
         if "insertion_step" in eval_dict:
             args.insertion_step = eval_dict["insertion_step"]
 
-    except KeyError:
-        pass
+    except KeyError as e:
+        print(f"key error {e} in {path}, so reverting to default args")
 
     except TypeError:
         print(
