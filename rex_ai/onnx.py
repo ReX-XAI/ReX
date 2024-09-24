@@ -15,7 +15,6 @@ from rex_ai.input_data import Setup
 
 from rex_ai.logger import logger
 
-
 def run_on_cpu(tensors, session, input_name, target, raw, binary_threshold=None):
     """Convert a pytorch tensor, or list of tensors, to numpy arrays on the cpu for onnx inference."""
     # check if it's a single tensor or a list of tensors
@@ -32,6 +31,7 @@ def run_on_cpu(tensors, session, input_name, target, raw, binary_threshold=None)
         )
 
     preds = []
+
     try:
         prediction = session.run(None, {input_name: tensors})[0]
         for i in range(0, prediction.shape[0]):

@@ -182,6 +182,7 @@ def causal_explanation(process, data: Data, args: CausalArgs, prediction_func, c
                 if data.mode in ("spectral", "tabular"):
                     preds: List[Prediction] = [prediction_func(m.mask, args.target, binary_threshold=None)[0] for m in mutants]
                 else:
+                    # TODO this ignores batch_size == 1, which is should not
                     preds: List[Prediction] = prediction_func(
                         tt.stack([m.mask.squeeze(0) for m in mutants]), args.target, binary_threshold=None
                     )
@@ -244,7 +245,7 @@ def causal_explanation(process, data: Data, args: CausalArgs, prediction_func, c
             logger.debug("nothing left in the queue")
             break
 
-        # our new searchqueue, which takes us back to the beginning
+        # our new search queue, which takes us back to the beginning
         queue = deque(update)
 
     # clear up unneeded mutants and boxes
