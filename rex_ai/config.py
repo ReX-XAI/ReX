@@ -48,9 +48,10 @@ class Args:
         self.custom: Optional[ModuleType] = None
         self.custom_location = None
         self.processed = False
-        # min-max normalization
+        # onnx processing
         self.means = None
         self.stds = None
+        # self.norm: Optional = None
         self.binary_threshold = None
         # verbosity
         self.verbosity = 0
@@ -159,7 +160,8 @@ def get_config_file(path):
         file_args = toml.load(path)
         return file_args
     except Exception:
-        return FileNotFoundError
+        return None
+    #     return FileNotFoundError
 
 
 def cmdargs():
@@ -347,6 +349,9 @@ def get_all_args(path=None):
     try:
         config_file_args = get_config_file(path)
 
+        if config_file_args is None:
+            return args
+
         causal_dict = config_file_args["causal"]
         # print(causal_dict)
         if "tree_depth" in causal_dict:
@@ -471,7 +476,8 @@ def get_all_args(path=None):
             try:
                 spec.loader.exec_module(script)  # type: ignore
             except Exception as e:
-                print(f"failed to load {name} because of {e}")
+                print(f"failed to load {name} because of {e}, exiting...")
+                sys.exit(-1)
             args.custom = script
             args.custom_location = cmd_args.script
         except ImportError:
