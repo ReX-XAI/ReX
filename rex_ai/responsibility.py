@@ -179,13 +179,27 @@ def causal_explanation(process, data: Data, args: CausalArgs, prediction_func, c
 
                 work_done = len(mutants)
 
+                # n = 0
+                # for m in mutants:
+                #     m.save_mutant(data, f"{n}.png")
+                #     n += 1
+                # sys.exit()
+
+
                 if data.mode in ("spectral", "tabular"):
                     preds: List[Prediction] = [prediction_func(m.mask, args.target, binary_threshold=None)[0] for m in mutants]
                 else:
-                    # TODO this ignores batch_size == 1, which is should not
-                    preds: List[Prediction] = prediction_func(
-                        tt.stack([m.mask.squeeze(0) for m in mutants]), args.target, binary_threshold=None
-                    )
+                    # TODO this needs testing
+                    if args.batch == 1:
+                        preds = [prediction_func(m.mask, args.target, binary_threshold=args.binary_threshold)[0] for m in mutants]
+                        # for i, m in enumerate(mutants):
+                        #     m.save_mutant(data, f"{preds[i]}.png")
+                        # sys.exit()
+                    else:
+                        preds: List[Prediction] = prediction_func(
+                            tt.stack([m.mask for m in mutants]), args.target, binary_threshold=args.binary_threshold
+                            # tt.stack([m.mask.squeeze(0) for m in mutants]), args.target, binary_threshold=args.binary_threshold
+                        )
 
                 for i, m in enumerate(mutants):
                     m.prediction = preds[i]

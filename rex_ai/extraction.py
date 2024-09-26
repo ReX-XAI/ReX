@@ -91,7 +91,8 @@ class Explanation:
             for _, loc in chunk:
                 self.set_to_true(loc, mutant)
             d = _apply_to_data(mutant, self.data, self.mask_func).squeeze(0)
-            masks.append(d)
+            # TODO hack to get greyscale working
+            masks.append(d.unsqueeze(0))
             if len(masks) == self.args.batch:
                 preds = self.prediction_func(
                     tt.stack(masks).to(self.data.device)

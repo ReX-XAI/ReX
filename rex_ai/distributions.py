@@ -1,6 +1,5 @@
 """distributions module"""
 
-import sys
 from typing import Optional, Tuple
 from enum import Enum
 import numpy as np
@@ -8,7 +7,6 @@ import numpy as np
 
 from numba import njit
 from scipy.stats import binom, betabinom
-from rex_ai.logger import logger
 
 Distribution = Enum(
     "Distribution", ["Binomial", "Uniform", "BetaBinomial", "Adaptive"]
@@ -63,6 +61,8 @@ def random_coords(d: Optional[Distribution], *args, map=None) -> int:
 
     # try:
     if d == Distribution.Uniform:
+        if args[0] == 0:
+            return
         return np.random.randint(1, args[0]) # type: ignore
 
     if d == Distribution.Binomial:

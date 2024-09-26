@@ -60,11 +60,15 @@ class Data:
         This function does *not* add in the batch channel at the beginning
         """
         if (
-            self.mode == "RGB"
+                self.mode == "RGB"
             and self.model_order == "first"
             and self.data is not None
         ):
             self.data = self.data.transpose(2, 0, 1)  # type: ignore
+            self.transposed = True
+        if self.mode == "L":
+            # self.data = self.data.transpose(2, 0, 1)
+            self.data = np.expand_dims(self.data, axis=0)
             self.transposed = True
         if self.mode == "tabular" or self.mode == "spectral":
             self.generic_tab_preprocess()
@@ -142,11 +146,12 @@ class Data:
         if self.mode == "L":
             # a PIL greyscale image has dimension H * W, so we might need to
             # add a few dummy channels to bring it up to model_shape
+            self.data = self._normalise(means, stds, astype, norm)
             for _ in range(len(self.model_shape) - 2):
                 self.unsqueeze()
-                # self.data = np.expand_dims(self.data, axis=0)
-                if norm is not None and self.data is not None:
-                    self.data /= norm
+            # TODO reinsert this later
+            # if norm is not None and self.data is not None:
+            #     self.data /= norm
 
     def __get_shape(self):
         if (self.mode == "tabular" or self.mode == "spectral") and len(

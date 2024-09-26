@@ -35,7 +35,7 @@ class Args:
     def __init__(self) -> None:
         self.config_location: Optional[str] = None
         # input file
-        self.path = None
+        self.path: Optional[str] = None
         self.model = None
         self.mode = None
         self.shape: None = None

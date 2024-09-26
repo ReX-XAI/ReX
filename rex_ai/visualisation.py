@@ -4,7 +4,6 @@
 
 from PIL import Image, ImageDraw
 import os
-
 # from matplotlib.text import Rectangle #type: ignore
 import numpy as np
 import matplotlib.pyplot as plt
@@ -69,13 +68,15 @@ def plot_curve(curve, chunk_size, style="insertion", destination=None):
         plt.savefig(destination, bbox_inches="tight", dpi=300, pad_inches=0)
 
 
-def plot_3d(path, ranking, ogrid):
-    """plots a 3d grid in matplotlib"""
-    img = Image.open(path)
+def plot_3d(path, ranking, ogrid, norm=255.0):
+    """plots a 3d grid in matplotlib given an image <path>
+    If <path> is greyscale or RGBA, it is converted to RGB for plotting.
+    """
+    img = Image.open(path).convert("RGB")
     img = img.resize((ranking.shape[0], ranking.shape[1]))
     img = np.asarray(img)
 
-    img = img / 255.0  # type: ignore
+    img = img / norm  # type: ignore
     if ogrid:
         x, y = np.ogrid[0 : img.shape[0], 0 : img.shape[1]]
     else:
@@ -294,10 +295,13 @@ def save_image(explanation, data: Data, args: CausalArgs):
 
     mask = None
     if data.mode == "RGB" or data.mode == "L":
-        img = data.input.resize((data.model_height, data.model_width))
+        if data.mode == "L":
+            img = data.input.convert("RGB").resize((data.model_height, data.model_width))
+        else:
+            img = data.input.resize((data.model_height, data.model_width))
 
         if data.transposed:
-            if data.mode == "RGB" or data.mode == "L":
+            if data.mode == "RGB":
                 mask = (
                     explanation.squeeze()
                     .detach()
@@ -305,8 +309,12 @@ def save_image(explanation, data: Data, args: CausalArgs):
                     .numpy()
                     .transpose((1, 2, 0))
                 )
+            if data.mode == "L":
+                mask = explanation.squeeze(0).detach().cpu().numpy().transpose((1, 2, 0))
+                print(np.count_nonzero(mask))
         else:
-            mask = explanation.squeeze().detach().cpu().numpy()
+        # else:
+            mask = explanation.squeeze(0).detach().cpu().numpy()
 
         if mask is not None:
             if args.raw:
@@ -317,7 +325,7 @@ def save_image(explanation, data: Data, args: CausalArgs):
 
             else:
                 exp = np.where(mask, img, args.colour)
-                exp = Image.fromarray(exp, data.mode)
+                exp = Image.fromarray(exp, "RGB")
                 out = Image.blend(exp, img, args.alpha)
 
                 if args.mark_segments:
