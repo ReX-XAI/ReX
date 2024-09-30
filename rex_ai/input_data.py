@@ -65,9 +65,10 @@ class Data:
             and self.data is not None
         ):
             self.data = self.data.transpose(2, 0, 1)  # type: ignore
+            self.data = self.unsqueeze()
             self.transposed = True
         if self.mode == "L":
-            # self.data = self.data.transpose(2, 0, 1)
+            self.data = self.unsqueeze()
             self.data = np.expand_dims(self.data, axis=0)
             self.transposed = True
         if self.mode == "tabular" or self.mode == "spectral":
@@ -93,16 +94,17 @@ class Data:
         normed_data = tt.zeros(self.data.shape, dtype=tt.float32).to(
             self.device
         )
+        print(norm, normed_data.shape)
         if norm is not None:
             normed_data = self.data / norm
 
         if self.model_order == "first" and self.model_channels == 3:
             if means is not None:
                 for i, m in enumerate(means):
-                    normed_data[i, :, :] = normed_data[i, :, :] - m
+                    normed_data[:, i, :, :] = normed_data[:, i, :, :] - m
             if stds is not None:
                 for i, s in enumerate(stds):
-                    normed_data[i, :, :] = normed_data[i, :, :] / s
+                    normed_data[:, i, :, :] = normed_data[:, i, :, :] / s
 
         # greyscale
         if self.model_order == "first" and self.model_channels == 1:
@@ -126,9 +128,15 @@ class Data:
         return normed_data
 
     def unsqueeze(self):
+        assert self.data is not None
+        out = self.data
         if isinstance(self.data, tt.Tensor):
             for _ in range(len(self.model_shape) - len(self.data.shape)):
-                self.data = tt.unsqueeze(self.data, dim=0)
+                out = tt.unsqueeze(self.data, dim=0)
+        else:
+            for _ in range(len(self.model_shape) - len(self.data.shape)):
+                out = np.expand_dims(self.data, axis=0)
+        return out
 
     def generic_image_preprocess(
         self,

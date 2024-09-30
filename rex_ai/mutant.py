@@ -130,13 +130,13 @@ class Mutant:
             if isinstance(colour, float):
                 colour *= 255
                 colour = np.uint8(colour)
-                print(f'casting {self.masking_func} to {colour}')
+                logger.info('casting %f to %d', self.masking_func, colour)
 
             m = np.array(
                 data.input.resize((data.model_height, data.model_width))
             )
             mask = self.mask.squeeze().detach().cpu().numpy()
-            if data.transposed:
+            if data.transposed and data.mode == "RGB":
                 # if transposed, we have C * H * W, so change that to H * W * C
                 m = np.where(mask, m.transpose((2, 0, 1)), colour)
                 m = m.transpose((1, 2, 0))

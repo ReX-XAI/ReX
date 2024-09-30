@@ -192,13 +192,9 @@ def causal_explanation(process, data: Data, args: CausalArgs, prediction_func, c
                     # TODO this needs testing
                     if args.batch == 1:
                         preds = [prediction_func(m.mask, args.target, binary_threshold=args.binary_threshold)[0] for m in mutants]
-                        # for i, m in enumerate(mutants):
-                        #     m.save_mutant(data, f"{preds[i]}.png")
-                        # sys.exit()
                     else:
                         preds: List[Prediction] = prediction_func(
                             tt.stack([m.mask for m in mutants]), args.target, binary_threshold=args.binary_threshold
-                            # tt.stack([m.mask.squeeze(0) for m in mutants]), args.target, binary_threshold=args.binary_threshold
                         )
 
                 for i, m in enumerate(mutants):
@@ -213,6 +209,12 @@ def causal_explanation(process, data: Data, args: CausalArgs, prediction_func, c
                         mutants,
                     )
                 )
+
+                # n = 0
+                # for m in mutants:
+                #     m.save_mutant(data, f"{n}_{m.passing}.png")
+                #     n += 1
+                # sys.exit()
 
                 total_passing += len(passing)
                 total_failing += work_done - len(passing)
