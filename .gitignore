@@ -40,3 +40,5 @@ rex_ai.egg-info/*
 *.pt
 *.json
 .coverage
+
+docs/_build/

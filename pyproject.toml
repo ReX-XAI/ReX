@@ -29,3 +29,11 @@ ReX = "rex_ai.rex:main"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.group.docs]
+optional = true
+
+[tool.poetry.group.docs.dependencies]
+sphinx = "^8.0.2"
+myst-parser = "^4.0.0"
+sphinx-autoapi = "^3.3.2"
