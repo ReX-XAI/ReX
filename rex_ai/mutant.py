@@ -129,7 +129,8 @@ class Mutant:
             # an assumption here
             if isinstance(colour, float):
                 colour *= 255
-                colour = np.uint8(colour)
+                colour = np.uint8(np.abs(colour))
+                colour = 0
                 logger.info('casting %f to %d', self.masking_func, colour)
 
             m = np.array(

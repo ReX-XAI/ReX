@@ -91,12 +91,14 @@ class Data:
 
     def _normalise(self, means, stds, astype, norm):
         assert self.data is not None
-        normed_data = tt.zeros(self.data.shape, dtype=tt.float32).to(
-            self.device
-        )
-        print(norm, normed_data.shape)
-        if norm is not None:
-            normed_data = self.data / norm
+        # normed_data = tt.zeros(self.data.shape, dtype=tt.float32).to(
+        #     self.device
+        # )
+        # sys.exit()
+
+        normed_data = self.data
+        # if norm is not None:
+        normed_data /= 255.0
 
         if self.model_order == "first" and self.model_channels == 3:
             if means is not None:
@@ -143,8 +145,9 @@ class Data:
         means=None,
         stds=None,
         astype="float32",
-        norm: Optional[float] = 255.0,
+        norm: Optional[float] = 0,
     ):
+        # TODO fix norm value from config
         self.load_data(astype=astype)
 
         if self.mode == "RGB" and self.data is not None:
@@ -152,6 +155,7 @@ class Data:
             self.unsqueeze()
             # self.unsqueeze_data()
         if self.mode == "L":
+            print("processing here")
             # a PIL greyscale image has dimension H * W, so we might need to
             # add a few dummy channels to bring it up to model_shape
             self.data = self._normalise(means, stds, astype, norm)

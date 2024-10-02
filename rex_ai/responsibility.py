@@ -212,9 +212,8 @@ def causal_explanation(process, data: Data, args: CausalArgs, prediction_func, c
 
                 # n = 0
                 # for m in mutants:
-                #     m.save_mutant(data, f"{n}_{m.passing}.png")
+                #     m.save_mutant(data, f"{process}_{n}_{m.passing}.png")
                 #     n += 1
-                # sys.exit()
 
                 total_passing += len(passing)
                 total_failing += work_done - len(passing)

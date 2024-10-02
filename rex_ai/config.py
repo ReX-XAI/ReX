@@ -51,7 +51,7 @@ class Args:
         # onnx processing
         self.means = None
         self.stds = None
-        # self.norm: Optional = None
+        self.norm: Optional[float] = None
         self.binary_threshold = None
         # verbosity
         self.verbosity = 0
@@ -96,7 +96,7 @@ class Args:
             + f"progress_bar: {self.progress}, "
             + f"output_file: {self.output}, surface_plot: {self.surface}, "
             + f"heatmap_plot: {self.heatmap}, "
-            + f"means: {self.means}, stds: {self.stds}, "
+            + f"means: {self.means}, stds: {self.stds}, norm: {self.norm} "
             + f"explanation_strategy: {self.strategy}, "
             + f"chunk size: {self.chunk_size}, "
             + f"spatial_radius: {self.spatial_radius}, "
@@ -142,6 +142,7 @@ class CausalArgs(Args):
         return (
             "Causal Args <"
             + Args.__repr__(self)
+            + f"config_location: {self.config_location}, "
             + f"mask_value: {self.mask_value}, "
             + f"tree_depth: {self.tree_depth}, search_limit: {self.search_limit}, "
             + f"min_box_size: {self.min_box_size}, weighted: {self.weighted}, "
@@ -407,6 +408,8 @@ def get_all_args(path=None):
                 args.stds = onnx["stds"]
             if "binary_threshold" in onnx:
                 args.binary_threshold = onnx["binary_threshold"]
+            if "norm" in onnx:
+                args.norm = onnx["norm"]
 
 
         if "visual" in rex_dict:
