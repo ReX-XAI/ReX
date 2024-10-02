@@ -30,18 +30,14 @@ ReX = "rex_ai.rex:main"
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.poetry.group.docs]
+[tool.poetry.group.dev]
 optional = true
 
-[tool.poetry.group.docs.dependencies]
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.6.8"
+pytest = "^8.3.3"
 sphinx = "^8.0.2"
 myst-parser = "^4.0.0"
 sphinx-autoapi = "^3.3.2"
 
-[tool.poetry.group.dev.dependencies]
-ruff = "^0.6.8"
-
-
-[tool.poetry.group.tests.dependencies]
-pytest = "^8.3.3"
 
