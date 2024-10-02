@@ -8,7 +8,8 @@ tab = np.arange(0, 1, 999)
 
 
 class TestData(unittest.TestCase):
-    data = Data(tab, [1, 999])
-
-    self.assertEqual(data.model_shape, [1, 999])
-    self.assertEqual(data.mode, "tabular")
+    
+    def test_data(self):
+        data = Data(input=tab, model_shape=[1, 999], device="cpu")
+        self.assertEqual(data.model_shape, [1, 999])
+        self.assertEqual(data.mode, "tabular")
