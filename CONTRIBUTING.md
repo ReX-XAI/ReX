@@ -31,6 +31,13 @@ This will automatically generate documentation based on the code and docstrings 
 
 We prefer [Google-style](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html) docstrings, and use `sphinx.ext.napoleon` to parse them.
 
+## Code linting and formatting
+
+This project uses [ruff](https://docs.astral.sh/ruff/) to 
+Install by running `poetry install --with dev`.
+Run the linter on all files in the current working dircetory with `ruff check`.
+Ruff can automatically fix some issues if you run `ruff check --fix`.
+
 ## TODO
 
 - linting with ruff
