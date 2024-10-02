@@ -33,10 +33,13 @@ We prefer [Google-style](https://sphinxcontrib-napoleon.readthedocs.io/en/latest
 
 ## Code linting and formatting
 
-This project uses [ruff](https://docs.astral.sh/ruff/) to 
+This project uses [ruff](https://docs.astral.sh/ruff/) for code linting and formatting, to ensure a consistent code style and identify issues like unused imports. 
 Install by running `poetry install --with dev`.
-Run the linter on all files in the current working dircetory with `ruff check`.
+
+Run the linter on all files in the current working directory with `ruff check`.
 Ruff can automatically fix some issues if you run `ruff check --fix`.
+
+Run `ruff format` to automatically format all files in the current working directory.
 
 ## TODO
 
