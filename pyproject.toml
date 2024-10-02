@@ -41,3 +41,7 @@ sphinx-autoapi = "^3.3.2"
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.6.8"
 
+
+[tool.poetry.group.tests.dependencies]
+pytest = "^8.3.3"
+
