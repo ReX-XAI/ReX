@@ -310,15 +310,15 @@ def save_image(explanation, data: Data, args: CausalArgs):
                     .transpose((1, 2, 0))
                 )
             if data.mode == "L":
-                mask = explanation.squeeze(0).detach().cpu().numpy().transpose((1, 2, 0))
-                print(np.count_nonzero(mask))
+                mask = explanation.squeeze(0).detach().cpu().numpy().transpose(2, 1, 0)
+                mask = np.repeat(mask, 3, axis=-1)
         else:
         # else:
             mask = explanation.squeeze(0).detach().cpu().numpy()
 
         if mask is not None:
             if args.raw:
-                out = np.where(mask, img, args.mask_value).squeeze()
+                out = np.where(mask, img, args.mask_value).squeeze(0)
                 out = Image.fromarray(out, data.mode)
                 out.save(name)
                 return out

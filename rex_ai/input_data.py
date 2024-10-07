@@ -68,8 +68,8 @@ class Data:
             self.data = self.unsqueeze()
             self.transposed = True
         if self.mode == "L":
+            self.data = self.data.transpose(1, 0)
             self.data = self.unsqueeze()
-            self.data = np.expand_dims(self.data, axis=0)
             self.transposed = True
         if self.mode == "tabular" or self.mode == "spectral":
             self.generic_tab_preprocess()
@@ -91,14 +91,10 @@ class Data:
 
     def _normalise(self, means, stds, astype, norm):
         assert self.data is not None
-        # normed_data = tt.zeros(self.data.shape, dtype=tt.float32).to(
-        #     self.device
-        # )
-        # sys.exit()
 
         normed_data = self.data
-        # if norm is not None:
-        normed_data /= 255.0
+        if norm is not None:
+            normed_data /= 255.0
 
         if self.model_order == "first" and self.model_channels == 3:
             if means is not None:
@@ -134,10 +130,11 @@ class Data:
         out = self.data
         if isinstance(self.data, tt.Tensor):
             for _ in range(len(self.model_shape) - len(self.data.shape)):
-                out = tt.unsqueeze(self.data, dim=0)
+                out = tt.unsqueeze(out, dim=0)
         else:
             for _ in range(len(self.model_shape) - len(self.data.shape)):
-                out = np.expand_dims(self.data, axis=0)
+                print(out.shape)
+                out = np.expand_dims(out, axis=0)
         return out
 
     def generic_image_preprocess(
@@ -145,25 +142,15 @@ class Data:
         means=None,
         stds=None,
         astype="float32",
-        norm: Optional[float] = 0,
+        norm: Optional[float] = 1.0,
     ):
-        # TODO fix norm value from config
         self.load_data(astype=astype)
 
         if self.mode == "RGB" and self.data is not None:
             self.data = self._normalise(means, stds, astype, norm)
             self.unsqueeze()
-            # self.unsqueeze_data()
         if self.mode == "L":
-            print("processing here")
-            # a PIL greyscale image has dimension H * W, so we might need to
-            # add a few dummy channels to bring it up to model_shape
             self.data = self._normalise(means, stds, astype, norm)
-            for _ in range(len(self.model_shape) - 2):
-                self.unsqueeze()
-            # TODO reinsert this later
-            # if norm is not None and self.data is not None:
-            #     self.data /= norm
 
     def __get_shape(self):
         if (self.mode == "tabular" or self.mode == "spectral") and len(

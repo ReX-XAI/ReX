@@ -2,12 +2,14 @@
 import numpy as np
 from typing import List
 
+from typing import Optional
 import sys
 try:
     from anytree.cachedsearch import find
 except ImportError:
-    pass
+    from anytree import find
 
+from rex_ai.box import Box
 from rex_ai.config import CausalArgs
 from rex_ai.mutant import Mutant
 from rex_ai.input_data import Data
@@ -45,7 +47,7 @@ class ResponsibilityMaps:
 
     def responsibility(self, mutant: Mutant, args: CausalArgs):
         responsibility = np.zeros(4, dtype=np.float32)
-        parts = mutant.get_active_parts()
+        parts = mutant.get_active_boxes()
         r = 1 / len(parts)
         for p in parts:
             i = np.uint(p[-1])
@@ -73,8 +75,7 @@ class ResponsibilityMaps:
 
         for mutant in mutants:
             r = self.responsibility(mutant, args)
-            # r_good = np.where(r > 0)
-            # r_bad = np.where(r == 0)
+            r_bad = np.where(r == 0)
             k = None
             if mutant.prediction is not None:
                 k = mutant.prediction.classification
@@ -85,8 +86,26 @@ class ResponsibilityMaps:
                 self.new_map(k, data.model_height, data.model_width)
             resp_map = self.get(k)
             assert resp_map is not None
-            parts = [np.uint(p[-1]) for p in mutant.get_active_parts()]
-            print(r, parts, r[parts])
+            for box_name in mutant.get_active_boxes():
+                box: Optional[Box] = find(search_tree, lambda n: n.name == box_name)
+                if box is not None and box.area() > 0:
+                    index = np.uint(box_name[-1])
+                    section = resp_map[box.row_start : box.row_stop, box.col_start : box.col_stop]
+                    if np.mean(section) == 0:
+                        section += r[index]
+                    else:
+                        if args.concentrate:
+                            section += np.mean(section) * r[index]
+                        else:
+                            section += r[index]
+                if args.concentrate:
+                    for ind in r_bad:
+                        for i in ind:
+                            box_name = box_name[:-1] + str(i)
+                            box: Optional[Box] = find(search_tree, lambda n: n.name == box_name)
+                            section = resp_map[box.row_start : box.row_stop, box.col_start : box.col_stop]
+                            section = 0.001
+            self.maps[k] = resp_map
 
             # for p in mutant.get_active_parts():
             #

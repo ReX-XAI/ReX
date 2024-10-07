@@ -78,12 +78,12 @@ def prune(mutants: List[Mutant], technique=Queue.Intersection, keep=None):
         inter = set()
         i = 0
         while len(inter) == 0 and i < len(mutants):
-            names = [mutant.get_active_parts() for mutant in mutants]
+            names = [mutant.get_active_boxes() for mutant in mutants]
             head = set(names[i])
             tail = names[i + 1 :]
             inter = head.intersection(*tail)
             i += 1
-        mutants = [m for m in mutants if inter <= set(m.get_active_parts())]
+        mutants = [m for m in mutants if inter <= set(m.get_active_boxes())]
         ordered = sorted(mutants, key=lambda x: x.area())
         if keep is not None:
             return ordered[:keep]
@@ -174,28 +174,19 @@ def causal_explanation(process, data: Data, args: CausalArgs, prediction_func, c
                         )
                         m.set_active_mask_regions(nps)
                         m.set_static_mask_regions(static, search_tree)
-                        m.mask = m.apply_to_data(data)
                         mutants.append(m)
 
                 work_done = len(mutants)
-
-                # n = 0
-                # for m in mutants:
-                #     m.save_mutant(data, f"{n}.png")
-                #     n += 1
-                # sys.exit()
-
 
                 if data.mode in ("spectral", "tabular"):
                     preds: List[Prediction] = [prediction_func(m.mask, args.target, binary_threshold=None)[0] for m in mutants]
                 else:
                     # TODO this needs testing
                     if args.batch == 1:
-                        preds = [prediction_func(m.mask, args.target, binary_threshold=args.binary_threshold)[0] for m in mutants]
+                        preds = [prediction_func(tt.where(m.mask, data.data, args.mask_value), args.target, binary_threshold=args.binary_threshold)[0] for m in mutants] #type: ignore
                     else:
                         preds: List[Prediction] = prediction_func(
-                            tt.stack([m.mask for m in mutants]), args.target, binary_threshold=args.binary_threshold
-                        )
+                            tt.stack([tt.where(m.mask, data.data, args.mask_value) for m in mutants]), args.target, binary_threshold=args.binary_threshold) #type: ignore
 
                 for i, m in enumerate(mutants):
                     m.prediction = preds[i]
@@ -212,9 +203,11 @@ def causal_explanation(process, data: Data, args: CausalArgs, prediction_func, c
 
                 # n = 0
                 # for m in mutants:
-                #     m.save_mutant(data, f"{process}_{n}_{m.passing}.png")
+                #     m.save_mutant(data, f"{process}_{m.depth}_{n}_{m.prediction.confidence}_{m.passing}.png")
                 #     n += 1
 
+                # import sys
+                # sys.exit()
                 total_passing += len(passing)
                 total_failing += work_done - len(passing)
                 total_work += work_done

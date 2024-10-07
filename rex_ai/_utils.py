@@ -51,10 +51,10 @@ def set_boolean_mask_value(tensor, mode, order, coords: Union[Box, Tuple[NDArray
         # (H, W, C)
         else:
             tensor[h, w, :] = val
-    if mode == "L":
-        # (H, W)
+    elif mode == "L":
+        # (1, H, W)
         tensor[0, h, w] = val
-    if mode in ("spectral", "tabular"):
+    elif mode in ("spectral", "tabular"):
         tensor[0, h:w] = val
-    if mode == "voxel":
+    elif mode == "voxel":
         logger.warning("not yet implemented")

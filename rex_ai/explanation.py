@@ -66,7 +66,9 @@ def try_preprocess(args, model_shape, device):
     return data
 
 
-def _explanation(args, model_shape, prediction_func, depth_reached, device):
+def _explanation(args, model_shape, prediction_func, device):
+    depth_reached = 0
+
     if hasattr(args.custom, "preprocess"):
         data = args.custom.preprocess(
             args.path, model_shape, device, mode=args.mode
@@ -236,9 +238,9 @@ def explanation(
                 logger.info("processing %s", to_process)
                 args.path = to_process
                 explanations.append(
-                    _explanation(args, model_shape, prediction_func, 0, device)
+                    _explanation(args, model_shape, prediction_func, device)
                 )
         return explanations
 
     else:
-        return _explanation(args, model_shape, prediction_func, 0, device)
+        return _explanation(args, model_shape, prediction_func, device)

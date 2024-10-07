@@ -46,6 +46,7 @@ def run_on_cpu(tensors, session, input_name, target, raw, binary_threshold=None)
                 tc = confidences[0]
             else:
                 classification = np.argmax(confidences)
+                # print(prediction[i], confidences, classification)
                 if target is not None:
                     tc = confidences[target.classification]
                 else:
@@ -66,7 +67,7 @@ def run_on_cpu(tensors, session, input_name, target, raw, binary_threshold=None)
         sys.exit(-1)
 
 
-def run_with_data_on_device(session, x, input_name, device, tsize):
+def run_with_data_on_device(session, x, input_name, device, tsize, binary_threshold):
     if isinstance(x, list):
         # TODO this should probably be a stack
         x = [m.contiguous() for m in x]
@@ -151,5 +152,5 @@ def get_prediction_function(model_path, gpu: bool):
             x, sess, input_name, target, raw, binary_threshold
         ), shape
     if device == "cuda":
-        return lambda x, target=None, device=device: run_with_data_on_device(
-            sess,x,input_name,device,len(x)), shape
+        return lambda x, target=None, device=device, binary_threshold=None: run_with_data_on_device(
+            sess,x,input_name,device,len(x), binary_threshold), shape
