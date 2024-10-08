@@ -1,0 +1,33 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: Python package
+
+on: pull_request
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+        poetry-version: ["1.8.3"]
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: "Setup Python, Poetry and Dependencies"
+      uses: packetcoders/action-setup-cache-python-poetry@main
+      with:
+          python-version: ${{matrix.python-version}}
+          poetry-version: ${{matrix.poetry-version}}
+          install-args: --with dev
+
+    - name: Lint with Ruff
+      run: |
+        ruff check
+    - name: Test with pytest
+      run: |
+        pytest
