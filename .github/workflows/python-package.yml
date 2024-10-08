@@ -27,6 +27,7 @@ jobs:
 
     - name: Lint with Ruff
       run: |
+        source $VENV
         ruff check
     - name: Test with pytest
       run: |
