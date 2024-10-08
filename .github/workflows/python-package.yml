@@ -28,7 +28,10 @@ jobs:
     - name: Lint with Ruff
       run: |
         source $VENV
-        ruff check
+        ruff check --output-format=github .
+    - name: Install ReX
+      run: |
+        poetry install 
     - name: Test with pytest
       run: |
         source $VENV
