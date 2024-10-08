@@ -31,4 +31,5 @@ jobs:
         ruff check
     - name: Test with pytest
       run: |
+        source $VENV
         pytest
