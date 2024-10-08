@@ -80,7 +80,7 @@ class ResponsibilityMaps:
             if mutant.prediction is not None:
                 k = mutant.prediction.classification
             if k is None:
-                logger.fatal("bad bad bad")
+                logger.fatal("this is no search classification, so exiting here")
                 sys.exit(-1)
             if k not in self.maps:
                 self.new_map(k, data.model_height, data.model_width)
@@ -91,98 +91,18 @@ class ResponsibilityMaps:
                 if box is not None and box.area() > 0:
                     index = np.uint(box_name[-1])
                     section = resp_map[box.row_start : box.row_stop, box.col_start : box.col_stop]
-                    if np.mean(section) == 0:
-                        section += r[index]
-                    else:
-                        if args.concentrate:
-                            section += np.mean(section) * r[index]
-                        else:
+                    if all(section.shape):
+                        if np.mean(section) == 0:
                             section += r[index]
-                if args.concentrate:
-                    for ind in r_bad:
-                        for i in ind:
-                            box_name = box_name[:-1] + str(i)
-                            box: Optional[Box] = find(search_tree, lambda n: n.name == box_name)
-                            section = resp_map[box.row_start : box.row_stop, box.col_start : box.col_stop]
-                            section = 0.001
+                        else:
+                            if args.concentrate:
+                                section += np.mean(section) * r[index]
+                            else:
+                                section += r[index]
+                    if args.concentrate:
+                        for ind in r_bad:
+                            for i in ind:
+                                box_name = box_name[:-1] + str(i)
+                                box: Optional[Box] = find(search_tree, lambda n: n.name == box_name)
+                                section = 0.001
             self.maps[k] = resp_map
-
-            # for p in mutant.get_active_parts():
-            #
-            #     # p is a string of the form e.g. 'R:3:2:1', we want
-            #     # to get the last element of that string '1' and convert to 1
-            #     # i = np.uint(p[-1])
-            #     box: Optional[Box] = find(search_tree, lambda n: n.name == p)
-            #     if box is not None:
-            #         if box.area() == 0:
-            #             pass
-            #         else:
-            #             section = resp_map[box.row_start : box.row_stop, box.col_start : box.col_stop]
-            #             update = r[np.uint(p[-1])]
-
-
-
-
-
-
-        # for mutant in mutants:
-        #     r = self.responsibility(mutant, args)
-        #     r_good = np.where(r > 0.0)
-        #     r_bad = np.where(r == 0.0)
-        #     print(r_good, r_bad)
-        #     for part in mutant.get_active_parts():
-        #         assert mutant.prediction is not None
-        #         k = mutant.prediction.classification  
-        #         assert k is not None
-        #         if k not in self.maps:
-        #             self.new_map(k, data.model_height, data.model_width)
-        #         # index for the appropriate responsibility
-        #         i = np.uint(part[-1])
-        #         box: Optional[Box] = find(search_tree, lambda node: node.name == part)
-        #         if box is not None:
-        #             concentration = 1.0
-        #             if args.concentrate:
-        #                 concentration = box.area() / (data.model_width * data.model_height) #type: ignore
-        #             # first time we've seen a particular classification
-        #             # continue with map (may be blank)
-        #             # if k not in self.maps:
-        #             #     self.new_map(k, data.model_height, data.model_width)
-        #             resp_map = self.get(k)
-        #             if resp_map is not None:
-        #                 # NB: no segmentation data here, so just boxes
-        #                 if data.mode in ("spectral", "tabular"):
-        #                     resp_map[0, box.col_start : box.col_stop] += r[i]
-        #                 elif data.mode in ("RGB", "L"):
-        #                     # TODO not sure why this should ever occur, but it does. Indicates a mistake somewhere
-        #                     # else in the code
-        #                     if box.area() == 0:
-        #                         pass
-        #                     else:
-        #                         section = resp_map[box.row_start : box.row_stop, box.col_start : box.col_stop]
-        #                         section += r[i] * np.min(section)
-        #
-        #                         # if r[i] == 0 and np.min(section) > 0:
-        #                         #     section = 0
-        #                         # else:
-        #                         #     section += np.min(section) * r[i]
-        #                         # print(np.min(section), np.mean(section), np.max(section))
-        #                         # if np.min(section) == 0:
-        #                         #     section += r[i]
-        #                         # else:
-        #                         #     # section += r[i]
-        #                         #     section += np.min(section) * r[i] * concentration
-        #                             # section += np.mean(section) * r[i] * concentration
-        #
-        #                         # print(np.min(section), np.max(section))
-        #                         # section += np.min(section) * r[i]
-        #                         # resp_map[
-        #                         #     box.row_start : box.row_stop,
-        #                         #     box.col_start : box.col_stop,
-        #                         # ] += r[i] * concentration
-        #                 else:
-        #                     logger.warning("not yet implemented for voxels")
-        #                     pass
-        #                 self.maps[k] = resp_map
-        #             else:
-        #                 logger.fatal("unable to update responsibility maps")
-        #                 exit(-1)

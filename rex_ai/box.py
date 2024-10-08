@@ -143,6 +143,8 @@ class BoxInternal:
             space: int = int(self.row_stop - self.row_start) * (self.col_stop - self.col_start)
             pos = random_coords(self.distribution, space, map=map)
 
+        if pos == -1:
+            return None
         coords = np.unravel_index(pos, (self.row_stop - self.row_start, self.col_stop - self.col_start)) # type: ignore
         row: int = int(coords[0]) + self.row_start
         col: int = int(coords[1]) + self.col_start

@@ -201,10 +201,10 @@ def causal_explanation(process, data: Data, args: CausalArgs, prediction_func, c
                     )
                 )
 
-                # n = 0
-                # for m in mutants:
-                #     m.save_mutant(data, f"{process}_{m.depth}_{n}_{m.prediction.confidence}_{m.passing}.png")
-                #     n += 1
+                n = 0
+                for m in mutants:
+                    m.save_mutant(data, f"{process}_{m.depth}_{n}_{m.prediction.confidence}_{m.passing}.png")
+                    n += 1
 
                 # import sys
                 # sys.exit()

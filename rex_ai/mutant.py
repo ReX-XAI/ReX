@@ -124,16 +124,7 @@ class Mutant:
         return _apply_to_data(self.mask, data, self.masking_func)
 
     def save_mutant(self, data: Data, name=None, segs=None):
-        # colour = self.masking_func
-        # image
         if data.mode in ("RGB", "L"):
-            # an assumption here
-            # if isinstance(colour, float):
-            #     colour *= 255
-            #     colour = np.uint8(np.abs(colour))
-            #     colour = 0
-            #     logger.info('casting %f to %d', self.masking_func, colour)
-
             m = np.array(
                 data.input.resize((data.model_height, data.model_width))
             )
@@ -143,14 +134,13 @@ class Mutant:
                 m = np.where(mask, m.transpose((2, 0, 1)), 0)
                 m = m.transpose((1, 2, 0))
             else:
-                # m = m.transpose((0, 2, 1))
+                # TODO m = m.transpose((0, 2, 1))
                 m = np.where(mask, m, 255)
             # draw on the segment_mask, if available
             if segs is not None:
                 m = add_boundaries(m, segs)
             img = Image.fromarray(m, data.mode)
             if name is not None:
-                # pass
                 img.save(name)
             else:
                 img.save(f"{self.get_name()}.png")

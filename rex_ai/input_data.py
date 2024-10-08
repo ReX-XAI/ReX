@@ -39,9 +39,9 @@ class Data:
         self.model_order = order
 
         if process:
-            if self.mode == "tabular" or self.mode == "spectral":
+            if self.mode in ("tabular", "spectral"):
                 self.data = self.input
-                self.match_to_model()
+                self.match_data_to_model_shape()
             else:
                 self.data = None
             self.transposed = False
@@ -52,25 +52,28 @@ class Data:
     def set_classification(self, cl):
         self.classification = cl
 
-    def match_to_model(self):
+    def match_data_to_model_shape(self):
         """
         a PIL image has the from H * W * C, so
         if the model takes C * H * W we need to transpose self.data to
         get it into the correct form for the model to consume
         This function does *not* add in the batch channel at the beginning
         """
+        assert self.data is not None
         if (
                 self.mode == "RGB"
             and self.model_order == "first"
-            and self.data is not None
         ):
             self.data = self.data.transpose(2, 0, 1)  # type: ignore
             self.data = self.unsqueeze()
             self.transposed = True
-        if self.mode == "L":
+        if self.mode == "L" and self.model_order == "first":
             self.data = self.data.transpose(1, 0)
             self.data = self.unsqueeze()
             self.transposed = True
+        if self.mode == "L" and self.model_order == "last":
+            self.data = self.data.transpose(1, 0)
+            self.data = self.unsqueeze()
         if self.mode == "tabular" or self.mode == "spectral":
             self.generic_tab_preprocess()
         if self.mode == "voxel":
@@ -86,7 +89,7 @@ class Data:
         img = self.input.resize((self.model_height, self.model_width))
         img = np.array(img).astype(astype)
         self.data = img
-        self.match_to_model()
+        self.match_data_to_model_shape()
         self.data = tt.from_numpy(self.data).to(self.device)
 
     def _normalise(self, means, stds, astype, norm):
@@ -104,15 +107,6 @@ class Data:
                 for i, s in enumerate(stds):
                     normed_data[:, i, :, :] = normed_data[:, i, :, :] / s
 
-        # greyscale
-        if self.model_order == "first" and self.model_channels == 1:
-            if means is not None:
-                for i, m in enumerate(means):
-                    normed_data[i] = normed_data[i] - m
-            if stds is not None:
-                for i, s in enumerate(stds):
-                    normed_data[i] = normed_data[i] / s
-
         if self.model_order == "last" and self.model_channels == 3:
             if means is not None:
                 for i, m in enumerate(means):
@@ -120,21 +114,33 @@ class Data:
             if stds is not None:
                 for i, s in enumerate(stds):
                     normed_data[:, :, i] = normed_data[:, :, i] / s
-        if self.model_order == "last" and self.model_channels == 1:
-            pass
+
+        # greyscale
+        if self.model_channels == 1:
+            if means is not None:
+                for i, m in enumerate(means):
+                    normed_data[i] = normed_data[i] - m
+            if stds is not None:
+                for i, s in enumerate(stds):
+                    normed_data[i] = normed_data[i] / s
+
 
         return normed_data
 
     def unsqueeze(self):
-        assert self.data is not None
         out = self.data
-        if isinstance(self.data, tt.Tensor):
-            for _ in range(len(self.model_shape) - len(self.data.shape)):
-                out = tt.unsqueeze(out, dim=0)
+        if self.model_order == "first":
+            dim = 0
         else:
-            for _ in range(len(self.model_shape) - len(self.data.shape)):
-                print(out.shape)
-                out = np.expand_dims(out, axis=0)
+            dim = -1
+        if isinstance(self.data, tt.Tensor):
+            for _ in range(len(self.model_shape) - len(self.data.shape) - 1):
+                out = tt.unsqueeze(out, dim=dim) #type: ignore
+            out = tt.unsqueeze(out, dim=0) #type: ignore
+        else:
+            for _ in range(len(self.model_shape) - len(self.data.shape) - 1): #type: ignore
+                out = np.expand_dims(out, axis=dim) #type: ignore
+            out = np.expand_dims(out, axis=0) #type: ignore
         return out
 
     def generic_image_preprocess(

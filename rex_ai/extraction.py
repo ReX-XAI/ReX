@@ -37,7 +37,7 @@ class Explanation:
         if method == Strategy.Global:
             return self.__global()
         if method == Strategy.MultiSpotlight:
-            logger.warn("not yet implemented, defaulting to global")
+            logger.warning("not yet implemented, defaulting to global")
             return self.__global()
             # name = None
             # ext = None
@@ -91,7 +91,6 @@ class Explanation:
             for _, loc in chunk:
                 self.set_to_true(loc, mutant)
             d = _apply_to_data(mutant, self.data, self.mask_func).squeeze(0)
-            # TODO hack to get greyscale working
             masks.append(d.unsqueeze(0))
             if len(masks) == self.args.batch:
                 preds = self.prediction_func(
@@ -99,6 +98,7 @@ class Explanation:
                 )
                 for j, p in enumerate(preds):
                     if p.classification == self.target.classification:
+                        logger.info("found an explanation of %f confidence", p.confidence)
                         # TODO yuk, yuk, yuk. Everywhere else, explanation is a boolean mask, but here we change to float32
                         self.explanation = masks[j]
                         return
@@ -150,7 +150,7 @@ class Explanation:
 
     def save(self):
         # if it's an image
-        if self.data.mode == "RGB" or self.data.mode == "L":
+        if self.data.mode in ("RGB", "L"):
             save_image(self.explanation, self.data, self.args)
         # if it's a spectral array
         if self.data.mode == "spectral":
