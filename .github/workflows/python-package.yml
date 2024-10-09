@@ -24,6 +24,7 @@ jobs:
           python-version: ${{matrix.python-version}}
           poetry-version: ${{matrix.poetry-version}}
           install-args: --with dev
+    - run: echo "$(poetry env info --path)/bin" >> $GITHUB_PATH
 
     - name: Lint with Ruff
       run: |
@@ -36,3 +37,5 @@ jobs:
       run: |
         source $VENV
         pytest
+    - name: "Type checking with Pyright"
+      uses: jakebailey/pyright-action@v2
