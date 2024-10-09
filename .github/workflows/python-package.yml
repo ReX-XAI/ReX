@@ -15,6 +15,9 @@ jobs:
         python-version: ["3.12"]
         poetry-version: ["1.8.3"]
 
+    permissions:
+      pull-requests: write
+    
     steps:
     - uses: actions/checkout@v4
     
@@ -43,3 +46,5 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         include-base-comparison: true
         fail-on-issue-increase: true
+
+
