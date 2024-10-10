@@ -24,7 +24,9 @@ Run the tests by running `pytest`, which will automatically run all files of the
 
 ## Generating documentation with Sphinx
 
-To generate documentation using Sphinx and sphinx-autoapi:
+Docs are automatically built on PRs, and are available at <http://rex-xai.readthedocs.io/>. 
+
+To build documentation locally using Sphinx and sphinx-autoapi:
 
 ```sh
 cd docs/
