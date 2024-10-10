@@ -40,6 +40,7 @@ sphinx = "^8.0.2"
 myst-parser = "^4.0.0"
 sphinx-autoapi = "^3.3.2"
 pyright = "^1.1.383"
+pytest-cov = "^5.0.0"
 
 [tool.pyright]
 include = ["rex_ai"]
