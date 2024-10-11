@@ -1,7 +1,7 @@
 # This workflow will install Python dependencies, run tests and lint with a variety of Python versions
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
 
-name: Python package
+name: Run tests and checks
 
 on: pull_request
 
@@ -21,7 +21,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: "Setup Python, Poetry and Dependencies"
+    - name: Setup Python, Poetry and Dependencies
       uses: packetcoders/action-setup-cache-python-poetry@v1.2.0
       with:
           python-version: ${{matrix.python-version}}
@@ -42,11 +42,9 @@ jobs:
       uses: MishaKav/pytest-coverage-comment@v1.1.52
       with:
         pytest-xml-coverage-path: ./coverage.xml
-    - name: "Type checking with Pyright"
-      uses: YajJackson/simple-pyright-action@v1.0.0
+    - name: Type checking with Pyright
+      uses: jakebailey/pyright-action@v2
       with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        include-base-comparison: true
-        fail-on-issue-increase: true
+        working-directory: "./rex-xai/"
 
 
