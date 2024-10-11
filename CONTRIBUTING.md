@@ -2,7 +2,7 @@
 
 ## Setting up a local development environment
 
-Install [poetry](https://python-poetry.org/) following [its installation instrucutions](https://python-poetry.org/docs/) - it's recommended to install using `pipx`.
+Install [poetry](https://python-poetry.org/) following [its installation instructions](https://python-poetry.org/docs/) - it's recommended to install using `pipx`.
 
 Clone this repo and `cd` into it.
 
@@ -18,13 +18,15 @@ See the [poetry docs](https://python-poetry.org/docs/basic-usage/#using-your-vir
 
 ## Testing
 
-We use [pytest](https://docs.pytest.org/en/stable/index.html).
+We use [pytest](https://docs.pytest.org/en/stable/index.html) with the [pytest-cov](https://github.com/pytest-dev/pytest-cov) plugin.
 
 Run the tests by running `pytest`, which will automatically run all files of the form `test_*.py` or `*_test.py` in the current directory and its subdirectories.
+Run `pytest --cov=rex_ai tests/` to get a coverage report printed to the terminal.
+See [pytest-cov's documentation](https://pytest-cov.readthedocs.io/en/latest/) for addittional reporting options.
 
 ## Generating documentation with Sphinx
 
-Docs are automatically built on PRs, and are available at <http://rex-xai.readthedocs.io/>.
+Docs are automatically built on PRs and on updates to the repo's default branch, and are available at <http://rex-xai.readthedocs.io/>.
 
 To build documentation locally using Sphinx and sphinx-autoapi:
 
@@ -48,9 +50,4 @@ Run the linter on all files in the current working directory with `ruff check`.
 Ruff can automatically fix some issues if you run `ruff check --fix`.
 
 Run `ruff format` to automatically format all files in the current working directory.
-
-## TODO
-
-- linting with ruff
-- running tests
-- test coverage
+Run `ruff format --diff` to get a preview of any changes that would be made.
