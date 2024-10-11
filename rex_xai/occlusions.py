@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import torch as tt
 import numpy as np
-from rex_ai.input_data import Data
+from rex_xai.input_data import Data
 
 
 def set_mask_value(m, data: Data, device="cpu"):
@@ -23,9 +23,7 @@ def __split_groups(neg_mask):
     return np.split(neg_mask, np.where(np.diff(neg_mask) > 1)[0] + 1)
 
 
-def spectral_occlusion(
-    mask: tt.Tensor, data: tt.Tensor, noise=0.03, device="cpu"
-):
+def spectral_occlusion(mask: tt.Tensor, data: tt.Tensor, noise=0.03, device="cpu"):
     """Linear interpolated occlusion for spectral data, with optional added noise.
 
     @param mask: boolean valued NDArray

@@ -16,9 +16,7 @@ def _guess_mode(input):
 
 
 class Data:
-    def __init__(
-        self, input, model_shape, device, mode=None, process=True
-    ) -> None:
+    def __init__(self, input, model_shape, device, mode=None, process=True) -> None:
         self.input = input
         self.mode = None
         self.classification = None

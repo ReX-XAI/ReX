@@ -9,7 +9,7 @@ from typing import List, Tuple
 from anytree import LevelOrderGroupIter, NodeMixin, RenderTree
 import numpy as np
 
-from rex_ai.distributions import Distribution, random_coords
+from rex_xai.distributions import Distribution, random_coords
 
 
 class BoxInternal:
@@ -191,9 +191,7 @@ class BoxInternal:
 
         return [b0, b1, b2, b3]
 
-    def spawn_children(
-        self, min_size, mode, map=None
-    ) -> List[Box] | Tuple | None:
+    def spawn_children(self, min_size, mode, map=None) -> List[Box] | Tuple | None:
         """spawn subboxes from <self>"""
         if self.area() < min_size:
             return ()
@@ -216,9 +214,7 @@ class BoxInternal:
         """returns the area of a box"""
         if self.row_start == 0 and self.row_stop == 0:
             return self.col_stop - self.col_start
-        return (self.row_stop - self.row_start) * (
-            self.col_stop - self.col_start
-        )
+        return (self.row_stop - self.row_start) * (self.col_stop - self.col_start)
 
 
 class Box(BoxInternal, NodeMixin):
@@ -284,8 +280,7 @@ def show_tree(tree):
 def average_box_size(tree, d) -> float:
     """Calculate the average box size at depth <d> of <tree>."""
     areas = [
-        [node.area() for node in children]
-        for children in LevelOrderGroupIter(tree)
+        [node.area() for node in children] for children in LevelOrderGroupIter(tree)
     ]
     try:
         return np.mean(areas[d], axis=0)

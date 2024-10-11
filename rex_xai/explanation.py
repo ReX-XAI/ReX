@@ -11,16 +11,16 @@ import torch as tt
 import numpy as np
 from PIL import Image
 
-from rex_ai.evaluation import Evaluation
-from rex_ai.extraction import Explanation
-from rex_ai.responsibility import causal_explanation
-from rex_ai.input_data import Data
-from rex_ai.onnx import get_prediction_function
-from rex_ai.resp_maps import ResponsibilityMaps
-from rex_ai.occlusions import set_mask_value
-from rex_ai.config import CausalArgs
-from rex_ai.logger import logger, set_log_level
-from rex_ai.database import initialise_rex_db, update_database
+from rex_xai.evaluation import Evaluation
+from rex_xai.extraction import Explanation
+from rex_xai.responsibility import causal_explanation
+from rex_xai.input_data import Data
+from rex_xai.onnx import get_prediction_function
+from rex_xai.resp_maps import ResponsibilityMaps
+from rex_xai.occlusions import set_mask_value
+from rex_xai.config import CausalArgs
+from rex_xai.logger import logger, set_log_level
+from rex_xai.database import initialise_rex_db, update_database
 
 
 def try_preprocess(args: CausalArgs, model_shape: Tuple[int], device: str):
@@ -54,9 +54,7 @@ def try_preprocess(args: CausalArgs, model_shape: Tuple[int], device: str):
     # a compressed numpy array file
     elif ext in ".npy":
         if args.mode in ("tabular", "spectral"):
-            data = Data(
-                np.load(args.path), model_shape, mode=args.mode, device=device
-            )
+            data = Data(np.load(args.path), model_shape, mode=args.mode, device=device)
             data.data = tt.from_numpy(data.generic_tab_preprocess()).to(device)
         else:
             logger.fatal("we do not generically handle this datatype")
@@ -76,9 +74,7 @@ def _explanation(args, model_shape, prediction_func, device):
     depth_reached = 0
 
     if hasattr(args.custom, "preprocess"):
-        data = args.custom.preprocess(
-            args.path, model_shape, device, mode=args.mode
-        )
+        data = args.custom.preprocess(args.path, model_shape, device, mode=args.mode)
     else:
         # no custom preprocessing, so we make our best guess as to what to do
         data = try_preprocess(args, model_shape, device)
@@ -118,9 +114,7 @@ def _explanation(args, model_shape, prediction_func, device):
     maps = ResponsibilityMaps()
 
     if args.target is not None:
-        maps.new_map(
-            args.target.classification, data.model_height, data.model_width
-        )
+        maps.new_map(args.target.classification, data.model_height, data.model_width)
 
     if args.iters > 0:
         for i in trange(args.iters, disable=not args.progress):
@@ -217,9 +211,7 @@ def _explanation(args, model_shape, prediction_func, device):
     return exp
 
 
-def explanation(
-    args: CausalArgs, device
-) -> Union[Explanation, List[Explanation]]:
+def explanation(args: CausalArgs, device) -> Union[Explanation, List[Explanation]]:
     """Take a CausalArgs object and return a Explanation.
 
     @param args: CausalArgs

@@ -8,11 +8,11 @@ from sqlalchemy import Column, Integer, Unicode
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 import numpy as np
 
-from rex_ai.logger import logger
-from rex_ai.config import CausalArgs, Strategy
-from rex_ai.prediction import Prediction
-from rex_ai.extraction import Explanation
-from rex_ai.multi_explanation import MultiExplanation
+from rex_xai.logger import logger
+from rex_xai.config import CausalArgs, Strategy
+from rex_xai.prediction import Prediction
+from rex_xai.extraction import Explanation
+from rex_xai.multi_explanation import MultiExplanation
 
 
 def update_database(
@@ -234,9 +234,7 @@ class DataBaseEntry(Base):
 
 def initialise_rex_db(name, echo=False):
     engine = create_engine(f"sqlite:///{name}", echo=echo)
-    Base.metadata.create_all(
-        engine, tables=[DataBaseEntry.__table__], checkfirst=True
-    )  # type: ignore
+    Base.metadata.create_all(engine, tables=[DataBaseEntry.__table__], checkfirst=True)  # type: ignore
     Session = sessionmaker(bind=engine)
     s = Session()
     return s

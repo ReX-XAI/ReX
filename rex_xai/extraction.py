@@ -4,20 +4,20 @@ from typing import Optional
 import torch as tt
 import numpy as np
 
-from rex_ai.resp_maps import ResponsibilityMaps
-from rex_ai.visualisation import (
+from rex_xai.resp_maps import ResponsibilityMaps
+from rex_xai.visualisation import (
     save_image,
     spectral_plot,
     surface_plot,
     heatmap_plot,
 )
-from rex_ai.prediction import Prediction
-from rex_ai.input_data import Data
-from rex_ai.config import CausalArgs
-from rex_ai.config import Strategy
-from rex_ai.logger import logger
-from rex_ai.mutant import _apply_to_data
-from rex_ai._utils import get_map_locations, set_boolean_mask_value
+from rex_xai.prediction import Prediction
+from rex_xai.input_data import Data
+from rex_xai.config import CausalArgs
+from rex_xai.config import Strategy
+from rex_xai.logger import logger
+from rex_xai.mutant import _apply_to_data
+from rex_xai._utils import get_map_locations, set_boolean_mask_value
 
 
 class Explanation:
@@ -102,9 +102,7 @@ class Explanation:
             d = _apply_to_data(mutant, self.data, self.mask_func).squeeze(0)
             masks.append(d.unsqueeze(0))
             if len(masks) == self.args.batch:
-                preds = self.prediction_func(
-                    tt.stack(masks).to(self.data.device)
-                )
+                preds = self.prediction_func(tt.stack(masks).to(self.data.device))
                 for j, p in enumerate(preds):
                     if p.classification == self.target.classification:
                         logger.info(
@@ -143,9 +141,7 @@ class Explanation:
 
         expansions = 0
         cutoff = (
-            self.data.model_width
-            * self.data.model_height
-            * self.data.model_channels
+            self.data.model_width * self.data.model_height * self.data.model_channels
         )  # type: ignore
         while tt.count_nonzero(mask) < cutoff:
             if expansion_limit is not None:
@@ -190,9 +186,7 @@ class Explanation:
     def heatmap_plot(self, maps: ResponsibilityMaps):
         if self.data.mode in ("RGB", "L"):
             if self.args.heatmap == "show":
-                heatmap_plot(
-                    self.data, maps, self.args.heatmap_colours, self.target
-                )
+                heatmap_plot(self.data, maps, self.args.heatmap_colours, self.target)
             else:
                 heatmap_plot(
                     self.data,

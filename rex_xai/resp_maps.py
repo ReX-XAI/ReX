@@ -10,11 +10,11 @@ try:
 except ImportError:
     from anytree import find
 
-from rex_ai.box import Box
-from rex_ai.config import CausalArgs
-from rex_ai.mutant import Mutant
-from rex_ai.input_data import Data
-from rex_ai.logger import logger
+from rex_xai.box import Box
+from rex_xai.config import CausalArgs
+from rex_xai.mutant import Mutant
+from rex_xai.input_data import Data
+from rex_xai.logger import logger
 
 
 class ResponsibilityMaps:
@@ -87,18 +87,14 @@ class ResponsibilityMaps:
             if mutant.prediction is not None:
                 k = mutant.prediction.classification
             if k is None:
-                logger.fatal(
-                    "this is no search classification, so exiting here"
-                )
+                logger.fatal("this is no search classification, so exiting here")
                 sys.exit(-1)
             if k not in self.maps:
                 self.new_map(k, data.model_height, data.model_width)
             resp_map = self.get(k)
             assert resp_map is not None
             for box_name in mutant.get_active_boxes():
-                box: Optional[Box] = find(
-                    search_tree, lambda n: n.name == box_name
-                )
+                box: Optional[Box] = find(search_tree, lambda n: n.name == box_name)
                 if box is not None and box.area() > 0:
                     index = np.uint(box_name[-1])
                     section = resp_map[

@@ -1,0 +1,52 @@
+# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: Run tests and checks
+
+on: pull_request
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+
+    permissions:
+      pull-requests: write
+    
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install poetry
+      run: pipx install poetry
+    - name: Set up Python, install and cache dependencies
+      uses: actions/setup-python@v5
+      with:
+          python-version: ${{matrix.python-version}}
+          cache: poetry
+    - run: poetry install --with dev
+    - run: echo "$(poetry env info --path)/bin" >> $GITHUB_PATH
+
+    - name: Lint with Ruff
+      run: |
+        ruff check --output-format=github .
+    - name: Install ReX
+      run: |
+        poetry install 
+    - name: Test with pytest
+      run: |
+        pytest --junitxml=pytest.xml --cov-report=xml:coverage.xml --cov=rex_xai tests/
+    - name: Pytest coverage comment
+      uses: MishaKav/pytest-coverage-comment@v1.1.52
+      with:
+        pytest-xml-coverage-path: ./coverage.xml
+    - name: Type checking with Pyright
+      uses: YajJackson/simple-pyright-action@v1.0.0
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        include-base-comparison: true
+        fail-on-issue-increase: true
+        include-file-comments: false
+

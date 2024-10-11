@@ -5,10 +5,10 @@
 import numpy as np
 
 from numpy.typing import NDArray
-from rex_ai.input_data import Data
-from rex_ai.prediction import Prediction
-from rex_ai.config import CausalArgs
-from rex_ai.distributions import random_coords, Distribution
+from rex_xai.input_data import Data
+from rex_xai.prediction import Prediction
+from rex_xai.config import CausalArgs
+from rex_xai.distributions import random_coords, Distribution
 
 
 class MultiExplanation:
@@ -47,11 +47,11 @@ class MultiExplanation:
 # from numba import njit
 # from tqdm import trange
 
-# from rex_ai.config import CausalArgs
+# from rex_xai.config import CausalArgs
 
-# from rex_ai.logger import logger
+# from rex_xai.logger import logger
 
-# # from rex_ai.ranking import linear_search, neighbours, spatial_search
+# # from rex_xai.ranking import linear_search, neighbours, spatial_search
 
 
 # @njit

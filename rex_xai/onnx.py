@@ -12,10 +12,10 @@ import numpy as np
 
 import onnxruntime as ort
 from onnxruntime import InferenceSession
-from rex_ai.prediction import Prediction, from_pytorch_tensor
-from rex_ai.input_data import Setup
+from rex_xai.prediction import Prediction, from_pytorch_tensor
+from rex_xai.input_data import Setup
 
-from rex_ai.logger import logger
+from rex_xai.logger import logger
 
 
 def run_on_cpu(
@@ -36,9 +36,7 @@ def run_on_cpu(
     if tensor_size == 1:
         tensors = tensors.detach().cpu().numpy()  # type: ignore
     else:
-        tensors = np.stack(
-            [t.squeeze(0).detach().cpu().numpy() for t in tensors]
-        )  # type: ignore
+        tensors = np.stack([t.squeeze(0).detach().cpu().numpy() for t in tensors])  # type: ignore
 
     preds = []
 
@@ -107,9 +105,7 @@ def run_with_data_on_device(
         buffer_ptr=ptr,
     )
 
-    z_tensor = tt.empty(
-        [tsize, 1000], dtype=tt.float32, device=device
-    ).contiguous()
+    z_tensor = tt.empty([tsize, 1000], dtype=tt.float32, device=device).contiguous()
 
     binding.bind_output(
         name=session.get_outputs()[0].name,

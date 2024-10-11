@@ -1,10 +1,10 @@
 """main entry point to ReX"""
 
-from rex_ai._utils import get_device
-from rex_ai.config import get_all_args
+from rex_xai._utils import get_device
+from rex_xai.config import get_all_args
 
-from rex_ai.explanation import explanation
-from rex_ai.logger import logger, set_log_level
+from rex_xai.explanation import explanation
+from rex_xai.logger import logger, set_log_level
 
 
 def main():

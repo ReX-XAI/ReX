@@ -12,11 +12,11 @@ import matplotlib as mpl
 from scipy.ndimage import center_of_mass
 from skimage.segmentation import slic
 
-from rex_ai.prediction import Prediction
-from rex_ai.config import CausalArgs
-from rex_ai.resp_maps import ResponsibilityMaps
-from rex_ai.input_data import Data
-from rex_ai._utils import add_boundaries
+from rex_xai.prediction import Prediction
+from rex_xai.config import CausalArgs
+from rex_xai.resp_maps import ResponsibilityMaps
+from rex_xai.input_data import Data
+from rex_xai._utils import add_boundaries
 
 
 def plot_curve(curve, chunk_size, style="insertion", destination=None):
@@ -118,9 +118,7 @@ def heatmap_plot(data: Data, resp_maps, colour, target: Prediction, path=None):
             plt.show()
 
 
-def contour_plot(
-    path, maps: ResponsibilityMaps, target, levels=30, destination=None
-):
+def contour_plot(path, maps: ResponsibilityMaps, target, levels=30, destination=None):
     """plots a contour plot"""
     pass
 
@@ -316,21 +314,9 @@ def save_image(explanation, data: Data, args: CausalArgs):
 
         if data.transposed:
             if data.mode == "RGB":
-                mask = (
-                    explanation.squeeze()
-                    .detach()
-                    .cpu()
-                    .numpy()
-                    .transpose((1, 2, 0))
-                )
+                mask = explanation.squeeze().detach().cpu().numpy().transpose((1, 2, 0))
             if data.mode == "L":
-                mask = (
-                    explanation.squeeze(0)
-                    .detach()
-                    .cpu()
-                    .numpy()
-                    .transpose(2, 1, 0)
-                )
+                mask = explanation.squeeze(0).detach().cpu().numpy().transpose(2, 1, 0)
                 mask = np.repeat(mask, 3, axis=-1)
         else:
             # else:
