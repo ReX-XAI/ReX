@@ -22,7 +22,7 @@ jobs:
     - uses: actions/checkout@v4
     
     - name: "Setup Python, Poetry and Dependencies"
-      uses: packetcoders/action-setup-cache-python-poetry@main
+      uses: packetcoders/action-setup-cache-python-poetry@v1.2.0
       with:
           python-version: ${{matrix.python-version}}
           poetry-version: ${{matrix.poetry-version}}
