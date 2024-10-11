@@ -118,9 +118,7 @@ def heatmap_plot(data: Data, resp_maps, colour, target: Prediction, path=None):
             plt.show()
 
 
-def contour_plot(
-    path, maps: ResponsibilityMaps, target, levels=30, destination=None
-):
+def contour_plot(path, maps: ResponsibilityMaps, target, levels=30, destination=None):
     """plots a contour plot"""
     pass
 
@@ -316,21 +314,9 @@ def save_image(explanation, data: Data, args: CausalArgs):
 
         if data.transposed:
             if data.mode == "RGB":
-                mask = (
-                    explanation.squeeze()
-                    .detach()
-                    .cpu()
-                    .numpy()
-                    .transpose((1, 2, 0))
-                )
+                mask = explanation.squeeze().detach().cpu().numpy().transpose((1, 2, 0))
             if data.mode == "L":
-                mask = (
-                    explanation.squeeze(0)
-                    .detach()
-                    .cpu()
-                    .numpy()
-                    .transpose(2, 1, 0)
-                )
+                mask = explanation.squeeze(0).detach().cpu().numpy().transpose(2, 1, 0)
                 mask = np.repeat(mask, 3, axis=-1)
         else:
             # else:

@@ -127,9 +127,7 @@ class Mutant:
 
     def save_mutant(self, data: Data, name=None, segs=None):
         if data.mode in ("RGB", "L"):
-            m = np.array(
-                data.input.resize((data.model_height, data.model_width))
-            )
+            m = np.array(data.input.resize((data.model_height, data.model_width)))
             mask = self.mask.squeeze().detach().cpu().numpy()
             if data.transposed and data.mode == "RGB":
                 # if transposed, we have C * H * W, so change that to H * W * C

@@ -54,9 +54,7 @@ def try_preprocess(args: CausalArgs, model_shape: Tuple[int], device: str):
     # a compressed numpy array file
     elif ext in ".npy":
         if args.mode in ("tabular", "spectral"):
-            data = Data(
-                np.load(args.path), model_shape, mode=args.mode, device=device
-            )
+            data = Data(np.load(args.path), model_shape, mode=args.mode, device=device)
             data.data = tt.from_numpy(data.generic_tab_preprocess()).to(device)
         else:
             logger.fatal("we do not generically handle this datatype")
@@ -76,9 +74,7 @@ def _explanation(args, model_shape, prediction_func, device):
     depth_reached = 0
 
     if hasattr(args.custom, "preprocess"):
-        data = args.custom.preprocess(
-            args.path, model_shape, device, mode=args.mode
-        )
+        data = args.custom.preprocess(args.path, model_shape, device, mode=args.mode)
     else:
         # no custom preprocessing, so we make our best guess as to what to do
         data = try_preprocess(args, model_shape, device)
@@ -118,9 +114,7 @@ def _explanation(args, model_shape, prediction_func, device):
     maps = ResponsibilityMaps()
 
     if args.target is not None:
-        maps.new_map(
-            args.target.classification, data.model_height, data.model_width
-        )
+        maps.new_map(args.target.classification, data.model_height, data.model_width)
 
     if args.iters > 0:
         for i in trange(args.iters, disable=not args.progress):
@@ -217,9 +211,7 @@ def _explanation(args, model_shape, prediction_func, device):
     return exp
 
 
-def explanation(
-    args: CausalArgs, device
-) -> Union[Explanation, List[Explanation]]:
+def explanation(args: CausalArgs, device) -> Union[Explanation, List[Explanation]]:
     """Take a CausalArgs object and return a Explanation.
 
     @param args: CausalArgs

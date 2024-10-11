@@ -18,9 +18,7 @@ class Prediction:
         self.classification: Optional[int] = pred
         self.confidence: Optional[float] = conf
         self.bounding_box: Optional[NDArray] = box
-        self.target: Optional[int] = (
-            None if target is None else target.classification
-        )
+        self.target: Optional[int] = None if target is None else target.classification
         self.target_confidence: Optional[float] = target_confidence
 
     def __repr__(self) -> str:
@@ -42,9 +40,7 @@ class Prediction:
         return self.target == self.classification
 
 
-def from_pytorch_tensor(
-    tensor, target=None, binary_threshold=None
-) -> List[Prediction]:
+def from_pytorch_tensor(tensor, target=None, binary_threshold=None) -> List[Prediction]:
     # TODO get this to handle binary models
     softmax_tensor = F.softmax(tensor, dim=1)
     prediction_scores, pred_labels = tt.topk(softmax_tensor, 1)
@@ -53,9 +49,7 @@ def from_pytorch_tensor(
         p = Prediction(pl.item(), ps.item())
         if target is not None:
             p.target = target
-            p.target_confidence = softmax_tensor[
-                i, target.classification
-            ].item()
+            p.target_confidence = softmax_tensor[i, target.classification].item()
         predictions.append(p)
 
     return predictions

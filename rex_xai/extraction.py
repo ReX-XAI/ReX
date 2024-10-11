@@ -102,9 +102,7 @@ class Explanation:
             d = _apply_to_data(mutant, self.data, self.mask_func).squeeze(0)
             masks.append(d.unsqueeze(0))
             if len(masks) == self.args.batch:
-                preds = self.prediction_func(
-                    tt.stack(masks).to(self.data.device)
-                )
+                preds = self.prediction_func(tt.stack(masks).to(self.data.device))
                 for j, p in enumerate(preds):
                     if p.classification == self.target.classification:
                         logger.info(
@@ -143,9 +141,7 @@ class Explanation:
 
         expansions = 0
         cutoff = (
-            self.data.model_width
-            * self.data.model_height
-            * self.data.model_channels
+            self.data.model_width * self.data.model_height * self.data.model_channels
         )  # type: ignore
         while tt.count_nonzero(mask) < cutoff:
             if expansion_limit is not None:
@@ -190,9 +186,7 @@ class Explanation:
     def heatmap_plot(self, maps: ResponsibilityMaps):
         if self.data.mode in ("RGB", "L"):
             if self.args.heatmap == "show":
-                heatmap_plot(
-                    self.data, maps, self.args.heatmap_colours, self.target
-                )
+                heatmap_plot(self.data, maps, self.args.heatmap_colours, self.target)
             else:
                 heatmap_plot(
                     self.data,

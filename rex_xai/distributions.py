@@ -8,9 +8,7 @@ import numpy as np
 from numba import njit
 from scipy.stats import binom, betabinom
 
-Distribution = Enum(
-    "Distribution", ["Binomial", "Uniform", "BetaBinomial", "Adaptive"]
-)
+Distribution = Enum("Distribution", ["Binomial", "Uniform", "BetaBinomial", "Adaptive"])
 
 
 @njit
@@ -21,9 +19,7 @@ def _blend(dist, alpha, base):
     return blend
 
 
-def _2d_adaptive(
-    map, args: Tuple[int, int, int, int], alpha=0.0, base=None
-) -> int:
+def _2d_adaptive(map, args: Tuple[int, int, int, int], alpha=0.0, base=None) -> int:
     # if the map exists and is not 0.0 everywhere...
     if map is not None and np.max(map) > 0.0:
         s = map[args[0] : args[1], args[2] : args[3]]

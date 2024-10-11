@@ -181,9 +181,7 @@ def causal_explanation(
 
                 if data.mode in ("spectral", "tabular"):
                     preds: List[Prediction] = [
-                        prediction_func(
-                            m.mask, args.target, binary_threshold=None
-                        )[0]
+                        prediction_func(m.mask, args.target, binary_threshold=None)[0]
                         for m in mutants
                     ]
                 else:
@@ -262,9 +260,7 @@ def causal_explanation(
 
         # if we are too deep into the tree, break from the loop
         if depth_reached > args.tree_depth and ai == todo:  # type: ignore
-            logger.info(
-                "breaking at %s as max tree depth reached", depth_reached
-            )
+            logger.info("breaking at %s as max tree depth reached", depth_reached)
             break
 
         if args.search_limit is not None and total_work > args.search_limit:

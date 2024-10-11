@@ -234,9 +234,7 @@ class DataBaseEntry(Base):
 
 def initialise_rex_db(name, echo=False):
     engine = create_engine(f"sqlite:///{name}", echo=echo)
-    Base.metadata.create_all(
-        engine, tables=[DataBaseEntry.__table__], checkfirst=True
-    )  # type: ignore
+    Base.metadata.create_all(engine, tables=[DataBaseEntry.__table__], checkfirst=True)  # type: ignore
     Session = sessionmaker(bind=engine)
     s = Session()
     return s

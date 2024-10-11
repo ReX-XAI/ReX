@@ -20,9 +20,7 @@ from rex_xai.distributions import Distribution
 
 CAUSAL = Enum("CAUSAL", ["Responsibility"])
 
-Strategy = Enum(
-    "Strategy", ["Global", "Spatial", "Spotlight", "MultiSpotlight"]
-)
+Strategy = Enum("Strategy", ["Global", "Spatial", "Spotlight", "MultiSpotlight"])
 
 Queue = Enum("Queue", ["Area", "All", "Intersection", "DC"])
 
@@ -181,9 +179,7 @@ def cmdargs():
         const="show",
         help="show minimal explanation, optionally saved to <OUTPUT>. Requires a PIL compatible file extension",
     )
-    parser.add_argument(
-        "-c", "--config", type=str, help="config file to use for rex"
-    )
+    parser.add_argument("-c", "--config", type=str, help="config file to use for rex")
 
     parser.add_argument(
         "--processed",

@@ -36,15 +36,11 @@ class Evaluation:
         if self.explanation.data.mode in ("RGB", "L"):
             img = np.array(self.explanation.data.input)
             assert self.explanation.explanation is not None
-            exp = shannon_entropy(
-                self.explanation.explanation.detach().cpu().numpy()
-            )
+            exp = shannon_entropy(self.explanation.explanation.detach().cpu().numpy())
 
             return shannon_entropy(img), exp
         else:
-            logger.warning(
-                "entropy loss is not yet defined on this type of data"
-            )
+            logger.warning("entropy loss is not yet defined on this type of data")
 
     def insertion_deletion_curve(self, prediction_func):
         insertion_curve = []
@@ -84,27 +80,19 @@ class Evaluation:
                     val=False,
                 )
             im.append(
-                _apply_to_data(
-                    insertion_mask, self.explanation.data, 0
-                ).squeeze(0)
+                _apply_to_data(insertion_mask, self.explanation.data, 0).squeeze(0)
             )
             dm.append(
-                _apply_to_data(deletion_mask, self.explanation.data, 0).squeeze(
-                    0
-                )
+                _apply_to_data(deletion_mask, self.explanation.data, 0).squeeze(0)
             )
 
             if len(im) == self.explanation.args.batch:
-                self.__batch(
-                    im, dm, prediction_func, insertion_curve, deletion_curve
-                )
+                self.__batch(im, dm, prediction_func, insertion_curve, deletion_curve)
                 im = []
                 dm = []
 
         if im != [] and dm != []:
-            self.__batch(
-                im, dm, prediction_func, insertion_curve, deletion_curve
-            )
+            self.__batch(im, dm, prediction_func, insertion_curve, deletion_curve)
 
         i_auc = simpson(insertion_curve, dx=step) / (
             (self.explanation.args.target.confidence) * iters * step
@@ -123,12 +111,8 @@ class Evaluation:
 
     def __batch(self, im, dm, prediction_func, insertion_curve, deletion_curve):
         assert self.explanation.args.target is not None
-        ip = prediction_func(
-            tt.stack(im).to(self.explanation.data.device), raw=True
-        )
-        dp = prediction_func(
-            tt.stack(dm).to(self.explanation.data.device), raw=True
-        )
+        ip = prediction_func(tt.stack(im).to(self.explanation.data.device), raw=True)
+        dp = prediction_func(tt.stack(dm).to(self.explanation.data.device), raw=True)
         for p in range(0, ip.shape[0]):
             insertion_curve.append(
                 ip[p, self.explanation.args.target.classification].item()
