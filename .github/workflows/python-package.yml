@@ -43,8 +43,9 @@ jobs:
       with:
         pytest-xml-coverage-path: ./coverage.xml
     - name: Type checking with Pyright
-      uses: jakebailey/pyright-action@v2
+      uses:  jordemort/action-pyright@v1
       with:
-        working-directory: "./rex_xai"
-
+        workdir: "./rex_xai"
+        github_token: ${{ secrets.GITHUB_TOKEN }} # You need this
+        reporter: github-pr-check 
 
