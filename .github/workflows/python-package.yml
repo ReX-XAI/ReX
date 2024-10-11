@@ -45,6 +45,6 @@ jobs:
     - name: Type checking with Pyright
       uses: jakebailey/pyright-action@v2
       with:
-        working-directory: "./rex-xai/"
+        working-directory: "./rex_xai"
 
 
