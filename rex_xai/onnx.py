@@ -10,10 +10,10 @@ from scipy.special import softmax
 import numpy as np
 
 import onnxruntime as ort
-from rex_ai.prediction import Prediction, from_pytorch_tensor
-from rex_ai.input_data import Setup
+from rex_xai.prediction import Prediction, from_pytorch_tensor
+from rex_xai.input_data import Setup
 
-from rex_ai.logger import logger
+from rex_xai.logger import logger
 
 def run_on_cpu(tensors, session, input_name, target, raw, binary_threshold=None):
     """Convert a pytorch tensor, or list of tensors, to numpy arrays on the cpu for onnx inference."""

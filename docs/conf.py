@@ -31,5 +31,5 @@ html_static_path = ['_static']
 
 # -- AutoAPI -----------------------------------------------------------------
 # https://sphinx-autoapi.readthedocs.io/en/latest/
-autoapi_dirs = ['../rex_ai']
+autoapi_dirs = ['../rex_xai']
 autodoc_typehints = 'description'

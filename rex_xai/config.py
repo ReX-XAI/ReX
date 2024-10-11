@@ -14,9 +14,9 @@ import numpy as np
 import toml  # type: ignore
 
 
-from rex_ai.distributions import str2distribution
-from rex_ai.prediction import Prediction
-from rex_ai.distributions import Distribution
+from rex_xai.distributions import str2distribution
+from rex_xai.prediction import Prediction
+from rex_xai.distributions import Distribution
 
 CAUSAL = Enum("CAUSAL", ["Responsibility"])
 

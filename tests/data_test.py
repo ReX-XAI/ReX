@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import numpy as np
-from rex_ai.input_data import Data
+from rex_xai.input_data import Data
 
 
 tab = np.arange(0, 1, 999)

@@ -2,11 +2,11 @@
 import numpy as np
 import torch as tt
 
-from rex_ai.logger import logger
-from rex_ai.extraction import Explanation
-from rex_ai._utils import get_map_locations
-from rex_ai.mutant import _apply_to_data
-from rex_ai._utils import set_boolean_mask_value
+from rex_xai.logger import logger
+from rex_xai.extraction import Explanation
+from rex_xai._utils import get_map_locations
+from rex_xai.mutant import _apply_to_data
+from rex_xai._utils import set_boolean_mask_value
 from scipy.integrate import simpson
 from skimage.measure import shannon_entropy
 

@@ -4,8 +4,8 @@ from numpy.typing import NDArray
 import torch as tt
 import numpy as np
 from skimage.segmentation import mark_boundaries
-from rex_ai.logger import logger
-from rex_ai.box import Box
+from rex_xai.logger import logger
+from rex_xai.box import Box
 
 
 def add_boundaries(img: Union[NDArray, tt.Tensor], segs: NDArray) -> NDArray:

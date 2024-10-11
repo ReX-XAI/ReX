@@ -9,7 +9,7 @@ from typing import List, Tuple
 from anytree import LevelOrderGroupIter, NodeMixin, RenderTree
 import numpy as np
 
-from rex_ai.distributions import Distribution, random_coords
+from rex_xai.distributions import Distribution, random_coords
 
 
 class BoxInternal:

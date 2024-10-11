@@ -6,8 +6,8 @@ from torchvision import transforms as T
 import torch as tt
 import torch.nn.functional as F
 from PIL import Image #type: ignore
-from rex_ai.input_data import Data
-from rex_ai.prediction import from_pytorch_tensor
+from rex_xai.input_data import Data
+from rex_xai.prediction import from_pytorch_tensor
 
 
 model = resnet50(weights='ResNet50_Weights.DEFAULT')

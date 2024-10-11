@@ -8,7 +8,7 @@ import numpy as np
 
 from numba import njit
 from scipy.stats import binom, betabinom
-from rex_ai.logger import logger
+from rex_xai.logger import logger
 
 Distribution = Enum(
     "Distribution", ["Binomial", "Uniform", "BetaBinomial", "Adaptive"]

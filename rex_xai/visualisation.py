@@ -12,11 +12,11 @@ import matplotlib as mpl
 from scipy.ndimage import center_of_mass
 from skimage.segmentation import slic
 
-from rex_ai.prediction import Prediction
-from rex_ai.config import CausalArgs
-from rex_ai.resp_maps import ResponsibilityMaps
-from rex_ai.input_data import Data
-from rex_ai._utils import add_boundaries
+from rex_xai.prediction import Prediction
+from rex_xai.config import CausalArgs
+from rex_xai.resp_maps import ResponsibilityMaps
+from rex_xai.input_data import Data
+from rex_xai._utils import add_boundaries
 
 
 def plot_curve(curve, chunk_size, style="insertion", destination=None):

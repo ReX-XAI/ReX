@@ -10,11 +10,11 @@ except ImportError:
     from anytree.search import find
 
 import matplotlib.pyplot as plt
-from rex_ai.box import Box
-from rex_ai.prediction import Prediction
-from rex_ai.logger import logger
-from rex_ai.input_data import Data
-from rex_ai._utils import add_boundaries, set_boolean_mask_value
+from rex_xai.box import Box
+from rex_xai.prediction import Prediction
+from rex_xai.logger import logger
+from rex_xai.input_data import Data
+from rex_xai._utils import add_boundaries, set_boolean_mask_value
 
 __combinations = [
     [

@@ -4,15 +4,15 @@ from typing import Optional
 import torch as tt
 import numpy as np
 
-from rex_ai.resp_maps import ResponsibilityMaps
-from rex_ai.visualisation import save_image, spectral_plot, surface_plot, heatmap_plot
-from rex_ai.prediction import Prediction
-from rex_ai.input_data import Data
-from rex_ai.config import CausalArgs
-from rex_ai.config import Strategy
-from rex_ai.logger import logger
-from rex_ai.mutant import _apply_to_data
-from rex_ai._utils import get_map_locations, set_boolean_mask_value
+from rex_xai.resp_maps import ResponsibilityMaps
+from rex_xai.visualisation import save_image, spectral_plot, surface_plot, heatmap_plot
+from rex_xai.prediction import Prediction
+from rex_xai.input_data import Data
+from rex_xai.config import CausalArgs
+from rex_xai.config import Strategy
+from rex_xai.logger import logger
+from rex_xai.mutant import _apply_to_data
+from rex_xai._utils import get_map_locations, set_boolean_mask_value
 
 
 class Explanation:

@@ -7,11 +7,11 @@ try:
 except ImportError:
     from anytree.search import find
 
-from rex_ai.logger import logger
-from rex_ai.config import CausalArgs
-from rex_ai.mutant import Mutant
-from rex_ai.input_data import Data
-from rex_ai.box import Box
+from rex_xai.logger import logger
+from rex_xai.config import CausalArgs
+from rex_xai.mutant import Mutant
+from rex_xai.input_data import Data
+from rex_xai.box import Box
 
 
 class ResponsibilityMaps:
