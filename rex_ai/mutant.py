@@ -43,8 +43,8 @@ __combinations = [
 
 
 def _apply_to_data(mask, data: Data, masking_func):
-    if isinstance(masking_func, (float, int)): 
-        res = tt.where(mask, data.data, masking_func)  #type: ignore
+    if isinstance(masking_func, (float, int)):
+        res = tt.where(mask, data.data, masking_func)  # type: ignore
         return res
     if callable(masking_func):
         return masking_func(mask, data.data)
@@ -63,7 +63,9 @@ class Mutant:
             data.model_shape[1:]
         )  # the first element of shape is the batch information, so we drop that
         self.mode = data.mode
-        self.channels: int = data.model_channels if data.model_channels is not None else 0
+        self.channels: int = (
+            data.model_channels if data.model_channels is not None else 0
+        )
         self.order = data.model_order
         self.mask = tt.zeros(self.shape, dtype=tt.bool, device=data.device)
         self.static = static

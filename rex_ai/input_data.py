@@ -39,6 +39,10 @@ class Data:
         self.model_order = order
 
         if process:
+            # RGB model but greyscale input so we convery greyscale to pseudo-RGB
+            if self.model_channels == 3 and self.mode == "L":
+                self.input = self.input.convert("RGB")
+                self.mode = "RGB"
             if self.mode in ("tabular", "spectral"):
                 self.data = self.input
                 self.match_data_to_model_shape()
@@ -60,10 +64,7 @@ class Data:
         This function does *not* add in the batch channel at the beginning
         """
         assert self.data is not None
-        if (
-                self.mode == "RGB"
-            and self.model_order == "first"
-        ):
+        if self.mode == "RGB" and self.model_order == "first":
             self.data = self.data.transpose(2, 0, 1)  # type: ignore
             self.data = self.unsqueeze()
             self.transposed = True
@@ -124,7 +125,6 @@ class Data:
                 for i, s in enumerate(stds):
                     normed_data[i] = normed_data[i] / s
 
-
         return normed_data
 
     def unsqueeze(self):
@@ -135,12 +135,12 @@ class Data:
             dim = -1
         if isinstance(self.data, tt.Tensor):
             for _ in range(len(self.model_shape) - len(self.data.shape) - 1):
-                out = tt.unsqueeze(out, dim=dim) #type: ignore
-            out = tt.unsqueeze(out, dim=0) #type: ignore
+                out = tt.unsqueeze(out, dim=dim)  # type: ignore
+            out = tt.unsqueeze(out, dim=0)  # type: ignore
         else:
-            for _ in range(len(self.model_shape) - len(self.data.shape) - 1): #type: ignore
-                out = np.expand_dims(out, axis=dim) #type: ignore
-            out = np.expand_dims(out, axis=0) #type: ignore
+            for _ in range(len(self.model_shape) - len(self.data.shape) - 1):  # type: ignore
+                out = np.expand_dims(out, axis=dim)  # type: ignore
+            out = np.expand_dims(out, axis=0)  # type: ignore
         return out
 
     def generic_image_preprocess(

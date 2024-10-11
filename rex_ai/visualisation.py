@@ -4,6 +4,7 @@
 
 from PIL import Image, ImageDraw
 import os
+
 # from matplotlib.text import Rectangle #type: ignore
 import numpy as np
 import matplotlib.pyplot as plt
@@ -85,34 +86,36 @@ def plot_3d(path, ranking, ogrid, norm=255.0):
         )
     return img, x, y
 
+
 # code from https://stackoverflow.com/questions/42481203/heatmap-on-top-of-image
 def _transparent_cmap(cmap, N=255):
     "Copy colormap and set alpha values"
     mycmap = cmap
     mycmap._init()
-    mycmap._lut[:,-1] = np.linspace(0, 0.8, N+4)
+    mycmap._lut[:, -1] = np.linspace(0, 0.8, N + 4)
     return mycmap
 
 
 def heatmap_plot(data: Data, resp_maps, colour, target: Prediction, path=None):
     if data.mode in ("RGB", "L"):
         mycmap = _transparent_cmap(mpl.colormaps[colour])
-        background = data.input.resize((data.model_height, data.model_width)) # TODO check these dimensions
-        x, y = np.mgrid[0:data.model_height, 0:data.model_width]
+        background = data.input.resize(
+            (data.model_height, data.model_width)
+        )  # TODO check these dimensions
+        x, y = np.mgrid[0 : data.model_height, 0 : data.model_width]
         fig, ax = plt.subplots(1, 1)
         ax.imshow(background)
         resp_map = resp_maps.get(target.classification)
         # TODO this is not working as expected
         resp_map = np.rot90(resp_map, k=2)
         ax.contourf(x, y, resp_map, 15, cmap=mycmap)
-        plt.axis('off')
+        plt.axis("off")
         ax.get_xaxis().set_visible(False)
         ax.get_yaxis().set_visible(False)
         if path is not None:
-            plt.savefig(path, bbox_inches='tight', dpi=300, pad_inches=0)
+            plt.savefig(path, bbox_inches="tight", dpi=300, pad_inches=0)
         else:
             plt.show()
-
 
 
 def contour_plot(
@@ -142,7 +145,9 @@ def __group_spectral_parts(explanation):
     return res
 
 
-def spectral_plot(args: CausalArgs, explanation, data: Data, ranking, colour, extra=False):
+def spectral_plot(
+    args: CausalArgs, explanation, data: Data, ranking, colour, extra=False
+):
     # plt.style.use("seaborn-v0_8")
     explanation = explanation.squeeze()
     if extra:
@@ -154,14 +159,12 @@ def spectral_plot(args: CausalArgs, explanation, data: Data, ranking, colour, ex
     else:
         fig, ax = plt.subplots(nrows=1, ncols=1)
 
-
-    data = data.data[0, 0, :].detach().cpu().numpy() # type: ignore
-    d_min = np.min(data) # type: ignore
-    d_max = np.max(data) # type: ignore
-
+    data = data.data[0, 0, :].detach().cpu().numpy()  # type: ignore
+    d_min = np.min(data)  # type: ignore
+    d_max = np.max(data)  # type: ignore
 
     # if the spectrum hasn't been base shifted to 0, then we do it to make plotting easier,
-    # but we will lie about it on the y axis 
+    # but we will lie about it on the y axis
     if d_min < 0:
         data += np.abs(d_min)
         y_dmin = np.floor(d_min)
@@ -175,8 +178,8 @@ def spectral_plot(args: CausalArgs, explanation, data: Data, ranking, colour, ex
     ax.plot(data)  # type: ignore
     ax.set_ylabel("Wave Intensity")
 
-    k = args.target.classification # type: ignore
-    confidence = args.target.confidence #type: ignore
+    k = args.target.classification  # type: ignore
+    confidence = args.target.confidence  # type: ignore
     fig.suptitle(
         f"Spectrum and Responsibility\nTarget: {k}\nconfidence {confidence:5.4f}"
     )
@@ -207,7 +210,10 @@ def spectral_plot(args: CausalArgs, explanation, data: Data, ranking, colour, ex
 
 
 def surface_plot(
-    args: CausalArgs, resp_maps: ResponsibilityMaps, target: Prediction, destination=None
+    args: CausalArgs,
+    resp_maps: ResponsibilityMaps,
+    target: Prediction,
+    destination=None,
 ):
     """plots a 3d surface plot"""
     img, _x, _y = plot_3d(args.path, resp_maps.get(target.classification), True)
@@ -223,10 +229,16 @@ def surface_plot(
         if ranking is not None:
             ax = fig.add_subplot(rows, cols, i + 1, projection="3d")
 
-            ax.plot_surface( #type: ignore
+            ax.plot_surface(  # type: ignore
                 _x, _y, np.atleast_2d(0), rstride=5, cstride=5, facecolors=img
-            )  
-            ax.plot_surface(_x, _y, resp_maps.get(k), alpha=0.4, cmap=mpl.colormaps[args.heatmap_colours])  # type: ignore
+            )
+            ax.plot_surface(
+                _x,
+                _y,
+                resp_maps.get(k),
+                alpha=0.4,
+                cmap=mpl.colormaps[args.heatmap_colours],
+            )  # type: ignore
             if args.info:
                 # confidence = 0.0
                 # if k == target.classification:
@@ -296,7 +308,9 @@ def save_image(explanation, data: Data, args: CausalArgs):
     mask = None
     if data.mode == "RGB" or data.mode == "L":
         if data.mode == "L":
-            img = data.input.convert("RGB").resize((data.model_height, data.model_width))
+            img = data.input.convert("RGB").resize(
+                (data.model_height, data.model_width)
+            )
         else:
             img = data.input.resize((data.model_height, data.model_width))
 
@@ -310,10 +324,16 @@ def save_image(explanation, data: Data, args: CausalArgs):
                     .transpose((1, 2, 0))
                 )
             if data.mode == "L":
-                mask = explanation.squeeze(0).detach().cpu().numpy().transpose(2, 1, 0)
+                mask = (
+                    explanation.squeeze(0)
+                    .detach()
+                    .cpu()
+                    .numpy()
+                    .transpose(2, 1, 0)
+                )
                 mask = np.repeat(mask, 3, axis=-1)
         else:
-        # else:
+            # else:
             mask = explanation.squeeze(0).detach().cpu().numpy()
 
         if mask is not None:
@@ -342,4 +362,3 @@ def save_image(explanation, data: Data, args: CausalArgs):
 
                 out.save(name)
                 return out
-

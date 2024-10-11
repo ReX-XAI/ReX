@@ -7,8 +7,8 @@ calculate causal responsibility
 from collections import deque
 from typing import List
 
-import numpy as np  
-import torch as tt 
+import numpy as np
+import torch as tt
 
 try:
     from anytree.cachedsearch import find
@@ -98,7 +98,9 @@ def prune(mutants: List[Mutant], technique=Queue.Intersection, keep=None):
     return mutants
 
 
-def causal_explanation(process, data: Data, args: CausalArgs, prediction_func, current_map=None):
+def causal_explanation(
+    process, data: Data, args: CausalArgs, prediction_func, current_map=None
+):
     """Calculate causal responsiblity.
 
     @param process: an integer value
@@ -152,13 +154,12 @@ def causal_explanation(process, data: Data, args: CausalArgs, prediction_func, c
                     args.tree_depth,
                     args.min_box_size,
                     data.mode,
-                    r_map=current_map
+                    r_map=current_map,
                 )
 
                 if child_boxes is None or len(child_boxes) == 0:
                     logger.debug("no children, breaking")
                     break
-
 
                 mutants = []
                 if child_boxes is not None:
@@ -179,14 +180,37 @@ def causal_explanation(process, data: Data, args: CausalArgs, prediction_func, c
                 work_done = len(mutants)
 
                 if data.mode in ("spectral", "tabular"):
-                    preds: List[Prediction] = [prediction_func(m.mask, args.target, binary_threshold=None)[0] for m in mutants]
+                    preds: List[Prediction] = [
+                        prediction_func(
+                            m.mask, args.target, binary_threshold=None
+                        )[0]
+                        for m in mutants
+                    ]
                 else:
                     # TODO this needs testing
                     if args.batch == 1:
-                        preds = [prediction_func(tt.where(m.mask, data.data, args.mask_value), args.target, binary_threshold=args.binary_threshold)[0] for m in mutants] #type: ignore
+                        preds = [
+                            prediction_func(
+                                tt.where(m.mask, data.data, args.mask_value),
+                                args.target,
+                                binary_threshold=args.binary_threshold,
+                            )[0]
+                            for m in mutants
+                        ]  # type: ignore
                     else:
+                        tensors = tt.stack(
+                            [
+                                tt.where(m.mask, data.data, args.mask_value)
+                                for m in mutants
+                            ]
+                        )  # type: ignore
+                        if len(tensors.shape) > len(data.model_shape):
+                            tensors = tensors.squeeze(1)
                         preds: List[Prediction] = prediction_func(
-                            tt.stack([tt.where(m.mask, data.data, args.mask_value) for m in mutants]), args.target, binary_threshold=args.binary_threshold) #type: ignore
+                            tensors,
+                            args.target,
+                            binary_threshold=args.binary_threshold,
+                        )
 
                 for i, m in enumerate(mutants):
                     m.prediction = preds[i]
@@ -201,13 +225,15 @@ def causal_explanation(process, data: Data, args: CausalArgs, prediction_func, c
                     )
                 )
 
-                n = 0
-                for m in mutants:
-                    m.save_mutant(data, f"{process}_{m.depth}_{n}_{m.prediction.confidence}_{m.passing}.png")
-                    n += 1
+                if args.verbosity > 3:
+                    n = 0
+                    for m in mutants:
+                        m.save_mutant(
+                            data,
+                            f"{process}_{m.depth}_{n}_{m.prediction.confidence}_{m.passing}.png",
+                        )
+                        n += 1
 
-                # import sys
-                # sys.exit()
                 total_passing += len(passing)
                 total_failing += work_done - len(passing)
                 total_work += work_done

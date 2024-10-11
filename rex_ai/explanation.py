@@ -6,10 +6,10 @@ import os
 import sys
 import time
 from tqdm import trange  # type: ignore
-from typing import List, Union
+from typing import List, Tuple, Union
 import torch as tt
 import numpy as np
-from PIL import Image 
+from PIL import Image
 
 from rex_ai.evaluation import Evaluation
 from rex_ai.extraction import Explanation
@@ -23,7 +23,7 @@ from rex_ai.logger import logger, set_log_level
 from rex_ai.database import initialise_rex_db, update_database
 
 
-def try_preprocess(args, model_shape, device):
+def try_preprocess(args: CausalArgs, model_shape: Tuple[int], device: str):
     """Makes an attempt to preprocess data based on file extension and (possibly)
     user defined mode.
 
@@ -34,7 +34,7 @@ def try_preprocess(args, model_shape, device):
     """
     _, ext = os.path.splitext(args.path)
     # args.path is an image
-    if ext.lower() in [".jpg", ".png", ".jpeg", ".tif", ".tiff"]:
+    if ext.lower() in [".jpg", ".jpeg", ".png", ".tif", ".tiff"]:
         # a simple sanity check: spectral_occlusion is not suitable for images
         # so remind the user to update rex.toml and set mask_value to 0 in the meantime
         try:
@@ -48,6 +48,7 @@ def try_preprocess(args, model_shape, device):
 
         # if not args.processed:
         data = Data(Image.open(args.path), model_shape, device)
+        # data = Data(Image.open(args.path).convert("RGB"), model_shape, device)
         data.generic_image_preprocess(means=args.means, stds=args.stds)
 
     # a compressed numpy array file
@@ -58,7 +59,12 @@ def try_preprocess(args, model_shape, device):
             )
             data.data = tt.from_numpy(data.generic_tab_preprocess()).to(device)
         else:
+            logger.fatal("we do not generically handle this datatype")
             return NotImplemented
+    # nifti files for 3d data
+    elif ext in ".nii":
+        logger.fatal("we do not (yet) handle nifti files generically")
+        return NotImplemented
     else:
         # we don't know what to do!
         data = Data(args.path, model_shape, mode=args.mode, device=device)
@@ -124,7 +130,13 @@ def _explanation(args, model_shape, prediction_func, device):
                 failing,
                 depth_reached,
                 avg_bs,  # average box size
-            ) = causal_explanation(i + 1, data, args, prediction_func, current_map=maps.get(args.target.classification))
+            ) = causal_explanation(
+                i + 1,
+                data,
+                args,
+                prediction_func,
+                current_map=maps.get(args.target.classification),
+            )
 
             total_passing += passing
             total_failing += failing
@@ -148,13 +160,18 @@ def _explanation(args, model_shape, prediction_func, device):
 
     exp = Explanation(maps, prediction_func, target, data, args)  # type: ignore
 
+    print(maps)
+    # for k, v in maps.items():
+    #     print(k)
+    #     print(maps.counts)
+
     exp.extract(args.strategy)
 
     if args.analyze:
         eval = Evaluation(exp)
         rat = eval.ratio()
         if data.mode in ("RGB", "L"):
-            be, ae = eval.entropy_loss() # type: ignore
+            be, ae = eval.entropy_loss()  # type: ignore
             ent = be - ae
         else:
             ent = None
@@ -229,6 +246,7 @@ def explanation(
         logger.info(f"resetting batch size to {model_shape[0]}")
         args.batch = model_shape[0]
 
+    # multiple explanations
     if os.path.isdir(args.path):
         dir = args.path
         explanations = []
@@ -243,4 +261,5 @@ def explanation(
         return explanations
 
     else:
+        # a single explanation
         return _explanation(args, model_shape, prediction_func, device)

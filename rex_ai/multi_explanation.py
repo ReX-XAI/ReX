@@ -28,11 +28,15 @@ class MultiExplanation:
     def separate_by(self, dice_coefficient: float):
         pass
 
-
     def spotlight_search(self, args: CausalArgs, coords=None):
         if coords is None:
-            origin = random_coords(Distribution.Uniform, [self.data.model_width * self.data.model_height]) #type: ignore
-            return np.unravel_index(origin, (self.data.model_height, self.data.model_width)) #type: ignore
+            origin = random_coords(
+                Distribution.Uniform,
+                [self.data.model_width * self.data.model_height],
+            )  # type: ignore
+            return np.unravel_index(
+                origin, (self.data.model_height, self.data.model_width)
+            )  # type: ignore
         # pass
 
 

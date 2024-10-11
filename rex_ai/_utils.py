@@ -10,7 +10,7 @@ from rex_ai.box import Box
 
 def add_boundaries(img: Union[NDArray, tt.Tensor], segs: NDArray) -> NDArray:
     m = mark_boundaries(img, segs)
-    m *= 255 #type: ignore
+    m *= 255  # type: ignore
     m = m.astype(np.uint8)
     return m
 
@@ -32,7 +32,15 @@ def get_map_locations(map, reverse=True):
     coords = sorted(coords, reverse=reverse)
     return coords
     #
-def set_boolean_mask_value(tensor, mode, order, coords: Union[Box, Tuple[NDArray, NDArray]], val:bool=True):
+
+
+def set_boolean_mask_value(
+    tensor,
+    mode,
+    order,
+    coords: Union[Box, Tuple[NDArray, NDArray]],
+    val: bool = True,
+):
     if isinstance(coords, Box):
         if mode in ("spectral", "tabular"):
             h = coords.col_start

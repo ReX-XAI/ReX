@@ -21,10 +21,12 @@ def _blend(dist, alpha, base):
     return blend
 
 
-def _2d_adaptive(map, args: Tuple[int, int, int, int], alpha=0.0, base=None) -> int:
+def _2d_adaptive(
+    map, args: Tuple[int, int, int, int], alpha=0.0, base=None
+) -> int:
     # if the map exists and is not 0.0 everywhere...
     if map is not None and np.max(map) > 0.0:
-        s = map[args[0]: args[1], args[2]:args[3]]
+        s = map[args[0] : args[1], args[2] : args[3]]
         sf = np.ndarray.flatten(s)
         # sf = np.max(sf) - sf
         sf /= np.sum(sf)
@@ -38,6 +40,7 @@ def _2d_adaptive(map, args: Tuple[int, int, int, int], alpha=0.0, base=None) -> 
 
     # if the map is empty or doesn't exist, return uniform
     return np.random.randint(1, (args[1] - args[0]) * (args[3] - args[2]))
+
 
 def str2distribution(d: str) -> Distribution:
     """converts string into Distribution enum"""
@@ -63,7 +66,7 @@ def random_coords(d: Optional[Distribution], *args, map=None) -> int:
     if d == Distribution.Uniform:
         if args[0] < 2:
             return -1
-        return np.random.randint(1, args[0]) # type: ignore
+        return np.random.randint(1, args[0])  # type: ignore
 
     if d == Distribution.Binomial:
         start, stop, *dist_args = args[0]
@@ -78,9 +81,9 @@ def random_coords(d: Optional[Distribution], *args, map=None) -> int:
 
     return -1
 
-        # d is None or an option we don't recognise
-        # return np.random.randint(start, stop)
+    # d is None or an option we don't recognise
+    # return np.random.randint(start, stop)
     # except BaseException as e:
     #     logger.fatal("fatal error %s", e)
     #     return 0
-        # sys.exit(-1)
+    # sys.exit(-1)

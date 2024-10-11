@@ -35,7 +35,7 @@ class Args:
     def __init__(self) -> None:
         self.config_location: Optional[str] = None
         # input file
-        self.path: Optional[str] = None
+        self.path: str = ""
         self.model = None
         self.mode = None
         self.shape: None = None
@@ -69,7 +69,7 @@ class Args:
         self.all = False
         self.resize = False
         self.grid = False
-        self.heatmap_colours = 'magma'
+        self.heatmap_colours = "magma"
         # explanation production strategy
         self.strategy: Strategy = Strategy.Spatial
         self.chunk_size = 25
@@ -411,7 +411,6 @@ def get_all_args(path=None):
             if "norm" in onnx:
                 args.norm = onnx["norm"]
 
-
         if "visual" in rex_dict:
             if "info" in rex_dict["visual"]:
                 args.info = rex_dict["visual"]["info"]
@@ -458,7 +457,6 @@ def get_all_args(path=None):
             args.spotlight_step = multi_dict["spotlight_step"]
         args.spotlight_objective_function = get_objective_function(multi_dict)  # type: ignore
 
-
         eval_dict = explain_dict["evaluation"]
         if "insertion_step" in eval_dict:
             args.insertion_step = eval_dict["insertion_step"]
@@ -501,7 +499,6 @@ def get_all_args(path=None):
 
     if cmd_args.iters is not None:
         args.iters = cmd_args.iters
-
 
     if cmd_args.analyze or cmd_args.analyse:
         args.analyze = True

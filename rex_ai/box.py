@@ -64,26 +64,17 @@ class BoxInternal:
         return (self.row_start, self.row_stop, self.col_start, self.col_stop)
 
     def __1d_parts(self):
-        c1 = random_coords(
-            self.distribution,
-            [self.col_stop - self.col_start]
-        )  
+        c1 = random_coords(self.distribution, [self.col_stop - self.col_start])
         if c1 is not None and isinstance(c1, np.ndarray):
-            c1 = c1[0] + self.col_start 
+            c1 = c1[0] + self.col_start
 
-        c2 = random_coords(
-            self.distribution,
-            [self.col_stop - self.col_start]
-        )
+        c2 = random_coords(self.distribution, [self.col_stop - self.col_start])
         if c2 is not None and isinstance(c2, np.ndarray):
             c2 = c2[0] + self.col_start
 
-        c3 = random_coords(
-            self.distribution,
-            [self.col_stop - self.col_start]
-        )
+        c3 = random_coords(self.distribution, [self.col_stop - self.col_start])
         if c3 is not None and isinstance(c3, np.ndarray):
-            c3 = c3[0] + self.col_start 
+            c3 = c3[0] + self.col_start
 
         if c1 is None or c2 is None or c3 is None:
             return None
@@ -140,12 +131,17 @@ class BoxInternal:
         if self.distribution == Distribution.Adaptive:
             pos = random_coords(self.distribution, self.corners(), map=map)
         else:
-            space: int = int(self.row_stop - self.row_start) * (self.col_stop - self.col_start)
+            space: int = int(self.row_stop - self.row_start) * (
+                self.col_stop - self.col_start
+            )
             pos = random_coords(self.distribution, space, map=map)
 
         if pos == -1:
             return None
-        coords = np.unravel_index(pos, (self.row_stop - self.row_start, self.col_stop - self.col_start)) # type: ignore
+        coords = np.unravel_index(
+            pos,
+            (self.row_stop - self.row_start, self.col_stop - self.col_start),
+        )  # type: ignore
         row: int = int(coords[0]) + self.row_start
         col: int = int(coords[1]) + self.col_start
 
@@ -226,7 +222,7 @@ class BoxInternal:
 
 
 class Box(BoxInternal, NodeMixin):
-    """An object that represents a box, a set of 
+    """An object that represents a box, a set of
     boxes forms an occlusion"""
 
     # pylint: disable=too-many-arguments

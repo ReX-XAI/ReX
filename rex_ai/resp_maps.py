@@ -4,6 +4,7 @@ from typing import List
 
 from typing import Optional
 import sys
+
 try:
     from anytree.cachedsearch import find
 except ImportError:
@@ -19,15 +20,21 @@ from rex_ai.logger import logger
 class ResponsibilityMaps:
     def __init__(self) -> None:
         self.maps = {}
+        self.counts = {}
+
+    def __repr__(self) -> str:
+        return str(self.counts)
 
     def get(self, k):
         try:
+            self.counts[k] += 1
             return self.maps[k]
         except KeyError:
             return None
 
     def new_map(self, k: int, height, width):
         self.maps[k] = np.zeros((height, width), dtype="float32")
+        self.counts[k] = 1
 
     def items(self):
         return self.maps.items()
@@ -67,7 +74,7 @@ class ResponsibilityMaps:
         """Update the different responsibility maps with all passing mutants <mutants>
         @params mutants: list of mutants
         @params args: causal args
-        @params data: data 
+        @params data: data
         @params search_tree: tree of boxes
 
         Mutates in place, does not return a value
@@ -80,17 +87,24 @@ class ResponsibilityMaps:
             if mutant.prediction is not None:
                 k = mutant.prediction.classification
             if k is None:
-                logger.fatal("this is no search classification, so exiting here")
+                logger.fatal(
+                    "this is no search classification, so exiting here"
+                )
                 sys.exit(-1)
             if k not in self.maps:
                 self.new_map(k, data.model_height, data.model_width)
             resp_map = self.get(k)
             assert resp_map is not None
             for box_name in mutant.get_active_boxes():
-                box: Optional[Box] = find(search_tree, lambda n: n.name == box_name)
+                box: Optional[Box] = find(
+                    search_tree, lambda n: n.name == box_name
+                )
                 if box is not None and box.area() > 0:
                     index = np.uint(box_name[-1])
-                    section = resp_map[box.row_start : box.row_stop, box.col_start : box.col_stop]
+                    section = resp_map[
+                        box.row_start : box.row_stop,
+                        box.col_start : box.col_stop,
+                    ]
                     if all(section.shape):
                         if np.mean(section) == 0:
                             section += r[index]
@@ -103,6 +117,8 @@ class ResponsibilityMaps:
                         for ind in r_bad:
                             for i in ind:
                                 box_name = box_name[:-1] + str(i)
-                                box: Optional[Box] = find(search_tree, lambda n: n.name == box_name)
+                                box: Optional[Box] = find(
+                                    search_tree, lambda n: n.name == box_name
+                                )
                                 section = 0.001
             self.maps[k] = resp_map
