@@ -13,7 +13,10 @@ local/
 runs/
 benchmarks/
 rex.toml
+rgb_rex.toml
+l_rex.toml
 *.org
+*.onnx
 
 test_*.jpg
 ReX_*.jpg

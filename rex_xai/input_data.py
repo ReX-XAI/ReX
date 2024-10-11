@@ -39,9 +39,13 @@ class Data:
         self.model_order = order
 
         if process:
-            if self.mode == "tabular" or self.mode == "spectral":
+            # RGB model but greyscale input so we convery greyscale to pseudo-RGB
+            if self.model_channels == 3 and self.mode == "L":
+                self.input = self.input.convert("RGB")
+                self.mode = "RGB"
+            if self.mode in ("tabular", "spectral"):
                 self.data = self.input
-                self.match_to_model()
+                self.match_data_to_model_shape()
             else:
                 self.data = None
             self.transposed = False
@@ -52,20 +56,25 @@ class Data:
     def set_classification(self, cl):
         self.classification = cl
 
-    def match_to_model(self):
+    def match_data_to_model_shape(self):
         """
         a PIL image has the from H * W * C, so
         if the model takes C * H * W we need to transpose self.data to
         get it into the correct form for the model to consume
         This function does *not* add in the batch channel at the beginning
         """
-        if (
-            self.mode == "RGB"
-            and self.model_order == "first"
-            and self.data is not None
-        ):
+        assert self.data is not None
+        if self.mode == "RGB" and self.model_order == "first":
             self.data = self.data.transpose(2, 0, 1)  # type: ignore
+            self.data = self.unsqueeze()
             self.transposed = True
+        if self.mode == "L" and self.model_order == "first":
+            self.data = self.data.transpose(1, 0)
+            self.data = self.unsqueeze()
+            self.transposed = True
+        if self.mode == "L" and self.model_order == "last":
+            self.data = self.data.transpose(1, 0)
+            self.data = self.unsqueeze()
         if self.mode == "tabular" or self.mode == "spectral":
             self.generic_tab_preprocess()
         if self.mode == "voxel":
@@ -81,33 +90,23 @@ class Data:
         img = self.input.resize((self.model_height, self.model_width))
         img = np.array(img).astype(astype)
         self.data = img
-        self.match_to_model()
+        self.match_data_to_model_shape()
         self.data = tt.from_numpy(self.data).to(self.device)
 
     def _normalise(self, means, stds, astype, norm):
         assert self.data is not None
-        normed_data = tt.zeros(self.data.shape, dtype=tt.float32).to(
-            self.device
-        )
+
+        normed_data = self.data
         if norm is not None:
-            normed_data = self.data / norm
+            normed_data /= 255.0
 
         if self.model_order == "first" and self.model_channels == 3:
             if means is not None:
                 for i, m in enumerate(means):
-                    normed_data[i, :, :] = normed_data[i, :, :] - m
+                    normed_data[:, i, :, :] = normed_data[:, i, :, :] - m
             if stds is not None:
                 for i, s in enumerate(stds):
-                    normed_data[i, :, :] = normed_data[i, :, :] / s
-
-        # greyscale
-        if self.model_order == "first" and self.model_channels == 1:
-            if means is not None:
-                for i, m in enumerate(means):
-                    normed_data[i] = normed_data[i] - m
-            if stds is not None:
-                for i, s in enumerate(stds):
-                    normed_data[i] = normed_data[i] / s
+                    normed_data[:, i, :, :] = normed_data[:, i, :, :] / s
 
         if self.model_order == "last" and self.model_channels == 3:
             if means is not None:
@@ -116,37 +115,48 @@ class Data:
             if stds is not None:
                 for i, s in enumerate(stds):
                     normed_data[:, :, i] = normed_data[:, :, i] / s
-        if self.model_order == "last" and self.model_channels == 1:
-            pass
+
+        # greyscale
+        if self.model_channels == 1:
+            if means is not None:
+                for i, m in enumerate(means):
+                    normed_data[i] = normed_data[i] - m
+            if stds is not None:
+                for i, s in enumerate(stds):
+                    normed_data[i] = normed_data[i] / s
 
         return normed_data
 
     def unsqueeze(self):
+        out = self.data
+        if self.model_order == "first":
+            dim = 0
+        else:
+            dim = -1
         if isinstance(self.data, tt.Tensor):
-            for _ in range(len(self.model_shape) - len(self.data.shape)):
-                self.data = tt.unsqueeze(self.data, dim=0)
+            for _ in range(len(self.model_shape) - len(self.data.shape) - 1):
+                out = tt.unsqueeze(out, dim=dim)  # type: ignore
+            out = tt.unsqueeze(out, dim=0)  # type: ignore
+        else:
+            for _ in range(len(self.model_shape) - len(self.data.shape) - 1):  # type: ignore
+                out = np.expand_dims(out, axis=dim)  # type: ignore
+            out = np.expand_dims(out, axis=0)  # type: ignore
+        return out
 
     def generic_image_preprocess(
         self,
         means=None,
         stds=None,
         astype="float32",
-        norm: Optional[float] = 255.0,
+        norm: Optional[float] = 1.0,
     ):
         self.load_data(astype=astype)
 
         if self.mode == "RGB" and self.data is not None:
             self.data = self._normalise(means, stds, astype, norm)
             self.unsqueeze()
-            # self.unsqueeze_data()
         if self.mode == "L":
-            # a PIL greyscale image has dimension H * W, so we might need to
-            # add a few dummy channels to bring it up to model_shape
-            for _ in range(len(self.model_shape) - 2):
-                self.unsqueeze()
-                # self.data = np.expand_dims(self.data, axis=0)
-                if norm is not None and self.data is not None:
-                    self.data /= norm
+            self.data = self._normalise(means, stds, astype, norm)
 
     def __get_shape(self):
         if (self.mode == "tabular" or self.mode == "spectral") and len(

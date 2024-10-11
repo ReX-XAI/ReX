@@ -5,7 +5,12 @@ import torch as tt
 import numpy as np
 
 from rex_xai.resp_maps import ResponsibilityMaps
-from rex_xai.visualisation import save_image, spectral_plot, surface_plot, heatmap_plot
+from rex_xai.visualisation import (
+    save_image,
+    spectral_plot,
+    surface_plot,
+    heatmap_plot,
+)
 from rex_xai.prediction import Prediction
 from rex_xai.input_data import Data
 from rex_xai.config import CausalArgs
@@ -37,7 +42,7 @@ class Explanation:
         if method == Strategy.Global:
             return self.__global()
         if method == Strategy.MultiSpotlight:
-            logger.warn("not yet implemented, defaulting to global")
+            logger.warning("not yet implemented, defaulting to global")
             return self.__global()
             # name = None
             # ext = None
@@ -76,14 +81,18 @@ class Explanation:
 
     def set_to_true(self, coords, mask=None):
         if mask is not None:
-            mask = set_boolean_mask_value(mask, self.data.mode, self.data.model_order, coords)
+            mask = set_boolean_mask_value(
+                mask, self.data.mode, self.data.model_order, coords
+            )
 
     def __global(self, map=None, wipe=False):
         if map is None:
             map = self.map
         ranking = get_map_locations(map)
 
-        mutant = tt.zeros(self.data.model_shape[1:], dtype=tt.bool, device=self.data.device)
+        mutant = tt.zeros(
+            self.data.model_shape[1:], dtype=tt.bool, device=self.data.device
+        )
         masks = []
 
         for i in range(0, len(ranking), self.args.chunk_size):
@@ -91,18 +100,21 @@ class Explanation:
             for _, loc in chunk:
                 self.set_to_true(loc, mutant)
             d = _apply_to_data(mutant, self.data, self.mask_func).squeeze(0)
-            masks.append(d)
+            masks.append(d.unsqueeze(0))
             if len(masks) == self.args.batch:
                 preds = self.prediction_func(
                     tt.stack(masks).to(self.data.device)
                 )
                 for j, p in enumerate(preds):
                     if p.classification == self.target.classification:
+                        logger.info(
+                            "found an explanation of %f confidence",
+                            p.confidence,
+                        )
                         # TODO yuk, yuk, yuk. Everywhere else, explanation is a boolean mask, but here we change to float32
                         self.explanation = masks[j]
                         return
                 masks = []
-
 
     def __circle(self, centre, radius: int):
         Y, X = np.ogrid[: self.data.model_height, : self.data.model_width]
@@ -120,7 +132,9 @@ class Explanation:
             centre = np.unravel_index(np.argmax(self.map), self.map.shape)
 
         start_radius = self.args.spatial_radius
-        mask = tt.zeros(self.data.model_shape[1:], dtype=tt.bool, device=self.data.device)
+        mask = tt.zeros(
+            self.data.model_shape[1:], dtype=tt.bool, device=self.data.device
+        )
         circle = self.__circle(centre, start_radius)
         if self.data.model_order == "first":
             mask[:, circle] = True
@@ -128,16 +142,24 @@ class Explanation:
             mask[circle, :] = True
 
         expansions = 0
-        cutoff = self.data.model_width * self.data.model_height * self.data.model_channels # type: ignore
+        cutoff = (
+            self.data.model_width
+            * self.data.model_height
+            * self.data.model_channels
+        )  # type: ignore
         while tt.count_nonzero(mask) < cutoff:
             if expansion_limit is not None:
                 if expansions >= expansion_limit:
-                    logger.info(f"no explanation found after {expansion_limit} expansions")
+                    logger.info(
+                        f"no explanation found after {expansion_limit} expansions"
+                    )
                     return -1
             d = _apply_to_data(mask, self.data, self.mask_func)
             p = self.prediction_func(d)[0]
             if p.classification == self.target.classification:
-                return self.__global(map=np.where(circle.detach().cpu().numpy(), self.map, 0))
+                return self.__global(
+                    map=np.where(circle.detach().cpu().numpy(), self.map, 0)
+                )
             start_radius = int(start_radius * (1 + self.args.spatial_eta))
             circle = self.__circle(centre, start_radius)
             if self.data.model_order == "first":
@@ -146,29 +168,39 @@ class Explanation:
                 mask[circle, :] = True
             expansions += 1
 
-
     def save(self):
         # if it's an image
-        if self.data.mode == "RGB" or self.data.mode == "L":
+        if self.data.mode in ("RGB", "L"):
             save_image(self.explanation, self.data, self.args)
         # if it's a spectral array
         if self.data.mode == "spectral":
-            spectral_plot(self.args, self.explanation, self.data, self.map, self.args.heatmap_colours)
+            spectral_plot(
+                self.args,
+                self.explanation,
+                self.data,
+                self.map,
+                self.args.heatmap_colours,
+            )
         # if it's tabular data
         if self.data.mode == "tabular":
             pass
         if self.data.mode == "voxel":
             pass
 
-
     def heatmap_plot(self, maps: ResponsibilityMaps):
         if self.data.mode in ("RGB", "L"):
             if self.args.heatmap == "show":
-                heatmap_plot(self.data, maps, self.args.heatmap_colours, self.target)
+                heatmap_plot(
+                    self.data, maps, self.args.heatmap_colours, self.target
+                )
             else:
-                heatmap_plot(self.data, maps, self.args.heatmap_colours, self.target, path=self.args.heatmap)
-
-
+                heatmap_plot(
+                    self.data,
+                    maps,
+                    self.args.heatmap_colours,
+                    self.target,
+                    path=self.args.heatmap,
+                )
 
     def surface_plot(self, maps: ResponsibilityMaps):
         if self.data.mode == "RGB" or self.data.mode == "L":

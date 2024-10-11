@@ -42,7 +42,9 @@ class Prediction:
         return self.target == self.classification
 
 
-def from_pytorch_tensor(tensor, target=None, binary_threshold=None) -> List[Prediction]:
+def from_pytorch_tensor(
+    tensor, target=None, binary_threshold=None
+) -> List[Prediction]:
     # TODO get this to handle binary models
     softmax_tensor = F.softmax(tensor, dim=1)
     prediction_scores, pred_labels = tt.topk(softmax_tensor, 1)

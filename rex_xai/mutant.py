@@ -43,8 +43,9 @@ __combinations = [
 
 
 def _apply_to_data(mask, data: Data, masking_func):
-    if isinstance(masking_func, (float, int)): 
-        return tt.where(mask, data.data, masking_func)  #type: ignore
+    if isinstance(masking_func, (float, int)):
+        res = tt.where(mask, data.data, masking_func)  # type: ignore
+        return res
     if callable(masking_func):
         return masking_func(mask, data.data)
 
@@ -62,7 +63,9 @@ class Mutant:
             data.model_shape[1:]
         )  # the first element of shape is the batch information, so we drop that
         self.mode = data.mode
-        self.channels: int = data.model_channels if data.model_channels is not None else 0
+        self.channels: int = (
+            data.model_channels if data.model_channels is not None else 0
+        )
         self.order = data.model_order
         self.mask = tt.zeros(self.shape, dtype=tt.bool, device=data.device)
         self.static = static
@@ -86,7 +89,7 @@ class Mutant:
     def get_length(self):
         return len(self.active.split("_"))
 
-    def get_active_parts(self):
+    def get_active_boxes(self):
         return self.active.split("_")
 
     def area(self) -> int:
@@ -97,19 +100,19 @@ class Mutant:
         else:
             return int(tensor.item()) // self.channels
 
-    def predict(self, prediction_func, data, target):
-        p = prediction_func(self.apply_to_data(data), target)
-        self.prediction = p
-
-        if data.classification == p.classification:
-            self.passing = True
+    # def predict(self, prediction_func, data, target):
+    #     p = prediction_func(self.apply_to_data(data), target)
+    #     self.prediction = p
+    #
+    #     if data.classification == p.classification:
+    #         self.passing = True
 
     def set_static_mask_regions(self, names, search_tree):
         for name in names:
-            s = find(search_tree, lambda node: node.name == name)
-            if s is not None:
-                self.depth = max(self.depth, s.depth)
-                self.set_mask_region_to_true(s)
+            box = find(search_tree, lambda node: node.name == name)
+            if box is not None:
+                self.depth = max(self.depth, box.depth)
+                self.set_mask_region_to_true(box)
 
     def set_active_mask_regions(self, boxes: List[Box]):
         for box in boxes:
@@ -123,25 +126,18 @@ class Mutant:
         return _apply_to_data(self.mask, data, self.masking_func)
 
     def save_mutant(self, data: Data, name=None, segs=None):
-        colour = self.masking_func
-        # image
         if data.mode in ("RGB", "L"):
-            # an assumption here
-            if isinstance(colour, float):
-                colour *= 255
-                colour = np.uint8(colour)
-                print(f'casting {self.masking_func} to {colour}')
-
             m = np.array(
                 data.input.resize((data.model_height, data.model_width))
             )
             mask = self.mask.squeeze().detach().cpu().numpy()
-            if data.transposed:
+            if data.transposed and data.mode == "RGB":
                 # if transposed, we have C * H * W, so change that to H * W * C
-                m = np.where(mask, m.transpose((2, 0, 1)), colour)
+                m = np.where(mask, m.transpose((2, 0, 1)), 0)
                 m = m.transpose((1, 2, 0))
             else:
-                m = np.where(mask, m, colour)
+                # TODO m = m.transpose((0, 2, 1))
+                m = np.where(mask, m, 255)
             # draw on the segment_mask, if available
             if segs is not None:
                 m = add_boundaries(m, segs)

@@ -32,7 +32,7 @@ def update_database(
             target.classification,
             target.confidence,
             explanation.map,
-            explanation.explanation.detach().cpu().numpy(), #type: ignore
+            explanation.explanation.detach().cpu().numpy(),  # type: ignore
             time_taken,
             total_passing,
             total_failing,

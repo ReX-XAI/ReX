@@ -38,11 +38,13 @@ class Evaluation:
             assert self.explanation.explanation is not None
             exp = shannon_entropy(
                 self.explanation.explanation.detach().cpu().numpy()
-            ) 
+            )
 
             return shannon_entropy(img), exp
         else:
-            logger.warning("entropy loss is not yet defined on this type of data")
+            logger.warning(
+                "entropy loss is not yet defined on this type of data"
+            )
 
     def insertion_deletion_curve(self, prediction_func):
         insertion_curve = []
@@ -52,12 +54,12 @@ class Evaluation:
         assert self.explanation.args.target.confidence is not None
 
         assert self.explanation.data.data is not None
-        insertion_mask = tt.zeros(self.explanation.data.data.squeeze(0).shape, dtype=tt.bool).to(
-            self.explanation.data.device
-        )
-        deletion_mask = tt.ones(self.explanation.data.data.squeeze(0).shape, dtype=tt.bool).to(
-            self.explanation.data.device
-        )
+        insertion_mask = tt.zeros(
+            self.explanation.data.data.squeeze(0).shape, dtype=tt.bool
+        ).to(self.explanation.data.device)
+        deletion_mask = tt.ones(
+            self.explanation.data.data.squeeze(0).shape, dtype=tt.bool
+        ).to(self.explanation.data.device)
         im = []
         dm = []
 
@@ -68,20 +70,30 @@ class Evaluation:
         for i in range(0, len(ranking), step):
             chunk = ranking[i : i + step]
             for _, loc in chunk:
-                set_boolean_mask_value(insertion_mask, self.explanation.data.mode, self.explanation.data.model_order, loc)
-                set_boolean_mask_value(deletion_mask, self.explanation.data.mode, self.explanation.data.model_order, loc, val=False)
+                set_boolean_mask_value(
+                    insertion_mask,
+                    self.explanation.data.mode,
+                    self.explanation.data.model_order,
+                    loc,
+                )
+                set_boolean_mask_value(
+                    deletion_mask,
+                    self.explanation.data.mode,
+                    self.explanation.data.model_order,
+                    loc,
+                    val=False,
+                )
             im.append(
                 _apply_to_data(
                     insertion_mask, self.explanation.data, 0
                 ).squeeze(0)
-            )  
+            )
             dm.append(
-                _apply_to_data(
-                    deletion_mask, self.explanation.data, 0
-                ).squeeze(0)
-            ) 
+                _apply_to_data(deletion_mask, self.explanation.data, 0).squeeze(
+                    0
+                )
+            )
 
-            
             if len(im) == self.explanation.args.batch:
                 self.__batch(
                     im, dm, prediction_func, insertion_curve, deletion_curve

@@ -35,7 +35,7 @@ class Args:
     def __init__(self) -> None:
         self.config_location: Optional[str] = None
         # input file
-        self.path = None
+        self.path: str = ""
         self.model = None
         self.mode = None
         self.shape: None = None
@@ -48,9 +48,10 @@ class Args:
         self.custom: Optional[ModuleType] = None
         self.custom_location = None
         self.processed = False
-        # min-max normalization
+        # onnx processing
         self.means = None
         self.stds = None
+        self.norm: Optional[float] = None
         self.binary_threshold = None
         # verbosity
         self.verbosity = 0
@@ -68,7 +69,7 @@ class Args:
         self.all = False
         self.resize = False
         self.grid = False
-        self.heatmap_colours = 'magma'
+        self.heatmap_colours = "magma"
         # explanation production strategy
         self.strategy: Strategy = Strategy.Spatial
         self.chunk_size = 25
@@ -95,7 +96,7 @@ class Args:
             + f"progress_bar: {self.progress}, "
             + f"output_file: {self.output}, surface_plot: {self.surface}, "
             + f"heatmap_plot: {self.heatmap}, "
-            + f"means: {self.means}, stds: {self.stds}, "
+            + f"means: {self.means}, stds: {self.stds}, norm: {self.norm} "
             + f"explanation_strategy: {self.strategy}, "
             + f"chunk size: {self.chunk_size}, "
             + f"spatial_radius: {self.spatial_radius}, "
@@ -141,6 +142,7 @@ class CausalArgs(Args):
         return (
             "Causal Args <"
             + Args.__repr__(self)
+            + f"config_location: {self.config_location}, "
             + f"mask_value: {self.mask_value}, "
             + f"tree_depth: {self.tree_depth}, search_limit: {self.search_limit}, "
             + f"min_box_size: {self.min_box_size}, weighted: {self.weighted}, "
@@ -159,7 +161,8 @@ def get_config_file(path):
         file_args = toml.load(path)
         return file_args
     except Exception:
-        return FileNotFoundError
+        return None
+    #     return FileNotFoundError
 
 
 def cmdargs():
@@ -347,6 +350,9 @@ def get_all_args(path=None):
     try:
         config_file_args = get_config_file(path)
 
+        if config_file_args is None:
+            return args
+
         causal_dict = config_file_args["causal"]
         # print(causal_dict)
         if "tree_depth" in causal_dict:
@@ -402,7 +408,8 @@ def get_all_args(path=None):
                 args.stds = onnx["stds"]
             if "binary_threshold" in onnx:
                 args.binary_threshold = onnx["binary_threshold"]
-
+            if "norm" in onnx:
+                args.norm = onnx["norm"]
 
         if "visual" in rex_dict:
             if "info" in rex_dict["visual"]:
@@ -450,7 +457,6 @@ def get_all_args(path=None):
             args.spotlight_step = multi_dict["spotlight_step"]
         args.spotlight_objective_function = get_objective_function(multi_dict)  # type: ignore
 
-
         eval_dict = explain_dict["evaluation"]
         if "insertion_step" in eval_dict:
             args.insertion_step = eval_dict["insertion_step"]
@@ -471,7 +477,8 @@ def get_all_args(path=None):
             try:
                 spec.loader.exec_module(script)  # type: ignore
             except Exception as e:
-                print(f"failed to load {name} because of {e}")
+                print(f"failed to load {name} because of {e}, exiting...")
+                sys.exit(-1)
             args.custom = script
             args.custom_location = cmd_args.script
         except ImportError:
@@ -492,7 +499,6 @@ def get_all_args(path=None):
 
     if cmd_args.iters is not None:
         args.iters = cmd_args.iters
-
 
     if cmd_args.analyze or cmd_args.analyse:
         args.analyze = True

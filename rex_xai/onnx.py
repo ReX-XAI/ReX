@@ -2,6 +2,7 @@
 
 """onnx model management"""
 
+from typing import Optional, Union, List
 import sys
 import os
 import torch as tt
@@ -10,12 +11,21 @@ from scipy.special import softmax
 import numpy as np
 
 import onnxruntime as ort
+from onnxruntime import InferenceSession
 from rex_xai.prediction import Prediction, from_pytorch_tensor
 from rex_xai.input_data import Setup
 
 from rex_xai.logger import logger
 
-def run_on_cpu(tensors, session, input_name, target, raw, binary_threshold=None):
+
+def run_on_cpu(
+    session: InferenceSession,
+    tensors: Union[tt.Tensor, List[tt.Tensor]],
+    input_name: str,
+    target: Optional[Prediction],
+    raw: bool,
+    binary_threshold: Optional[float] = None,
+):
     """Convert a pytorch tensor, or list of tensors, to numpy arrays on the cpu for onnx inference."""
     # check if it's a single tensor or a list of tensors
     if isinstance(tensors, list):
@@ -28,7 +38,7 @@ def run_on_cpu(tensors, session, input_name, target, raw, binary_threshold=None)
     else:
         tensors = np.stack(
             [t.squeeze(0).detach().cpu().numpy() for t in tensors]
-        )
+        )  # type: ignore
 
     preds = []
 
@@ -46,6 +56,7 @@ def run_on_cpu(tensors, session, input_name, target, raw, binary_threshold=None)
                 tc = confidences[0]
             else:
                 classification = np.argmax(confidences)
+                # print(prediction[i], confidences, classification)
                 if target is not None:
                     tc = confidences[target.classification]
                 else:
@@ -66,23 +77,25 @@ def run_on_cpu(tensors, session, input_name, target, raw, binary_threshold=None)
         sys.exit(-1)
 
 
-def run_with_data_on_device(session, x, input_name, device, tsize):
-    if isinstance(x, list):
+def run_with_data_on_device(
+    session, tensors, input_name, device, tsize, binary_threshold
+):
+    if isinstance(tensors, list):
         # TODO this should probably be a stack
-        x = [m.contiguous() for m in x]
+        tensors = [m.contiguous() for m in tensors]
         shape = tuple(
             (
-                len(x),
+                len(tensors),
                 3,
                 224,
                 224,
             )
         )
-        ptr = x[0].data_ptr()
+        ptr = tensors[0].data_ptr()
     else:
-        x = x.contiguous()
-        shape = tuple(x.shape)
-        ptr = x.data_ptr()
+        tensors = tensors.contiguous()
+        shape = tuple(tensors.shape)
+        ptr = tensors.data_ptr()
 
     binding = session.io_binding()
     binding.bind_input(
@@ -147,9 +160,19 @@ def get_prediction_function(model_path, gpu: bool):
     logger.info("model shape %s", shape)
 
     if device == "cpu" or setup == Setup.ONNXMPS:
-        return lambda x, target=None, raw=False, binary_threshold=None: run_on_cpu(
-            x, sess, input_name, target, raw, binary_threshold
-        ), shape
+        return (
+            lambda x, target=None, raw=False, binary_threshold=None: run_on_cpu(
+                sess, x, input_name, target, raw, binary_threshold
+            ),
+            shape,
+        )
     if device == "cuda":
-        return lambda x, target=None, device=device: run_with_data_on_device(
-            sess,x,input_name,device,len(x)), shape
+        return (
+            lambda x,
+            target=None,
+            device=device,
+            binary_threshold=None: run_with_data_on_device(
+                sess, x, input_name, device, len(x), binary_threshold
+            ),
+            shape,
+        )
