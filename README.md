@@ -8,7 +8,7 @@
 
 <!--- BADGES: START --->
 
-[![CI Pipeline](https://github.com/kellino/ReX/actions/workflows/ci-pipeline.yml/badge.svg)](https://github.com/kellino/ReX/actions/workflows/ci-pipeline.yml)
+[![CI Pipeline](https://github.com/ReX-XAI/ReX/actions/workflows/python-package.yml/badge.svg)](https://github.com/ReX-XAI/ReX/actions/workflows/python-package.yml)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/kellino/ReX.jl/blob/main/LICENSE)
 
 <!--- BADGES: END --->
