@@ -79,6 +79,7 @@ def run_with_data_on_device(
     session, tensors, input_name, device, tsize, binary_threshold
 ):
     if isinstance(tensors, list):
+
         # TODO this should probably be a stack
         tensors = [m.contiguous() for m in tensors]
         shape = tuple(
