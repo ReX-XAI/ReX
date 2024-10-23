@@ -154,7 +154,7 @@ def _explanation(args, model_shape, prediction_func, device):
 
     exp = Explanation(maps, prediction_func, target, data, args)  # type: ignore
 
-    print(maps)
+    # print(maps)
     # for k, v in maps.items():
     #     print(k)
     #     print(maps.counts)

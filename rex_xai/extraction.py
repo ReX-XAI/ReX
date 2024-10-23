@@ -31,6 +31,7 @@ class Explanation:
     ) -> None:
         self.map = map.get(target.classification)
         self.explanation: Optional[tt.Tensor] = None
+        self.final_mask = None
         self.prediction_func = prediction_func
         self.target = target
         self.data = data
@@ -95,12 +96,14 @@ class Explanation:
         )
         masks = []
 
+        limit = 0
         for i in range(0, len(ranking), self.args.chunk_size):
             chunk = ranking[i : i + self.args.chunk_size]
+            limit += self.args.chunk_size
             for _, loc in chunk:
                 self.set_to_true(loc, mutant)
             d = _apply_to_data(mutant, self.data, self.mask_func).squeeze(0)
-            masks.append(d.unsqueeze(0))
+            masks.append(d)
             if len(masks) == self.args.batch:
                 preds = self.prediction_func(tt.stack(masks).to(self.data.device))
                 for j, p in enumerate(preds):
@@ -109,8 +112,11 @@ class Explanation:
                             "found an explanation of %f confidence",
                             p.confidence,
                         )
-                        # TODO yuk, yuk, yuk. Everywhere else, explanation is a boolean mask, but here we change to float32
                         self.explanation = masks[j]
+                        self.final_mask = mutant.zero_()
+                        for _, loc in ranking[:limit]:
+                            self.set_to_true(loc, self.final_mask)
+                        np.save("test", self.final_mask.detach().cpu().numpy())
                         return
                 masks = []
 
@@ -141,8 +147,8 @@ class Explanation:
 
         expansions = 0
         cutoff = (
-            self.data.model_width * self.data.model_height * self.data.model_channels
-        )  # type: ignore
+            self.data.model_width * self.data.model_height * self.data.model_channels #type: ignore
+        ) 
         while tt.count_nonzero(mask) < cutoff:
             if expansion_limit is not None:
                 if expansions >= expansion_limit:
