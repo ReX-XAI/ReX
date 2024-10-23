@@ -147,8 +147,8 @@ class Explanation:
 
         expansions = 0
         cutoff = (
-            self.data.model_width * self.data.model_height * self.data.model_channels #type: ignore
-        ) 
+            self.data.model_width * self.data.model_height * self.data.model_channels  # type: ignore
+        )
         while tt.count_nonzero(mask) < cutoff:
             if expansion_limit is not None:
                 if expansions >= expansion_limit:
