@@ -1,8 +1,48 @@
 # Configuration
 
 This page describes the different sections in the ReX config file, `rex.toml`, and their possible values.
+TOML is a [minimal configuration file format](https://toml.io/en/).
+An example `rex.toml` file that configures a few of the possible parameters might look like this:
+
+```none
+[rex]
+
+gpu = false
+
+batch_size = 4
+
+[rex.onnx]
+
+binary_threshold = 0.5
+
+[rex.visual]
+
+progress_bar = true
+
+[causal]
+
+search_limit = 1000
+
+iters = 30
+
+[causal.distribution]
+
+distribution = 'uniform'
+
+[explanation]
+
+[explanation.spatial]
+
+[explanation.multi]
+
+[explanation.evaluation]
+```
+
+N.B. that all section/subsection headers must be present even if no values in that section are set to non-default values.
 
 ## [rex] section
+
+This section is for options that affect the general features of ReX.
 
 mask_value = 0
 
@@ -42,12 +82,15 @@ Binary model confidence threshold.
 Anything >= threshold will be classified as 1, otherwise 0.
 Default: None.
 
-norm # unclear to me what this is used for
+norm
+<!-- unclear to me what this is used for -->
 
 Optional.
 Default: None.
 
 ### [rex.visual] section
+
+This section is for options that control the appearance of the progress bar and output data visualisation.
 
 progress_bar = false
 
@@ -98,6 +141,8 @@ Default: false.
 
 ## [causal] section
 
+This sections is for options relevant to the causal responsibility calculations.
+
 tree_depth = 30
 
 Maximum depth of tree.
@@ -115,12 +160,14 @@ Leaving the search limit at none can potentially be very expensive.
 iters = 30
 
 Number of times to run the algorithm.
-Defaults: 20. # from code looks like default is actually 30
+Defaults: 20.
+<!-- from code looks like default is actually 30 -->
 
 min_box_size = 10
 
 Minimum child size, in pixels.
-Default: 10. # is this width or area?
+Default: 10.
+<!-- is this width or area? -->
 
 confidence_filter = 0.5
 
@@ -153,6 +200,8 @@ Default: false.
 
 ### [causal.distribution] section
 
+This section is for options that control the distribution used to split boxes.
+
 distribution = 'uniform'
 
 Distribution for splitting the box.
@@ -171,28 +220,36 @@ Default: None.
 
 ## [explanation] section
 
+This section is for options related to identifying the explanation(s).
+
 chunk = 10
 
 Iterate through pixel ranking in chunks, defaults to `causal.min_box_size`.
 
 ### [explanation.spatial] section
 
+This section is for options used for spatial search for explanations.
+
 initial_radius = 25
 
 Initial search radius.
+Default: 25.
 
 radius_eta = 0.2
 
 Increment to change radius.
+Default: 0.2.
 
 no_expansions = 50
 
 Number of times to expand before quitting
-Default: 1. # from code looks like default is 50?
+Default: 1.
+<!-- from code looks like default is 50? -->
 
 ### [explanation.multi] section
 
-method = 'spotlight' # from code looks like this is not used currently
+method = 'spotlight'
+<!-- from code looks like this is not used currently -->
 
 Multi-explanation method (only spotlight is currently implemented).
 
@@ -216,12 +273,15 @@ obj_function = 'mean'
 Objective function for spotlight search.
 Possible options 'mean' | 'max' | 'min'.
 
-spotlight_step? # in Args obj but does not seem to be read from config file
+spotlight_step
+
+Default: 5.
 
 ### [explanation.evaluation] section
 
-Used if ReX is run with the `--analyse` option.
+These options are used if ReX is run with the `--analyse` option.
 
 insertion_step = 100
 
 Insertion/deletion curve step size.
+Default: 100.
