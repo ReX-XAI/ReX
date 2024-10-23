@@ -84,52 +84,10 @@ If you want to use a custom location, use::
 An example config file is included in the repo as ``example.rex.toml``.
 Rename this to ``rex.toml`` if you wish to use it.
 
-Command line usage 
-----
-
-::
-
-   usage: ReX [-h] [--output [OUTPUT]] [-c CONFIG] [--processed]
-            [--script SCRIPT] [-v] [--surface [SURFACE]] [--heatmap [HEATMAP]]
-            [--model MODEL] [--strategy STRATEGY] [--database DATABASE]
-            [--iters ITERS] [--analyze] [--analyse] [--show-all] [--mode MODE]
-            filename
-
-   Explaining AI through causal reasoning
-
-   positional arguments:
-   filename              file to be processed, assumes that file is 3 channel
-                           (RGB or BRG)
-
-   options:
-   -h, --help            show this help message and exit
-   --output [OUTPUT]     show minimal explanation, optionally saved to
-                           <OUTPUT>. Requires a PIL compatible file extension
-   -c CONFIG, --config CONFIG
-                           config file to use for rex
-   --processed           don't perform any processing with rex itself
-   --script SCRIPT       custom loading and preprocessing script, for us with pytorch
-   -v, --verbose         verbosity level, either -v or -vv, or -vvv
-   --surface [SURFACE]   surface plot, optionally saved to <SURFACE>
-   --heatmap [HEATMAP]   heatmap plot, optionally saved to <HEATMAP>
-   --model MODEL         model, must be onnx format
-   --strategy STRATEGY, -s STRATEGY
-                           explanation strategy, one of < multi | spatial |
-                           linear | spotlight >
-   --database DATABASE, -db DATABASE
-                           store output in sqlite database <DATABASE>, creating
-                           db if necessary
-   --iters ITERS         manually override the number of iterations set in the
-                           config file
-   --analyze             area, entropy different and insertion/deletion curves
-   --analyse             area, entropy different and insertion/deletion curves
-   --mode MODE, -m MODE  assist ReX with your input type, one of <tabular>,
-                           <spectral>, <RGB>, <L>
-
-
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
    background.md
-
+   command_line.md
+   config.md
