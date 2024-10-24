@@ -28,8 +28,9 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 html_theme = "alabaster"
 html_static_path = ["_static"]
+html_logo = "../assets/rex_logo.png"
 
 # -- AutoAPI -----------------------------------------------------------------
 # https://sphinx-autoapi.readthedocs.io/en/latest/
-autoapi_dirs = ["../rex_xai"]
+autoapi_dirs = ["../rex_xai/"]
 autodoc_typehints = "description"
