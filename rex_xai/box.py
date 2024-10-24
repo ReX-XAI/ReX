@@ -9,7 +9,7 @@ from typing import List, Tuple
 from anytree import LevelOrderGroupIter, NodeMixin, RenderTree
 import numpy as np
 
-from rex_ai.distributions import Distribution, random_coords
+from rex_xai.distributions import Distribution, random_coords
 
 
 class BoxInternal:
@@ -64,26 +64,17 @@ class BoxInternal:
         return (self.row_start, self.row_stop, self.col_start, self.col_stop)
 
     def __1d_parts(self):
-        c1 = random_coords(
-            self.distribution,
-            [self.col_stop - self.col_start]
-        )  
+        c1 = random_coords(self.distribution, [self.col_stop - self.col_start])
         if c1 is not None and isinstance(c1, np.ndarray):
-            c1 = c1[0] + self.col_start 
+            c1 = c1[0] + self.col_start
 
-        c2 = random_coords(
-            self.distribution,
-            [self.col_stop - self.col_start]
-        )
+        c2 = random_coords(self.distribution, [self.col_stop - self.col_start])
         if c2 is not None and isinstance(c2, np.ndarray):
             c2 = c2[0] + self.col_start
 
-        c3 = random_coords(
-            self.distribution,
-            [self.col_stop - self.col_start]
-        )
+        c3 = random_coords(self.distribution, [self.col_stop - self.col_start])
         if c3 is not None and isinstance(c3, np.ndarray):
-            c3 = c3[0] + self.col_start 
+            c3 = c3[0] + self.col_start
 
         if c1 is None or c2 is None or c3 is None:
             return None
@@ -140,10 +131,17 @@ class BoxInternal:
         if self.distribution == Distribution.Adaptive:
             pos = random_coords(self.distribution, self.corners(), map=map)
         else:
-            space: int = int(self.row_stop - self.row_start) * (self.col_stop - self.col_start)
+            space: int = int(self.row_stop - self.row_start) * (
+                self.col_stop - self.col_start
+            )
             pos = random_coords(self.distribution, space, map=map)
 
-        coords = np.unravel_index(pos, (self.row_stop - self.row_start, self.col_stop - self.col_start)) # type: ignore
+        if pos == -1:
+            return None
+        coords = np.unravel_index(
+            pos,
+            (self.row_stop - self.row_start, self.col_stop - self.col_start),
+        )  # type: ignore
         row: int = int(coords[0]) + self.row_start
         col: int = int(coords[1]) + self.col_start
 
@@ -193,9 +191,7 @@ class BoxInternal:
 
         return [b0, b1, b2, b3]
 
-    def spawn_children(
-        self, min_size, mode, map=None
-    ) -> List[Box] | Tuple | None:
+    def spawn_children(self, min_size, mode, map=None) -> List[Box] | Tuple | None:
         """spawn subboxes from <self>"""
         if self.area() < min_size:
             return ()
@@ -218,13 +214,11 @@ class BoxInternal:
         """returns the area of a box"""
         if self.row_start == 0 and self.row_stop == 0:
             return self.col_stop - self.col_start
-        return (self.row_stop - self.row_start) * (
-            self.col_stop - self.col_start
-        )
+        return (self.row_stop - self.row_start) * (self.col_stop - self.col_start)
 
 
 class Box(BoxInternal, NodeMixin):
-    """An object that represents a box, a set of 
+    """An object that represents a box, a set of
     boxes forms an occlusion"""
 
     # pylint: disable=too-many-arguments
@@ -286,8 +280,7 @@ def show_tree(tree):
 def average_box_size(tree, d) -> float:
     """Calculate the average box size at depth <d> of <tree>."""
     areas = [
-        [node.area() for node in children]
-        for children in LevelOrderGroupIter(tree)
+        [node.area() for node in children] for children in LevelOrderGroupIter(tree)
     ]
     try:
         return np.mean(areas[d], axis=0)

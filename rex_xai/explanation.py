@@ -6,24 +6,24 @@ import os
 import sys
 import time
 from tqdm import trange  # type: ignore
-from typing import List, Union
+from typing import List, Tuple, Union
 import torch as tt
 import numpy as np
-from PIL import Image 
+from PIL import Image
 
-from rex_ai.evaluation import Evaluation
-from rex_ai.extraction import Explanation
-from rex_ai.responsibility import causal_explanation
-from rex_ai.input_data import Data
-from rex_ai.onnx import get_prediction_function
-from rex_ai.resp_maps import ResponsibilityMaps
-from rex_ai.occlusions import set_mask_value
-from rex_ai.config import CausalArgs
-from rex_ai.logger import logger, set_log_level
-from rex_ai.database import initialise_rex_db, update_database
+from rex_xai.evaluation import Evaluation
+from rex_xai.extraction import Explanation
+from rex_xai.responsibility import causal_explanation
+from rex_xai.input_data import Data
+from rex_xai.onnx import get_prediction_function
+from rex_xai.resp_maps import ResponsibilityMaps
+from rex_xai.occlusions import set_mask_value
+from rex_xai.config import CausalArgs
+from rex_xai.logger import logger, set_log_level
+from rex_xai.database import initialise_rex_db, update_database
 
 
-def try_preprocess(args, model_shape, device):
+def try_preprocess(args: CausalArgs, model_shape: Tuple[int], device: str):
     """Makes an attempt to preprocess data based on file extension and (possibly)
     user defined mode.
 
@@ -34,7 +34,7 @@ def try_preprocess(args, model_shape, device):
     """
     _, ext = os.path.splitext(args.path)
     # args.path is an image
-    if ext.lower() in [".jpg", ".png", ".jpeg", ".tif", ".tiff"]:
+    if ext.lower() in [".jpg", ".jpeg", ".png", ".tif", ".tiff"]:
         # a simple sanity check: spectral_occlusion is not suitable for images
         # so remind the user to update rex.toml and set mask_value to 0 in the meantime
         try:
@@ -48,17 +48,21 @@ def try_preprocess(args, model_shape, device):
 
         # if not args.processed:
         data = Data(Image.open(args.path), model_shape, device)
+        # data = Data(Image.open(args.path).convert("RGB"), model_shape, device)
         data.generic_image_preprocess(means=args.means, stds=args.stds)
 
     # a compressed numpy array file
     elif ext in ".npy":
         if args.mode in ("tabular", "spectral"):
-            data = Data(
-                np.load(args.path), model_shape, mode=args.mode, device=device
-            )
+            data = Data(np.load(args.path), model_shape, mode=args.mode, device=device)
             data.data = tt.from_numpy(data.generic_tab_preprocess()).to(device)
         else:
+            logger.fatal("we do not generically handle this datatype")
             return NotImplemented
+    # nifti files for 3d data
+    elif ext in ".nii":
+        logger.fatal("we do not (yet) handle nifti files generically")
+        return NotImplemented
     else:
         # we don't know what to do!
         data = Data(args.path, model_shape, mode=args.mode, device=device)
@@ -66,11 +70,11 @@ def try_preprocess(args, model_shape, device):
     return data
 
 
-def _explanation(args, model_shape, prediction_func, depth_reached, device):
+def _explanation(args, model_shape, prediction_func, device):
+    depth_reached = 0
+
     if hasattr(args.custom, "preprocess"):
-        data = args.custom.preprocess(
-            args.path, model_shape, device, mode=args.mode
-        )
+        data = args.custom.preprocess(args.path, model_shape, device, mode=args.mode)
     else:
         # no custom preprocessing, so we make our best guess as to what to do
         data = try_preprocess(args, model_shape, device)
@@ -110,9 +114,7 @@ def _explanation(args, model_shape, prediction_func, depth_reached, device):
     maps = ResponsibilityMaps()
 
     if args.target is not None:
-        maps.new_map(
-            args.target.classification, data.model_height, data.model_width
-        )
+        maps.new_map(args.target.classification, data.model_height, data.model_width)
 
     if args.iters > 0:
         for i in trange(args.iters, disable=not args.progress):
@@ -122,7 +124,13 @@ def _explanation(args, model_shape, prediction_func, depth_reached, device):
                 failing,
                 depth_reached,
                 avg_bs,  # average box size
-            ) = causal_explanation(i + 1, data, args, prediction_func, current_map=maps.get(args.target.classification))
+            ) = causal_explanation(
+                i + 1,
+                data,
+                args,
+                prediction_func,
+                current_map=maps.get(args.target.classification),
+            )
 
             total_passing += passing
             total_failing += failing
@@ -146,13 +154,18 @@ def _explanation(args, model_shape, prediction_func, depth_reached, device):
 
     exp = Explanation(maps, prediction_func, target, data, args)  # type: ignore
 
+    # print(maps)
+    # for k, v in maps.items():
+    #     print(k)
+    #     print(maps.counts)
+
     exp.extract(args.strategy)
 
     if args.analyze:
         eval = Evaluation(exp)
         rat = eval.ratio()
         if data.mode in ("RGB", "L"):
-            be, ae = eval.entropy_loss() # type: ignore
+            be, ae = eval.entropy_loss()  # type: ignore
             ent = be - ae
         else:
             ent = None
@@ -198,9 +211,7 @@ def _explanation(args, model_shape, prediction_func, depth_reached, device):
     return exp
 
 
-def explanation(
-    args: CausalArgs, device
-) -> Union[Explanation, List[Explanation]]:
+def explanation(args: CausalArgs, device) -> Union[Explanation, List[Explanation]]:
     """Take a CausalArgs object and return a Explanation.
 
     @param args: CausalArgs
@@ -227,6 +238,7 @@ def explanation(
         logger.info(f"resetting batch size to {model_shape[0]}")
         args.batch = model_shape[0]
 
+    # multiple explanations
     if os.path.isdir(args.path):
         dir = args.path
         explanations = []
@@ -236,9 +248,10 @@ def explanation(
                 logger.info("processing %s", to_process)
                 args.path = to_process
                 explanations.append(
-                    _explanation(args, model_shape, prediction_func, 0, device)
+                    _explanation(args, model_shape, prediction_func, device)
                 )
         return explanations
 
     else:
-        return _explanation(args, model_shape, prediction_func, 0, device)
+        # a single explanation
+        return _explanation(args, model_shape, prediction_func, device)

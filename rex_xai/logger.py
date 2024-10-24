@@ -21,4 +21,3 @@ def set_log_level(i: int, rex_logger):
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 logger = logging.getLogger("ReX")
 logging.basicConfig(stream=sys.stdout, level=logging.WARNING)
-# logging.getLogger("tensorflow").setLevel(logging.FATAL)
