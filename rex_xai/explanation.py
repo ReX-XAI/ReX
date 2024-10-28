@@ -69,9 +69,7 @@ def try_preprocess(args: CausalArgs, model_shape: Tuple[int], device: str):
 
     return data
 
-
-def _explanation(args, model_shape, prediction_func, device):
-    depth_reached = 0
+def load_and_preprocess_data(model_shape, device, args):
 
     if hasattr(args.custom, "preprocess"):
         data = args.custom.preprocess(args.path, model_shape, device, mode=args.mode)
@@ -79,6 +77,9 @@ def _explanation(args, model_shape, prediction_func, device):
         # no custom preprocessing, so we make our best guess as to what to do
         data = try_preprocess(args, model_shape, device)
 
+    return data
+
+def predict_target(data, args, prediction_func):
     target = prediction_func(data.data, None)
 
     if isinstance(target, list):
@@ -99,22 +100,17 @@ def _explanation(args, model_shape, prediction_func, device):
         logger.warning("no target found")
         sys.exit(-1)
 
-    args.mask_value = set_mask_value(args.mask_value, data, device=data.device)
+    return target
 
-    db = None
-    if args.db is not None:
-        db = initialise_rex_db(args.db)
+def calculate_responsibility(data, args, prediction_func):
 
-    start = time.time()
+    maps = ResponsibilityMaps()
+    maps.new_map(args.target.classification, data.model_height, data.model_width)
+
     total_passing: int = 0
     total_failing: int = 0
     max_depth_reached: int = 0
     avg_box_size: float = 0.0
-
-    maps = ResponsibilityMaps()
-
-    if args.target is not None:
-        maps.new_map(args.target.classification, data.model_height, data.model_width)
 
     if args.iters > 0:
         for i in trange(args.iters, disable=not args.progress):
@@ -152,35 +148,48 @@ def _explanation(args, model_shape, prediction_func, device):
         avg_box_size,
     )
 
-    exp = Explanation(maps, prediction_func, target, data, args)  # type: ignore
+    return maps, total_passing, total_failing, max_depth_reached, avg_box_size
 
-    # print(maps)
-    # for k, v in maps.items():
-    #     print(k)
-    #     print(maps.counts)
+def analyze(data, exp, prediction_func, args):
+    eval = Evaluation(exp)
+    rat = eval.ratio()
+    if data.mode in ("RGB", "L"):
+        be, ae = eval.entropy_loss()  # type: ignore
+        ent = be - ae
+    else:
+        ent = None
+
+    iauc, dauc = eval.insertion_deletion_curve(prediction_func)
+    if args.verbosity < 2:
+        set_log_level(2, logger)
+    logger.info(
+        "area %f, entropy difference %f, insertion curve %f, deletion curve %f",
+        rat,
+        ent,
+        iauc,
+        dauc,
+    )
+    set_log_level(args.verbosity, logger)
+
+
+def _explanation(args, model_shape, prediction_func, device, db=None):
+
+    data = load_and_preprocess_data(model_shape, device, args)
+
+    target = predict_target(data, args, prediction_func)
+
+    args.mask_value = set_mask_value(args.mask_value, data, device=data.device)
+
+    start = time.time()
+
+    maps, total_passing, total_failing, max_depth_reached, avg_box_size = calculate_responsibility(data, args, prediction_func)
+
+    exp = Explanation(maps, prediction_func, target, data, args)  # type: ignore
 
     exp.extract(args.strategy)
 
     if args.analyze:
-        eval = Evaluation(exp)
-        rat = eval.ratio()
-        if data.mode in ("RGB", "L"):
-            be, ae = eval.entropy_loss()  # type: ignore
-            ent = be - ae
-        else:
-            ent = None
-
-        iauc, dauc = eval.insertion_deletion_curve(prediction_func)
-        if args.verbosity < 2:
-            set_log_level(2, logger)
-        logger.info(
-            "area %f, entropy difference %f, insertion curve %f, deletion curve %f",
-            rat,
-            ent,
-            iauc,
-            dauc,
-        )
-        set_log_level(args.verbosity, logger)
+        analyze(data, exp, prediction_func, args)
 
     end = time.time()
     time_taken = end - start
@@ -211,7 +220,7 @@ def _explanation(args, model_shape, prediction_func, device):
     return exp
 
 
-def explanation(args: CausalArgs, device) -> Union[Explanation, List[Explanation]]:
+def explanation(args: CausalArgs, device, db) -> Union[Explanation, List[Explanation]]:
     """Take a CausalArgs object and return a Explanation.
 
     @param args: CausalArgs
@@ -254,4 +263,4 @@ def explanation(args: CausalArgs, device) -> Union[Explanation, List[Explanation
 
     else:
         # a single explanation
-        return _explanation(args, model_shape, prediction_func, device)
+        return _explanation(args, model_shape, prediction_func, device, db)
