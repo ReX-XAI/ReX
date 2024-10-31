@@ -2,6 +2,7 @@
 # from __future__ import annotations
 """main logical entrypoint for ReX."""
 
+import copy
 import os
 import sys
 import time
@@ -20,7 +21,7 @@ from rex_xai.resp_maps import ResponsibilityMaps
 from rex_xai.occlusions import set_mask_value
 from rex_xai.config import CausalArgs
 from rex_xai.logger import logger, set_log_level
-from rex_xai.database import initialise_rex_db, update_database
+from rex_xai.database import update_database
 
 
 def try_preprocess(args: CausalArgs, model_shape: Tuple[int], device: str):
@@ -241,7 +242,7 @@ def get_prediction_func_from_args(args):
     return prediction_func, model_shape
 
 
-def explanation(args: CausalArgs, device, db) -> Union[Explanation, List[Explanation]]:
+def explanation(args: CausalArgs, device, db=None) -> Union[Explanation, List[Explanation]]:
     """Take a CausalArgs object and return a Explanation.
 
     @param args: CausalArgs
@@ -264,9 +265,10 @@ def explanation(args: CausalArgs, device, db) -> Union[Explanation, List[Explana
             for f in files:
                 to_process = os.path.join(dir, f)
                 logger.info("processing %s", to_process)
-                args.path = to_process
+                current_args = copy.copy(args)
+                current_args.path = to_process
                 explanations.append(
-                    _explanation(args, model_shape, prediction_func, device, db)
+                    _explanation(current_args, model_shape, prediction_func, device, db)
                 )
         return explanations
 
