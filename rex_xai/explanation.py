@@ -220,31 +220,40 @@ def _explanation(args, model_shape, prediction_func, device, db=None):
     return exp
 
 
+def validate_args(args):
+    if args.path is None:
+        raise FileNotFoundError("Input file path cannot be None")
+
+
+def get_prediction_func_from_args(args):
+    if hasattr(args.custom, "prediction_function") and hasattr(
+        args.custom, "model_shape"
+    ):
+        prediction_func = args.custom.prediction_function  # type: ignore
+        model_shape = args.custom.model_shape()  # type: ignore
+    else:
+        ps = get_prediction_function(args.model, args.gpu)
+        if ps is None:
+            raise RuntimeError("Unable to create an onnx inference instance")
+        else:
+            prediction_func, model_shape = ps
+    
+    return prediction_func, model_shape
+
+
 def explanation(args: CausalArgs, device, db) -> Union[Explanation, List[Explanation]]:
     """Take a CausalArgs object and return a Explanation.
 
     @param args: CausalArgs
     @return Explanation
     """
-    if args.path is None:
-        sys.exit()
 
-    if hasattr(args.custom, "prediction_function") and hasattr(
-        args.custom, "model_shape"
-    ):
-        # assert args.custom is not None
-        prediction_func = args.custom.prediction_function  # type: ignore
-        model_shape = args.custom.model_shape()  # type: ignore
-    else:
-        ps = get_prediction_function(args.model, args.gpu)
-        if ps is None:
-            logger.fatal("unable to create an onnx inference instance")
-            sys.exit(-1)
-        else:
-            prediction_func, model_shape = ps
+    validate_args(args)
+
+    prediction_func, model_shape = get_prediction_func_from_args(args)
 
     if isinstance(model_shape[0], int) and model_shape[0] < args.batch:
-        logger.info(f"resetting batch size to {model_shape[0]}")
+        logger.warning(f"Resetting batch size to size of model's first axis: {model_shape[0]}")
         args.batch = model_shape[0]
 
     # multiple explanations
@@ -257,7 +266,7 @@ def explanation(args: CausalArgs, device, db) -> Union[Explanation, List[Explana
                 logger.info("processing %s", to_process)
                 args.path = to_process
                 explanations.append(
-                    _explanation(args, model_shape, prediction_func, device)
+                    _explanation(args, model_shape, prediction_func, device, db)
                 )
         return explanations
 
