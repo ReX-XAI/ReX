@@ -2,7 +2,6 @@
 
 """config management"""
 
-import sys
 from typing import List, Optional
 from types import ModuleType
 import argparse
@@ -373,8 +372,8 @@ def process_config_dict(config_file_args, args):
     if "blend" in dist:
         b = dist["blend"]
         if b < 0.0 or b > 1.0:
-            print("impossible blend value")
-            sys.exit(-1)
+            logger.error("impossible blend value")
+            raise ValueError
         args.blend = dist["blend"]
     if args.distribution == Distribution.Uniform:
         args.distribution_args = None
