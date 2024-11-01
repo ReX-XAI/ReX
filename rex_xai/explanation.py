@@ -18,7 +18,6 @@ from rex_xai.responsibility import causal_explanation
 from rex_xai.input_data import Data
 from rex_xai.onnx import get_prediction_function
 from rex_xai.resp_maps import ResponsibilityMaps
-from rex_xai.occlusions import set_mask_value
 from rex_xai.config import CausalArgs
 from rex_xai.logger import logger, set_log_level
 from rex_xai.database import update_database
@@ -176,10 +175,9 @@ def analyze(data, exp, prediction_func, args):
 def _explanation(args, model_shape, prediction_func, device, db=None):
 
     data = load_and_preprocess_data(model_shape, device, args)
-
+    data.set_mask_value(args.mask_value, device=data.device)
+    
     target = predict_target(data, args, prediction_func)
-
-    args.mask_value = set_mask_value(args.mask_value, data, device=data.device)
 
     start = time.time()
 

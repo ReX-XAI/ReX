@@ -5,6 +5,8 @@ import torch as tt
 
 from enum import Enum
 
+from rex_xai.occlusions import spectral_occlusion
+
 Setup = Enum("Setup", ["ONNXMPS", "ONNX", "PYTORCH"])
 
 
@@ -35,6 +37,7 @@ class Data:
         self.model_width: Optional[int] = width
         self.model_channels: Optional[int] = channels
         self.model_order = order
+        self.mask_value = None
 
         if process:
             # RGB model but greyscale input so we convery greyscale to pseudo-RGB
@@ -170,3 +173,15 @@ class Data:
         if self.mode == "voxel":
             pass
         return None, None, None, None
+
+    def set_mask_value(self, m, device="cpu"):
+        assert self.data is not None
+        # if m is a number, then if might still need to be normalised
+        if isinstance(m, (int, float)):
+            self.mask_value = m
+        if m == "min":
+            self.mask_value = tt.min(self.data).item()  # type: ignore
+        if m == "mean":
+            self.mask_value = tt.mean(self.data).item()  # type: ignore
+        if m == "spectral":
+            self.mask_value = lambda m, d: spectral_occlusion(m, d, device=device)

@@ -171,7 +171,7 @@ def causal_explanation(
                             data,
                             static=static,
                             active=current,
-                            masking_func=args.mask_value,
+                            masking_func=data.mask_value,
                         )
                         m.set_active_mask_regions(nps)
                         m.set_static_mask_regions(static, search_tree)
@@ -189,7 +189,7 @@ def causal_explanation(
                     if args.batch == 1:
                         preds = [
                             prediction_func(
-                                tt.where(m.mask, data.data, args.mask_value),
+                                tt.where(m.mask, data.data, data.mask_value),
                                 args.target,
                                 binary_threshold=args.binary_threshold,
                             )[0]
@@ -198,7 +198,7 @@ def causal_explanation(
                     else:
                         tensors = tt.stack(
                             [
-                                tt.where(m.mask, data.data, args.mask_value)
+                                tt.where(m.mask, data.data, data.mask_value)
                                 for m in mutants
                             ]
                         )  # type: ignore
