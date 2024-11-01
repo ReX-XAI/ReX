@@ -41,7 +41,7 @@ def try_preprocess(args: CausalArgs, model_shape: Tuple[int], device: str):
         try:
             if args.mask_value in ("tabular", "spectral"):  # type: ignore
                 logger.warning(
-                    "tabular is not suitable for images. Changing mask_value to 0"
+                    f"{args.mask_value} is not suitable for images. Changing mask_value to 0"
                 )
                 args.mask_value = 0
         except AttributeError:
