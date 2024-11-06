@@ -18,6 +18,7 @@ extensions = [
     "sphinx.ext.autodoc.typehints",
     "myst_parser",
     "sphinx.ext.napoleon",
+    "sphinx.ext.intersphinx"
 ]
 
 templates_path = ["_templates"]
@@ -45,3 +46,11 @@ html_theme_options = {
 # https://sphinx-autoapi.readthedocs.io/en/latest/
 autoapi_dirs = ["../rex_xai/"]
 autodoc_typehints = "description"
+
+# -- Intersphinx --------------------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/extensions/intersphinx.html
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', None),
+    'torch': ('https://pytorch.org/docs/stable/',None),
+    'sqla': ('https://docs.sqlalchemy.org/en/latest/', None)
+    }

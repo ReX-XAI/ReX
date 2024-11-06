@@ -11,6 +11,7 @@ from typing import List, Tuple, Union
 import torch as tt
 import numpy as np
 from PIL import Image
+from sqlalchemy.orm import Session
 
 from rex_xai.evaluation import Evaluation
 from rex_xai.extraction import Explanation
@@ -240,11 +241,22 @@ def get_prediction_func_from_args(args):
     return prediction_func, model_shape
 
 
-def explanation(args: CausalArgs, device, db=None) -> Union[Explanation, List[Explanation]]:
-    """Take a CausalArgs object and return a Explanation.
+def explanation(args: CausalArgs, device: tt.device, db: Session | None = None) -> Union[Explanation, List[Explanation]]:
+    """Takes a CausalArgs object and returns a Explanation.
 
-    @param args: CausalArgs
-    @return Explanation
+    Takes a CausalArgs object and returns either an Explanation, or a list of Explanations
+    if the input ``args.path`` is a directory rather than a path to a single file. 
+
+    Args:
+        args: configuration values for ReX
+        device: as returned by :py:func:`~rex_xai._utils.get_device()`
+        db: None or as returned by :py:func:`~rex_xai.database.initialise_rex_db()`
+    
+    Returns: 
+        Explanation: 
+            An :py:class:`~rex_xai.extraction.Explanation` object containing the causal reponsibility explanation 
+            calculated using the given ``args``.
+
     """
 
     validate_args(args)
