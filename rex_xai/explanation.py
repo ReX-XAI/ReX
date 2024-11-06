@@ -24,14 +24,22 @@ from rex_xai.logger import logger, set_log_level
 from rex_xai.database import update_database
 
 
-def try_preprocess(args: CausalArgs, model_shape: Tuple[int], device: str):
-    """Makes an attempt to preprocess data based on file extension and (possibly)
-    user defined mode.
+def try_preprocess(args: CausalArgs, model_shape: Tuple[int], device: tt.device):
+    """Makes an attempt to preprocess input data as required for the model.
+     
+    Data preprocessing is based on file extension and (possibly) user-defined mode.
+    File extensions in ``[".jpg", ".jpeg", ".png", ".tif", ".tiff"]`` are treated 
+    as images, ".npy" are treated as Numpy arrays, and ".nii" are treated as nifti files.
+    For any other file extension, we create a ``Data`` object without pre-processing.
 
-    @param args: CausalArgs object
-    @param model_shape: shape of the input tensor of the model
+    Args:
+        args: configuration values for ReX
+        model_shape: shape of the input tensor of the model, as returned by 
+            :py:func:`~rex_xai.explanation.get_prediction_func_from_args()`
+        device: as returned by :py:func:`~rex_xai._utils.get_device()`
 
-    @return a <Data> object
+    Returns:
+      Data: the processed input data
     """
     _, ext = os.path.splitext(args.path)
     # args.path is an image
@@ -70,8 +78,22 @@ def try_preprocess(args: CausalArgs, model_shape: Tuple[int], device: str):
 
     return data
 
-def load_and_preprocess_data(model_shape, device, args):
+def load_and_preprocess_data(model_shape: Tuple[int], device: tt.device, args: CausalArgs):
+    """Loads input data from filepath and does preprocessing.
 
+    Uses a custom preprocesssing function if this is defined in ``args.custom.preprocess``,
+    otherwise :py:func:`~rex_xai.explanation.try_preprocess()`.
+    
+    Args:
+        model_shape: shape of the input tensor of the model, as returned by 
+            :py:func:`~rex_xai.explanation.get_prediction_func_from_args()`
+        device: as returned by :py:func:`~rex_xai._utils.get_device()`
+        args: configuration values for ReX
+    
+    Returns:
+        Data: the processed input data
+    
+    """
     if hasattr(args.custom, "preprocess"):
         data = args.custom.preprocess(args.path, model_shape, device, mode=args.mode)
     else:
@@ -80,7 +102,20 @@ def load_and_preprocess_data(model_shape, device, args):
 
     return data
 
-def predict_target(data, args, prediction_func):
+def predict_target(data: Data, args: CausalArgs, prediction_func):
+    """Predicts classification of input data, using given prediction function.
+
+    Uses ``prediction_func`` to identify the classification of the input data and set 
+    this as the target classification for ReX. Sets ``data.classification`` and ``args.target``.
+
+    Args:
+        data: processed input data object
+        args: configuration values for ReX
+        prediction_func: prediction function for the model
+
+    Returns:
+        None
+    """
     target = prediction_func(data.data, None)
 
     if isinstance(target, list):
@@ -103,8 +138,27 @@ def predict_target(data, args, prediction_func):
 
     return target
 
-def calculate_responsibility(data, args, prediction_func):
+def calculate_responsibility(data: Data, args: CausalArgs, prediction_func):
+    """Calculates ResponsibilityMaps for input data using given args.
 
+    Runs :py:func:`~rex_xai.responsibility.causal_explanation` for ``args.iters`` iterations,
+    and returns the resulting :py:class:`~rex_xai.resp_maps.ResponsibilityMaps` and some statistics about the
+    calculation process.
+
+    Args:
+        data: processed input data object
+        args: configuration values for ReX
+        prediction_func: prediction function for the model
+    
+    Returns:
+        tuple containing
+
+        - maps (ResponsibilityMaps): maps
+        - total_passing (int)
+        - total_failing (int)
+        - max_depth_reached (int)
+        - avg_box_size (float)
+    """
     maps = ResponsibilityMaps()
     maps.new_map(args.target.classification, data.model_height, data.model_width)
 
@@ -151,17 +205,33 @@ def calculate_responsibility(data, args, prediction_func):
 
     return maps, total_passing, total_failing, max_depth_reached, avg_box_size
 
-def analyze(data, exp, prediction_func, args):
+def analyze(exp: Explanation, data_mode: str, logging_level: int):
+    """Analyzes an Explanation.
+
+    Analyzes the area ratio, entropy difference, insertion and deletion curves for an 
+    Explanation object and prints them to ``logging.info``.
+
+    Args:
+        exp: Explanation object as returned by :py:func:`~rex_xai.explanation._explanation`
+        data_mode: Mode of the input data. Entropy difference is only calculated if ``data_mode`` 
+            is one of ["RGB", "L"].
+        logging_level: used to set logging level back to its original value after ensuring 
+            output is printed using :py:func:`logging.info`.
+
+    Returns:
+        None
+        
+    """
     eval = Evaluation(exp)
     rat = eval.ratio()
-    if data.mode in ("RGB", "L"):
+    if data_mode in ("RGB", "L"):
         be, ae = eval.entropy_loss()  # type: ignore
         ent = be - ae
     else:
         ent = None
 
-    iauc, dauc = eval.insertion_deletion_curve(prediction_func)
-    if args.verbosity < 2:
+    iauc, dauc = eval.insertion_deletion_curve(exp.prediction_func)
+    if logging_level < 2:
         set_log_level(2, logger)
     logger.info(
         "area %f, entropy difference %f, insertion curve %f, deletion curve %f",
@@ -170,11 +240,29 @@ def analyze(data, exp, prediction_func, args):
         iauc,
         dauc,
     )
-    set_log_level(args.verbosity, logger)
+    set_log_level(logging_level, logger)
 
 
-def _explanation(args, model_shape, prediction_func, device, db=None):
+def _explanation(args: CausalArgs, model_shape: Tuple[int], prediction_func, device: tt.device, db: Session | None =None):
+    """Takes a CausalArgs object and model information and returns a Explanation.
 
+    Takes a CausalArgs object, model shape and prediction function and returns an Explanation.
+    Depending on the input ``args``, optionally produces output plots, analyses the output 
+    explanation, and/or writes results to a database.
+
+    Args:
+        args: configuration values for ReX
+        model_shape: shape of the input tensor of the model, as returned by :py:func:`~rex_xai.explanation.get_prediction_func_from_args()`
+        prediction_func: as returned by :py:func:`~rex_xai.explanation.get_prediction_func_from_args()`
+        device: as returned by :py:func:`~rex_xai._utils.get_device()`
+        db: None or as returned by :py:func:`~rex_xai.database.initialise_rex_db()`
+    
+    Returns: 
+        Explanation: 
+            An :py:class:`~rex_xai.extraction.Explanation` object containing the causal reponsibility explanation 
+            calculated using the given ``args``.
+
+    """
     data = load_and_preprocess_data(model_shape, device, args)
     data.set_mask_value(args.mask_value, device=data.device)
     
@@ -189,7 +277,7 @@ def _explanation(args, model_shape, prediction_func, device, db=None):
     exp.extract(args.strategy)
 
     if args.analyze:
-        analyze(data, exp, prediction_func, args)
+        analyze(exp, data.mode, args.verbosity)
 
     end = time.time()
     time_taken = end - start
@@ -220,12 +308,39 @@ def _explanation(args, model_shape, prediction_func, device, db=None):
     return exp
 
 
-def validate_args(args):
+def validate_args(args: CausalArgs):
+    """Validates a CausalArgs object.
+
+    Checks that ``args.path`` is not None.
+
+    Args:
+        args: configuration values for ReX
+    """
+
     if args.path is None:
         raise FileNotFoundError("Input file path cannot be None")
 
 
-def get_prediction_func_from_args(args):
+def get_prediction_func_from_args(args: CausalArgs):
+    """Takes a CausalArgs object and gets the prediction function and model shape.
+
+    If ``args.custom`` specifies a prediction function and model shape, returns these.
+    Otherwise gets the prediction function and model shape from the provided model
+    file. 
+
+    Args:
+        args: configuration values for ReX
+
+    Returns:
+        tuple containing
+
+        - ``prediction_func``
+        - ``model_shape``
+
+    Raises:
+        RuntimeError: if an onnx inference instance cannot be created from the provided model file.
+    
+    """
     if hasattr(args.custom, "prediction_function") and hasattr(
         args.custom, "model_shape"
     ):
