@@ -6,35 +6,36 @@ import copy
 import os
 import sys
 import time
-from tqdm import trange  # type: ignore
 from typing import List, Tuple, Union
-import torch as tt
+
 import numpy as np
+import torch as tt
 from PIL import Image
 from sqlalchemy.orm import Session
+from tqdm import trange  # type: ignore
 
+from rex_xai.config import CausalArgs
+from rex_xai.database import update_database
 from rex_xai.evaluation import Evaluation
 from rex_xai.extraction import Explanation
-from rex_xai.responsibility import causal_explanation
 from rex_xai.input_data import Data
+from rex_xai.logger import logger, set_log_level
 from rex_xai.onnx import get_prediction_function
 from rex_xai.resp_maps import ResponsibilityMaps
-from rex_xai.config import CausalArgs
-from rex_xai.logger import logger, set_log_level
-from rex_xai.database import update_database
+from rex_xai.responsibility import causal_explanation
 
 
 def try_preprocess(args: CausalArgs, model_shape: Tuple[int], device: tt.device):
     """Makes an attempt to preprocess input data as required for the model.
-     
+
     Data preprocessing is based on file extension and (possibly) user-defined mode.
-    File extensions in ``[".jpg", ".jpeg", ".png", ".tif", ".tiff"]`` are treated 
+    File extensions in ``[".jpg", ".jpeg", ".png", ".tif", ".tiff"]`` are treated
     as images, ".npy" are treated as Numpy arrays, and ".nii" are treated as nifti files.
     For any other file extension, we create a ``Data`` object without pre-processing.
 
     Args:
         args: configuration values for ReX
-        model_shape: shape of the input tensor of the model, as returned by 
+        model_shape: shape of the input tensor of the model, as returned by
             :py:func:`~rex_xai.explanation.get_prediction_func_from_args()`
         device: as returned by :py:func:`~rex_xai._utils.get_device()`
 
@@ -78,21 +79,24 @@ def try_preprocess(args: CausalArgs, model_shape: Tuple[int], device: tt.device)
 
     return data
 
-def load_and_preprocess_data(model_shape: Tuple[int], device: tt.device, args: CausalArgs):
+
+def load_and_preprocess_data(
+    model_shape: Tuple[int], device: tt.device, args: CausalArgs
+):
     """Loads input data from filepath and does preprocessing.
 
     Uses a custom preprocesssing function if this is defined in ``args.custom.preprocess``,
     otherwise :py:func:`~rex_xai.explanation.try_preprocess()`.
-    
+
     Args:
-        model_shape: shape of the input tensor of the model, as returned by 
+        model_shape: shape of the input tensor of the model, as returned by
             :py:func:`~rex_xai.explanation.get_prediction_func_from_args()`
         device: as returned by :py:func:`~rex_xai._utils.get_device()`
         args: configuration values for ReX
-    
+
     Returns:
         Data: the processed input data
-    
+
     """
     if hasattr(args.custom, "preprocess"):
         data = args.custom.preprocess(args.path, model_shape, device, mode=args.mode)
@@ -102,10 +106,11 @@ def load_and_preprocess_data(model_shape: Tuple[int], device: tt.device, args: C
 
     return data
 
+
 def predict_target(data: Data, args: CausalArgs, prediction_func):
     """Predicts classification of input data, using given prediction function.
 
-    Uses ``prediction_func`` to identify the classification of the input data and set 
+    Uses ``prediction_func`` to identify the classification of the input data and set
     this as the target classification for ReX. Sets ``data.classification`` and ``args.target``.
 
     Args:
@@ -138,6 +143,7 @@ def predict_target(data: Data, args: CausalArgs, prediction_func):
 
     return target
 
+
 def calculate_responsibility(data: Data, args: CausalArgs, prediction_func):
     """Calculates ResponsibilityMaps for input data using given args.
 
@@ -149,7 +155,7 @@ def calculate_responsibility(data: Data, args: CausalArgs, prediction_func):
         data: processed input data object
         args: configuration values for ReX
         prediction_func: prediction function for the model
-    
+
     Returns:
         tuple containing
 
@@ -205,22 +211,23 @@ def calculate_responsibility(data: Data, args: CausalArgs, prediction_func):
 
     return maps, total_passing, total_failing, max_depth_reached, avg_box_size
 
+
 def analyze(exp: Explanation, data_mode: str, logging_level: int):
     """Analyzes an Explanation.
 
-    Analyzes the area ratio, entropy difference, insertion and deletion curves for an 
+    Analyzes the area ratio, entropy difference, insertion and deletion curves for an
     Explanation object and prints them to ``logging.info``.
 
     Args:
         exp: Explanation object as returned by :py:func:`~rex_xai.explanation._explanation`
-        data_mode: Mode of the input data. Entropy difference is only calculated if ``data_mode`` 
+        data_mode: Mode of the input data. Entropy difference is only calculated if ``data_mode``
             is one of ["RGB", "L"].
-        logging_level: used to set logging level back to its original value after ensuring 
+        logging_level: used to set logging level back to its original value after ensuring
             output is printed using :py:func:`logging.info`.
 
     Returns:
         None
-        
+
     """
     eval = Evaluation(exp)
     rat = eval.ratio()
@@ -243,11 +250,17 @@ def analyze(exp: Explanation, data_mode: str, logging_level: int):
     set_log_level(logging_level, logger)
 
 
-def _explanation(args: CausalArgs, model_shape: Tuple[int], prediction_func, device: tt.device, db: Session | None =None):
+def _explanation(
+    args: CausalArgs,
+    model_shape: Tuple[int],
+    prediction_func,
+    device: tt.device,
+    db: Session | None = None,
+):
     """Takes a CausalArgs object and model information and returns a Explanation.
 
     Takes a CausalArgs object, model shape and prediction function and returns an Explanation.
-    Depending on the input ``args``, optionally produces output plots, analyses the output 
+    Depending on the input ``args``, optionally produces output plots, analyses the output
     explanation, and/or writes results to a database.
 
     Args:
@@ -256,21 +269,23 @@ def _explanation(args: CausalArgs, model_shape: Tuple[int], prediction_func, dev
         prediction_func: as returned by :py:func:`~rex_xai.explanation.get_prediction_func_from_args()`
         device: as returned by :py:func:`~rex_xai._utils.get_device()`
         db: None or as returned by :py:func:`~rex_xai.database.initialise_rex_db()`
-    
-    Returns: 
-        Explanation: 
-            An :py:class:`~rex_xai.extraction.Explanation` object containing the causal reponsibility explanation 
+
+    Returns:
+        Explanation:
+            An :py:class:`~rex_xai.extraction.Explanation` object containing the causal reponsibility explanation
             calculated using the given ``args``.
 
     """
     data = load_and_preprocess_data(model_shape, device, args)
     data.set_mask_value(args.mask_value, device=data.device)
-    
+
     target = predict_target(data, args, prediction_func)
 
     start = time.time()
 
-    maps, total_passing, total_failing, max_depth_reached, avg_box_size = calculate_responsibility(data, args, prediction_func)
+    maps, total_passing, total_failing, max_depth_reached, avg_box_size = (
+        calculate_responsibility(data, args, prediction_func)
+    )
 
     exp = Explanation(maps, prediction_func, target, data, args)  # type: ignore
 
@@ -326,7 +341,7 @@ def get_prediction_func_from_args(args: CausalArgs):
 
     If ``args.custom`` specifies a prediction function and model shape, returns these.
     Otherwise gets the prediction function and model shape from the provided model
-    file. 
+    file.
 
     Args:
         args: configuration values for ReX
@@ -339,7 +354,7 @@ def get_prediction_func_from_args(args: CausalArgs):
 
     Raises:
         RuntimeError: if an onnx inference instance cannot be created from the provided model file.
-    
+
     """
     if hasattr(args.custom, "prediction_function") and hasattr(
         args.custom, "model_shape"
@@ -352,24 +367,26 @@ def get_prediction_func_from_args(args: CausalArgs):
             raise RuntimeError("Unable to create an onnx inference instance")
         else:
             prediction_func, model_shape = ps
-    
+
     return prediction_func, model_shape
 
 
-def explanation(args: CausalArgs, device: tt.device, db: Session | None = None) -> Union[Explanation, List[Explanation]]:
+def explanation(
+    args: CausalArgs, device: tt.device, db: Session | None = None
+) -> Union[Explanation, List[Explanation]]:
     """Takes a CausalArgs object and returns a Explanation.
 
     Takes a CausalArgs object and returns either an Explanation, or a list of Explanations
-    if the input ``args.path`` is a directory rather than a path to a single file. 
+    if the input ``args.path`` is a directory rather than a path to a single file.
 
     Args:
         args: configuration values for ReX
         device: as returned by :py:func:`~rex_xai._utils.get_device()`
         db: None or as returned by :py:func:`~rex_xai.database.initialise_rex_db()`
-    
-    Returns: 
-        Explanation: 
-            An :py:class:`~rex_xai.extraction.Explanation` object containing the causal reponsibility explanation 
+
+    Returns:
+        Explanation:
+            An :py:class:`~rex_xai.extraction.Explanation` object containing the causal reponsibility explanation
             calculated using the given ``args``.
 
     """
@@ -379,7 +396,9 @@ def explanation(args: CausalArgs, device: tt.device, db: Session | None = None) 
     prediction_func, model_shape = get_prediction_func_from_args(args)
 
     if isinstance(model_shape[0], int) and model_shape[0] < args.batch:
-        logger.warning(f"Resetting batch size to size of model's first axis: {model_shape[0]}")
+        logger.warning(
+            f"Resetting batch size to size of model's first axis: {model_shape[0]}"
+        )
         args.batch = model_shape[0]
 
     # multiple explanations
