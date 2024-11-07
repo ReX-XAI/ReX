@@ -1,4 +1,4 @@
-from pytest import approx
+import pytest
 
 from rex_xai.config import CausalArgs, process_custom_script
 from rex_xai._utils import get_device
@@ -6,6 +6,8 @@ from rex_xai.explanation import (
     try_preprocess,
     predict_target,
     get_prediction_func_from_args,
+    load_and_preprocess_data,
+    validate_args
 )
 
 args = CausalArgs()
@@ -13,13 +15,20 @@ args.path = "imgs/dog.jpg"
 model_shape = ["N", 3, 224, 224]  # may not be correct/appropriate, check!
 device = get_device(gpu=False)
 
-data = try_preprocess(args, model_shape, device=device)
 process_custom_script("tests/scripts/pytorch.py", args)
+data = try_preprocess(args, model_shape, device=device)
 prediction_func, model_shape = get_prediction_func_from_args(args)
 
 
 def test_preprocess(snapshot):
-    data = try_preprocess(args, model_shape, device=device)
+    args.custom = None
+    data = load_and_preprocess_data(model_shape, device, args)
+    assert data == snapshot
+
+
+def test_preprocess_custom(snapshot):
+    process_custom_script("tests/scripts/pytorch.py", args)
+    data = load_and_preprocess_data(model_shape, device, args)
     assert data == snapshot
 
 
@@ -55,7 +64,14 @@ def test_preprocess_npy(caplog, snapshot):
 
 
 def test_predict_target(snapshot):
-    target = predict_target(data, args, prediction_func)
+    target = predict_target(data, prediction_func)
 
     assert target.classification == 207
-    assert target.confidence == approx(0.25323787)
+    assert target.confidence == pytest.approx(0.25323787)
+
+
+def test_validate_args():
+    args.path = None
+    with pytest.raises(FileNotFoundError):
+        validate_args(args)
+

@@ -2,6 +2,9 @@
 # name: test_preprocess
   Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
 # ---
+# name: test_preprocess_custom
+  Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
+# ---
 # name: test_preprocess_npy
   Data: tabular, ['N', 3, 224, 224], None, None, None, None
 # ---
