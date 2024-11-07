@@ -3,11 +3,13 @@
 ReX is a causal explainability tool for image classifiers.
 ReX is black-box, that is, agnostic to the internal structure of the classifier.
 We assume that we can modify the inputs and send them to the classifier, observing the output.
-ReX outperforms other tools on single explanations, non-contiguous explanations (for partially obscured images), and multiple explanations.
+ReX outperforms other tools on [single explanations](https://www.hanachockler.com/eccv/), [non-contiguous explanations](https://www.hanachockler.com/iccv2021/) (for partially obscured images), and [multiple explanations](http://www.hanachockler.com/multirex/).
 
 ![ReX organisation](../assets/rex-structure-600x129.png)
 
 ## Assumptions
+
+ReX works on the assumption that if we can intervene on the inputs to a model and observe changes in its outputs, we can use this information to reason about the way the DNN makes its decisions.
 
 ![ReX assumptions](../assets/rex-assumptions-768x259.png)
 

@@ -88,7 +88,7 @@ Some options from the config file can be overridden at the command line when cal
 In particular, you can change the number of iterations of the algorithm:
 
 ```bash
-rex <path_to_image> --model <path_to_model>  --iters 5
+rex <path_to_image> --model <path_to_model> --iters 5
 ```
 
 ## Preprocessing
@@ -112,4 +112,4 @@ If you have very specific requirements for preprocessing, you can write a standa
 rex <path_to_image> --model <path_to_model> --process_script <path_to_script.py>
 ```
 
-An example is included in `scripts/example_preprocess.py`.
+An example is included in `scripts/pytorch.py`.

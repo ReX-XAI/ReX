@@ -17,72 +17,11 @@ ReX outperforms other tools on single explanations, non-contiguous explanations 
 
 For more information and links to the papers, see the :doc:`background` page.
 
-Installation
-----
 
-Clone the ReX repository and ``cd`` into it::
-
-   git clone git@github.com:ReX-XAI/ReX.git
-   cd ReX/
-
-We recommend creating a virtual environment to install ReX.
-ReX has been tested using versions of Python >= 3.10.
-The following instructions assume ``conda``::
-
-   conda create -n rex python=3.12
-   conda activate rex
-   pip install .
-
-This should install an executable ``rex`` in your path.
-
-  **Note:**
-  
-  By default, ``onnxruntime`` will be installed.
-  If you wish to use a GPU, you should uninstall ``onnxruntime`` and install ``onnxruntime-gpu`` instead.
-  You can alternatively edit the ``pyproject.toml`` to read "onnxruntime >= 1.17.0" rather than "onnxruntime-gpu >= 1.17.0" before running ``pip install .``. 
-
-
-Quickstart
-----
-
-ReX requires as input an image and a model. 
-ReX natively understands onnx files. Train or download a model (e.g. `Resnet50 <https://github.com/onnx/models/blob/main/validated/vision/classification/resnet/model/resnet50-v1-7.onnx>`_) and, from this directory, run::
-
-   rex imgs/dog.jpg --model resnet50-v1-7.onnx -vv --output dog_exp.jpg
-
-To view an interactive plot for the responsibility map, run::
-
-   rex imgs/dog.jpg --model resnet50-v1-7.onnx -vv --surface
-   
-Other options::
-
-   # with spatial search (the default)
-   rex <path_to_image> --model <path_to_model>
-
-   # with linear search
-   rex <path_to_image> --model <path_to_model> --strategy linear
-
-   # to save the extracted explanation
-   rex <path_to_image> --model <path_to_model> --output <path_and_extension>
-
-   # to view an interactive responsibility landscape
-   rex <path_to_image> --model <path_to_model>  --surface
-
-   # to save a responsibility landscape
-   rex <path_to_image> --model <path_to_model>  --surface <path_and_extension>
-
-   # to run multiple explanations
-   rex <path_to_image> --model <path_to_model> --strategy multi
-
-ReX configuration is mainly handled via a config file; some options can also be set on the command line.
-ReX looks for the config file ``rex.toml`` in the current working directory and then ``$HOME/.config/rex.toml`` on unix-like systems.
-
-If you want to use a custom location, use::
-
-   rex <path_to_image> --model <path_to_model> --config <path_to_config>
-
-An example config file is included in the repo as ``example.rex.toml``.
-Rename this to ``rex.toml`` if you wish to use it.
+.. include:: ../README.md
+   :parser: myst_parser.sphinx_
+   :start-after: <!--inclusion-marker-start-do-not-remove-->
+   :end-before: <!--inclusion-marker-end-do-not-remove-->
 
 .. toctree::
    :maxdepth: 2

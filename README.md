@@ -9,11 +9,13 @@
 <!--- BADGES: START --->
 
 [![CI Pipeline](https://github.com/ReX-XAI/ReX/actions/workflows/python-package.yml/badge.svg)](https://github.com/ReX-XAI/ReX/actions/workflows/python-package.yml)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/kellino/ReX.jl/blob/main/LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/ReX-XAI/ReX.jl/blob/main/LICENSE)
 
 <!--- BADGES: END --->
 
 ***
+
+<!--inclusion-marker-start-do-not-remove-->
 
 ## Installation
 
@@ -40,7 +42,7 @@ This should install an executable `rex` in your path.
 >
 > By default, `onnxruntime` will be installed.
 > If you wish to use a GPU, you should uninstall `onnxruntime` and install `onnxruntime-gpu` instead.
-> You can alternatively edit the `pyproject.toml` to read "onnxruntime >= 1.17.0" rather than "onnxruntime-gpu >= 1.17.0".
+> You can alternatively edit the `pyproject.toml` to read "onnxruntime-gpu >= 1.17.0" rather than "onnxruntime >= 1.17.0".
 
 ## Quickstart
 
@@ -92,6 +94,8 @@ rex <path_to_image> --model <path_to_model> --config <path_to_config>
 
 An example config file is included in the repo as ``example.rex.toml``.
 Rename this to ``rex.toml`` if you wish to use it.
+
+<!--inclusion-marker-end-do-not-remove-->
 
 ## Command line usage
 
