@@ -14,7 +14,6 @@ import toml  # type: ignore
 
 
 from rex_xai.distributions import str2distribution
-from rex_xai.prediction import Prediction
 from rex_xai.distributions import Distribution
 from rex_xai.logger import logger
 
@@ -332,10 +331,11 @@ def find_config_path():
     elif exists(conf_home):
         logger.info(f"using config in {conf_home}")
         config_path = conf_home
-    else: 
+    else:
         config_path = None
 
     return config_path
+
 
 def process_config_dict(config_file_args, args):
     causal_dict = config_file_args["causal"]
@@ -484,29 +484,32 @@ def process_cmd_args(cmd_args, args):
 
 
 def load_config(config_path=None):
-    
     if config_path is None:
         config_path = find_config_path()
-    
+
     args = CausalArgs()
     args.config_location = config_path
 
     if config_path is None:
         logger.warning(
             "Could not find a rex.toml, so running with defaults. This might not produce the effect you want..."
-            )
+        )
         return args
-    else: 
+    else:
         config_file_args = get_config_file(config_path)
 
         if config_file_args is None:
-            logger.warning(f"Error reading config file {config_path}, so running with defaults. This might not produce the effect you want...")
+            logger.warning(
+                f"Error reading config file {config_path}, so running with defaults. This might not produce the effect you want..."
+            )
         else:
             try:
                 process_config_dict(config_file_args, args)
             except KeyError as e:
-                logger.warning(f"Key error {e} in {config_path}, so reverting to default args")
-    
+                logger.warning(
+                    f"Key error {e} in {config_path}, so reverting to default args"
+                )
+
     return args
 
 
@@ -519,14 +522,14 @@ def get_all_args():
     config_path = None
     if cmd_args.config is not None:
         config_path = cmd_args.config
-    
+
     args = load_config(config_path)
 
     process_cmd_args(cmd_args, args)
-    
+
     shared_args(cmd_args, args)
 
     if args.model is None and args.custom_location is None:
         raise RuntimeError("either a <model>.onnx or a python file must be provided")
-    
+
     return args

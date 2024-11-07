@@ -107,7 +107,7 @@ def load_and_preprocess_data(
     return data
 
 
-def predict_target(data: Data, args: CausalArgs, prediction_func):
+def predict_target(data: Data, prediction_func):
     """Predicts classification of input data, using given prediction function.
 
     Uses ``prediction_func`` to identify the classification of the input data and return
@@ -274,7 +274,7 @@ def _explanation(
     data = load_and_preprocess_data(model_shape, device, args)
     data.set_mask_value(args.mask_value, device=data.device)
 
-    data.target = predict_target(data, args, prediction_func)
+    data.target = predict_target(data, prediction_func)
 
     start = time.time()
 

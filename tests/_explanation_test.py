@@ -18,10 +18,15 @@ device = get_device(gpu=False)
 
 def test__explanation_snapshot(snapshot):
     exp = _explanation(args, model_shape, prediction_func, device, db=None)
-    
-    assert exp == snapshot(exclude=props("obj_function", "spotlight_objective_function"), # pointers to functions, will differ between runs
+
+    assert exp == snapshot(
+        exclude=props(
+            "obj_function", "spotlight_objective_function"
+        ),  # pointers to functions, will differ between runs
         matcher=path_type(
             types=(CausalArgs,),
-            replacer=lambda data, _: AmberDataSerializer.object_as_named_tuple(data), # needed to allow exclude to work for custom classes
-        ),)
-
+            replacer=lambda data, _: AmberDataSerializer.object_as_named_tuple(
+                data
+            ),  # needed to allow exclude to work for custom classes
+        ),
+    )
