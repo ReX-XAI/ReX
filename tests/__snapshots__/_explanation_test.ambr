@@ -55,7 +55,6 @@
       stds=None,
       strategy=<Strategy.Spatial: 2>,
       surface=None,
-      target=CLASS: 207, CONF: 0.2046184241771698, TARGET_CLASS: None, TARGET_CONFIDENCE: None,
       tree_depth=10,
       type=<enum 'CAUSAL'>,
       verbosity=0,

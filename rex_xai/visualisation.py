@@ -176,8 +176,8 @@ def spectral_plot(
     ax.plot(data)  # type: ignore
     ax.set_ylabel("Wave Intensity")
 
-    k = args.target.classification  # type: ignore
-    confidence = args.target.confidence  # type: ignore
+    k = data.target.classification  # type: ignore
+    confidence = data.target.confidence  # type: ignore
     fig.suptitle(
         f"Spectrum and Responsibility\nTarget: {k}\nconfidence {confidence:5.4f}"
     )
@@ -301,7 +301,7 @@ def save_image(explanation, data: Data, args: CausalArgs):
     if args.output is not None:
         name = args.output
     else:
-        name = f"{args.target.classification}.png"  # type: ignore
+        name = f"{data.target.classification}.png"  # type: ignore
 
     mask = None
     if data.mode == "RGB" or data.mode == "L":

@@ -46,8 +46,8 @@ class Evaluation:
         insertion_curve = []
         deletion_curve = []
 
-        assert self.explanation.args.target is not None
-        assert self.explanation.args.target.confidence is not None
+        assert self.explanation.data.target is not None
+        assert self.explanation.data.target.confidence is not None
 
         assert self.explanation.data.data is not None
         insertion_mask = tt.zeros(
@@ -95,10 +95,10 @@ class Evaluation:
             self.__batch(im, dm, prediction_func, insertion_curve, deletion_curve)
 
         i_auc = simpson(insertion_curve, dx=step) / (
-            (self.explanation.args.target.confidence) * iters * step
+            (self.explanation.data.target.confidence) * iters * step
         )  # type: ignore
         d_auc = simpson(deletion_curve, dx=step) / (
-            (self.explanation.args.target.confidence) * iters * step
+            (self.explanation.data.target.confidence) * iters * step
         )  # type: ignore
 
         return i_auc, d_auc
@@ -110,13 +110,13 @@ class Evaluation:
     #     #     pass
 
     def __batch(self, im, dm, prediction_func, insertion_curve, deletion_curve):
-        assert self.explanation.args.target is not None
+        assert self.explanation.data.target is not None
         ip = prediction_func(tt.stack(im).to(self.explanation.data.device), raw=True)
         dp = prediction_func(tt.stack(dm).to(self.explanation.data.device), raw=True)
         for p in range(0, ip.shape[0]):
             insertion_curve.append(
-                ip[p, self.explanation.args.target.classification].item()
+                ip[p, self.explanation.data.target.classification].item()
             )  # type: ignore
             deletion_curve.append(
-                dp[p, self.explanation.args.target.classification].item()
+                dp[p, self.explanation.data.target.classification].item()
             )  # type: ignore

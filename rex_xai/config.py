@@ -125,7 +125,6 @@ class CausalArgs(Args):
         self.min_box_size: int = 10
         self.segmentation = False
         self.data_location: Optional[str] = None
-        self.target: Optional[Prediction] = None
         self.distribution: Distribution = Distribution.Uniform
         self.distribution_args: Optional[List] = None
         self.blend = 0.0

@@ -110,8 +110,8 @@ def load_and_preprocess_data(
 def predict_target(data: Data, args: CausalArgs, prediction_func):
     """Predicts classification of input data, using given prediction function.
 
-    Uses ``prediction_func`` to identify the classification of the input data and set
-    this as the target classification for ReX. Sets ``data.classification`` and ``args.target``.
+    Uses ``prediction_func`` to identify the classification of the input data and return
+    this as the target classification for ReX.
 
     Args:
         data: processed input data object
@@ -125,17 +125,12 @@ def predict_target(data: Data, args: CausalArgs, prediction_func):
 
     if isinstance(target, list):
         target = target[0]
+
     if target is not None:
-        data.classification = target.classification
-
-    if args.target is None:
-        args.target = target
-
-    if args.target is not None:
         logger.info(
             "image classified as %s with %f confidence",
-            args.target.classification,
-            args.target.confidence,
+            target.classification,
+            target.confidence,
         )
     else:
         logger.warning("no target found")
@@ -166,7 +161,7 @@ def calculate_responsibility(data: Data, args: CausalArgs, prediction_func):
         - avg_box_size (float)
     """
     maps = ResponsibilityMaps()
-    maps.new_map(args.target.classification, data.model_height, data.model_width)
+    maps.new_map(data.target.classification, data.model_height, data.model_width)
 
     total_passing: int = 0
     total_failing: int = 0
@@ -186,7 +181,7 @@ def calculate_responsibility(data: Data, args: CausalArgs, prediction_func):
                 data,
                 args,
                 prediction_func,
-                current_map=maps.get(args.target.classification),
+                current_map=maps.get(data.target.classification),
             )
 
             total_passing += passing
@@ -279,7 +274,7 @@ def _explanation(
     data = load_and_preprocess_data(model_shape, device, args)
     data.set_mask_value(args.mask_value, device=data.device)
 
-    target = predict_target(data, args, prediction_func)
+    data.target = predict_target(data, args, prediction_func)
 
     start = time.time()
 
@@ -287,7 +282,7 @@ def _explanation(
         calculate_responsibility(data, args, prediction_func)
     )
 
-    exp = Explanation(maps, prediction_func, target, data, args)  # type: ignore
+    exp = Explanation(maps, prediction_func, data.target, data, args)  # type: ignore
 
     exp.extract(args.strategy)
 
@@ -311,7 +306,7 @@ def _explanation(
         logger.info("writing to database")
         update_database(
             db,
-            target,  # type: ignore
+            data.target,  # type: ignore
             exp,
             time_taken,
             total_passing,

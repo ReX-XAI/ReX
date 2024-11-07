@@ -51,5 +51,3 @@ def test_predict_target(snapshot):
 
     assert target.classification == 207
     assert target.confidence == approx(0.25323787)
-    assert data.classification == target.classification
-    assert args.target == target

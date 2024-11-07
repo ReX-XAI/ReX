@@ -6,6 +6,7 @@ import torch as tt
 from enum import Enum
 
 from rex_xai.occlusions import spectral_occlusion
+from rex_xai.prediction import Prediction
 
 Setup = Enum("Setup", ["ONNXMPS", "ONNX", "PYTORCH"])
 
@@ -21,7 +22,7 @@ class Data:
     def __init__(self, input, model_shape, device, mode=None, process=True) -> None:
         self.input = input
         self.mode = None
-        self.classification = None
+        self.target: Optional[Prediction] = None
         self.device = device
         self.setup: Optional[Setup] = None
 
