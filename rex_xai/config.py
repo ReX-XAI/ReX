@@ -49,7 +49,7 @@ class Args:
         # onnx processing
         self.means = None
         self.stds = None
-        self.norm: Optional[float] = None
+        self.norm: Optional[float] = 255.0
         self.binary_threshold = None
         # verbosity
         self.verbosity = 0
