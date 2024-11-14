@@ -130,11 +130,14 @@ class CausalArgs(Args):
         self.distribution_args: Optional[List] = None
         self.blend = 0.0
         self.weighted: bool = False
-        self.iters = 30
+        self.iters = 20
         self.concentrate = False
         # queue management
         self.queue_len = 1
         self.queue_style = Queue.Area
+
+        if self.min_box_size is not None:
+            self.chunk_size = self.min_box_size
 
     def __repr__(self) -> str:
         return (
