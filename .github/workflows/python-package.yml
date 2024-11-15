@@ -40,6 +40,7 @@ jobs:
         pytest --junitxml=pytest.xml --cov-report=xml:coverage.xml --cov=rex_xai tests/
     - name: Pytest coverage comment
       uses: MishaKav/pytest-coverage-comment@v1.1.52
+      if: ${{ !github.event.pull_request.head.repo.fork }}
       with:
         pytest-xml-coverage-path: ./coverage.xml
     - name: Type checking with Pyright
