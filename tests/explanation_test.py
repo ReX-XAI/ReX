@@ -12,12 +12,11 @@ from rex_xai.explanation import (
 
 args = CausalArgs()
 args.path = "imgs/dog.jpg"
-model_shape = ["N", 3, 224, 224]  # may not be correct/appropriate, check!
+process_custom_script("tests/scripts/pytorch.py", args)
 device = get_device(gpu=False)
 
-process_custom_script("tests/scripts/pytorch.py", args)
-data = try_preprocess(args, model_shape, device=device)
 prediction_func, model_shape = get_prediction_func_from_args(args)
+data = try_preprocess(args, model_shape, device=device)
 
 
 def test_preprocess(snapshot):
