@@ -49,7 +49,7 @@ def try_preprocess(args: CausalArgs, model_shape: Tuple[int], device: str):
         # if not args.processed:
         data = Data(Image.open(args.path), model_shape, device)
         # data = Data(Image.open(args.path).convert("RGB"), model_shape, device)
-        data.generic_image_preprocess(means=args.means, stds=args.stds)
+        data.generic_image_preprocess(means=args.means, stds=args.stds, norm=args.norm)
 
     # a compressed numpy array file
     elif ext in ".npy":

@@ -49,7 +49,7 @@ class Args:
         # onnx processing
         self.means = None
         self.stds = None
-        self.norm: Optional[float] = None
+        self.norm: Optional[float] = 255.0
         self.binary_threshold = None
         # verbosity
         self.verbosity = 0
@@ -130,11 +130,14 @@ class CausalArgs(Args):
         self.distribution_args: Optional[List] = None
         self.blend = 0.0
         self.weighted: bool = False
-        self.iters = 30
+        self.iters = 20
         self.concentrate = False
         # queue management
         self.queue_len = 1
         self.queue_style = Queue.Area
+
+        if self.min_box_size is not None:
+            self.chunk_size = self.min_box_size
 
     def __repr__(self) -> str:
         return (

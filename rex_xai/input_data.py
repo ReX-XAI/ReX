@@ -96,7 +96,7 @@ class Data:
 
         normed_data = self.data
         if norm is not None:
-            normed_data /= 255.0
+            normed_data /= norm
 
         if self.model_order == "first" and self.model_channels == 3:
             if means is not None:
@@ -146,7 +146,7 @@ class Data:
         means=None,
         stds=None,
         astype="float32",
-        norm: Optional[float] = 1.0,
+        norm: Optional[float] = 255.0,
     ):
         self.load_data(astype=astype)
 
