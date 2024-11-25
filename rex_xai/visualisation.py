@@ -303,9 +303,9 @@ def overlay_grid(img, step_count=10):
     return img
 
 
-def save_image(explanation, data: Data, args: CausalArgs):
-    if args.output is not None:
-        name = args.output
+def save_image(explanation, data: Data, args: CausalArgs, path=None):
+    if path is not None:
+        name = path
     else:
         name = f"{data.target.classification}.png"  # type: ignore
 

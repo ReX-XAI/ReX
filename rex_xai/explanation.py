@@ -307,13 +307,25 @@ def _explanation(
     logger.info(time_taken)
 
     if args.surface is not None:
-        exp.surface_plot(exp.map)
+        if args.surface == "show": 
+            path = None
+        else:
+            path = args.surface
+        exp.surface_plot(path)
 
     if args.heatmap is not None:
-        exp.heatmap_plot(exp.map)
+        if args.heatmap == "show": 
+            path = None
+        else:
+            path = args.heatmap
+        exp.heatmap_plot(path)
 
     if args.output is not None:
-        exp.save()
+        if args.output == "show": 
+            path = None
+        else:
+            path = args.output
+        exp.save(path)
 
     if db is not None:
         logger.info("writing to database")

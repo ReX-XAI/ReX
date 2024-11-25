@@ -171,10 +171,10 @@ class Explanation:
                 mask[circle, :] = True
             expansions += 1
 
-    def save(self):
+    def save(self, path):
         # if it's an image
         if self.data.mode in ("RGB", "L"):
-            save_image(self.explanation, self.data, self.args)
+            save_image(self.explanation, self.data, self.args, path=path)
         # if it's a spectral array
         if self.data.mode == "spectral":
             spectral_plot(
@@ -182,7 +182,7 @@ class Explanation:
                 self.data,
                 self.map,
                 self.args.heatmap_colours,
-                path = self.args.output
+                path = path
             )
         # if it's tabular data
         if self.data.mode == "tabular":
@@ -190,25 +190,25 @@ class Explanation:
         if self.data.mode == "voxel":
             pass
 
-    def heatmap_plot(self):
+    def heatmap_plot(self, path=None):
         if self.data.mode in ("RGB", "L"):
             heatmap_plot(
                 self.data,
                 self.map,
                 self.args.heatmap_colours,
                 self.target,
-                path=self.args.heatmap,
+                path=path,
             )
         else:
             return NotImplementedError
 
-    def surface_plot(self):
+    def surface_plot(self, path=None):
         if self.data.mode in ("RGB", "L"):
             surface_plot(
                 self.args,
                 self.map,
                 self.target,
-                path=self.args.surface,
+                path=path,
             )
         else:
             return NotImplementedError
