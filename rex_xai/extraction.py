@@ -4,7 +4,6 @@ from typing import Optional
 import torch as tt
 import numpy as np
 
-from rex_xai.resp_maps import ResponsibilityMaps
 from rex_xai.visualisation import (
     save_image,
     spectral_plot,

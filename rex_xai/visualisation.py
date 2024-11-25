@@ -5,7 +5,6 @@
 from PIL import Image, ImageDraw
 import os
 
-# from matplotlib.text import Rectangle #type: ignore
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -221,6 +220,9 @@ def surface_plot(
 
     rows, cols = 1, len(keys)
 
+    # currently this for loop does nothing as keys always has len = 1
+    # if passing in multiple responsibility maps, would need to use
+    # ranking = resp_maps.get(k) for each iteration
     for i, k in enumerate(keys):
         ranking = resp_map
         if ranking is not None:
@@ -232,7 +234,7 @@ def surface_plot(
             ax.plot_surface(
                 _x,
                 _y,
-                resp_map,
+                ranking,
                 alpha=0.4,
                 cmap=mpl.colormaps[args.heatmap_colours],
             )  # type: ignore
