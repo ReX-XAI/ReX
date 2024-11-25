@@ -253,6 +253,15 @@ def analyze(exp: Explanation, data_mode: str, logging_level: int):
     )
     set_log_level(logging_level, logger)
 
+    analysis_results = {
+        "area": rat,
+        "entropy_diff": ent,
+        "insertion_curve": iauc,
+        "deletion_curve": dauc
+    }
+
+    return analysis_results
+
 
 def _explanation(
     args: CausalArgs,
