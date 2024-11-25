@@ -254,7 +254,12 @@ def surface_plot(
                     y = int(round(y))  # type: ignore
                     z = ranking[x, y]  # type: ignore
                     ax.scatter(x, y, z, color="b")
-                    if "GB" in os.environ["LANG"]:
+                    
+                    try:
+                        lang = os.environ["LANG"]
+                    except KeyError:
+                        lang = 'en_US.UTF-8'
+                    if "GB" in lang:
                         ax.text(x, y, z, s="centre of mass")  # type: ignore
                     else:
                         ax.text(x, y, z, s="center of mass")  # type: ignore
