@@ -121,6 +121,12 @@
          [2.       , 2.       , 2.       , ..., 3.4999998, 3.4999998,
           3.4999998]], dtype=float32),
     mask_func=0,
+    run_stats=dict({
+      'avg_box_size': 216.0,
+      'max_depth_reached': 5,
+      'total_failing': 71,
+      'total_passing': 41,
+    }),
     target=CLASS: 207, CONF: 0.2046184241771698, TARGET_CLASS: None, TARGET_CONFIDENCE: None,
   )
 # ---

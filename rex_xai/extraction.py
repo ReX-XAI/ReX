@@ -28,6 +28,7 @@ class Explanation:
         target: Prediction,
         data: Data,
         args: CausalArgs,
+        run_stats: dict,
     ) -> None:
         self.map = map.get(target.classification)
         self.explanation: Optional[tt.Tensor] = None
@@ -37,6 +38,7 @@ class Explanation:
         self.data = data
         self.args = args
         self.mask_func = args.mask_value
+        self.run_stats = run_stats
 
     def extract(self, method: Strategy):
         self.blank()

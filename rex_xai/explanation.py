@@ -204,7 +204,16 @@ def calculate_responsibility(data: Data, args: CausalArgs, prediction_func):
         avg_box_size,
     )
 
-    return maps, total_passing, total_failing, max_depth_reached, avg_box_size
+    run_stats = {
+        'total_passing': total_passing, 
+        'total_failing': total_failing, 
+        'max_depth_reached': max_depth_reached, 
+        'avg_box_size': avg_box_size
+        }
+
+    exp = Explanation(maps, prediction_func, data.target, data, args, run_stats)
+
+    return exp
 
 
 def analyze(exp: Explanation, data_mode: str, logging_level: int):
@@ -278,12 +287,7 @@ def _explanation(
 
     start = time.time()
 
-    maps, total_passing, total_failing, max_depth_reached, avg_box_size = (
-        calculate_responsibility(data, args, prediction_func)
-    )
-
-    exp = Explanation(maps, prediction_func, data.target, data, args)  # type: ignore
-
+    exp = calculate_responsibility(data, args, prediction_func)
     exp.extract(args.strategy)
 
     if args.analyze:
@@ -294,10 +298,10 @@ def _explanation(
     logger.info(time_taken)
 
     if args.surface is not None:
-        exp.surface_plot(maps)
+        exp.surface_plot(exp.map)
 
     if args.heatmap is not None:
-        exp.heatmap_plot(maps)
+        exp.heatmap_plot(exp.map)
 
     if args.output is not None:
         exp.save()
@@ -309,10 +313,10 @@ def _explanation(
             data.target,  # type: ignore
             exp,
             time_taken,
-            total_passing,
-            total_failing,
-            max_depth_reached,
-            avg_box_size,
+            exp.run_stats['total_passing'],
+            exp.run_stats['total_failing'],
+            exp.run_stats['max_depth_reached'],
+            exp.run_stats['avg_box_size'],
         )
 
     return exp
