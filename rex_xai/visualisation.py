@@ -96,7 +96,7 @@ def _transparent_cmap(cmap, N=255):
     return mycmap
 
 
-def heatmap_plot(data: Data, resp_maps, colour, target: Prediction, path=None):
+def heatmap_plot(data: Data, resp_map, colour, target: Prediction, path=None):
     if data.mode in ("RGB", "L"):
         mycmap = _transparent_cmap(mpl.colormaps[colour])
         background = data.input.resize(
@@ -105,7 +105,6 @@ def heatmap_plot(data: Data, resp_maps, colour, target: Prediction, path=None):
         x, y = np.mgrid[0 : data.model_height, 0 : data.model_width]
         fig, ax = plt.subplots(1, 1)
         ax.imshow(background)
-        resp_map = resp_maps.get(target.classification)
         # TODO this is not working as expected
         resp_map = np.rot90(resp_map, k=2)
         ax.contourf(x, y, resp_map, 15, cmap=mycmap)
@@ -144,7 +143,7 @@ def __group_spectral_parts(explanation):
 
 
 def spectral_plot(
-    args: CausalArgs, explanation, data: Data, ranking, colour, extra=False
+    explanation, data: Data, ranking, colour, extra=False, path=None
 ):
     # plt.style.use("seaborn-v0_8")
     explanation = explanation.squeeze()
@@ -201,20 +200,20 @@ def spectral_plot(
     #     )
     #     axs[0].add_patch(rectangle)
 
-    if args.output == "show":
+    if path is None:
         plt.show()
     else:
-        plt.savefig(args.output, dpi=300)
+        plt.savefig(path, dpi=300)
 
 
 def surface_plot(
     args: CausalArgs,
-    resp_maps: ResponsibilityMaps,
+    resp_map: ResponsibilityMaps,
     target: Prediction,
-    destination=None,
+    path=None,
 ):
     """plots a 3d surface plot"""
-    img, _x, _y = plot_3d(args.path, resp_maps.get(target.classification), True)
+    img, _x, _y = plot_3d(args.path, resp_map, True)
     fig = plt.figure()
 
     # TODO enable visualisation of sub-responsibility maps
@@ -223,7 +222,7 @@ def surface_plot(
     rows, cols = 1, len(keys)
 
     for i, k in enumerate(keys):
-        ranking = resp_maps.get(k)
+        ranking = resp_map
         if ranking is not None:
             ax = fig.add_subplot(rows, cols, i + 1, projection="3d")
 
@@ -233,7 +232,7 @@ def surface_plot(
             ax.plot_surface(
                 _x,
                 _y,
-                resp_maps.get(k),
+                resp_map,
                 alpha=0.4,
                 cmap=mpl.colormaps[args.heatmap_colours],
             )  # type: ignore
@@ -268,10 +267,10 @@ def surface_plot(
                 else:
                     plt.title(f"Submap for {k}\nconfidence {confidence:5.4f}")
 
-        if destination == "show":
+        if path is None:
             plt.show()
         else:
-            plt.savefig(destination, bbox_inches="tight", dpi=300)
+            plt.savefig(path, bbox_inches="tight", dpi=300)
 
 
 def overlay_grid(img, step_count=10):

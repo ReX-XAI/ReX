@@ -179,11 +179,11 @@ class Explanation:
         # if it's a spectral array
         if self.data.mode == "spectral":
             spectral_plot(
-                self.args,
                 self.explanation,
                 self.data,
                 self.map,
                 self.args.heatmap_colours,
+                path = self.args.output
             )
         # if it's tabular data
         if self.data.mode == "tabular":
@@ -191,26 +191,25 @@ class Explanation:
         if self.data.mode == "voxel":
             pass
 
-    def heatmap_plot(self, maps: ResponsibilityMaps):
+    def heatmap_plot(self):
         if self.data.mode in ("RGB", "L"):
-            if self.args.heatmap == "show":
-                heatmap_plot(self.data, maps, self.args.heatmap_colours, self.target)
-            else:
-                heatmap_plot(
-                    self.data,
-                    maps,
-                    self.args.heatmap_colours,
-                    self.target,
-                    path=self.args.heatmap,
-                )
+            heatmap_plot(
+                self.data,
+                self.map,
+                self.args.heatmap_colours,
+                self.target,
+                path=self.args.heatmap,
+            )
+        else:
+            return NotImplementedError
 
-    def surface_plot(self, maps: ResponsibilityMaps):
-        if self.data.mode == "RGB" or self.data.mode == "L":
+    def surface_plot(self):
+        if self.data.mode in ("RGB", "L"):
             surface_plot(
                 self.args,
-                maps,
+                self.map,
                 self.target,
-                destination=self.args.surface,
+                path=self.args.surface,
             )
         else:
             return NotImplementedError
