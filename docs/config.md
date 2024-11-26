@@ -9,11 +9,9 @@ An example `rex.toml` file that configures a few of the possible parameters migh
 
 gpu = false
 
-batch_size = 4
+batch_size = 32
 
 [rex.onnx]
-
-binary_threshold = 0.5
 
 [rex.visual]
 
@@ -23,7 +21,7 @@ progress_bar = true
 
 search_limit = 1000
 
-iters = 30
+iters = 35
 
 [causal.distribution]
 
@@ -46,16 +44,10 @@ This section is for options that affect the general features of ReX.
 
 `mask_value = 0`
 
-Masking value for mutations, can be either an integer, float or one of the following built-in occlusions 'spectral', 'min', 'mean'.
+Masking value for mutations. Can be an integer, float or one of the following built-in occlusions 'spectral', 'min', 'mean'.
 For image data, we recommend the default value of 0, and for spectral data we recommend 'spectral'.
 Note that this masking value is applied to the data after any data normalisation, and therefore does not correspond to a specific colour.
 Default: 0.
-
-<!-- TODO: check if this can be a float?
-Strongly suggest for images use zero
-Spectral/tabular need their own treatment
-Expand into full doc just on this.
-Masking is applied to the float matrix, not the RGB matrix - doesn't correspond to a particular colour. -->
 
 `seed = 42`
 
@@ -69,27 +61,27 @@ Default: true.
 
 `batch_size = 64`
 
-Batch size for inference. Some models specify a certain batch size, in which case the smaller of the two values will be used.
+Batch size for inference. Some models specify a certain batch size. If the batch size specified by the model is smaller than this value, the batch size speciifed by the model will be used.
 For best performance, set the batch size as high as your hardware allows.
 Default: 64.
 
-<!-- Some models tell you the batch size - first element in the model shape. String e.g. N or batch indicates dynamic batch size
-Otherwise use smaller of val set here and reported by the model.
-This should be set to be the upper limit of what your hardware can give you. -->
-
 ### [rex.onnx] section
+
+This section is for options used when specifying a model as an onnx format file.
+
+`norm = 255`
+
+Value used to scale input data - input data are divided by this value. The default value of 255 is appropriate for images, as it scales the values to the range [0, 1].
+Default: 255.
 
 `means = [0.485, 0.456, 0.406]`
 
-Means for min-max normalization.
+Means for input data normalization. The mean for each channel will be subtracted from the channel values, after they have been scaled (see `norm`). These examples are for ImageNet. If you are using your own model, you should calculate the mean and standard deviation from your own training data.
 Default: None.
-<!-- These examples are for imagenet data.
-Obtain from model source - should include details of how to pre-process.
-Calculated over training data. -->
 
 `stds = [0.229, 0.224, 0.225]`
 
-Standard deviations for min-max normalization.
+Standard deviations for input data normalization. Values for each channel will be divided by the standard deviation for each channel, after they have been scaled (see `norm`) and the mean has been subtracted (see `mean`). These examples are for ImageNet. If you are using your own model, you should calculate the mean and standard deviation from your own training data.
 Default: None.
 
 `binary_threshold = 0.5`
@@ -98,17 +90,9 @@ Binary model confidence threshold.
 Anything >= threshold will be classified as 1, otherwise 0.
 Default: None.
 
-`norm`
-
-Optional.
-Default: 255.
-
-<!-- Should be 255 for images.
-For other data types raise a warning if left as default. -->
-
 ### [rex.visual] section
 
-This section is for options that control the appearance of the progress bar and output data visualisation.
+This section is for options that control the appearance of the progress bar and output data visualisations.
 
 `progress_bar = false`
 
@@ -117,63 +101,62 @@ Defaults: true.
 
 `resize = true`
 
-Resize the explanation to the size of the original image.
-This uses cubic interpolation and will not be as visually accurate as not resizing.
+Resize the explanation to the size of the original image, rather than the size used for the model.
+This uses cubic interpolation and will not be as visually accurate as not resizing. Used with option `--output`.
 Default: false.
-
-<!-- Notes: explanation produced with the size used for the model. resize adjusts this back to the input image size. -->
-
-`info = false`
-
-Include classification and confidence information in title of plot.
-Default: true.
 
 `raw = false`
 
-Produce unvarnished image with actual masking value (or black as default).
-Defaults: false.
-
+Produce unvarnished image with actual masking value (or black as default). Used with option `--output`.
+Default: false.
 <!-- Or: show only pixels actually input to model, all else blacked out - check whether code needs to be changed so always black. -->
 
 `colour = 150`
 
-Pretty printing colour for explanations.
-Defaults: 200.
-
-<!-- colour used to grey out pixels - 150.
-Used as R,G,B.
-In theory can pass in 3 numbers instead - not implemented. -->
-
-`heatmap = 'coolwarm'`
-
-Matplotlib colourscheme for responsibility map plotting.
-Default: 'magma'.
-See the [Matplotlib documentation](https://matplotlib.org/stable/users/explain/colors/colormaps.html) for a list of all possible colourmaps.
+Shade of grey used to mask image and highlight the explanation. Used with option `--output`.
+Default: 200.
 
 `alpha = 0.2`
 
-Alpha blend for main image (PIL Image.blend parameter).
+Alpha blend for main image (PIL Image.blend parameter). Used with option `--output`.
 Default: 0.2.
-<!-- Used for pretty printing of output image. -->
 
 `grid = false`
 
-Overlay a 10*10 grid on an explanation.
+Overlay a 10*10 grid on an explanation. Used with option `--output`.
 Defaults: false.
 
 `mark_segments = false`
 
-Mark quickshift segmentation on image.
+Mark quickshift segmentation on image. Segmentation is performed with `skimage.segmentation.slic`. Used with option `--output`.
 Default: false.
 
-<!-- Helpful to see if segmentation matches/spans explanation.
-Not used during explanation. -->
+`info = false`
+
+Include classification and confidence information in title of plot, and label centre of mass and maximum points of responsibility map. Used with option `--surface`.
+Default: true.
+
+`heatmap = 'coolwarm'`
+
+Matplotlib colourscheme for responsibility map plotting.  Used with option `--heatmap` and `--surface`.
+Default: 'magma'.
+See the [Matplotlib documentation](https://matplotlib.org/stable/users/explain/colors/colormaps.html) for a list of all possible colourmaps.
 
 ## [causal] section
 
 This sections is for options relevant to the causal responsibility calculations.
 
-`tree_depth = 30`
+`iters = 30`
+
+Number of times to run the algorithm. More iteraions will generally lead to smaller explanations.
+Default: 20.
+
+`weighted = false`
+
+Whether to weight responsibility by prediction confidence.
+Default: false.
+
+`tree_depth = 20`
 
 Maximum depth of tree.
 Default: 10.
@@ -191,62 +174,43 @@ It is **not** the total work done by ReX over all iterations.
 Leaving the search limit at none can potentially be very expensive.
 
 <!-- number of mutants per iteration
-Is there a total work limit as well? - check -->
-
-`iters = 30`
-
-Number of times to run the algorithm.
-Default: 20.
-<!-- More iters -> smaller explanations.
-Probably the only one most people will set. -->
+Is there a total work limit as well? -->
 
 `min_box_size = 10`
 
-Minimum child size, in pixels.
+Minimum child box area, in pixels.
 Default: 10.
 <!-- Area of box. In practice never gets this small. -->
 
 `confidence_filter = 0.5`
 
-Remove passing mutants which have a confidence less than `confidence_filter`.
+Remove passing mutants which have a confidence less than `confidence_filter` * the confidence on the full input data.
 Default: 0.0 (meaning all mutants are considered).
-<!-- everything above this gets added to resp map
-Advanced option -->
-
-`weighted = false`
-
-Whether to weight responsibility by prediction confidence.
-Default: false.
-<!-- One people might want to set. -->
+<!-- Advanced option -->
 
 `queue_style = "area"`
 
-queue_style = "intersection" | "area" | "all" | "dc"
+This parameter controls how the queue of mutants to analyse is ordered. "area" means that the passing mutant with the smallest area will be ordered first. "intersection" means that ordering is based on the smallest occlusion that occurs in the highest number of passing mutants. "all" will keep all mutants and may lead to significant slowdown.
+Possible values: "intersection" | "area" | "all" | "dc"
 Default: "area".
 <!-- Advanced.
 Aim is to not have to follow every path
 Area: choose passing mutant that has smallest area
 All: keep everything - very slow
 Intersection: smallest occlusion that occurs in highest number of passing mutants - but area works better.
-Affects how queue is ordered -->
+Affects how queue is ordered 
+TODO: clarify - how does intersection work? -->
 
 `queue_len = 1`
 
-Maximum number of things to hold in search queue, either an integer or 'all'.
+How many items from the search queue to keep, either an integer or 'all'. Note that specifying 'all' may lead to significant slowdown.
 Default: 1.
-<!-- How many items from queue to process
-'all' will be slow -->
 
-`concentrate = false`
+<!-- `concentrate = false`
 
 Weight responsibility by size and depth of passing partition.
-Default: false.
-<!-- Experimental! remove? doesn't work yet -->
-
-`segmentation`
-
-Default: false.
-<!-- Remove this! -->
+Default: false. 
+Experimental! doesn't work yet -->
 
 ### [causal.distribution] section
 
