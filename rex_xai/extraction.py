@@ -174,6 +174,8 @@ class Explanation:
     def save(self, path):
         # if it's an image
         if self.data.mode in ("RGB", "L"):
+            if path is None:
+                path = f"{self.data.target.classification}.png"  # type: ignore
             save_image(self.explanation, self.data, self.args, path=path)
         # if it's a spectral array
         if self.data.mode == "spectral":
@@ -210,5 +212,13 @@ class Explanation:
                 self.target,
                 path=path,
             )
+        else:
+            return NotImplementedError
+        
+    def show(self, path=None):
+        # if it's an image
+        if self.data.mode in ("RGB", "L"):
+            out = save_image(self.explanation, self.data, self.args, path=path)
+            return out
         else:
             return NotImplementedError

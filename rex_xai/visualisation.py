@@ -304,10 +304,6 @@ def overlay_grid(img, step_count=10):
 
 
 def save_image(explanation, data: Data, args: CausalArgs, path=None):
-    if path is not None:
-        name = path
-    else:
-        name = f"{data.target.classification}.png"  # type: ignore
 
     mask = None
     if data.mode == "RGB" or data.mode == "L":
@@ -332,8 +328,6 @@ def save_image(explanation, data: Data, args: CausalArgs, path=None):
             if args.raw:
                 out = np.where(mask, img, 0).squeeze(0) # 0 used to mask image with black
                 out = Image.fromarray(out, data.mode)
-                out.save(name)
-                return out
 
             else:
                 exp = np.where(mask, img, args.colour)
@@ -351,6 +345,8 @@ def save_image(explanation, data: Data, args: CausalArgs, path=None):
 
                 if args.resize:
                     out = out.resize(data.input.size)
+            
+            if path is not None:
+                out.save(path)
 
-                out.save(name)
-                return out
+            return out
