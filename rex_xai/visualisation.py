@@ -101,11 +101,9 @@ def heatmap_plot(data: Data, resp_map, colour, target: Prediction, path=None):
         background = data.input.resize(
             (data.model_height, data.model_width)
         )  # TODO check these dimensions
-        x, y = np.mgrid[0 : data.model_height, 0 : data.model_width]
+        y, x = np.mgrid[0 : data.model_height, 0 : data.model_width]
         fig, ax = plt.subplots(1, 1)
         ax.imshow(background)
-        # TODO this is not working as expected
-        resp_map = np.rot90(resp_map, k=2)
         ax.contourf(x, y, resp_map, 15, cmap=mycmap)
         plt.axis("off")
         ax.get_xaxis().set_visible(False)
