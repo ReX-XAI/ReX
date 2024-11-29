@@ -211,7 +211,7 @@ def calculate_responsibility(data: Data, args: CausalArgs, prediction_func):
         'avg_box_size': avg_box_size
         }
 
-    exp = Explanation(maps, prediction_func, data.target, data, args, run_stats)
+    exp = Explanation(maps, prediction_func, data.target, data, args, run_stats, keep_all_maps=False)
 
     return exp
 

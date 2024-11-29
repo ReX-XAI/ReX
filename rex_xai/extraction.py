@@ -22,14 +22,20 @@ from rex_xai._utils import get_map_locations, set_boolean_mask_value
 class Explanation:
     def __init__(
         self,
-        map,
+        maps,
         prediction_func,
         target: Prediction,
         data: Data,
         args: CausalArgs,
         run_stats: dict,
+        keep_all_maps = False
     ) -> None:
-        self.map = map.get(target.classification)
+        if keep_all_maps:
+            self.maps = maps
+        else:
+            maps.subset(target.classification)
+            self.maps = maps
+        
         self.explanation: Optional[tt.Tensor] = None
         self.final_mask = None
         self.prediction_func = prediction_func
@@ -89,7 +95,7 @@ class Explanation:
 
     def __global(self, map=None, wipe=False):
         if map is None:
-            map = self.map
+            map = self.maps.get(self.data.target.classification)
         ranking = get_map_locations(map)
 
         mutant = tt.zeros(
@@ -133,8 +139,9 @@ class Explanation:
 
     def __spatial(self, centre=None, expansion_limit=None) -> Optional[int]:
         # we don't have a search location to start from, so we try to isolate one
+        map = self.maps.get(self.data.target.classification)
         if centre is None:
-            centre = np.unravel_index(np.argmax(self.map), self.map.shape)
+            centre = np.unravel_index(np.argmax(map), map.shape)
 
         start_radius = self.args.spatial_radius
         mask = tt.zeros(
@@ -161,7 +168,7 @@ class Explanation:
             p = self.prediction_func(d)[0]
             if p.classification == self.target.classification:
                 return self.__global(
-                    map=np.where(circle.detach().cpu().numpy(), self.map, 0)
+                    map=np.where(circle.detach().cpu().numpy(), map, 0)
                 )
             start_radius = int(start_radius * (1 + self.args.spatial_eta))
             circle = self.__circle(centre, start_radius)
@@ -182,7 +189,7 @@ class Explanation:
             spectral_plot(
                 self.explanation,
                 self.data,
-                self.map,
+                self.maps.get(self.data.target.classification),
                 self.args.heatmap_colours,
                 path = path
             )
@@ -196,7 +203,7 @@ class Explanation:
         if self.data.mode in ("RGB", "L"):
             heatmap_plot(
                 self.data,
-                self.map,
+                self.maps.get(self.data.target.classification),
                 self.args.heatmap_colours,
                 self.target,
                 path=path,
@@ -208,7 +215,7 @@ class Explanation:
         if self.data.mode in ("RGB", "L"):
             surface_plot(
                 self.args,
-                self.map,
+                self.maps.get(self.data.target.classification),
                 self.target,
                 path=path,
             )

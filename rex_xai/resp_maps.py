@@ -118,3 +118,9 @@ class ResponsibilityMaps:
                                 )
                                 section = 0.001
             self.maps[k] = resp_map
+
+    def subset(self, id):
+        m = self.maps.get(id)
+        c = self.counts.get(id)
+        self.maps = {id: m}
+        self.counts = {id: c}
