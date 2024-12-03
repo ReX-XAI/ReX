@@ -324,7 +324,7 @@ def save_image(explanation, data: Data, args: CausalArgs):
 
         if mask is not None:
             if args.raw:
-                out = np.where(mask, img, args.mask_value).squeeze(0)
+                out = np.where(mask, img, 0).squeeze(0) # 0 used to mask image with black
                 out = Image.fromarray(out, data.mode)
                 out.save(name)
                 return out
