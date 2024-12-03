@@ -56,12 +56,13 @@ Default: None.
 
 `gpu = true`
 
-Whether to use gpu or not.
+Whether to use GPU (if available) or not.
 Default: true.
 
 `batch_size = 64`
 
-Batch size for inference. Some models specify a certain batch size. If the batch size specified by the model is smaller than this value, the batch size speciifed by the model will be used.
+Batch size for inference. Some models specify a certain batch size.
+If the batch size specified by the model is smaller than this value, the batch size specified by the model will be used.
 For best performance, set the batch size as high as your hardware allows.
 Default: 64.
 
@@ -71,17 +72,24 @@ This section is for options used when specifying a model as an onnx format file.
 
 `norm = 255`
 
-Value used to scale input data - input data are divided by this value. The default value of 255 is appropriate for images, as it scales the values to the range [0, 1].
+Value used to scale input data - input data are divided by this value.
+The default value of 255 is appropriate for images, as it scales the values to the range [0, 1].
 Default: 255.
 
 `means = [0.485, 0.456, 0.406]`
 
-Means for input data normalization. The mean for each channel will be subtracted from the channel values, after they have been scaled (see `norm`). These examples are for ImageNet. If you are using your own model, you should calculate the mean and standard deviation from your own training data.
+Means for input data normalization.
+The mean for each channel will be subtracted from the channel values, after they have been scaled (see `norm`).
+These examples are for ImageNet.
+If you are using your own model, you should calculate the mean and standard deviation from your own training data.
 Default: None.
 
 `stds = [0.229, 0.224, 0.225]`
 
-Standard deviations for input data normalization. Values for each channel will be divided by the standard deviation for each channel, after they have been scaled (see `norm`) and the mean has been subtracted (see `mean`). These examples are for ImageNet. If you are using your own model, you should calculate the mean and standard deviation from your own training data.
+Standard deviations for input data normalization.
+Values for each channel will be divided by the standard deviation for each channel, after they have been scaled (see `norm`) and the mean has been subtracted (see `mean`).
+These examples are for ImageNet.
+If you are using your own model, you should calculate the mean and standard deviation from your own training data.
 Default: None.
 
 `binary_threshold = 0.5`
@@ -102,43 +110,50 @@ Defaults: true.
 `resize = true`
 
 Resize the explanation to the size of the original image, rather than the size used for the model.
-This uses cubic interpolation and will not be as visually accurate as not resizing. Used with option `--output`.
+This uses cubic interpolation and will not be as visually accurate as not resizing.
+Used with option `--output`.
 Default: false.
 
 `raw = false`
 
-Produce unvarnished image with actual masking value (or black as default). Used with option `--output`.
+Produce unvarnished image with masked regions set to black.
+Used with option `--output`.
 Default: false.
-<!-- Or: show only pixels actually input to model, all else blacked out - check whether code needs to be changed so always black. -->
 
 `colour = 150`
 
-Shade of grey used to mask image and highlight the explanation. Used with option `--output`.
+Shade of grey used to mask image and highlight the explanation.
+Used with option `--output`, if `raw` is `false`.
 Default: 200.
 
 `alpha = 0.2`
 
-Alpha blend for main image (PIL Image.blend parameter). Used with option `--output`.
+Alpha blend for main image (PIL Image.blend parameter).
+Used with option `--output`, if `raw` is `false`.
 Default: 0.2.
 
 `grid = false`
 
-Overlay a 10*10 grid on an explanation. Used with option `--output`.
+Overlay a 10*10 grid on an explanation.
+Used with option `--output`.
 Defaults: false.
 
 `mark_segments = false`
 
-Mark quickshift segmentation on image. Segmentation is performed with `skimage.segmentation.slic`. Used with option `--output`.
+Mark quickshift segmentation on image.
+Segmentation is performed with `skimage.segmentation.slic`. Used with option `--output`.
 Default: false.
 
 `info = false`
 
-Include classification and confidence information in title of plot, and label centre of mass and maximum points of responsibility map. Used with option `--surface`.
+Include classification and confidence information in title of plot, and label centre of mass and maximum points of responsibility map.
+Used with option `--surface`.
 Default: true.
 
 `heatmap = 'coolwarm'`
 
-Matplotlib colourscheme for responsibility map plotting.  Used with option `--heatmap` and `--surface`.
+Matplotlib colourscheme for responsibility map plotting.
+Used with option `--heatmap` and `--surface`.
 Default: 'magma'.
 See the [Matplotlib documentation](https://matplotlib.org/stable/users/explain/colors/colormaps.html) for a list of all possible colourmaps.
 
@@ -148,7 +163,8 @@ This sections is for options relevant to the causal responsibility calculations.
 
 `iters = 30`
 
-Number of times to run the algorithm. More iteraions will generally lead to smaller explanations.
+Number of times to run the algorithm.
+More iterations will generally lead to smaller explanations.
 Default: 20.
 
 `weighted = false`
@@ -163,7 +179,8 @@ Default: 10.
 Note that search can actually go beyond this number on occasion, as the check only occurs at the end of an iteration.
 
 <!-- TODO: add a diagram?
-30 is very large (getting to individual pixels), 10 is easily reachable. -->
+30 is very large (getting to individual pixels), 10 is easily reachable. 
+'iteration' here doesn't mean what's set by 'iters', but rather per item in the search queue -->
 
 `search_limit = 1000`
 
@@ -173,8 +190,8 @@ Default: None.
 It is **not** the total work done by ReX over all iterations.
 Leaving the search limit at none can potentially be very expensive.
 
-<!-- number of mutants per iteration
-Is there a total work limit as well? -->
+<!-- number of mutants per iteration, no total search limit
+'iteration' here doesn't mean what's set by 'iters', but rather per item in the search queue -->
 
 `min_box_size = 10`
 
@@ -190,7 +207,10 @@ Default: 0.0 (meaning all mutants are considered).
 
 `queue_style = "area"`
 
-This parameter controls how the queue of mutants to analyse is ordered. "area" means that the passing mutant with the smallest area will be ordered first. "intersection" means that ordering is based on the smallest occlusion that occurs in the highest number of passing mutants. "all" will keep all mutants and may lead to significant slowdown.
+This parameter controls how the queue of mutants to analyse is ordered.
+"area" means that the passing mutant with the smallest area will be ordered first.
+"intersection" means that ordering is based on the smallest occlusion that occurs in the highest number of passing mutants.
+"all" will keep all mutants and may lead to significant slowdown.
 Possible values: "intersection" | "area" | "all" | "dc"
 Default: "area".
 <!-- Advanced.
@@ -203,7 +223,8 @@ TODO: clarify - how does intersection work? -->
 
 `queue_len = 1`
 
-How many items from the search queue to keep, either an integer or 'all'. Note that specifying 'all' may lead to significant slowdown.
+How many items from the search queue to keep, either an integer or 'all'.
+Note that specifying 'all' may lead to significant slowdown.
 Default: 1.
 
 <!-- `concentrate = false`
@@ -219,22 +240,25 @@ This section is for options that control the distribution used to split boxes.
 `distribution = 'uniform'`
 
 Distribution for splitting the box.
+Only 'uniform' is currently recommended, the other options are experimental.
 Default: 'uniform'.
-Possible choices are 'uniform' | 'binom' | 'betabinom' | 'adaptive'.
 
+<!-- Possible choices are 'uniform' | 'binom' | 'betabinom' | 'adaptive'. -->
 <!-- Uniform works, the others might not work at the moment. -->
-
-`blend = 0.5`
-
-Default: 0.0.
-Ignored for uniform - used for adaptive. Experimental.
 
 `dist_args = [1.1, 1.1]`
 
 Supplemental arguments for distribution creation, these are ignored if `distribution` does not take any parameters.
 Optional.
 Default: None.
-<!-- Ignored for uniform -->
+<!-- Currently don't seem to be passed in to random_coords, so not used -->
+
+<!-- `blend = 0.5`
+
+Experimental.
+Used for 'adaptive'.
+Default: 0.0. -->
+<!-- Not currently used -->
 
 ## [explanation] section
 
@@ -242,32 +266,37 @@ This section is for options related to identifying the explanation(s).
 
 `chunk = 10`
 
-Iterate through pixel ranking in chunks, defaults to `causal.min_box_size`. 
+To find a minimal sufficient explanation, ReX adds pixels according to the pixel ranking in chunks, then checks the classification of the output.
+This option sets the number of pixels that will be added at each iteration.
+If your model is slow to classify, you may want to increase this value.
+Defaults to `causal.min_box_size`.
 <!-- Adds this number of pixels at a time - faster.
 User may want to adjust this - if model is slow need bigger values. -->
 
 ### [explanation.spatial] section
 
 This section is for options used for spatial search for explanations.
+The spatial search looks for explanations within a 'spotlight' region centred on the highest ranked pixel.
+If a sufficient explanation cannot be found, the spotlight size will be increased.
 
 <!-- Needs expanding into a separate page with illustrations. -->
 
 `initial_radius = 25`
 
 Initial search radius.
-<!-- Shines a "spotlight" on the image, focuses on looking for explanation in that region. Centred on top pixel. -->
 Default: 25.
 
 `radius_eta = 0.2`
 
-Increment to change radius. 
-<!-- - i.e. increase by 20%. -->
+Increment to increase radius.
+0.2 means an increase of 20%.
 Default: 0.2.
 
-`no_expansions = 50`
+<!-- `no_expansions = 50`
 
-Number of times to expand before quitting
-Default: 1.
+Number of times to expand before quitting.
+Default: 1. -->
+<!-- Not currently used. -->
 <!-- from code looks like default is 50? -->
 <!-- Should the default be the batch size? warning if batch size is 1?
 Check what happens if model batch size is dynamic and batch size is not set.
@@ -285,11 +314,10 @@ Could calculate % of image that would be covered? -->
 
 This option is currently disabled.
 
-method = 'spotlight'
+<!-- method = 'spotlight' -->
+<!-- Multi-explanation method (only spotlight is currently implemented). -->
 <!-- from code looks like this is not used currently -->
 <!-- Keep as hidden legacy option? Not currently planning to implement others -->
-
-Multi-explanation method (only spotlight is currently implemented).
 
 `spotlights = 10`
 
@@ -298,31 +326,31 @@ Default: 10.
 
 `spotlight_size = 24`
 
-Default size of spotlight.
+Initial spotlight radius.
 Default: 20.
 <!-- Could default to values set above. Radius of approx circle. -->
 
 `spotlight_eta = 0.2`
 
-Increase spotlight by this amount.
+Increase spotlight radius by this amount.
 Default: 0.2
 
 `obj_function = 'mean'`
 
 Objective function for spotlight search.
 Possible options 'mean' | 'max' | 'min'.
+If no explanation is found, the spotlight is moved towards a location defined by this function.
 <!-- Simplified stochastic hill climb - move spotlight towards area with mean/max/min repsonsibility -->
 
 `spotlight_step = 5`
 
+If no explanation is found, the spotlight is moved this distance in pixels towards a location defined by `obj_function`.
 Default: 5.
 <!-- How far spotlight is moved. -->
 
 ### [explanation.evaluation] section
 
-Metrics from literature used to assess explanation quality.
-
-These options are used if ReX is run with the `--analyse` option.
+These options are used if ReX is run with the `--analyse` option, which triggers the calculation of several metrics from the literature used to assess explanation quality.
 
 `insertion_step = 100`
 
