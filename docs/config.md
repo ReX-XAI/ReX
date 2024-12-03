@@ -191,7 +191,7 @@ It is **not** the total work done by ReX over all iterations.
 Leaving the search limit at none can potentially be very expensive.
 
 <!-- number of mutants per iteration, no total search limit
-'iteration' here doesn't mean what's set by 'iters', but rather per item in the search queue -->
+'iteration' here *is* what's set by 'iters' -->
 
 `min_box_size = 10`
 
