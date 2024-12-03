@@ -51,7 +51,7 @@ rex imgs/dog.jpg --model resnet50-v1-7.onnx -vv --output dog_exp.jpg
 
 ### Pytorch
 
-ReX also works with PyTorch, but some custom preprocessing is required.
+ReX also works with PyTorch, but you will need to write some custom code to provide ReX with the prediction function and model shape, as well as preprocess the input data.
 See the sample script in `scripts/`.
 
 ```bash
@@ -93,16 +93,22 @@ rex <path_to_image> --model <path_to_model> --iters 5
 
 ## Preprocessing
 
-ReX by default tries to make reasonable guesses for image preprocessing.
-If the image has already been resized appropriately for the model, then use the processed flag:
+Input data should be transformed in the same way the model's training data was transformed before training.
+For PyTorch models, you should specify the preprocessing steps in the custom script.
+See the sample script in `scripts/`.
+
+Otherwise, ReX by default tries to make reasonable guesses for image preprocessing.
+This includes resizing the image to match that needed for the model, converting it to a numpy array, and normalising the data.
+Image data will be normalised to a 0-1 range.
+Optionally, you can provide means and standard deviations for further normalisation.
+In the event the the model input is single channel and the image is multi-channel, then ReX will try to convert the image to greyscale.
+If you want to avoid this, then pass in a greyscale image.
+
+If the image has already been resized appropriately for the model, then use the `--processed` flag:
 
 ```bash
 rex <path_to_image> --model <path_to_model> --processed
 ```
-
-ReX will still normalize the image and convert it into a numpy array.
-In the event the the model input is single channel and the image is multi-channel, then ReX will try to convert the image to greyscale.
-If you want to avoid this, then pass in a greyscale image.
 
 ### Preprocess Script
 
@@ -112,4 +118,4 @@ If you have very specific requirements for preprocessing, you can write a standa
 rex <path_to_image> --model <path_to_model> --process_script <path_to_script.py>
 ```
 
-An example is included in `scripts/pytorch.py`.
+An example `preprocess` function is included in `scripts/pytorch.py`.
