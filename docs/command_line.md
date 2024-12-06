@@ -95,20 +95,20 @@ rex <path_to_image> --model <path_to_model> --iters 5
 
 Input data should be transformed in the same way the model's training data was transformed before training.
 For PyTorch models, you should specify the preprocessing steps in the custom script.
-See the sample script in `scripts/`.
+See the sample scripts in `scripts/` for examples of using models provided by the [torchvision](https://pytorch.org/vision/stable/index.html) and [timm](https://huggingface.co/docs/timm/index) packages.
 
 Otherwise, ReX by default tries to make reasonable guesses for image preprocessing.
 This includes resizing the image to match that needed for the model, converting it to a numpy array, and normalising the data.
 Image data will be normalised to a 0-1 range.
 Optionally, you can provide means and standard deviations for further normalisation.
-In the event the the model input is single channel and the image is multi-channel, then ReX will try to convert the image to greyscale.
-If you want to avoid this, then pass in a greyscale image.
+In the event the the model input is multi-channel and the image is greyscale, then ReX will convert the image to pseudo-RGB.
+If you want more control over the conversion, you can do the conversion yourself and pass in the converted image.
 
-If the image has already been resized appropriately for the model, then use the `--processed` flag:
+<!-- If the image has already been resized appropriately for the model, then use the `--processed` flag:
 
 ```bash
 rex <path_to_image> --model <path_to_model> --processed
-```
+``` -->
 
 ### Preprocess Script
 
