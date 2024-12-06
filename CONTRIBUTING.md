@@ -2,7 +2,7 @@
 
 ## Setting up a local development environment
 
-Install [poetry](https://python-poetry.org/) following [its installation instructions](https://python-poetry.org/docs/) - it's recommended to install using `pipx`.
+While you can install ReX through various methods, for development purposes we use [poetry](https://python-poetry.org/) for installation, development dependency management, and building the package. Install poetry following [its installation instructions](https://python-poetry.org/docs/) - it's recommended to install using `pipx`.
 
 Clone this repo and `cd` into it.
 
