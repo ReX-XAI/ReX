@@ -27,8 +27,19 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "alabaster"
+html_sidebars = {
+    '**': [
+        'about.html',
+        'searchfield.html',
+        'navigation.html',
+        'relations.html',
+        'donate.html',
+    ]
+}
 html_static_path = ["_static"]
-html_logo = "../assets/rex_logo.png"
+html_theme_options = {
+   "logo": "rex_logo.png"
+}
 
 # -- AutoAPI -----------------------------------------------------------------
 # https://sphinx-autoapi.readthedocs.io/en/latest/
