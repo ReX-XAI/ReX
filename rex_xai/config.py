@@ -339,7 +339,6 @@ def find_config_path():
 
 def process_config_dict(config_file_args, args):
     causal_dict = config_file_args["causal"]
-    # print(causal_dict)
     if "tree_depth" in causal_dict:
         args.tree_depth = causal_dict["tree_depth"]
     if "search_limit" in causal_dict:

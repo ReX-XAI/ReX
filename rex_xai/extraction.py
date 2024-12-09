@@ -179,12 +179,10 @@ class Explanation:
             expansions += 1
 
     def save(self, path):
-        # if it's an image
         if self.data.mode in ("RGB", "L"):
             if path is None:
                 path = f"{self.data.target.classification}.png"  # type: ignore
             save_image(self.explanation, self.data, self.args, path=path)
-        # if it's a spectral array
         if self.data.mode == "spectral":
             spectral_plot(
                 self.explanation,
@@ -193,7 +191,6 @@ class Explanation:
                 self.args.heatmap_colours,
                 path = path
             )
-        # if it's tabular data
         if self.data.mode == "tabular":
             pass
         if self.data.mode == "voxel":
@@ -223,7 +220,6 @@ class Explanation:
             return NotImplementedError
         
     def show(self, path=None):
-        # if it's an image
         if self.data.mode in ("RGB", "L"):
             out = save_image(self.explanation, self.data, self.args, path=path)
             return out
