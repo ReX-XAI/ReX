@@ -178,11 +178,14 @@ class Data:
     def set_mask_value(self, m, device="cpu"):
         assert self.data is not None
         # if m is a number, then if might still need to be normalised
-        if isinstance(m, (int, float)):
-            self.mask_value = m
-        if m == "min":
-            self.mask_value = tt.min(self.data).item()  # type: ignore
-        if m == "mean":
-            self.mask_value = tt.mean(self.data).item()  # type: ignore
-        if m == "spectral":
-            self.mask_value = lambda m, d: spectral_occlusion(m, d, device=device)
+        match m:
+            case int() | float() as m:
+                self.mask_value = m
+            case "min":
+                self.mask_value = tt.min(self.data).item()  # type: ignore
+            case "mean":
+                self.mask_value = tt.mean(self.data).item()  # type: ignore
+            case "spectral":
+                self.mask_value = lambda m, d: spectral_occlusion(m, d, device=device)
+            case _:
+                raise ValueError(f"Invalid mask value {m}. Should be an integer, float, or one of 'min', 'mean', 'spectral'")
