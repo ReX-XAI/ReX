@@ -13,8 +13,6 @@
       concentrate=False,
       confidence_filter=0.0,
       config_location=None,
-      custom=<module 'tests/scripts/pytorch' from '/Users/k2474365/Documents/Projects/Chockler/ReX/rex-repo/tests/scripts/pytorch.py'>,
-      custom_location=<module 'tests/scripts/pytorch' from '/Users/k2474365/Documents/Projects/Chockler/ReX/rex-repo/tests/scripts/pytorch.py'>,
       data_location=None,
       db=None,
       distribution=<Distribution.Uniform: 2>,

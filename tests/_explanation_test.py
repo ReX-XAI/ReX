@@ -27,8 +27,8 @@ def test__explanation_snapshot(args_custom_script, snapshot):
 
     assert exp == snapshot(
         exclude=props(
-            "obj_function", "spotlight_objective_function"
-        ),  # pointers to functions, will differ between runs
+            "obj_function", "spotlight_objective_function", "custom", "custom_location",
+        ),  # paths that differ between systems, pointers to functions that will differ between runs
         matcher=path_type(
             types=(CausalArgs,),
             replacer=lambda data, _: AmberDataSerializer.object_as_named_tuple(
