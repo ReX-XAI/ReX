@@ -1,7 +1,6 @@
-# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+# This workflow will install ReX and carry out linting and type checking 
 
-name: Run tests and checks
+name: Linting and type checking
 
 on: pull_request
 
@@ -12,7 +11,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.12"]
 
     permissions:
       pull-requests: write
@@ -21,6 +20,7 @@ jobs:
     - uses: actions/checkout@v4
     - name: Install poetry
       run: pipx install poetry
+
     - name: Set up Python, install and cache dependencies
       uses: actions/setup-python@v5
       with:
@@ -32,17 +32,7 @@ jobs:
     - name: Lint with Ruff
       run: |
         ruff check --output-format=github .
-    - name: Install ReX
-      run: |
-        poetry install 
-    - name: Test with pytest
-      run: |
-        pytest --junitxml=pytest.xml --cov-report=xml:coverage.xml --cov=rex_xai tests/
-    - name: Pytest coverage comment
-      uses: MishaKav/pytest-coverage-comment@v1.1.52
-      if: ${{ !github.event.pull_request.head.repo.fork }}
-      with:
-        pytest-xml-coverage-path: ./coverage.xml
+
     - name: Type checking with Pyright
       uses: YajJackson/simple-pyright-action@v1.0.0
       with:
