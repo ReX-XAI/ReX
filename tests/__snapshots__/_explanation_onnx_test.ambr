@@ -31,7 +31,6 @@
       means=None,
       min_box_size=10,
       mode=None,
-      model=PosixPath('/Users/k2474365/.cache/cached_path/71b997fca71b917413263b9cb40aabf2109b763911c8a3b340c2e27994d9a88b.ca3b7663fbcfc63060cdc1f11f5d7b5aa426dec860a41380cda55f70fcad1da5'),
       no_expansions=50,
       norm=None,
       output=None,
