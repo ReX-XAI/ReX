@@ -15,6 +15,7 @@ def args_onnx(resnet50):
     args.search_limit = 1000
     args.seed = 100
     args.model = resnet50
+    args.gpu = False
     return args
 
 device = get_device(gpu=False)

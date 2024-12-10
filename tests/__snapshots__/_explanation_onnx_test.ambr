@@ -19,7 +19,7 @@
       db=None,
       distribution=<Distribution.Uniform: 2>,
       distribution_args=None,
-      gpu=True,
+      gpu=False,
       grid=False,
       heatmap=None,
       heatmap_colours='magma',
@@ -114,6 +114,6 @@
       'total_failing': 169,
       'total_passing': 41,
     }),
-    target=CLASS: 209, CONF: 0.391777366399765, TARGET_CLASS: None, TARGET_CONFIDENCE: None,
+    target=CLASS: 209, CONF: 0.39423608779907227, TARGET_CLASS: None, TARGET_CONFIDENCE: None,
   )
 # ---

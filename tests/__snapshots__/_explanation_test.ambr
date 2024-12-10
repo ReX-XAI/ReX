@@ -17,7 +17,7 @@
       db=None,
       distribution=<Distribution.Uniform: 2>,
       distribution_args=None,
-      gpu=True,
+      gpu=False,
       grid=False,
       heatmap=None,
       heatmap_colours='magma',
