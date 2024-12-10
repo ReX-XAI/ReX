@@ -12,7 +12,7 @@ from syrupy.matchers import path_type
 def args_custom_script():
     args = CausalArgs()
     args.path = "imgs/dog.jpg"
-    args.iters = 1
+    args.iters = 2
     args.search_limit = 1000
     args.seed = 42
     process_custom_script("tests/scripts/pytorch.py", args)
