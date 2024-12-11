@@ -19,16 +19,17 @@ class Evaluation:
     def ratio(self) -> float:
         """Returns percentage of data required for sufficient explanation"""
         assert self.explanation.explanation is not None
+        map = self.explanation.maps.get(self.explanation.data.target.classification)
         try:
             return (
                 tt.count_nonzero(self.explanation.explanation.squeeze()).item()
-                / self.explanation.map.size
+                / map.size
                 / self.explanation.data.model_channels
             )
         except TypeError:
             return (
                 np.count_nonzero(self.explanation.explanation)
-                / self.explanation.map.size
+                / map.size
                 / self.explanation.data.model_channels
             )
 
@@ -60,7 +61,8 @@ class Evaluation:
         dm = []
 
         step = self.explanation.args.insertion_step
-        ranking = get_map_locations(map=self.explanation.map)
+        map = self.explanation.maps.get(self.explanation.data.target.classification)
+        ranking = get_map_locations(map=map)
         iters = len(ranking) // step
 
         for i in range(0, len(ranking), step):
