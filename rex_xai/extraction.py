@@ -28,22 +28,27 @@ class Explanation:
         data: Data,
         args: CausalArgs,
         run_stats: dict,
-        keep_all_maps = False
+        keep_all_maps=False,
     ) -> None:
-        
         if data.target is None or data.target.classification is None:
-            raise(ValueError("Data must have `target` defined to create an Explanation object!"))
+            raise (
+                ValueError(
+                    "Data must have `target` defined to create an Explanation object!"
+                )
+            )
 
         if keep_all_maps:
             self.maps = maps
         else:
             maps.subset(data.target.classification)
             self.maps = maps
-        
-        self.target_map: np.ndarray = maps.get(data.target.classification) # type: ignore
+
+        self.target_map: np.ndarray = maps.get(data.target.classification)  # type: ignore
         if self.target_map is None:
-            raise ValueError(f"No responsibility map found for target {data.target.classification}!")
-        
+            raise ValueError(
+                f"No responsibility map found for target {data.target.classification}!"
+            )
+
         self.explanation: Optional[tt.Tensor] = None
         self.final_mask = None
         self.prediction_func = prediction_func
@@ -51,7 +56,6 @@ class Explanation:
         self.args = args
         self.mask_func = args.mask_value
         self.run_stats = run_stats
-
 
     def extract(self, method: Strategy):
         self.blank()
@@ -122,7 +126,7 @@ class Explanation:
             if len(masks) == self.args.batch:
                 preds = self.prediction_func(tt.stack(masks).to(self.data.device))
                 for j, p in enumerate(preds):
-                    if p.classification == self.data.target.classification: #  type: ignore
+                    if p.classification == self.data.target.classification:  #  type: ignore
                         logger.info(
                             "found an explanation of %f confidence",
                             p.confidence,
@@ -174,7 +178,7 @@ class Explanation:
                     return -1
             d = _apply_to_data(mask, self.data, self.mask_func)
             p = self.prediction_func(d)[0]
-            if p.classification == self.data.target.classification: #  type: ignore
+            if p.classification == self.data.target.classification:  #  type: ignore
                 return self.__global(
                     map=np.where(circle.detach().cpu().numpy(), map, 0)
                 )
@@ -197,7 +201,7 @@ class Explanation:
                 self.data,
                 self.target_map,
                 self.args.heatmap_colours,
-                path = path
+                path=path,
             )
         if self.data.mode == "tabular":
             pass
@@ -220,16 +224,15 @@ class Explanation:
             surface_plot(
                 self.args,
                 self.target_map,
-                self.data.target, #  type: ignore
+                self.data.target,  #  type: ignore
                 path=path,
             )
         else:
             return NotImplementedError
-        
+
     def show(self, path=None):
         if self.data.mode in ("RGB", "L"):
             out = save_image(self.explanation, self.data, self.args, path=path)
             return out
         else:
             return NotImplementedError
-        

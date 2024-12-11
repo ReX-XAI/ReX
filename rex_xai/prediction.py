@@ -6,6 +6,7 @@ from numpy.typing import NDArray
 from typing import Optional, List
 from rex_xai._utils import ff
 
+
 class Prediction:
     def __init__(
         self,

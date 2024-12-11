@@ -56,7 +56,7 @@ class Data:
         data_info = f"Data: {self.mode}, {self.model_shape}, {self.model_height}, {self.model_width}, {self.model_channels}, {self.model_order}"
         if self.target is not None:
             target_info = repr(self.target)
-            data_info = data_info + '\n\t Target:' + target_info
+            data_info = data_info + "\n\t Target:" + target_info
         return data_info
 
     def set_classification(self, cl):
@@ -192,4 +192,6 @@ class Data:
             case "spectral":
                 self.mask_value = lambda m, d: spectral_occlusion(m, d, device=device)
             case _:
-                raise ValueError(f"Invalid mask value {m}. Should be an integer, float, or one of 'min', 'mean', 'spectral'")
+                raise ValueError(
+                    f"Invalid mask value {m}. Should be an integer, float, or one of 'min', 'mean', 'spectral'"
+                )

@@ -139,9 +139,7 @@ def __group_spectral_parts(explanation):
     return res
 
 
-def spectral_plot(
-    explanation, data: Data, ranking, colour, extra=False, path=None
-):
+def spectral_plot(explanation, data: Data, ranking, colour, extra=False, path=None):
     # plt.style.use("seaborn-v0_8")
     explanation = explanation.squeeze()
     if extra:
@@ -235,7 +233,7 @@ def surface_plot(
                 ranking,
                 alpha=0.4,
                 cmap=mpl.colormaps[args.heatmap_colours],
-            )  
+            )
             if args.info:
                 # confidence = 0.0
                 # if k == target.classification:
@@ -252,11 +250,11 @@ def surface_plot(
                     y = int(round(y))  # type: ignore
                     z = ranking[x, y]  # type: ignore
                     ax.scatter(x, y, z, color="b")
-                    
+
                     try:
                         lang = os.environ["LANG"]
                     except KeyError:
-                        lang = 'en_US.UTF-8'
+                        lang = "en_US.UTF-8"
                     if "GB" in lang:
                         ax.text(x, y, z, s="centre of mass")  # type: ignore
                     else:
@@ -302,7 +300,6 @@ def overlay_grid(img, step_count=10):
 
 
 def save_image(explanation, data: Data, args: CausalArgs, path=None):
-
     mask = None
     if data.mode == "RGB" or data.mode == "L":
         if data.mode == "L":
@@ -324,7 +321,7 @@ def save_image(explanation, data: Data, args: CausalArgs, path=None):
 
         if mask is not None:
             if args.raw:
-                out = np.where(mask, img, 0).squeeze(0) # 0 used to mask image with black
+                out = np.where(mask, img, 0).squeeze(0)  # 0 used to mask image with black
                 out = Image.fromarray(out, data.mode)
 
             else:
@@ -343,7 +340,7 @@ def save_image(explanation, data: Data, args: CausalArgs, path=None):
 
                 if args.resize:
                     out = out.resize(data.input.size)
-            
+
             if path is not None:
                 out.save(path)
 

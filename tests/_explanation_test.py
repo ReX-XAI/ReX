@@ -19,21 +19,30 @@ def args_custom_script():
     process_custom_script("tests/scripts/pytorch.py", args)
     return args
 
+
 device = get_device(gpu=False)
 
 
 def test__explanation_snapshot(args_custom_script, snapshot):
     prediction_func, model_shape = get_prediction_func_from_args(args_custom_script)
-    exp = _explanation(args_custom_script, model_shape, prediction_func, device, db=None)
+    exp = _explanation(
+        args_custom_script, model_shape, prediction_func, device, db=None
+    )
 
-    assert exp == snapshot(
-        exclude=props(
-            "obj_function", "spotlight_objective_function", "custom", "custom_location",
-        ),  # paths that differ between systems, pointers to functions that will differ between runs
-        matcher=path_type(
-            types=(CausalArgs,),
-            replacer=lambda data, _: AmberDataSerializer.object_as_named_tuple(
-                data
-            ),  # needed to allow exclude to work for custom classes
-        ),
+    assert (
+        exp
+        == snapshot(
+            exclude=props(
+                "obj_function",
+                "spotlight_objective_function",
+                "custom",
+                "custom_location",
+            ),  # paths that differ between systems, pointers to functions that will differ between runs
+            matcher=path_type(
+                types=(CausalArgs,),
+                replacer=lambda data, _: AmberDataSerializer.object_as_named_tuple(
+                    data
+                ),  # needed to allow exclude to work for custom classes
+            ),
+        )
     )

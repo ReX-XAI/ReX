@@ -7,7 +7,7 @@ from rex_xai.explanation import (
     predict_target,
     get_prediction_func_from_args,
     load_and_preprocess_data,
-    validate_args
+    validate_args,
 )
 
 args = CausalArgs()
@@ -70,7 +70,6 @@ def test_predict_target(snapshot):
 
 
 def test_validate_args():
-    args.path = None #  type: ignore
+    args.path = None  #  type: ignore
     with pytest.raises(FileNotFoundError):
         validate_args(args)
-

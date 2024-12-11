@@ -162,8 +162,10 @@ def calculate_responsibility(data: Data, args: CausalArgs, prediction_func):
     """
 
     if data.target is None or data.target.classification is None:
-        raise ValueError("No target classification found. Please run `predict_target` before running `calculate_responsibility`.")
-    
+        raise ValueError(
+            "No target classification found. Please run `predict_target` before running `calculate_responsibility`."
+        )
+
     maps = ResponsibilityMaps()
     maps.new_map(data.target.classification, data.model_height, data.model_width)
 
@@ -209,11 +211,11 @@ def calculate_responsibility(data: Data, args: CausalArgs, prediction_func):
     )
 
     run_stats = {
-        'total_passing': total_passing, 
-        'total_failing': total_failing, 
-        'max_depth_reached': max_depth_reached, 
-        'avg_box_size': avg_box_size
-        }
+        "total_passing": total_passing,
+        "total_failing": total_failing,
+        "max_depth_reached": max_depth_reached,
+        "avg_box_size": avg_box_size,
+    }
 
     exp = Explanation(maps, prediction_func, data, args, run_stats, keep_all_maps=False)
 
@@ -261,7 +263,7 @@ def analyze(exp: Explanation, data_mode: str | None, logging_level: int):
         "area": rat,
         "entropy_diff": ent,
         "insertion_curve": iauc,
-        "deletion_curve": dauc
+        "deletion_curve": dauc,
     }
 
     return analysis_results
@@ -311,21 +313,21 @@ def _explanation(
     logger.info(time_taken)
 
     if args.surface is not None:
-        if args.surface == "show": 
+        if args.surface == "show":
             path = None
         else:
             path = args.surface
         exp.surface_plot(path)
 
     if args.heatmap is not None:
-        if args.heatmap == "show": 
+        if args.heatmap == "show":
             path = None
         else:
             path = args.heatmap
         exp.heatmap_plot(path)
 
     if args.output is not None:
-        if args.output == "show": 
+        if args.output == "show":
             path = None
         else:
             path = args.output
@@ -338,10 +340,10 @@ def _explanation(
             data.target,  # type: ignore
             exp,
             time_taken,
-            exp.run_stats['total_passing'],
-            exp.run_stats['total_failing'],
-            exp.run_stats['max_depth_reached'],
-            exp.run_stats['avg_box_size'],
+            exp.run_stats["total_passing"],
+            exp.run_stats["total_failing"],
+            exp.run_stats["max_depth_reached"],
+            exp.run_stats["avg_box_size"],
         )
 
     return exp
