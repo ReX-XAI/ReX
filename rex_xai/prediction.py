@@ -4,7 +4,7 @@ import torch as tt
 import torch.nn.functional as F
 from numpy.typing import NDArray
 from typing import Optional, List
-
+from rex_xai._utils import ff
 
 class Prediction:
     def __init__(
@@ -24,11 +24,11 @@ class Prediction:
     def __repr__(self) -> str:
         if self.bounding_box is None:
             if self.is_passing():
-                return f"CLASS: {self.classification}, CONF: {self.confidence}"
+                return f"CLASS: {self.classification}, CONF: {self.confidence:.6f}"
             else:
-                return f"CLASS: {self.classification}, CONF: {self.confidence}, TARGET_CLASS: {self.target}, TARGET_CONFIDENCE: {self.target_confidence}"
+                return f"CLASS: {self.classification}, CONF: {self.confidence:.6f}, TARGET_CLASS: {self.target}, TARGET_CONFIDENCE: {ff(self.target_confidence, '.6f')}"
 
-        return f"CLASS: {self.classification}, CONF: {self.confidence}, TARGET_CLASS: {self.target}, TARGET_CONFIDENCE: {self.target_confidence}, BOUNDING_BOX: {self.bounding_box}"
+        return f"CLASS: {self.classification}, CONF: {self.confidence:.6f}, TARGET_CLASS: {self.target}, TARGET_CONFIDENCE: {ff(self.target_confidence, '.6f')}, BOUNDING_BOX: {self.bounding_box}"
 
     def get_class(self):
         return self.classification
