@@ -205,7 +205,7 @@ def spectral_plot(
 
 def surface_plot(
     args: CausalArgs,
-    resp_map: ResponsibilityMaps,
+    resp_map: np.ndarray,
     target: Prediction,
     path=None,
 ):

@@ -98,7 +98,7 @@ def load_and_preprocess_data(
         Data: the processed input data
 
     """
-    if hasattr(args.custom, "preprocess"):
+    if args.custom is not None and hasattr(args.custom, "preprocess"):
         data = args.custom.preprocess(args.path, model_shape, device, mode=args.mode)
     else:
         # no custom preprocessing, so we make our best guess as to what to do
@@ -160,6 +160,10 @@ def calculate_responsibility(data: Data, args: CausalArgs, prediction_func):
         - max_depth_reached (int)
         - avg_box_size (float)
     """
+
+    if data.target is None or data.target.classification is None:
+        raise ValueError("No target classification found. Please run `predict_target` before running `calculate_responsibility`.")
+    
     maps = ResponsibilityMaps()
     maps.new_map(data.target.classification, data.model_height, data.model_width)
 

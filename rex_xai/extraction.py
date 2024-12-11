@@ -17,12 +17,13 @@ from rex_xai.config import Strategy
 from rex_xai.logger import logger
 from rex_xai.mutant import _apply_to_data
 from rex_xai._utils import get_map_locations, set_boolean_mask_value
+from rex_xai.resp_maps import ResponsibilityMaps
 
 
 class Explanation:
     def __init__(
         self,
-        maps,
+        maps: ResponsibilityMaps,
         prediction_func,
         target: Prediction,
         data: Data,
@@ -35,6 +36,10 @@ class Explanation:
         else:
             maps.subset(target.classification)
             self.maps = maps
+        
+        self.target_map: np.ndarray = maps.get(target.classification)
+        if self.target_map is None:
+            raise ValueError(f"No responsibility map found for target {target.classification}!")
         
         self.explanation: Optional[tt.Tensor] = None
         self.final_mask = None
@@ -95,7 +100,7 @@ class Explanation:
 
     def __global(self, map=None, wipe=False):
         if map is None:
-            map = self.maps.get(self.data.target.classification)
+            map = self.target_map
         ranking = get_map_locations(map)
 
         mutant = tt.zeros(
@@ -139,7 +144,7 @@ class Explanation:
 
     def __spatial(self, centre=None, expansion_limit=None) -> Optional[int]:
         # we don't have a search location to start from, so we try to isolate one
-        map = self.maps.get(self.data.target.classification)
+        map = self.target_map
         if centre is None:
             centre = np.unravel_index(np.argmax(map), map.shape)
 
@@ -187,7 +192,7 @@ class Explanation:
             spectral_plot(
                 self.explanation,
                 self.data,
-                self.maps.get(self.data.target.classification),
+                self.target_map,
                 self.args.heatmap_colours,
                 path = path
             )
@@ -200,7 +205,7 @@ class Explanation:
         if self.data.mode in ("RGB", "L"):
             heatmap_plot(
                 self.data,
-                self.maps.get(self.data.target.classification),
+                self.target_map,
                 self.args.heatmap_colours,
                 self.target,
                 path=path,
@@ -212,7 +217,7 @@ class Explanation:
         if self.data.mode in ("RGB", "L"):
             surface_plot(
                 self.args,
-                self.maps.get(self.data.target.classification),
+                self.target_map,
                 self.target,
                 path=path,
             )
@@ -225,3 +230,4 @@ class Explanation:
             return out
         else:
             return NotImplementedError
+        
