@@ -23,6 +23,7 @@ from rex_xai.logger import logger, set_log_level
 from rex_xai.onnx import get_prediction_function
 from rex_xai.resp_maps import ResponsibilityMaps
 from rex_xai.responsibility import causal_explanation
+from rex_xai.prediction import Prediction
 
 
 def try_preprocess(args: CausalArgs, model_shape: Tuple[int], device: tt.device):
@@ -107,7 +108,7 @@ def load_and_preprocess_data(
     return data
 
 
-def predict_target(data: Data, prediction_func):
+def predict_target(data: Data, prediction_func) -> Prediction:
     """Predicts classification of input data, using given prediction function.
 
     Uses ``prediction_func`` to identify the classification of the input data and return
@@ -119,7 +120,7 @@ def predict_target(data: Data, prediction_func):
         prediction_func: prediction function for the model
 
     Returns:
-        None
+        Prediction: the predicted target classification and confidence
     """
     target = prediction_func(data.data, None)
 
@@ -139,26 +140,25 @@ def predict_target(data: Data, prediction_func):
     return target
 
 
-def calculate_responsibility(data: Data, args: CausalArgs, prediction_func):
-    """Calculates ResponsibilityMaps for input data using given args.
+def calculate_responsibility(data: Data, args: CausalArgs, prediction_func, keep_all_maps=False) -> Explanation:
+    """Calculates an Explanation for input data using given args.
 
     Runs :py:func:`~rex_xai.responsibility.causal_explanation` for ``args.iters`` iterations,
-    and returns the resulting :py:class:`~rex_xai.resp_maps.ResponsibilityMaps` and some statistics about the
-    calculation process.
+    and returns an Explanation object.
+    The resulting Explanation object by default only includes the responsibility map that matches
+    the classification of the input data. Set ``keep_all_maps`` to ``True`` to retain all maps.
+    The  Explanation object also includes some statistics about the calculation process, in the
+    ``run_stats`` field.
 
     Args:
         data: processed input data object
         args: configuration values for ReX
         prediction_func: prediction function for the model
+        keep_all_maps: whether to retain all :py:class:`~rex_xai.resp_maps.ResponsibilityMaps`,
+            or just the one that matches the target classification.
 
     Returns:
-        tuple containing
-
-        - maps (ResponsibilityMaps): maps
-        - total_passing (int)
-        - total_failing (int)
-        - max_depth_reached (int)
-        - avg_box_size (float)
+        Explanation: Explanation for the given data, prediction function, and args.
     """
 
     if data.target is None or data.target.classification is None:
@@ -217,7 +217,7 @@ def calculate_responsibility(data: Data, args: CausalArgs, prediction_func):
         "avg_box_size": avg_box_size,
     }
 
-    exp = Explanation(maps, prediction_func, data, args, run_stats, keep_all_maps=False)
+    exp = Explanation(maps, prediction_func, data, args, run_stats, keep_all_maps=keep_all_maps)
 
     return exp
 
@@ -226,7 +226,7 @@ def analyze(exp: Explanation, data_mode: str | None, logging_level: int):
     """Analyzes an Explanation.
 
     Analyzes the area ratio, entropy difference, insertion and deletion curves for an
-    Explanation object and prints them to ``logging.info``.
+    Explanation object, prints them to ``logging.info``, and returns them.
 
     Args:
         exp: Explanation object as returned by :py:func:`~rex_xai.explanation._explanation`
@@ -236,7 +236,12 @@ def analyze(exp: Explanation, data_mode: str | None, logging_level: int):
             output is printed using :py:func:`logging.info`.
 
     Returns:
-        None
+        tuple containing
+
+        - area (float)
+        - entropy_diff (float)
+        - insertion_curve (float)
+        - deletion_curve (float)
 
     """
     eval = Evaluation(exp)
