@@ -24,11 +24,11 @@ class Prediction:
     def __repr__(self) -> str:
         if self.bounding_box is None:
             if self.is_passing():
-                return f"CLASS: {self.classification}, CONF: {self.confidence:.6f}"
+                return f"CLASS: {self.classification}, CONF: {self.confidence:.5f}"
             else:
-                return f"CLASS: {self.classification}, CONF: {self.confidence:.6f}, TARGET_CLASS: {self.target}, TARGET_CONFIDENCE: {ff(self.target_confidence, '.6f')}"
+                return f"CLASS: {self.classification}, CONF: {self.confidence:.5f}, TARGET_CLASS: {self.target}, TARGET_CONFIDENCE: {ff(self.target_confidence, '.5f')}"
 
-        return f"CLASS: {self.classification}, CONF: {self.confidence:.6f}, TARGET_CLASS: {self.target}, TARGET_CONFIDENCE: {ff(self.target_confidence, '.6f')}, BOUNDING_BOX: {self.bounding_box}"
+        return f"CLASS: {self.classification}, CONF: {self.confidence:.5f}, TARGET_CLASS: {self.target}, TARGET_CONFIDENCE: {ff(self.target_confidence, '.5f')}, BOUNDING_BOX: {self.bounding_box}"
 
     def get_class(self):
         return self.classification

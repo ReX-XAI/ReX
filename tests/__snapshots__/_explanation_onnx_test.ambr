@@ -114,7 +114,7 @@
       'total_failing': 169,
       'total_passing': 41,
     }),
-    target=CLASS: 209, CONF: 0.39423608779907227, TARGET_CLASS: None, TARGET_CONFIDENCE: None,
+    target=CLASS: 209, CONF: 0.39424, TARGET_CLASS: None, TARGET_CONFIDENCE: None,
     target_map=array([[ 5.3333335,  5.3333335,  5.666667 , ..., 10.166666 , 10.166666 ,
           10.166666 ],
          [ 5.3333335,  5.3333335,  5.666667 , ..., 10.166666 , 10.166666 ,
