@@ -189,7 +189,7 @@ def causal_explanation(
                     if args.batch == 1:
                         preds = [
                             prediction_func(
-                                tt.where(m.mask, data.data, data.mask_value),
+                                tt.where(m.mask, data.data, data.mask_value), #  type: ignore
                                 data.target,
                                 binary_threshold=args.binary_threshold,
                             )[0]
@@ -198,7 +198,7 @@ def causal_explanation(
                     else:
                         tensors = tt.stack(
                             [
-                                tt.where(m.mask, data.data, data.mask_value)
+                                tt.where(m.mask, data.data, data.mask_value) #  type: ignore
                                 for m in mutants
                             ]
                         )  # type: ignore

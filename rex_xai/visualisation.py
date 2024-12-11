@@ -95,7 +95,7 @@ def _transparent_cmap(cmap, N=255):
     return mycmap
 
 
-def heatmap_plot(data: Data, resp_map, colour, target: Prediction, path=None):
+def heatmap_plot(data: Data, resp_map, colour, path=None):
     if data.mode in ("RGB", "L"):
         mycmap = _transparent_cmap(mpl.colormaps[colour])
         background = data.input.resize(
@@ -229,13 +229,13 @@ def surface_plot(
             ax.plot_surface(  # type: ignore
                 _x, _y, np.atleast_2d(0), rstride=5, cstride=5, facecolors=img
             )
-            ax.plot_surface(
+            ax.plot_surface(  # type: ignore
                 _x,
                 _y,
                 ranking,
                 alpha=0.4,
                 cmap=mpl.colormaps[args.heatmap_colours],
-            )  # type: ignore
+            )  
             if args.info:
                 # confidence = 0.0
                 # if k == target.classification:

@@ -10,7 +10,7 @@ from rex_xai.visualisation import (
     surface_plot,
     heatmap_plot,
 )
-from rex_xai.prediction import Prediction
+
 from rex_xai.input_data import Data
 from rex_xai.config import CausalArgs
 from rex_xai.config import Strategy
@@ -30,6 +30,10 @@ class Explanation:
         run_stats: dict,
         keep_all_maps = False
     ) -> None:
+        
+        if data.target is None or data.target.classification is None:
+            raise(ValueError("Data must have `target` defined to create an Explanation object!"))
+
         if keep_all_maps:
             self.maps = maps
         else:
@@ -47,6 +51,7 @@ class Explanation:
         self.args = args
         self.mask_func = args.mask_value
         self.run_stats = run_stats
+
 
     def extract(self, method: Strategy):
         self.blank()
@@ -117,7 +122,7 @@ class Explanation:
             if len(masks) == self.args.batch:
                 preds = self.prediction_func(tt.stack(masks).to(self.data.device))
                 for j, p in enumerate(preds):
-                    if p.classification == self.data.target.classification:
+                    if p.classification == self.data.target.classification: #  type: ignore
                         logger.info(
                             "found an explanation of %f confidence",
                             p.confidence,
@@ -169,7 +174,7 @@ class Explanation:
                     return -1
             d = _apply_to_data(mask, self.data, self.mask_func)
             p = self.prediction_func(d)[0]
-            if p.classification == self.data.target.classification:
+            if p.classification == self.data.target.classification: #  type: ignore
                 return self.__global(
                     map=np.where(circle.detach().cpu().numpy(), map, 0)
                 )
@@ -205,7 +210,6 @@ class Explanation:
                 self.data,
                 self.target_map,
                 self.args.heatmap_colours,
-                self.data.target,
                 path=path,
             )
         else:
@@ -216,7 +220,7 @@ class Explanation:
             surface_plot(
                 self.args,
                 self.target_map,
-                self.data.target,
+                self.data.target, #  type: ignore
                 path=path,
             )
         else:

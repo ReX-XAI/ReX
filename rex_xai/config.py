@@ -2,7 +2,7 @@
 
 """config management"""
 
-from typing import List, Optional
+from typing import List, Optional, Union
 from types import ModuleType
 import argparse
 from enum import Enum
@@ -34,13 +34,13 @@ class Args:
         # input file
         self.path: str = ""
         self.model = None
-        self.mode = None
+        self.mode: Optional[str] = None
         self.shape: None = None
         self.db: Optional[str] = None
         # gpu support
         self.gpu: bool = True
         # for reproducability
-        self.seed: Optional[None] = None
+        self.seed: Union[int, float, None] = None
         # for custom scripts (when used as cmdline tool)
         self.custom: Optional[ModuleType] = None
         self.custom_location = None
@@ -119,7 +119,7 @@ class CausalArgs(Args):
         self.type = CAUSAL
         self.tree_depth: int = 10
         self.search_limit: Optional[int] = None
-        self.mask_value = 0
+        self.mask_value: int | float | str = 0
         self.confidence_filter = 0.0
         self.min_box_size: int = 10
         self.segmentation = False

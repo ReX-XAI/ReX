@@ -220,7 +220,7 @@ def calculate_responsibility(data: Data, args: CausalArgs, prediction_func):
     return exp
 
 
-def analyze(exp: Explanation, data_mode: str, logging_level: int):
+def analyze(exp: Explanation, data_mode: str | None, logging_level: int):
     """Analyzes an Explanation.
 
     Analyzes the area ratio, entropy difference, insertion and deletion curves for an

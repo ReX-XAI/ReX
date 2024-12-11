@@ -70,7 +70,7 @@ def test_predict_target(snapshot):
 
 
 def test_validate_args():
-    args.path = None
+    args.path = None #  type: ignore
     with pytest.raises(FileNotFoundError):
         validate_args(args)
 
