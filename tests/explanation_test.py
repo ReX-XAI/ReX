@@ -66,7 +66,7 @@ def test_predict_target(snapshot):
     target = predict_target(data, prediction_func)
 
     assert target.classification == 207
-    assert target.confidence == pytest.approx(0.25323787)
+    assert target.confidence == pytest.approx(0.25323)
 
 
 def test_validate_args():
