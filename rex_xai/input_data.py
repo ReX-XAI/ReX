@@ -53,7 +53,11 @@ class Data:
             self.transposed = False
 
     def __repr__(self) -> str:
-        return f"Data: {self.mode}, {self.model_shape}, {self.model_height}, {self.model_width}, {self.model_channels}, {self.model_order}"
+        data_info = f"Data: {self.mode}, {self.model_shape}, {self.model_height}, {self.model_width}, {self.model_channels}, {self.model_order}"
+        if self.target is not None:
+            target_info = repr(self.target)
+            data_info = data_info + '\n\t Target:' + target_info
+        return data_info
 
     def set_classification(self, cl):
         self.classification = cl

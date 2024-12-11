@@ -31,7 +31,7 @@ def update_database(
             explanation.args,
             target.classification,
             target.confidence,
-            explanation.maps.get(explanation.data.target.classification),
+            explanation.target_map,
             explanation.explanation.detach().cpu().numpy(),  # type: ignore
             time_taken,
             total_passing,

@@ -58,7 +58,8 @@
       verbosity=0,
       weighted=False,
     ),
-    data=Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first,
+    data=Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
+  	 Target:CLASS: 207, CONF: 0.20462, TARGET_CLASS: None, TARGET_CONFIDENCE: None,
     explanation=tensor([[[0., 0., 0.,  ..., 0., 0., 0.],
            [0., 0., 0.,  ..., 0., 0., 0.],
            [0., 0., 0.,  ..., 0., 0., 0.],
@@ -113,7 +114,6 @@
       'total_failing': 126,
       'total_passing': 84,
     }),
-    target=CLASS: 207, CONF: 0.20462, TARGET_CLASS: None, TARGET_CONFIDENCE: None,
     target_map=array([[6.6666665, 6.6666665, 6.6666665, ..., 6.6666665, 6.6666665,
           6.6666665],
          [6.6666665, 6.6666665, 6.6666665, ..., 6.6666665, 6.6666665,

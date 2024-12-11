@@ -25,7 +25,6 @@ class Explanation:
         self,
         maps: ResponsibilityMaps,
         prediction_func,
-        target: Prediction,
         data: Data,
         args: CausalArgs,
         run_stats: dict,
@@ -34,17 +33,16 @@ class Explanation:
         if keep_all_maps:
             self.maps = maps
         else:
-            maps.subset(target.classification)
+            maps.subset(data.target.classification)
             self.maps = maps
         
-        self.target_map: np.ndarray = maps.get(target.classification)
+        self.target_map: np.ndarray = maps.get(data.target.classification) # type: ignore
         if self.target_map is None:
-            raise ValueError(f"No responsibility map found for target {target.classification}!")
+            raise ValueError(f"No responsibility map found for target {data.target.classification}!")
         
         self.explanation: Optional[tt.Tensor] = None
         self.final_mask = None
         self.prediction_func = prediction_func
-        self.target = target
         self.data = data
         self.args = args
         self.mask_func = args.mask_value
@@ -119,7 +117,7 @@ class Explanation:
             if len(masks) == self.args.batch:
                 preds = self.prediction_func(tt.stack(masks).to(self.data.device))
                 for j, p in enumerate(preds):
-                    if p.classification == self.target.classification:
+                    if p.classification == self.data.target.classification:
                         logger.info(
                             "found an explanation of %f confidence",
                             p.confidence,
@@ -171,7 +169,7 @@ class Explanation:
                     return -1
             d = _apply_to_data(mask, self.data, self.mask_func)
             p = self.prediction_func(d)[0]
-            if p.classification == self.target.classification:
+            if p.classification == self.data.target.classification:
                 return self.__global(
                     map=np.where(circle.detach().cpu().numpy(), map, 0)
                 )
@@ -207,7 +205,7 @@ class Explanation:
                 self.data,
                 self.target_map,
                 self.args.heatmap_colours,
-                self.target,
+                self.data.target,
                 path=path,
             )
         else:
@@ -218,7 +216,7 @@ class Explanation:
             surface_plot(
                 self.args,
                 self.target_map,
-                self.target,
+                self.data.target,
                 path=path,
             )
         else:
