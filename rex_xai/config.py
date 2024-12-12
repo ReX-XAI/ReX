@@ -353,7 +353,6 @@ def get_all_args(path=None):
             return args
 
         causal_dict = config_file_args["causal"]
-        # print(causal_dict)
         if "tree_depth" in causal_dict:
             args.tree_depth = causal_dict["tree_depth"]
         if "search_limit" in causal_dict:
@@ -381,9 +380,7 @@ def get_all_args(path=None):
         d = dist["distribution"]
         args.distribution = str2distribution(d)
         if "dist_args" in dist:
-            print(dist)
             args.distribution_args = dist["dist_args"]
-            print(args.distribution_args)
         if "blend" in dist:
             b = dist["blend"]
             if b < 0.0 or b > 1.0:
