@@ -161,8 +161,9 @@ def get_config_file(path):
     try:
         file_args = toml.load(path)
         return file_args
-    except Exception:
-        return None
+    except Exception as e:
+        print(f"unable to read {path}: {e}")
+        exit(-1)
     #     return FileNotFoundError
 
 
@@ -381,7 +382,9 @@ def get_all_args(path=None):
         d = dist["distribution"]
         args.distribution = str2distribution(d)
         if "dist_args" in dist:
+            print(dist)
             args.distribution_args = dist["dist_args"]
+            print(args.distribution_args)
         if "blend" in dist:
             b = dist["blend"]
             if b < 0.0 or b > 1.0:
