@@ -3,15 +3,26 @@
 from typing import Optional, Tuple
 from enum import Enum
 import numpy as np
-# import torch as tt
-
-from numba import njit
 from scipy.stats import binom, betabinom
 
 Distribution = Enum("Distribution", ["Binomial", "Uniform", "BetaBinomial", "Adaptive"])
 
 
-@njit
+def _betabinom2d(height, width, alpha, beta):
+    bx = betabinom(width, alpha, beta)
+    by = betabinom(height, alpha, beta)
+
+    w = np.array([bx.pmf(i) for i in range(0, width)])  # type: ignore
+    h = np.array([by.pmf(i) for i in range(0, height)])  # type: ignore
+
+    w = np.expand_dims(w, axis=0)
+    h = np.expand_dims(h, axis=0)
+
+    u = (h.T * w / np.sum(h.T * w)).ravel()
+    p = np.random.choice(np.arange(0, len(u)), p=u)
+    return p
+
+
 def _blend(dist, alpha, base):
     pmf = np.array([base.pmf(x) for x in range(0, len(dist))])
     blend = ((1.0 - alpha) * pmf) + (alpha * dist)
@@ -53,15 +64,14 @@ def str2distribution(d: str) -> Distribution:
 
 def random_coords(d: Optional[Distribution], *args, map=None) -> int:
     """generates random coordinates given a distribution and args"""
+
+    if args[0] < 2:
+        return -1
+
     if d == Distribution.Adaptive:
         return _2d_adaptive(map, args[0])
-        # h, w = _2d_adaptive(map, args)
-        # return h, w
 
-    # try:
     if d == Distribution.Uniform:
-        if args[0] < 2:
-            return -1
         return np.random.randint(1, args[0])  # type: ignore
 
     if d == Distribution.Binomial:
@@ -69,17 +79,6 @@ def random_coords(d: Optional[Distribution], *args, map=None) -> int:
         return binom(stop - start - 1, dist_args).rvs() + start
 
     if d == Distribution.BetaBinomial:
-        start, stop, *dist_args = args[0]
-        stop -= 1
-        alpha = dist_args[0][0]
-        beta = dist_args[0][1]
-        return betabinom(stop - start, alpha, beta).rvs() + start
+        return _betabinom2d(args[1], args[2], args[3][0], args[3][1])
 
     return -1
-
-    # d is None or an option we don't recognise
-    # return np.random.randint(start, stop)
-    # except BaseException as e:
-    #     logger.fatal("fatal error %s", e)
-    #     return 0
-    # sys.exit(-1)
