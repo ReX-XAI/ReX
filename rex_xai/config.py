@@ -164,7 +164,6 @@ def get_config_file(path):
     except Exception as e:
         print(f"unable to read {path}: {e}")
         exit(-1)
-    #     return FileNotFoundError
 
 
 def cmdargs():
