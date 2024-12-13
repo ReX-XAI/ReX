@@ -43,7 +43,7 @@ class Args:
         # onnx processing
         self.means = None
         self.stds = None
-        self.norm: Optional[float] = None
+        self.norm: Optional[float] = 255.0
         self.binary_threshold = None
         # verbosity
         self.verbosity = 0
@@ -69,7 +69,7 @@ class Args:
         # args for spatial strategy
         self.spatial_radius: int = 25
         self.spatial_eta: float = 0.2
-        self.no_expansions = 4
+        self.no_expansions = 50
         # spotlight args
         self.spotlights: int = 10
         self.spotlight_size: int = 20
@@ -123,9 +123,8 @@ class CausalArgs(Args):
         self.distribution_args: Optional[List] = None
         self.blend = 0.0
         self.weighted: bool = False
-        self.iters = 30
+        self.iters = 20
         self.concentrate = False
-        self.min_confidence = 0.0
         # queue management
         self.queue_len = 1
         self.queue_style = Queue.Area
@@ -178,14 +177,6 @@ def cmdargs():
         const="show",
         help="show minimal explanation, optionally saved to <OUTPUT>. Requires a PIL compatible file extension",
     )
-
-    parser.add_argument(
-        "--array",
-        nargs="?",
-        const="default",
-        help="save the boolean mask as a numpy array to <ARRAY>.",
-    )
-
     parser.add_argument("-c", "--config", type=str, help="config file to use for rex")
 
     parser.add_argument(
@@ -218,22 +209,14 @@ def cmdargs():
         help="heatmap plot, optionally saved to <HEATMAP>",
     )
 
-    parser.add_argument(
-        "--multi",
-        nargs="?",
-        const=0,
-        help="multiple explanations, with optional number <x> of floodlights, defaults to value in rex.toml, or 10 if undefined",
-    )
-
     parser.add_argument("--model", type=str, help="model, must be onnx format")
 
     parser.add_argument(
         "--strategy",
         "-s",
         type=str,
-        help="explanation strategy, one of < spatial | global >",
+        help="explanation strategy, one of < multi | spatial | linear | spotlight >",
     )
-
     parser.add_argument(
         "--database",
         "-db",
