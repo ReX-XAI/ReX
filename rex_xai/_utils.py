@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from enum import Enum
 from typing import Tuple, Union
 from numpy.typing import NDArray
 import torch as tt
@@ -6,6 +7,12 @@ import numpy as np
 from skimage.segmentation import mark_boundaries
 from rex_xai.logger import logger
 from rex_xai.box import Box
+
+Strategy = Enum("Strategy", ["Global", "Spatial", "Spotlight", "MultiSpotlight"])
+
+Queue = Enum("Queue", ["Area", "All", "Intersection", "DC"])
+
+ReXError = Enum("RexError", ["BadToml", "BadPath", "NoExplanation"])
 
 
 def add_boundaries(img: Union[NDArray, tt.Tensor], segs: NDArray) -> NDArray:
