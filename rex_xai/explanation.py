@@ -19,7 +19,7 @@ from rex_xai.database import update_database
 from rex_xai.evaluation import Evaluation
 from rex_xai.extraction import Explanation
 from rex_xai.input_data import Data
-from rex_xai.logger import logger, set_log_level
+from rex_xai.logger import logger
 from rex_xai.onnx import get_prediction_function
 from rex_xai.resp_maps import ResponsibilityMaps
 from rex_xai.responsibility import causal_explanation
@@ -222,18 +222,16 @@ def calculate_responsibility(data: Data, args: CausalArgs, prediction_func, keep
     return exp
 
 
-def analyze(exp: Explanation, data_mode: str | None, logging_level: int):
+def analyze(exp: Explanation, data_mode: str | None):
     """Analyzes an Explanation.
 
     Analyzes the area ratio, entropy difference, insertion and deletion curves for an
-    Explanation object, prints them to ``logging.info``, and returns them.
+    Explanation object, prints them, and returns them.
 
     Args:
         exp: Explanation object as returned by :py:func:`~rex_xai.explanation._explanation`
         data_mode: Mode of the input data. Entropy difference is only calculated if ``data_mode``
             is one of ["RGB", "L"].
-        logging_level: used to set logging level back to its original value after ensuring
-            output is printed using :py:func:`logging.info`.
 
     Returns:
         tuple containing
@@ -253,16 +251,8 @@ def analyze(exp: Explanation, data_mode: str | None, logging_level: int):
         ent = None
 
     iauc, dauc = eval.insertion_deletion_curve(exp.prediction_func)
-    if logging_level < 2:
-        set_log_level(2, logger)
-    logger.info(
-        "area %f, entropy difference %f, insertion curve %f, deletion curve %f",
-        rat,
-        ent,
-        iauc,
-        dauc,
-    )
-    set_log_level(logging_level, logger)
+    
+    print(f"area {rat}, entropy difference {ent}, insertion curve {iauc}, deletion curve {dauc}")
 
     analysis_results = {
         "area": rat,
@@ -311,7 +301,7 @@ def _explanation(
     exp.extract(args.strategy)
 
     if args.analyze:
-        analyze(exp, data.mode, args.verbosity)
+        analyze(exp, data.mode)
 
     end = time.time()
     time_taken = end - start
