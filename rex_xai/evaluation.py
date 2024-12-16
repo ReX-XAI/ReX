@@ -18,8 +18,9 @@ class Evaluation:
 
     def ratio(self) -> float:
         """Returns percentage of data required for sufficient explanation"""
-        assert self.explanation.explanation is not None
-        assert self.explanation.data.model_channels is not None
+        if self.explanation.explanation is None or self.explanation.data.model_channels is None:
+            raise ValueError("Invalid Explanation object")
+
         map = self.explanation.target_map
         try:
             return (

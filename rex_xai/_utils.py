@@ -72,4 +72,8 @@ def set_boolean_mask_value(
 
 
 def ff(obj, fmt):
+    """
+    Like format(obj, fmt), but returns the string 'None' if obj is None.
+    See the help for format() to see acceptable values for fmt.
+    """
     return "None" if obj is None else format(obj, fmt)
