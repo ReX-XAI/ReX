@@ -159,9 +159,9 @@ def get_config_file(path):
     try:
         file_args = toml.load(path)
         return file_args
-    except Exception:
-        return None
-    #     return FileNotFoundError
+    except Exception as e:
+        print(f"unable to read {path}: {e}")
+        exit(-1)
 
 
 def cmdargs():

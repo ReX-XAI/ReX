@@ -131,10 +131,12 @@ class BoxInternal:
         if self.distribution == Distribution.Adaptive:
             pos = random_coords(self.distribution, self.corners(), map=map)
         else:
-            space: int = int(self.row_stop - self.row_start) * (
-                self.col_stop - self.col_start
+            h = int(self.row_stop - self.row_start)
+            w = int(self.col_stop - self.col_start)
+            space: int = h * w
+            pos = random_coords(
+                self.distribution, space, h, w, self.distribution_args, map=map
             )
-            pos = random_coords(self.distribution, space, map=map)
 
         if pos == -1:
             return None
