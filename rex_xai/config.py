@@ -2,8 +2,7 @@
 
 """config management"""
 
-import sys
-from typing import List, Optional
+from typing import List, Optional, Union
 from types import ModuleType
 import argparse
 from enum import Enum
@@ -15,8 +14,8 @@ import toml  # type: ignore
 
 
 from rex_xai.distributions import str2distribution
-from rex_xai.prediction import Prediction
 from rex_xai.distributions import Distribution
+from rex_xai.logger import logger
 
 CAUSAL = Enum("CAUSAL", ["Responsibility"])
 
@@ -35,13 +34,13 @@ class Args:
         # input file
         self.path: str = ""
         self.model = None
-        self.mode = None
+        self.mode: Optional[str] = None
         self.shape: None = None
         self.db: Optional[str] = None
         # gpu support
         self.gpu: bool = True
         # for reproducability
-        self.seed: Optional[None] = None
+        self.seed: Union[int, float, None] = None
         # for custom scripts (when used as cmdline tool)
         self.custom: Optional[ModuleType] = None
         self.custom_location = None
@@ -120,12 +119,11 @@ class CausalArgs(Args):
         self.type = CAUSAL
         self.tree_depth: int = 10
         self.search_limit: Optional[int] = None
-        self.mask_value = 0
+        self.mask_value: int | float | str = 0
         self.confidence_filter = 0.0
         self.min_box_size: int = 10
         self.segmentation = False
         self.data_location: Optional[str] = None
-        self.target: Optional[Prediction] = None
         self.distribution: Distribution = Distribution.Uniform
         self.distribution_args: Optional[List] = None
         self.blend = 0.0
@@ -323,177 +321,156 @@ def shared_args(cmd_args, args: CausalArgs):
     args.processed = cmd_args.processed
 
 
-def get_all_args(path=None):
-    # pylint: disable=too-many-branches
-    # pylint: disable=too-many-statements
-    """parses all arguments from config file and command line"""
-    cmd_args = cmdargs()
-
-    path = None
-    if cmd_args.config is not None:
-        path = cmd_args.config
+def find_config_path():
+    conf_home = expanduser("~/.config/rex.toml")
+    # search in current directory first
+    if exists("rex.toml"):
+        logger.info("using rex.toml in current working directory")
+        config_path = "rex.toml"
+    # fallback on $HOME/.config on linux/macos
+    elif exists(conf_home):
+        logger.info(f"using config in {conf_home}")
+        config_path = conf_home
     else:
-        conf_home = expanduser("~/.config/rex.toml")
-        # search in current directory first
-        if exists("rex.toml"):
-            print("using rex.toml in current working directory")
-            path = "rex.toml"
-        # fallback on $HOME/.config on linux/macos
-        elif exists(conf_home):
-            print(f"using config in {conf_home}")
-            path = conf_home
+        config_path = None
 
-    args = CausalArgs()
-    args.config_location = path
+    return config_path
 
-    try:
-        config_file_args = get_config_file(path)
 
-        if config_file_args is None:
-            return args
+def process_config_dict(config_file_args, args):
+    causal_dict = config_file_args["causal"]
+    if "tree_depth" in causal_dict:
+        args.tree_depth = causal_dict["tree_depth"]
+    if "search_limit" in causal_dict:
+        args.search_limit = causal_dict["search_limit"]
+    if "weighted" in causal_dict:
+        args.weighted = causal_dict["weighted"]
+    if "queue_len" in causal_dict:
+        ql = causal_dict["queue_len"]
+        if ql != "all":
+            args.queue_len = causal_dict["queue_len"]
+    if "queue_style" in causal_dict:
+        args.queue_style = match_queue_style(causal_dict["queue_style"])
+    if "iters" in causal_dict:
+        args.iters = causal_dict["iters"]
+    if "min_box_size" in causal_dict:
+        args.min_box_size = causal_dict["min_box_size"]
+    if "confidence_filter" in causal_dict:
+        args.confidence_filter = causal_dict["confidence_filter"]
+    if "segmentation" in causal_dict:
+        args.segmentation = causal_dict["segmentation"]
+    if "concentrate" in causal_dict:
+        args.concentrate = causal_dict["concentrate"]
 
-        causal_dict = config_file_args["causal"]
-        if "tree_depth" in causal_dict:
-            args.tree_depth = causal_dict["tree_depth"]
-        if "search_limit" in causal_dict:
-            args.search_limit = causal_dict["search_limit"]
-        if "weighted" in causal_dict:
-            args.weighted = causal_dict["weighted"]
-        if "queue_len" in causal_dict:
-            ql = causal_dict["queue_len"]
-            if ql != "all":
-                args.queue_len = causal_dict["queue_len"]
-        if "queue_style" in causal_dict:
-            args.queue_style = match_queue_style(causal_dict["queue_style"])
-        if "iters" in causal_dict:
-            args.iters = causal_dict["iters"]
-        if "min_box_size" in causal_dict:
-            args.min_box_size = causal_dict["min_box_size"]
-        if "confidence_filter" in causal_dict:
-            args.confidence_filter = causal_dict["confidence_filter"]
-        if "segmentation" in causal_dict:
-            args.segmentation = causal_dict["segmentation"]
-        if "concentrate" in causal_dict:
-            args.concentrate = causal_dict["concentrate"]
-
-        dist = causal_dict["distribution"]
-        d = dist["distribution"]
-        args.distribution = str2distribution(d)
-        if "dist_args" in dist:
-            args.distribution_args = dist["dist_args"]
-        if "blend" in dist:
-            b = dist["blend"]
-            if b < 0.0 or b > 1.0:
-                print("impossible blend value")
-                sys.exit(-1)
-            args.blend = dist["blend"]
-
-        rex_dict = config_file_args["rex"]
-        if "mask_value" in rex_dict:
-            args.mask_value = rex_dict["mask_value"]
-        if "seed" in rex_dict:
-            args.seed = rex_dict["seed"]
-        if "gpu" in rex_dict:
-            args.gpu = rex_dict["gpu"]
-        if "batch_size" in rex_dict:
-            args.batch = rex_dict["batch_size"]
-
-        if "onnx" in rex_dict:
-            onnx = rex_dict["onnx"]
-            if "means" in onnx:
-                args.means = onnx["means"]
-            if "stds" in onnx:
-                args.stds = onnx["stds"]
-            if "binary_threshold" in onnx:
-                args.binary_threshold = onnx["binary_threshold"]
-            if "norm" in onnx:
-                args.norm = onnx["norm"]
-
-        if "visual" in rex_dict:
-            if "info" in rex_dict["visual"]:
-                args.info = rex_dict["visual"]["info"]
-            if "colour" in rex_dict["visual"]:
-                args.colour = rex_dict["visual"]["colour"]
-            if "color" in rex_dict["visual"]:
-                args.colour = rex_dict["visual"]["color"]
-            if "alpha" in rex_dict["visual"]:
-                args.alpha = rex_dict["visual"]["alpha"]
-            if "raw" in rex_dict["visual"]:
-                args.raw = rex_dict["visual"]["raw"]
-            if "resize" in rex_dict["visual"]:
-                args.resize = rex_dict["visual"]["resize"]
-            if "progress_bar" in rex_dict["visual"]:
-                args.progress = rex_dict["visual"]["progress_bar"]
-            if "grid" in rex_dict["visual"]:
-                args.grid = rex_dict["visual"]["grid"]
-            if "mark_segments" in rex_dict["visual"]:
-                args.mark_segments = rex_dict["visual"]["mark_segments"]
-            if "heatmap" in rex_dict["visual"]:
-                args.heatmap_colours = rex_dict["visual"]["heatmap"]
-
-        explain_dict = config_file_args["explanation"]
-        if "chunk" in explain_dict:
-            args.chunk_size = explain_dict["chunk"]
-
-        # spatial args
-        spatial_dict = explain_dict["spatial"]
-        if "initial_radius" in spatial_dict:
-            args.spatial_radius = spatial_dict["initial_radius"]
-        if "radius_eta" in spatial_dict:
-            args.spatial_eta = spatial_dict["radius_eta"]
-        if "no_expansions" in spatial_dict:
-            args.no_expansions = spatial_dict["no_expansions"]
-
-        multi_dict = explain_dict["multi"]
-        if "spotlights" in multi_dict:
-            args.spotlights = multi_dict["spotlights"]
-        if "spotlight_size" in multi_dict:
-            args.spotlight_size = multi_dict["spotlight_size"]
-        if "spotlight_eta" in multi_dict:
-            args.spotlight_eta = multi_dict["spotlight_eta"]
-        if "spotlight_step" in multi_dict:
-            args.spotlight_step = multi_dict["spotlight_step"]
-        args.spotlight_objective_function = get_objective_function(multi_dict)  # type: ignore
-
-        eval_dict = explain_dict["evaluation"]
-        if "insertion_step" in eval_dict:
-            args.insertion_step = eval_dict["insertion_step"]
-
-    except KeyError as e:
-        print(f"key error {e} in {path}, so reverting to default args")
-
-    except TypeError:
-        print(
-            "could not find a rex.toml, so running with defaults. This might not produce the effect you want..."
-        )
-
-    if cmd_args.script is not None:
-        try:
-            name, _ = os.path.splitext(cmd_args.script)
-            spec = importlib.util.spec_from_file_location(name, cmd_args.script)
-            script = importlib.util.module_from_spec(spec)  # type: ignore
-            try:
-                spec.loader.exec_module(script)  # type: ignore
-            except Exception as e:
-                print(f"failed to load {name} because of {e}, exiting...")
-                sys.exit(-1)
-            args.custom = script
-            args.custom_location = cmd_args.script
-        except ImportError:
-            pass
-
+    dist = causal_dict["distribution"]
+    d = dist["distribution"]
+    args.distribution = str2distribution(d)
+    if "dist_args" in dist:
+        args.distribution_args = dist["dist_args"]
+    if "blend" in dist:
+        b = dist["blend"]
+        if b < 0.0 or b > 1.0:
+            logger.error("impossible blend value")
+            raise ValueError
+        args.blend = dist["blend"]
     if args.distribution == Distribution.Uniform:
         args.distribution_args = None
 
+    rex_dict = config_file_args["rex"]
+    if "mask_value" in rex_dict:
+        args.mask_value = rex_dict["mask_value"]
+    if "seed" in rex_dict:
+        args.seed = rex_dict["seed"]
+    if "gpu" in rex_dict:
+        args.gpu = rex_dict["gpu"]
+    if "batch_size" in rex_dict:
+        args.batch = rex_dict["batch_size"]
+
+    if "onnx" in rex_dict:
+        onnx = rex_dict["onnx"]
+        if "means" in onnx:
+            args.means = onnx["means"]
+        if "stds" in onnx:
+            args.stds = onnx["stds"]
+        if "binary_threshold" in onnx:
+            args.binary_threshold = onnx["binary_threshold"]
+        if "norm" in onnx:
+            args.norm = onnx["norm"]
+
+    if "visual" in rex_dict:
+        if "info" in rex_dict["visual"]:
+            args.info = rex_dict["visual"]["info"]
+        if "colour" in rex_dict["visual"]:
+            args.colour = rex_dict["visual"]["colour"]
+        if "color" in rex_dict["visual"]:
+            args.colour = rex_dict["visual"]["color"]
+        if "alpha" in rex_dict["visual"]:
+            args.alpha = rex_dict["visual"]["alpha"]
+        if "raw" in rex_dict["visual"]:
+            args.raw = rex_dict["visual"]["raw"]
+        if "resize" in rex_dict["visual"]:
+            args.resize = rex_dict["visual"]["resize"]
+        if "progress_bar" in rex_dict["visual"]:
+            args.progress = rex_dict["visual"]["progress_bar"]
+        if "grid" in rex_dict["visual"]:
+            args.grid = rex_dict["visual"]["grid"]
+        if "mark_segments" in rex_dict["visual"]:
+            args.mark_segments = rex_dict["visual"]["mark_segments"]
+        if "heatmap" in rex_dict["visual"]:
+            args.heatmap_colours = rex_dict["visual"]["heatmap"]
+
+    explain_dict = config_file_args["explanation"]
+    if "chunk" in explain_dict:
+        args.chunk_size = explain_dict["chunk"]
+
+    # spatial args
+    spatial_dict = explain_dict["spatial"]
+    if "initial_radius" in spatial_dict:
+        args.spatial_radius = spatial_dict["initial_radius"]
+    if "radius_eta" in spatial_dict:
+        args.spatial_eta = spatial_dict["radius_eta"]
+    if "no_expansions" in spatial_dict:
+        args.no_expansions = spatial_dict["no_expansions"]
+
+    multi_dict = explain_dict["multi"]
+    if "spotlights" in multi_dict:
+        args.spotlights = multi_dict["spotlights"]
+    if "spotlight_size" in multi_dict:
+        args.spotlight_size = multi_dict["spotlight_size"]
+    if "spotlight_eta" in multi_dict:
+        args.spotlight_eta = multi_dict["spotlight_eta"]
+    if "spotlight_step" in multi_dict:
+        args.spotlight_step = multi_dict["spotlight_step"]
+    args.spotlight_objective_function = get_objective_function(multi_dict)  # type: ignore
+
+    eval_dict = explain_dict["evaluation"]
+    if "insertion_step" in eval_dict:
+        args.insertion_step = eval_dict["insertion_step"]
+
+
+def process_custom_script(script, args):
+    name, _ = os.path.splitext(script)
+    spec = importlib.util.spec_from_file_location(name, script)
+    script = importlib.util.module_from_spec(spec)  # type: ignore
+    try:
+        spec.loader.exec_module(script)  # type: ignore
+    except Exception as e:
+        logger.error(f"failed to load {name} because of {e}, exiting...")
+        raise e
+    args.custom = script
+    args.custom_location = script
+
+
+def process_cmd_args(cmd_args, args):
+    if cmd_args.script is not None:
+        try:
+            process_custom_script(cmd_args.script, args)
+        except ImportError:
+            pass
+
     args.path = cmd_args.filename
 
-    shared_args(cmd_args, args)
-
     args.strategy = match_strategy(cmd_args)
-
-    if args.model is None and args.custom_location is None:
-        print("either a <model>.onnx or a python file must be provided")
-        sys.exit(-1)
 
     if cmd_args.iters is not None:
         args.iters = cmd_args.iters
@@ -503,5 +480,55 @@ def get_all_args(path=None):
 
     if cmd_args.show_all:
         args.all = True
+
+
+def load_config(config_path=None):
+    if config_path is None:
+        config_path = find_config_path()
+
+    args = CausalArgs()
+    args.config_location = config_path
+
+    if config_path is None:
+        logger.warning(
+            "Could not find a rex.toml, so running with defaults. This might not produce the effect you want..."
+        )
+        return args
+    else:
+        config_file_args = get_config_file(config_path)
+
+        if config_file_args is None:
+            logger.warning(
+                f"Error reading config file {config_path}, so running with defaults. This might not produce the effect you want..."
+            )
+        else:
+            try:
+                process_config_dict(config_file_args, args)
+            except KeyError as e:
+                logger.warning(
+                    f"Key error {e} in {config_path}, so reverting to default args"
+                )
+
+    return args
+
+
+def get_all_args():
+    # pylint: disable=too-many-branches
+    # pylint: disable=too-many-statements
+    """parses all arguments from config file and command line"""
+    cmd_args = cmdargs()
+
+    config_path = None
+    if cmd_args.config is not None:
+        config_path = cmd_args.config
+
+    args = load_config(config_path)
+
+    process_cmd_args(cmd_args, args)
+
+    shared_args(cmd_args, args)
+
+    if args.model is None and args.custom_location is None:
+        raise RuntimeError("either a <model>.onnx or a python file must be provided")
 
     return args

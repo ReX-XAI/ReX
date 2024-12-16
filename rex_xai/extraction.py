@@ -4,39 +4,52 @@ from typing import Optional
 import torch as tt
 import numpy as np
 
-from rex_xai.resp_maps import ResponsibilityMaps
-from rex_xai.visualisation import (
-    save_image,
-    spectral_plot,
-    surface_plot,
-    heatmap_plot,
-)
-from rex_xai.prediction import Prediction
+from rex_xai import visualisation
 from rex_xai.input_data import Data
 from rex_xai.config import CausalArgs
 from rex_xai.config import Strategy
 from rex_xai.logger import logger
 from rex_xai.mutant import _apply_to_data
 from rex_xai._utils import get_map_locations, set_boolean_mask_value
+from rex_xai.resp_maps import ResponsibilityMaps
 
 
 class Explanation:
     def __init__(
         self,
-        map,
+        maps: ResponsibilityMaps,
         prediction_func,
-        target: Prediction,
         data: Data,
         args: CausalArgs,
+        run_stats: dict,
+        keep_all_maps=False,
     ) -> None:
-        self.map = map.get(target.classification)
+        if data.target is None or data.target.classification is None:
+            raise (
+                ValueError(
+                    "Data must have `target` defined to create an Explanation object!"
+                )
+            )
+
+        if keep_all_maps:
+            self.maps = maps
+        else:
+            maps.subset(data.target.classification)
+            self.maps = maps
+
+        self.target_map: np.ndarray = maps.get(data.target.classification)  # type: ignore
+        if self.target_map is None:
+            raise ValueError(
+                f"No responsibility map found for target {data.target.classification}!"
+            )
+
         self.explanation: Optional[tt.Tensor] = None
         self.final_mask = None
         self.prediction_func = prediction_func
-        self.target = target
         self.data = data
         self.args = args
         self.mask_func = args.mask_value
+        self.run_stats = run_stats
 
     def extract(self, method: Strategy):
         self.blank()
@@ -88,7 +101,7 @@ class Explanation:
 
     def __global(self, map=None, wipe=False):
         if map is None:
-            map = self.map
+            map = self.target_map
         ranking = get_map_locations(map)
 
         mutant = tt.zeros(
@@ -107,7 +120,7 @@ class Explanation:
             if len(masks) == self.args.batch:
                 preds = self.prediction_func(tt.stack(masks).to(self.data.device))
                 for j, p in enumerate(preds):
-                    if p.classification == self.target.classification:
+                    if p.classification == self.data.target.classification:  #  type: ignore
                         logger.info(
                             "found an explanation of %f confidence",
                             p.confidence,
@@ -132,8 +145,9 @@ class Explanation:
 
     def __spatial(self, centre=None, expansion_limit=None) -> Optional[int]:
         # we don't have a search location to start from, so we try to isolate one
+        map = self.target_map
         if centre is None:
-            centre = np.unravel_index(np.argmax(self.map), self.map.shape)
+            centre = np.unravel_index(np.argmax(map), map.shape)
 
         start_radius = self.args.spatial_radius
         mask = tt.zeros(
@@ -158,9 +172,9 @@ class Explanation:
                     return -1
             d = _apply_to_data(mask, self.data, self.mask_func)
             p = self.prediction_func(d)[0]
-            if p.classification == self.target.classification:
+            if p.classification == self.data.target.classification:  #  type: ignore
                 return self.__global(
-                    map=np.where(circle.detach().cpu().numpy(), self.map, 0)
+                    map=np.where(circle.detach().cpu().numpy(), map, 0)
                 )
             start_radius = int(start_radius * (1 + self.args.spatial_eta))
             circle = self.__circle(centre, start_radius)
@@ -170,45 +184,49 @@ class Explanation:
                 mask[circle, :] = True
             expansions += 1
 
-    def save(self):
-        # if it's an image
+    def save(self, path):
         if self.data.mode in ("RGB", "L"):
-            save_image(self.explanation, self.data, self.args)
-        # if it's a spectral array
+            if path is None:
+                path = f"{self.data.target.classification}.png"  # type: ignore
+            visualisation.save_image(self.explanation, self.data, self.args, path=path)
         if self.data.mode == "spectral":
-            spectral_plot(
-                self.args,
+            visualisation.spectral_plot(
                 self.explanation,
                 self.data,
-                self.map,
+                self.target_map,
                 self.args.heatmap_colours,
+                path=path,
             )
-        # if it's tabular data
         if self.data.mode == "tabular":
             pass
         if self.data.mode == "voxel":
             pass
 
-    def heatmap_plot(self, maps: ResponsibilityMaps):
+    def heatmap_plot(self, path=None):
         if self.data.mode in ("RGB", "L"):
-            if self.args.heatmap == "show":
-                heatmap_plot(self.data, maps, self.args.heatmap_colours, self.target)
-            else:
-                heatmap_plot(
-                    self.data,
-                    maps,
-                    self.args.heatmap_colours,
-                    self.target,
-                    path=self.args.heatmap,
-                )
-
-    def surface_plot(self, maps: ResponsibilityMaps):
-        if self.data.mode == "RGB" or self.data.mode == "L":
-            surface_plot(
-                self.args,
-                maps,
-                self.target,
-                destination=self.args.surface,
+            visualisation.heatmap_plot(
+                self.data,
+                self.target_map,
+                self.args.heatmap_colours,
+                path=path,
             )
+        else:
+            return NotImplementedError
+
+    def surface_plot(self, path=None):
+        if self.data.mode in ("RGB", "L"):
+            visualisation.surface_plot(
+                self.args,
+                self.target_map,
+                self.data.target,  #  type: ignore
+                path=path,
+            )
+        else:
+            return NotImplementedError
+
+    def show(self, path=None):
+        if self.data.mode in ("RGB", "L"):
+            out = visualisation.save_image(self.explanation, self.data, self.args, path=path)
+            return out
         else:
             return NotImplementedError

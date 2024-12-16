@@ -51,3 +51,10 @@ Ruff can automatically fix some issues if you run `ruff check --fix`.
 
 Run `ruff format` to automatically format all files in the current working directory.
 Run `ruff format --diff` to get a preview of any changes that would be made.
+
+## Type checking
+
+We use [Pyright](https://microsoft.github.io/pyright/#/) for type checking.
+You can [install](https://microsoft.github.io/pyright/#/installation) the command line tool and/or an extension for your favourite editor.
+Upon a pull request, a check is run that compares the number of errors and warnings from Pyright in the branches being compared in the PR.
+Ideally, the number of errors/warnings will not increase!
