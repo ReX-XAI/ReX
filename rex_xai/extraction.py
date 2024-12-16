@@ -4,13 +4,7 @@ from typing import Optional
 import torch as tt
 import numpy as np
 
-from rex_xai.visualisation import (
-    save_image,
-    spectral_plot,
-    surface_plot,
-    heatmap_plot,
-)
-
+from rex_xai import visualisation
 from rex_xai.input_data import Data
 from rex_xai.config import CausalArgs
 from rex_xai.config import Strategy
@@ -194,9 +188,9 @@ class Explanation:
         if self.data.mode in ("RGB", "L"):
             if path is None:
                 path = f"{self.data.target.classification}.png"  # type: ignore
-            save_image(self.explanation, self.data, self.args, path=path)
+            visualisation.save_image(self.explanation, self.data, self.args, path=path)
         if self.data.mode == "spectral":
-            spectral_plot(
+            visualisation.spectral_plot(
                 self.explanation,
                 self.data,
                 self.target_map,
@@ -210,7 +204,7 @@ class Explanation:
 
     def heatmap_plot(self, path=None):
         if self.data.mode in ("RGB", "L"):
-            heatmap_plot(
+            visualisation.heatmap_plot(
                 self.data,
                 self.target_map,
                 self.args.heatmap_colours,
@@ -221,7 +215,7 @@ class Explanation:
 
     def surface_plot(self, path=None):
         if self.data.mode in ("RGB", "L"):
-            surface_plot(
+            visualisation.surface_plot(
                 self.args,
                 self.target_map,
                 self.data.target,  #  type: ignore
@@ -232,7 +226,7 @@ class Explanation:
 
     def show(self, path=None):
         if self.data.mode in ("RGB", "L"):
-            out = save_image(self.explanation, self.data, self.args, path=path)
+            out = visualisation.save_image(self.explanation, self.data, self.args, path=path)
             return out
         else:
             return NotImplementedError
