@@ -44,7 +44,6 @@ class MultiExplanation:
 # import numpy as np
 # from numpy.typing import NDArray
 # from numpy.random import randn
-# from numba import njit
 # from tqdm import trange
 
 # from rex_xai.config import CausalArgs
@@ -54,7 +53,6 @@ class MultiExplanation:
 # # from rex_xai.ranking import linear_search, neighbours, spatial_search
 
 
-# @njit
 # def dice(im1, im2):
 #     """calculates dice coefficient between two numpy arrays of the same dimensions"""
 #     im_sum = im1.sum() + im2.sum()
