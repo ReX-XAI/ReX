@@ -12,7 +12,27 @@ Strategy = Enum("Strategy", ["Global", "Spatial", "Spotlight", "MultiSpotlight"]
 
 Queue = Enum("Queue", ["Area", "All", "Intersection", "DC"])
 
-ReXError = Enum("RexError", ["BadToml", "BadPath", "NoExplanation"])
+
+class ReXError(Exception):
+    pass
+
+
+class ReXTomlError(ReXError):
+    def __init__(self, message) -> None:
+        self.message = message
+        super().__init__(self.message)
+
+    def __str__(self) -> str:
+        return f"ReXTomlError: {self.message}"
+
+
+class ReXPathError(ReXError):
+    def __init__(self, message) -> None:
+        self.message = message
+        super().__init__(self.message)
+
+    def __str__(self) -> str:
+        return f"ReXPathError: no such file exists at {self.message}"
 
 
 def add_boundaries(img: Union[NDArray, tt.Tensor], segs: NDArray) -> NDArray:
@@ -38,7 +58,6 @@ def get_map_locations(map, reverse=True):
         coords.append((r, np.unravel_index(i, map.shape)))
     coords = sorted(coords, reverse=reverse)
     return coords
-    #
 
 
 def set_boolean_mask_value(

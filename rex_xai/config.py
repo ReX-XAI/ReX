@@ -16,7 +16,7 @@ import toml  # type: ignore
 from rex_xai.distributions import str2distribution
 from rex_xai.prediction import Prediction
 from rex_xai.distributions import Distribution
-from rex_xai._utils import Strategy, Queue, ReXError
+from rex_xai._utils import Strategy, Queue, ReXError, ReXPathError, ReXTomlError
 
 
 class Args:
@@ -147,18 +147,15 @@ class CausalArgs(Args):
 
 
 def get_config_file(path):
-    """parses toml file into dictionary"""
     if path is None:
         return None
     if not os.path.isfile(path):
-        return ReXError.BadPath
+        raise ReXPathError(path)
     try:
         file_args = toml.load(path)
         return file_args
     except Exception as e:
-        print("The following error has been found while parsing your config file:")
-        print(e)
-        return ReXError.BadToml
+        raise ReXTomlError(e)
 
 
 def cmdargs():
@@ -259,7 +256,7 @@ def cmdargs():
 
 def match_strategy(cmd_args):
     """gets explanation extraction strategy"""
-    if cmd_args.multi is not None or cmd_args.strategy == "multi":
+    if cmd_args.strategy == "multi":
         return Strategy.MultiSpotlight
     if cmd_args.strategy == "linear" or cmd_args.strategy == "global":
         return Strategy.Global
@@ -342,133 +339,117 @@ def get_all_args(path=None):
 
     try:
         config_file_args = get_config_file(path)
-        if config_file_args is None:
-            print(
-                "ReX could not find a rex.toml, so running with defaults. This might not produce the effect you want..."
-            )
-        if config_file_args == ReXError.BadPath:
-            print(
-                f"The path you supplied for your config <{path}> is not correct. Have another look."
-            )
-            exit(-1)
-        if config_file_args == ReXError.BadToml:
-            exit(-1)
-
-        if config_file_args is not None:
-            causal_dict = config_file_args["causal"]
-            if "tree_depth" in causal_dict:
-                args.tree_depth = causal_dict["tree_depth"]
-            if "search_limit" in causal_dict:
-                args.search_limit = causal_dict["search_limit"]
-            if "weighted" in causal_dict:
-                args.weighted = causal_dict["weighted"]
-            if "queue_len" in causal_dict:
-                ql = causal_dict["queue_len"]
-                if ql != "all":
-                    args.queue_len = causal_dict["queue_len"]
-            if "queue_style" in causal_dict:
-                args.queue_style = match_queue_style(causal_dict["queue_style"])
-            if "iters" in causal_dict:
-                args.iters = causal_dict["iters"]
-            if "min_box_size" in causal_dict:
-                args.min_box_size = causal_dict["min_box_size"]
-            if "confidence_filter" in causal_dict:
-                args.confidence_filter = causal_dict["confidence_filter"]
-            if "segmentation" in causal_dict:
-                args.segmentation = causal_dict["segmentation"]
-            if "concentrate" in causal_dict:
-                args.concentrate = causal_dict["concentrate"]
-
-            dist = causal_dict["distribution"]
-            d = dist["distribution"]
-            args.distribution = str2distribution(d)
-            if "dist_args" in dist:
-                args.distribution_args = dist["dist_args"]
-            if "blend" in dist:
-                b = dist["blend"]
-                if b < 0.0 or b > 1.0:
-                    print("impossible blend value")
-                    sys.exit(-1)
-                args.blend = dist["blend"]
-
-            rex_dict = config_file_args["rex"]
-            if "mask_value" in rex_dict:
-                args.mask_value = rex_dict["mask_value"]
-            if "seed" in rex_dict:
-                args.seed = rex_dict["seed"]
-            if "gpu" in rex_dict:
-                args.gpu = rex_dict["gpu"]
-            if "batch_size" in rex_dict:
-                args.batch = rex_dict["batch_size"]
-
-            if "onnx" in rex_dict:
-                onnx = rex_dict["onnx"]
-                if "means" in onnx:
-                    args.means = onnx["means"]
-                if "stds" in onnx:
-                    args.stds = onnx["stds"]
-                if "binary_threshold" in onnx:
-                    args.binary_threshold = onnx["binary_threshold"]
-                if "norm" in onnx:
-                    args.norm = onnx["norm"]
-
-            if "visual" in rex_dict:
-                if "info" in rex_dict["visual"]:
-                    args.info = rex_dict["visual"]["info"]
-                if "colour" in rex_dict["visual"]:
-                    args.colour = rex_dict["visual"]["colour"]
-                if "color" in rex_dict["visual"]:
-                    args.colour = rex_dict["visual"]["color"]
-                if "alpha" in rex_dict["visual"]:
-                    args.alpha = rex_dict["visual"]["alpha"]
-                if "raw" in rex_dict["visual"]:
-                    args.raw = rex_dict["visual"]["raw"]
-                if "resize" in rex_dict["visual"]:
-                    args.resize = rex_dict["visual"]["resize"]
-                if "progress_bar" in rex_dict["visual"]:
-                    args.progress = rex_dict["visual"]["progress_bar"]
-                if "grid" in rex_dict["visual"]:
-                    args.grid = rex_dict["visual"]["grid"]
-                if "mark_segments" in rex_dict["visual"]:
-                    args.mark_segments = rex_dict["visual"]["mark_segments"]
-                if "heatmap" in rex_dict["visual"]:
-                    args.heatmap_colours = rex_dict["visual"]["heatmap"]
-
-            explain_dict = config_file_args["explanation"]
-            if "chunk" in explain_dict:
-                args.chunk_size = explain_dict["chunk"]
-
-            # spatial args
-            spatial_dict = explain_dict["spatial"]
-            if "initial_radius" in spatial_dict:
-                args.spatial_radius = spatial_dict["initial_radius"]
-            if "radius_eta" in spatial_dict:
-                args.spatial_eta = spatial_dict["radius_eta"]
-            if "no_expansions" in spatial_dict:
-                args.no_expansions = spatial_dict["no_expansions"]
-
-            multi_dict = explain_dict["multi"]
-            if "spotlights" in multi_dict:
-                args.spotlights = multi_dict["spotlights"]
-            if "spotlight_size" in multi_dict:
-                args.spotlight_size = multi_dict["spotlight_size"]
-            if "spotlight_eta" in multi_dict:
-                args.spotlight_eta = multi_dict["spotlight_eta"]
-            if "spotlight_step" in multi_dict:
-                args.spotlight_step = multi_dict["spotlight_step"]
-            args.spotlight_objective_function = get_objective_function(multi_dict)  # type: ignore
-
-            if cmd_args.multi is not None:
-                if int(cmd_args.multi) > 0:
-                    args.spotlights = int(cmd_args.multi)
-
-            eval_dict = explain_dict["evaluation"]
-            if "insertion_step" in eval_dict:
-                args.insertion_step = eval_dict["insertion_step"]
-
-    except Exception as e:
-        print(f"The following very unexpected error occurred: {e}")
+    except ReXError as e:
+        print(e)
         exit(-1)
+
+    if config_file_args is not None:
+        causal_dict = config_file_args["causal"]
+        if "tree_depth" in causal_dict:
+            args.tree_depth = causal_dict["tree_depth"]
+        if "search_limit" in causal_dict:
+            args.search_limit = causal_dict["search_limit"]
+        if "weighted" in causal_dict:
+            args.weighted = causal_dict["weighted"]
+        if "queue_len" in causal_dict:
+            ql = causal_dict["queue_len"]
+            if ql != "all":
+                args.queue_len = causal_dict["queue_len"]
+        if "queue_style" in causal_dict:
+            args.queue_style = match_queue_style(causal_dict["queue_style"])
+        if "iters" in causal_dict:
+            args.iters = causal_dict["iters"]
+        if "min_box_size" in causal_dict:
+            args.min_box_size = causal_dict["min_box_size"]
+        if "confidence_filter" in causal_dict:
+            args.confidence_filter = causal_dict["confidence_filter"]
+        if "segmentation" in causal_dict:
+            args.segmentation = causal_dict["segmentation"]
+        if "concentrate" in causal_dict:
+            args.concentrate = causal_dict["concentrate"]
+
+        dist = causal_dict["distribution"]
+        d = dist["distribution"]
+        args.distribution = str2distribution(d)
+        if "dist_args" in dist:
+            args.distribution_args = dist["dist_args"]
+        if "blend" in dist:
+            b = dist["blend"]
+            if b < 0.0 or b > 1.0:
+                print("impossible blend value")
+                sys.exit(-1)
+            args.blend = dist["blend"]
+
+        rex_dict = config_file_args["rex"]
+        if "mask_value" in rex_dict:
+            args.mask_value = rex_dict["mask_value"]
+        if "seed" in rex_dict:
+            args.seed = rex_dict["seed"]
+        if "gpu" in rex_dict:
+            args.gpu = rex_dict["gpu"]
+        if "batch_size" in rex_dict:
+            args.batch = rex_dict["batch_size"]
+
+        if "onnx" in rex_dict:
+            onnx = rex_dict["onnx"]
+            if "means" in onnx:
+                args.means = onnx["means"]
+            if "stds" in onnx:
+                args.stds = onnx["stds"]
+            if "binary_threshold" in onnx:
+                args.binary_threshold = onnx["binary_threshold"]
+            if "norm" in onnx:
+                args.norm = onnx["norm"]
+
+        if "visual" in rex_dict:
+            if "info" in rex_dict["visual"]:
+                args.info = rex_dict["visual"]["info"]
+            if "colour" in rex_dict["visual"]:
+                args.colour = rex_dict["visual"]["colour"]
+            if "color" in rex_dict["visual"]:
+                args.colour = rex_dict["visual"]["color"]
+            if "alpha" in rex_dict["visual"]:
+                args.alpha = rex_dict["visual"]["alpha"]
+            if "raw" in rex_dict["visual"]:
+                args.raw = rex_dict["visual"]["raw"]
+            if "resize" in rex_dict["visual"]:
+                args.resize = rex_dict["visual"]["resize"]
+            if "progress_bar" in rex_dict["visual"]:
+                args.progress = rex_dict["visual"]["progress_bar"]
+            if "grid" in rex_dict["visual"]:
+                args.grid = rex_dict["visual"]["grid"]
+            if "mark_segments" in rex_dict["visual"]:
+                args.mark_segments = rex_dict["visual"]["mark_segments"]
+            if "heatmap" in rex_dict["visual"]:
+                args.heatmap_colours = rex_dict["visual"]["heatmap"]
+
+        explain_dict = config_file_args["explanation"]
+        if "chunk" in explain_dict:
+            args.chunk_size = explain_dict["chunk"]
+
+        # spatial args
+        spatial_dict = explain_dict["spatial"]
+        if "initial_radius" in spatial_dict:
+            args.spatial_radius = spatial_dict["initial_radius"]
+        if "radius_eta" in spatial_dict:
+            args.spatial_eta = spatial_dict["radius_eta"]
+        if "no_expansions" in spatial_dict:
+            args.no_expansions = spatial_dict["no_expansions"]
+
+        multi_dict = explain_dict["multi"]
+        if "spotlights" in multi_dict:
+            args.spotlights = multi_dict["spotlights"]
+        if "spotlight_size" in multi_dict:
+            args.spotlight_size = multi_dict["spotlight_size"]
+        if "spotlight_eta" in multi_dict:
+            args.spotlight_eta = multi_dict["spotlight_eta"]
+        if "spotlight_step" in multi_dict:
+            args.spotlight_step = multi_dict["spotlight_step"]
+        args.spotlight_objective_function = get_objective_function(multi_dict)  # type: ignore
+
+        eval_dict = explain_dict["evaluation"]
+        if "insertion_step" in eval_dict:
+            args.insertion_step = eval_dict["insertion_step"]
 
     if cmd_args.script is not None:
         try:
