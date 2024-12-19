@@ -18,17 +18,23 @@ class Evaluation:
 
     def ratio(self) -> float:
         """Returns percentage of data required for sufficient explanation"""
-        assert self.explanation.explanation is not None
+        if (
+            self.explanation.explanation is None
+            or self.explanation.data.model_channels is None
+        ):
+            raise ValueError("Invalid Explanation object")
+
+        map = self.explanation.target_map
         try:
             return (
                 tt.count_nonzero(self.explanation.explanation.squeeze()).item()
-                / self.explanation.map.size
+                / map.size
                 / self.explanation.data.model_channels
             )
         except TypeError:
             return (
                 np.count_nonzero(self.explanation.explanation)
-                / self.explanation.map.size
+                / map.size
                 / self.explanation.data.model_channels
             )
 
@@ -46,8 +52,8 @@ class Evaluation:
         insertion_curve = []
         deletion_curve = []
 
-        assert self.explanation.args.target is not None
-        assert self.explanation.args.target.confidence is not None
+        assert self.explanation.data.target is not None
+        assert self.explanation.data.target.confidence is not None
 
         assert self.explanation.data.data is not None
         insertion_mask = tt.zeros(
@@ -60,7 +66,7 @@ class Evaluation:
         dm = []
 
         step = self.explanation.args.insertion_step
-        ranking = get_map_locations(map=self.explanation.map)
+        ranking = get_map_locations(map=self.explanation.target_map)
         iters = len(ranking) // step
 
         for i in range(0, len(ranking), step):
@@ -95,10 +101,10 @@ class Evaluation:
             self.__batch(im, dm, prediction_func, insertion_curve, deletion_curve)
 
         i_auc = simpson(insertion_curve, dx=step) / (
-            (self.explanation.args.target.confidence) * iters * step
+            (self.explanation.data.target.confidence) * iters * step
         )  # type: ignore
         d_auc = simpson(deletion_curve, dx=step) / (
-            (self.explanation.args.target.confidence) * iters * step
+            (self.explanation.data.target.confidence) * iters * step
         )  # type: ignore
 
         return i_auc, d_auc
@@ -110,13 +116,13 @@ class Evaluation:
     #     #     pass
 
     def __batch(self, im, dm, prediction_func, insertion_curve, deletion_curve):
-        assert self.explanation.args.target is not None
+        assert self.explanation.data.target is not None
         ip = prediction_func(tt.stack(im).to(self.explanation.data.device), raw=True)
         dp = prediction_func(tt.stack(dm).to(self.explanation.data.device), raw=True)
         for p in range(0, ip.shape[0]):
             insertion_curve.append(
-                ip[p, self.explanation.args.target.classification].item()
+                ip[p, self.explanation.data.target.classification].item()
             )  # type: ignore
             deletion_curve.append(
-                dp[p, self.explanation.args.target.classification].item()
+                dp[p, self.explanation.data.target.classification].item()
             )  # type: ignore

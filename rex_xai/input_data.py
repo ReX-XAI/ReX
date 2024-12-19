@@ -5,6 +5,9 @@ import torch as tt
 
 from enum import Enum
 
+from rex_xai.occlusions import spectral_occlusion
+from rex_xai.prediction import Prediction
+
 Setup = Enum("Setup", ["ONNXMPS", "ONNX", "PYTORCH"])
 
 
@@ -19,7 +22,7 @@ class Data:
     def __init__(self, input, model_shape, device, mode=None, process=True) -> None:
         self.input = input
         self.mode = None
-        self.classification = None
+        self.target: Optional[Prediction] = None
         self.device = device
         self.setup: Optional[Setup] = None
 
@@ -35,6 +38,7 @@ class Data:
         self.model_width: Optional[int] = width
         self.model_channels: Optional[int] = channels
         self.model_order = order
+        self.mask_value = None
 
         if process:
             # RGB model but greyscale input so we convery greyscale to pseudo-RGB
@@ -49,7 +53,11 @@ class Data:
             self.transposed = False
 
     def __repr__(self) -> str:
-        return f"Data: {self.mode}, {self.model_shape}, {self.model_height}, {self.model_width}, {self.model_channels}, {self.model_order}"
+        data_info = f"Data: {self.mode}, {self.model_shape}, {self.model_height}, {self.model_width}, {self.model_channels}, {self.model_order}"
+        if self.target is not None:
+            target_info = repr(self.target)
+            data_info = data_info + "\n\t Target:" + target_info
+        return data_info
 
     def set_classification(self, cl):
         self.classification = cl
@@ -170,3 +178,20 @@ class Data:
         if self.mode == "voxel":
             pass
         return None, None, None, None
+
+    def set_mask_value(self, m, device="cpu"):
+        assert self.data is not None
+        # if m is a number, then if might still need to be normalised
+        match m:
+            case int() | float() as m:
+                self.mask_value = m
+            case "min":
+                self.mask_value = tt.min(self.data).item()  # type: ignore
+            case "mean":
+                self.mask_value = tt.mean(self.data).item()  # type: ignore
+            case "spectral":
+                self.mask_value = lambda m, d: spectral_occlusion(m, d, device=device)
+            case _:
+                raise ValueError(
+                    f"Invalid mask value {m}. Should be an integer, float, or one of 'min', 'mean', 'spectral'"
+                )

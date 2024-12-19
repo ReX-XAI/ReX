@@ -5,7 +5,6 @@
 from PIL import Image, ImageDraw
 import os
 
-# from matplotlib.text import Rectangle #type: ignore
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -96,18 +95,15 @@ def _transparent_cmap(cmap, N=255):
     return mycmap
 
 
-def heatmap_plot(data: Data, resp_maps, colour, target: Prediction, path=None):
+def heatmap_plot(data: Data, resp_map, colour, path=None):
     if data.mode in ("RGB", "L"):
         mycmap = _transparent_cmap(mpl.colormaps[colour])
         background = data.input.resize(
             (data.model_height, data.model_width)
         )  # TODO check these dimensions
-        x, y = np.mgrid[0 : data.model_height, 0 : data.model_width]
+        y, x = np.mgrid[0 : data.model_height, 0 : data.model_width]
         fig, ax = plt.subplots(1, 1)
         ax.imshow(background)
-        resp_map = resp_maps.get(target.classification)
-        # TODO this is not working as expected
-        resp_map = np.rot90(resp_map, k=2)
         ax.contourf(x, y, resp_map, 15, cmap=mycmap)
         plt.axis("off")
         ax.get_xaxis().set_visible(False)
@@ -143,9 +139,7 @@ def __group_spectral_parts(explanation):
     return res
 
 
-def spectral_plot(
-    args: CausalArgs, explanation, data: Data, ranking, colour, extra=False
-):
+def spectral_plot(explanation, data: Data, ranking, colour, extra=False, path=None):
     # plt.style.use("seaborn-v0_8")
     explanation = explanation.squeeze()
     if extra:
@@ -176,8 +170,8 @@ def spectral_plot(
     ax.plot(data)  # type: ignore
     ax.set_ylabel("Wave Intensity")
 
-    k = args.target.classification  # type: ignore
-    confidence = args.target.confidence  # type: ignore
+    k = data.target.classification  # type: ignore
+    confidence = data.target.confidence  # type: ignore
     fig.suptitle(
         f"Spectrum and Responsibility\nTarget: {k}\nconfidence {confidence:5.4f}"
     )
@@ -201,20 +195,20 @@ def spectral_plot(
     #     )
     #     axs[0].add_patch(rectangle)
 
-    if args.output == "show":
+    if path is None:
         plt.show()
     else:
-        plt.savefig(args.output, dpi=300)
+        plt.savefig(path, dpi=300)
 
 
 def surface_plot(
     args: CausalArgs,
-    resp_maps: ResponsibilityMaps,
+    resp_map: np.ndarray,
     target: Prediction,
-    destination=None,
+    path=None,
 ):
     """plots a 3d surface plot"""
-    img, _x, _y = plot_3d(args.path, resp_maps.get(target.classification), True)
+    img, _x, _y = plot_3d(args.path, resp_map, True)
     fig = plt.figure()
 
     # TODO enable visualisation of sub-responsibility maps
@@ -222,21 +216,24 @@ def surface_plot(
 
     rows, cols = 1, len(keys)
 
+    # currently this for loop does nothing as keys always has len = 1
+    # if passing in multiple responsibility maps, would need to use
+    # ranking = resp_maps.get(k) for each iteration
     for i, k in enumerate(keys):
-        ranking = resp_maps.get(k)
+        ranking = resp_map
         if ranking is not None:
             ax = fig.add_subplot(rows, cols, i + 1, projection="3d")
 
             ax.plot_surface(  # type: ignore
                 _x, _y, np.atleast_2d(0), rstride=5, cstride=5, facecolors=img
             )
-            ax.plot_surface(
+            ax.plot_surface(  # type: ignore
                 _x,
                 _y,
-                resp_maps.get(k),
+                ranking,
                 alpha=0.4,
                 cmap=mpl.colormaps[args.heatmap_colours],
-            )  # type: ignore
+            )
             if args.info:
                 # confidence = 0.0
                 # if k == target.classification:
@@ -253,7 +250,12 @@ def surface_plot(
                     y = int(round(y))  # type: ignore
                     z = ranking[x, y]  # type: ignore
                     ax.scatter(x, y, z, color="b")
-                    if "GB" in os.environ["LANG"]:
+
+                    try:
+                        lang = os.environ["LANG"]
+                    except KeyError:
+                        lang = "en_US.UTF-8"
+                    if "GB" in lang:
                         ax.text(x, y, z, s="centre of mass")  # type: ignore
                     else:
                         ax.text(x, y, z, s="center of mass")  # type: ignore
@@ -268,10 +270,10 @@ def surface_plot(
                 else:
                     plt.title(f"Submap for {k}\nconfidence {confidence:5.4f}")
 
-        if destination == "show":
+        if path is None:
             plt.show()
         else:
-            plt.savefig(destination, bbox_inches="tight", dpi=300)
+            plt.savefig(path, bbox_inches="tight", dpi=300)
 
 
 def overlay_grid(img, step_count=10):
@@ -297,12 +299,7 @@ def overlay_grid(img, step_count=10):
     return img
 
 
-def save_image(explanation, data: Data, args: CausalArgs):
-    if args.output is not None:
-        name = args.output
-    else:
-        name = f"{args.target.classification}.png"  # type: ignore
-
+def save_image(explanation, data: Data, args: CausalArgs, path=None):
     mask = None
     if data.mode == "RGB" or data.mode == "L":
         if data.mode == "L":
@@ -324,10 +321,10 @@ def save_image(explanation, data: Data, args: CausalArgs):
 
         if mask is not None:
             if args.raw:
-                out = np.where(mask, img, 0).squeeze(0) # 0 used to mask image with black
+                out = np.where(mask, img, 0).squeeze(
+                    0
+                )  # 0 used to mask image with black
                 out = Image.fromarray(out, data.mode)
-                out.save(name)
-                return out
 
             else:
                 exp = np.where(mask, img, args.colour)
@@ -346,5 +343,7 @@ def save_image(explanation, data: Data, args: CausalArgs):
                 if args.resize:
                     out = out.resize(data.input.size)
 
-                out.save(name)
-                return out
+            if path is not None:
+                out.save(path)
+
+            return out

@@ -110,7 +110,7 @@ def causal_explanation(
         function that calls a model and return a Prediction object
     """
 
-    assert args.target is not None
+    assert data.target is not None
 
     if args.seed is not None:
         np.random.seed(args.seed + process)
@@ -171,7 +171,7 @@ def causal_explanation(
                             data,
                             static=static,
                             active=current,
-                            masking_func=args.mask_value,
+                            masking_func=data.mask_value,
                         )
                         m.set_active_mask_regions(nps)
                         m.set_static_mask_regions(static, search_tree)
@@ -181,7 +181,7 @@ def causal_explanation(
 
                 if data.mode in ("spectral", "tabular"):
                     preds: List[Prediction] = [
-                        prediction_func(m.mask, args.target, binary_threshold=None)[0]
+                        prediction_func(m.mask, data.target, binary_threshold=None)[0]
                         for m in mutants
                     ]
                 else:
@@ -189,8 +189,8 @@ def causal_explanation(
                     if args.batch == 1:
                         preds = [
                             prediction_func(
-                                tt.where(m.mask, data.data, args.mask_value),
-                                args.target,
+                                tt.where(m.mask, data.data, data.mask_value),  #  type: ignore
+                                data.target,
                                 binary_threshold=args.binary_threshold,
                             )[0]
                             for m in mutants
@@ -198,7 +198,7 @@ def causal_explanation(
                     else:
                         tensors = tt.stack(
                             [
-                                tt.where(m.mask, data.data, args.mask_value)
+                                tt.where(m.mask, data.data, data.mask_value)  #  type: ignore
                                 for m in mutants
                             ]
                         )  # type: ignore
@@ -206,19 +206,19 @@ def causal_explanation(
                             tensors = tensors.squeeze(1)
                         preds: List[Prediction] = prediction_func(
                             tensors,
-                            args.target,
+                            data.target,
                             binary_threshold=args.binary_threshold,
                         )
 
                 for i, m in enumerate(mutants):
                     m.prediction = preds[i]
-                    m.update_status(args.target)
+                    m.update_status(data.target)
 
                 passing: List[Mutant] = list(
                     filter(
                         lambda m: m.passing
                         and m.prediction.confidence
-                        >= (args.target.confidence * args.confidence_filter),  # type: ignore
+                        >= (data.target.confidence * args.confidence_filter),  # type: ignore
                         mutants,
                     )
                 )
