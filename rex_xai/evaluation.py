@@ -18,7 +18,10 @@ class Evaluation:
 
     def ratio(self) -> float:
         """Returns percentage of data required for sufficient explanation"""
-        if self.explanation.explanation is None or self.explanation.data.model_channels is None:
+        if (
+            self.explanation.explanation is None
+            or self.explanation.data.model_channels is None
+        ):
             raise ValueError("Invalid Explanation object")
 
         map = self.explanation.target_map
@@ -98,7 +101,7 @@ class Evaluation:
             self.__batch(im, dm, prediction_func, insertion_curve, deletion_curve)
 
         i_auc = simpson(insertion_curve, dx=step)
-        d_auc = simpson(deletion_curve, dx=step) 
+        d_auc = simpson(deletion_curve, dx=step)
 
         if normalize:
             const = self.explanation.data.target.confidence * iters * step

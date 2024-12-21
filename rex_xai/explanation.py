@@ -140,7 +140,9 @@ def predict_target(data: Data, prediction_func) -> Prediction:
     return target
 
 
-def calculate_responsibility(data: Data, args: CausalArgs, prediction_func, keep_all_maps=False) -> Explanation:
+def calculate_responsibility(
+    data: Data, args: CausalArgs, prediction_func, keep_all_maps=False
+) -> Explanation:
     """Calculates an Explanation for input data using given args.
 
     Runs :py:func:`~rex_xai.responsibility.causal_explanation` for ``args.iters`` iterations,
@@ -217,7 +219,9 @@ def calculate_responsibility(data: Data, args: CausalArgs, prediction_func, keep
         "avg_box_size": avg_box_size,
     }
 
-    exp = Explanation(maps, prediction_func, data, args, run_stats, keep_all_maps=keep_all_maps)
+    exp = Explanation(
+        maps, prediction_func, data, args, run_stats, keep_all_maps=keep_all_maps
+    )
 
     return exp
 
@@ -251,8 +255,10 @@ def analyze(exp: Explanation, data_mode: str | None):
         ent = None
 
     iauc, dauc = eval.insertion_deletion_curve(exp.prediction_func)
-    
-    print(f"area {rat}, entropy difference {ent}, insertion curve {iauc}, deletion curve {dauc}")
+
+    print(
+        f"area {rat}, entropy difference {ent}, insertion curve {iauc}, deletion curve {dauc}"
+    )
 
     analysis_results = {
         "area": rat,

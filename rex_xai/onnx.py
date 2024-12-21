@@ -18,16 +18,15 @@ from rex_xai.input_data import Setup
 from rex_xai.logger import logger
 
 
-class OnnxRunner():
+class OnnxRunner:
     def __init__(self, session: InferenceSession, setup: Setup, device) -> None:
         self.session = session
         self.input_shape = session.get_inputs()[0].shape
         self.output_shape = session.get_outputs()[0].shape
         self.input_name = session.get_inputs()[0].name
         self.output_name = session.get_outputs()[0].name
-        self.setup: Setup = setup 
+        self.setup: Setup = setup
         self.device: str = device
-
 
     def run_on_cpu(
         self,
@@ -85,18 +84,19 @@ class OnnxRunner():
             logger.fatal(e)
             sys.exit(-1)
 
-
-    def run_with_data_on_device(self,
-        tensors, device, tsize, binary_threshold, raw=False, device_id=0
+    def run_with_data_on_device(
+        self, tensors, device, tsize, binary_threshold, raw=False, device_id=0
     ):
         # input_shape = self.session.get_inputs()[0].shape # Gets the shape of the input (e.g [batch_size, 3, 224, 224])
         batch_size = len(tensors) if isinstance(tensors, list) else tensors.shape[0]
-        
+
         if isinstance(tensors, list):
             tensors = [m.contiguous() for m in tensors]
-            shape = tuple([batch_size] + list(self.input_shape)[1:]) # batch_size + remaining input shape
+            shape = tuple(
+                [batch_size] + list(self.input_shape)[1:]
+            )  # batch_size + remaining input shape
             ptr = tensors[0].data_ptr()
-            
+
         else:
             tensors = tensors.contiguous()
             shape = tuple(tensors.shape)
@@ -130,7 +130,10 @@ class OnnxRunner():
     def gen_prediction_function(self):
         if self.device == "cpu" or self.setup == Setup.ONNXMPS:
             return (
-                lambda x, target=None, raw=False, binary_threshold=None: self.run_on_cpu(
+                lambda x,
+                target=None,
+                raw=False,
+                binary_threshold=None: self.run_on_cpu(
                     x, target, raw, binary_threshold
                 ),
                 self.input_shape,
@@ -149,7 +152,6 @@ class OnnxRunner():
 
 
 def get_prediction_function(model_path, gpu: bool):
-
     sess_options = ort.SessionOptions()
     # are we (trying to) run on the gpu?
     if gpu:
