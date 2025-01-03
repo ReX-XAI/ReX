@@ -127,6 +127,9 @@ class CausalArgs(Args):
         self.queue_len = 1
         self.queue_style = Queue.Area
 
+        if self.min_box_size is not None:
+            self.chunk_size = self.min_box_size
+
     def __repr__(self) -> str:
         return (
             "Causal Args <"
@@ -346,6 +349,7 @@ def process_config_dict(config_file_args, args):
         args.iters = causal_dict["iters"]
     if "min_box_size" in causal_dict:
         args.min_box_size = causal_dict["min_box_size"]
+        args.chunk_size = args.min_box_size
     if "confidence_filter" in causal_dict:
         args.confidence_filter = causal_dict["confidence_filter"]
     if "segmentation" in causal_dict:
@@ -437,6 +441,7 @@ def process_config_dict(config_file_args, args):
     eval_dict = explain_dict["evaluation"]
     if "insertion_step" in eval_dict:
         args.insertion_step = eval_dict["insertion_step"]
+
 
 
 def process_custom_script(script, args):
