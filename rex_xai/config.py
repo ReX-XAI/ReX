@@ -251,6 +251,8 @@ def cmdargs():
         help="assist ReX with your input type, one of <tabular>, <spectral>, <RGB>, <L>, <voxel>, <audio>",
     )
 
+    parser.add_argument("--spectral", action="store_true", help="set ReX input type to <spectral>, shortcut for --mode spectral")
+
     args = parser.parse_args()
     return args
 
@@ -311,6 +313,8 @@ def shared_args(cmd_args, args: CausalArgs):
         args.db = cmd_args.database
     if cmd_args.mode is not None:
         args.mode = cmd_args.mode
+    if cmd_args.spectral is not None:
+        args.mode = "spectral"
 
     args.processed = cmd_args.processed
 
