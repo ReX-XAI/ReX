@@ -226,7 +226,9 @@ class Explanation:
 
     def show(self, path=None):
         if self.data.mode in ("RGB", "L"):
-            out = visualisation.save_image(self.explanation, self.data, self.args, path=path)
+            out = visualisation.save_image(
+                self.explanation, self.data, self.args, path=path
+            )
             return out
         else:
             return NotImplementedError

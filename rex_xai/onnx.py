@@ -78,14 +78,18 @@ def run_on_cpu(
 def run_with_data_on_device(
     session, tensors, input_name, device, tsize, binary_threshold
 ):
-    input_shape = session.get_inputs()[0].shape # Gets the shape of the input (e.g [batch_size, 3, 224, 224])
+    input_shape = session.get_inputs()[
+        0
+    ].shape  # Gets the shape of the input (e.g [batch_size, 3, 224, 224])
     batch_size = len(tensors) if isinstance(tensors, list) else tensors.shape[0]
-    
+
     if isinstance(tensors, list):
         tensors = [m.contiguous() for m in tensors]
-        shape = tuple([batch_size] + list(input_shape)[1:]) # batch_size + remaining input shape
+        shape = tuple(
+            [batch_size] + list(input_shape)[1:]
+        )  # batch_size + remaining input shape
         ptr = tensors[0].data_ptr()
-        
+
     else:
         tensors = tensors.contiguous()
         shape = tuple(tensors.shape)
