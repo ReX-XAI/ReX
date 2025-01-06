@@ -78,3 +78,11 @@ def exp_custom(args_custom, model_shape, prediction_func, cpu_device):
     exp = _explanation(args_custom, model_shape, prediction_func, cpu_device, db=None)
 
     return exp
+
+
+@pytest.fixture
+def exp_onnx(args_onnx, cpu_device):
+    prediction_func, model_shape = get_prediction_func_from_args(args_onnx)
+    exp = _explanation(args_onnx, model_shape, prediction_func, cpu_device, db=None)
+
+    return exp

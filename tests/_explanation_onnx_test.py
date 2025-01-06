@@ -1,4 +1,6 @@
-from rex_xai.config import CausalArgs
+import pytest
+
+from rex_xai.config import CausalArgs, Strategy
 from rex_xai.explanation import _explanation, get_prediction_func_from_args
 from syrupy.extensions.amber.serializer import AmberDataSerializer
 from syrupy.filters import props
@@ -23,3 +25,16 @@ def test__explanation_snapshot(args_onnx, cpu_device, snapshot):
             ),
         )
     )
+
+
+@pytest.mark.parametrize("strategy", ["global", "spatial"])
+def test_extract(exp_onnx, strategy, snapshot):
+    if strategy == "global":
+        strategy = Strategy.Global
+    elif strategy == "spatial":
+        strategy = Strategy.Spatial
+    else:
+        raise ValueError("invalid strategy!")
+    exp_onnx.extract(strategy)
+    
+    assert(exp_onnx.final_mask == snapshot)

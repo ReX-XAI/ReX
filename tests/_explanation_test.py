@@ -1,8 +1,5 @@
 import pytest
 
-from torch import save
-from tempfile import TemporaryFile
-
 from rex_xai.config import CausalArgs
 from rex_xai.explanation import _explanation
 from rex_xai.config import Strategy
