@@ -18,107 +18,137 @@ from rex_xai.input_data import Setup
 from rex_xai.logger import logger
 
 
-def run_on_cpu(
-    session: InferenceSession,
-    tensors: Union[tt.Tensor, List[tt.Tensor]],
-    input_name: str,
-    target: Optional[Prediction],
-    raw: bool,
-    binary_threshold: Optional[float] = None,
-):
-    """Convert a pytorch tensor, or list of tensors, to numpy arrays on the cpu for onnx inference."""
-    # check if it's a single tensor or a list of tensors
-    if isinstance(tensors, list):
-        tensor_size = tensors[0].shape[0]
-    else:
-        tensor_size = tensors.shape[0]
+class OnnxRunner:
+    def __init__(self, session: InferenceSession, setup: Setup, device) -> None:
+        self.session = session
+        self.input_shape = session.get_inputs()[0].shape
+        self.output_shape = session.get_outputs()[0].shape
+        self.input_name = session.get_inputs()[0].name
+        self.output_name = session.get_outputs()[0].name
+        self.setup: Setup = setup
+        self.device: str = device
 
-    if tensor_size == 1:
-        tensors = tensors.detach().cpu().numpy()  # type: ignore
-    else:
-        tensors = np.stack([t.squeeze(0).detach().cpu().numpy() for t in tensors])  # type: ignore
+    def run_on_cpu(
+        self,
+        tensors: Union[tt.Tensor, List[tt.Tensor]],
+        target: Optional[Prediction],
+        raw: bool,
+        binary_threshold: Optional[float] = None,
+    ):
+        """Convert a pytorch tensor, or list of tensors, to numpy arrays on the cpu for onnx inference."""
+        # check if it's a single tensor or a list of tensors
+        if isinstance(tensors, list):
+            tensor_size = tensors[0].shape[0]
+        else:
+            tensor_size = tensors.shape[0]
 
-    preds = []
+        if tensor_size == 1:
+            tensors = tensors.detach().cpu().numpy()  # type: ignore
+        else:
+            tensors = np.stack([t.squeeze(0).detach().cpu().numpy() for t in tensors])  # type: ignore
 
-    try:
-        prediction = session.run(None, {input_name: tensors})[0]
-        for i in range(0, prediction.shape[0]):
-            confidences = softmax(prediction[i])
-            if raw:
-                return confidences[0]
-            if binary_threshold is not None:
-                if confidences[0] >= binary_threshold:
-                    classification = 1
+        preds = []
+
+        try:
+            prediction = self.session.run(None, {self.input_name: tensors})[0]
+            for i in range(0, prediction.shape[0]):
+                confidences = softmax(prediction[i])
+                if raw:
+                    for i in range(len(self.output_shape) - len(confidences.shape)):
+                        confidences = np.expand_dims(confidences, axis=0)
+                    return confidences
+                if binary_threshold is not None:
+                    if confidences[0] >= binary_threshold:
+                        classification = 1
+                    else:
+                        classification = 0
+                    tc = confidences[0]
                 else:
-                    classification = 0
-                tc = confidences[0]
-            else:
-                classification = np.argmax(confidences)
-                # print(prediction[i], confidences, classification)
-                if target is not None:
-                    tc = confidences[target.classification]
-                else:
-                    tc = None
-            preds.append(
-                Prediction(
-                    classification,
-                    confidences[classification],
-                    None,
-                    target=target,
-                    target_confidence=tc,
+                    classification = np.argmax(confidences)
+                    if target is not None:
+                        tc = confidences[target.classification]
+                    else:
+                        tc = None
+                preds.append(
+                    Prediction(
+                        classification,
+                        confidences[classification],
+                        None,
+                        target=target,
+                        target_confidence=tc,
+                    )
                 )
+
+            return preds
+        except Exception as e:
+            logger.fatal(e)
+            sys.exit(-1)
+
+    def run_with_data_on_device(
+        self, tensors, device, tsize, binary_threshold, raw=False, device_id=0
+    ):
+        # input_shape = self.session.get_inputs()[0].shape # Gets the shape of the input (e.g [batch_size, 3, 224, 224])
+        batch_size = len(tensors) if isinstance(tensors, list) else tensors.shape[0]
+
+        if isinstance(tensors, list):
+            tensors = [m.contiguous() for m in tensors]
+            shape = tuple(
+                [batch_size] + list(self.input_shape)[1:]
+            )  # batch_size + remaining input shape
+            ptr = tensors[0].data_ptr()
+
+        else:
+            tensors = tensors.contiguous()
+            shape = tuple(tensors.shape)
+            ptr = tensors.data_ptr()
+
+        binding = self.session.io_binding()
+        binding.bind_input(
+            name=self.input_name,
+            device_type=device,
+            device_id=device_id,
+            element_type=np.float32,
+            shape=shape,
+            buffer_ptr=ptr,
+        )
+
+        output_shape = [batch_size] + list(self.output_shape[1:])
+        z_tensor = tt.empty(output_shape, dtype=tt.float32, device=device).contiguous()
+
+        binding.bind_output(
+            name=self.output_name,
+            device_type=device,
+            device_id=device_id,
+            element_type=np.float32,
+            shape=tuple(z_tensor.shape),
+            buffer_ptr=z_tensor.data_ptr(),
+        )
+
+        self.session.run_with_iobinding(binding)
+        return from_pytorch_tensor(z_tensor)
+
+    def gen_prediction_function(self):
+        if self.device == "cpu" or self.setup == Setup.ONNXMPS:
+            return (
+                lambda x,
+                target=None,
+                raw=False,
+                binary_threshold=None: self.run_on_cpu(
+                    x, target, raw, binary_threshold
+                ),
+                self.input_shape,
             )
-
-        return preds
-    except Exception as e:
-        logger.fatal(e)
-        sys.exit(-1)
-
-
-def run_with_data_on_device(
-    session, tensors, input_name, device, tsize, binary_threshold
-):
-    input_shape = session.get_inputs()[
-        0
-    ].shape  # Gets the shape of the input (e.g [batch_size, 3, 224, 224])
-    batch_size = len(tensors) if isinstance(tensors, list) else tensors.shape[0]
-
-    if isinstance(tensors, list):
-        tensors = [m.contiguous() for m in tensors]
-        shape = tuple(
-            [batch_size] + list(input_shape)[1:]
-        )  # batch_size + remaining input shape
-        ptr = tensors[0].data_ptr()
-
-    else:
-        tensors = tensors.contiguous()
-        shape = tuple(tensors.shape)
-        ptr = tensors.data_ptr()
-
-    binding = session.io_binding()
-    binding.bind_input(
-        name=input_name,
-        device_type=device,
-        device_id=0,
-        element_type=np.float32,
-        shape=shape,
-        buffer_ptr=ptr,
-    )
-
-    output_shape = [batch_size] + list(session.get_outputs()[0].shape[1:])
-    z_tensor = tt.empty(output_shape, dtype=tt.float32, device=device).contiguous()
-
-    binding.bind_output(
-        name=session.get_outputs()[0].name,
-        device_type=device,
-        device_id=0,
-        element_type=np.float32,
-        shape=tuple(z_tensor.shape),
-        buffer_ptr=z_tensor.data_ptr(),
-    )
-
-    session.run_with_iobinding(binding)
-    return from_pytorch_tensor(z_tensor)
+        if self.device == "cuda":
+            return (
+                lambda x,
+                target=None,
+                device=self.device,
+                raw=False,
+                binary_threshold=None: self.run_with_data_on_device(
+                    x, device, len(x), binary_threshold
+                ),
+                self.input_shape,
+            )
 
 
 def get_prediction_function(model_path, gpu: bool):
@@ -127,6 +157,7 @@ def get_prediction_function(model_path, gpu: bool):
     if gpu:
         logger.info("using gpu for onnx inference session")
         if platform.uname().system == "Darwin":
+            # note this is only true for M+ chips
             providers = ["CoreMLExecutionProvider"]
             device = "mps"
             _, ext = os.path.splitext(os.path.basename(model_path))
@@ -152,24 +183,6 @@ def get_prediction_function(model_path, gpu: bool):
         device = "cpu"
         setup = Setup.PYTORCH
 
-    input_name = sess.get_inputs()[0].name
-    shape = sess.get_inputs()[0].shape
-    logger.info("model shape %s", shape)
+    onnx_session = OnnxRunner(sess, setup, device)
 
-    if device == "cpu" or setup == Setup.ONNXMPS:
-        return (
-            lambda x, target=None, raw=False, binary_threshold=None: run_on_cpu(
-                sess, x, input_name, target, raw, binary_threshold
-            ),
-            shape,
-        )
-    if device == "cuda":
-        return (
-            lambda x,
-            target=None,
-            device=device,
-            binary_threshold=None: run_with_data_on_device(
-                sess, x, input_name, device, len(x), binary_threshold
-            ),
-            shape,
-        )
+    return onnx_session.gen_prediction_function()

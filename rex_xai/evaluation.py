@@ -48,7 +48,7 @@ class Evaluation:
         else:
             logger.warning("entropy loss is not yet defined on this type of data")
 
-    def insertion_deletion_curve(self, prediction_func):
+    def insertion_deletion_curve(self, prediction_func, normalize=True):
         insertion_curve = []
         deletion_curve = []
 
@@ -100,12 +100,13 @@ class Evaluation:
         if im != [] and dm != []:
             self.__batch(im, dm, prediction_func, insertion_curve, deletion_curve)
 
-        i_auc = simpson(insertion_curve, dx=step) / (
-            (self.explanation.data.target.confidence) * iters * step
-        )  # type: ignore
-        d_auc = simpson(deletion_curve, dx=step) / (
-            (self.explanation.data.target.confidence) * iters * step
-        )  # type: ignore
+        i_auc = simpson(insertion_curve, dx=step)
+        d_auc = simpson(deletion_curve, dx=step)
+
+        if normalize:
+            const = self.explanation.data.target.confidence * iters * step
+            i_auc /= const
+            d_auc /= const
 
         return i_auc, d_auc
 
