@@ -130,22 +130,22 @@ class OnnxRunner:
     def gen_prediction_function(self):
         if self.device == "cpu" or self.setup == Setup.ONNXMPS:
             return (
-                lambda x,
+                lambda tensor,
                 target=None,
                 raw=False,
                 binary_threshold=None: self.run_on_cpu(
-                    x, target, raw, binary_threshold
+                    tensor, target, raw, binary_threshold
                 ),
                 self.input_shape,
             )
         if self.device == "cuda":
             return (
-                lambda x,
+                lambda tensor,
                 target=None,
                 device=self.device,
                 raw=False,
                 binary_threshold=None: self.run_with_data_on_device(
-                    x, device, len(x), binary_threshold
+                    tensor, device, len(tensor), binary_threshold
                 ),
                 self.input_shape,
             )

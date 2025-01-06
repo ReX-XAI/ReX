@@ -251,14 +251,12 @@ def analyze(exp: Explanation, data_mode: str | None):
     if data_mode in ("RGB", "L"):
         be, ae = eval.entropy_loss()  # type: ignore
         ent = be - ae
+    elif data_mode in ("spectral", "tabular"):
+        ent = eval.spectral_entropy()
     else:
         ent = None
 
     iauc, dauc = eval.insertion_deletion_curve(exp.prediction_func)
-
-    print(
-        f"area {rat}, entropy difference {ent}, insertion curve {iauc}, deletion curve {dauc}"
-    )
 
     analysis_results = {
         "area": rat,
@@ -307,7 +305,14 @@ def _explanation(
     exp.extract(args.strategy)
 
     if args.analyze:
-        analyze(exp, data.mode)
+        results = analyze(exp, data.mode)
+        logger.info(
+            "area %f, entropy %f, insertion curve %f, deletion curve %f",
+            results["area"],
+            results["entropy_diff"],
+            results["insertion_curve"],
+            results["deletion_curve"],
+        )
 
     end = time.time()
     time_taken = end - start

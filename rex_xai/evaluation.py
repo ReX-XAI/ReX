@@ -1,18 +1,19 @@
 #!/usr/bin/env python
 import numpy as np
 import torch as tt
+from scipy.integrate import simpson
+from scipy.signal import periodogram
+from skimage.measure import shannon_entropy
 
-from rex_xai.logger import logger
 from rex_xai.extraction import Explanation
 from rex_xai._utils import get_map_locations
 from rex_xai.mutant import _apply_to_data
-from rex_xai._utils import set_boolean_mask_value
-from scipy.integrate import simpson
-from skimage.measure import shannon_entropy
+from rex_xai._utils import set_boolean_mask_value, xlogx
 
 
 class Evaluation:
     # TODO does this need to be an object? Probably not...
+    # TODO consider inheritance from Explanation object
     def __init__(self, explanation: Explanation) -> None:
         self.explanation = explanation
 
@@ -38,15 +39,23 @@ class Evaluation:
                 / self.explanation.data.model_channels
             )
 
-    def entropy_loss(self):
-        if self.explanation.data.mode in ("RGB", "L"):
-            img = np.array(self.explanation.data.input)
-            assert self.explanation.explanation is not None
-            exp = shannon_entropy(self.explanation.explanation.detach().cpu().numpy())
+    def spectral_entropy(self):
+        """
+        This code is a simplified version of 
+        https://github.com/raphaelvallat/antropy/blob/master/src/antropy/entropy.py
+        """
+        _, psd = periodogram(self.explanation.target_map)
+        psd_norm = psd / psd.sum()
+        ent = - np.sum(xlogx(psd_norm))
+        return ent
 
-            return shannon_entropy(img), exp
-        else:
-            logger.warning("entropy loss is not yet defined on this type of data")
+
+    def entropy_loss(self):
+        img = np.array(self.explanation.data.input)
+        assert self.explanation.explanation is not None
+        exp = shannon_entropy(self.explanation.explanation.detach().cpu().numpy())
+
+        return shannon_entropy(img), exp
 
     def insertion_deletion_curve(self, prediction_func, normalize=True):
         insertion_curve = []

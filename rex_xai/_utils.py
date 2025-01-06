@@ -8,6 +8,18 @@ from rex_xai.logger import logger
 from rex_xai.box import Box
 
 
+def xlogx(ps):
+    f = np.vectorize(_xlogx)
+    return f(ps)
+
+
+def _xlogx(p):
+    if p == 0.0:
+        return 0.0
+    else:
+        return p * np.log2(p)
+
+
 def add_boundaries(img: Union[NDArray, tt.Tensor], segs: NDArray) -> NDArray:
     m = mark_boundaries(img, segs)
     m *= 255  # type: ignore

@@ -65,8 +65,8 @@ def str2distribution(d: str) -> Distribution:
 def random_coords(d: Optional[Distribution], *args, map=None) -> int:
     """generates random coordinates given a distribution and args"""
 
-    if args[0] < 2:
-        return -1
+    # if args[0] < 2:
+    #     return -1
 
     if d == Distribution.Adaptive:
         return _2d_adaptive(map, args[0])

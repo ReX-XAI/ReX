@@ -455,7 +455,7 @@ def process_custom_script(script, args):
     try:
         spec.loader.exec_module(script)  # type: ignore
     except Exception as e:
-        logger.error(f"failed to load {name} because of {e}, exiting...")
+        logger.error("failed to load %s because of %s, exiting...", script, e)
         raise e
     args.custom = script
     args.custom_location = script
@@ -466,7 +466,9 @@ def process_cmd_args(cmd_args, args):
         try:
             process_custom_script(cmd_args.script, args)
         except ImportError:
-            pass
+            exit(-1)
+        except Exception:
+            exit(-1)
 
     args.path = cmd_args.filename
 
