@@ -1,7 +1,7 @@
 import pytest
 from cached_path import cached_path
 from rex_xai._utils import get_device
-from rex_xai.config import CausalArgs, process_custom_script
+from rex_xai.config import CausalArgs, process_custom_script, Strategy
 from rex_xai.explanation import (
     calculate_responsibility,
     get_prediction_func_from_args,
@@ -97,3 +97,9 @@ def exp_onnx(args_onnx, cpu_device):
     exp = calculate_responsibility(data, args_onnx, prediction_func)
 
     return exp
+
+@pytest.fixture
+def exp_extracted(exp_custom):
+    exp_custom.extract(Strategy.Global)
+
+    return exp_custom
