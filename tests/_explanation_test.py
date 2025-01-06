@@ -1,8 +1,6 @@
 import pytest
-
-from rex_xai.config import CausalArgs
-from rex_xai.explanation import _explanation
-from rex_xai.config import Strategy
+from rex_xai.config import CausalArgs, Strategy
+from rex_xai.explanation import _explanation, analyze
 from syrupy.extensions.amber.serializer import AmberDataSerializer
 from syrupy.filters import props
 from syrupy.matchers import path_type
@@ -33,7 +31,7 @@ def test__explanation_snapshot(
 
 
 @pytest.mark.parametrize("strategy", ["global", "spatial"])
-def test_extract(exp_custom, strategy, snapshot):
+def test_extract_analyze(exp_custom, strategy, snapshot):
     if strategy == "global":
         strategy = Strategy.Global
     elif strategy == "spatial":
@@ -41,5 +39,8 @@ def test_extract(exp_custom, strategy, snapshot):
     else:
         raise ValueError("invalid strategy!")
     exp_custom.extract(strategy)
-    
-    assert(exp_custom.final_mask == snapshot)
+    results = analyze(exp_custom, "RGB")
+    results_rounded = {k: round(v, 4) for k, v in results.items()}
+
+    assert exp_custom.final_mask == snapshot
+    assert results_rounded == snapshot
