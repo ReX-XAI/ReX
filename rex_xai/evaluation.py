@@ -41,14 +41,13 @@ class Evaluation:
 
     def spectral_entropy(self):
         """
-        This code is a simplified version of 
+        This code is a simplified version of
         https://github.com/raphaelvallat/antropy/blob/master/src/antropy/entropy.py
         """
         _, psd = periodogram(self.explanation.target_map)
         psd_norm = psd / psd.sum()
-        ent = - np.sum(xlogx(psd_norm))
+        ent = -np.sum(xlogx(psd_norm))
         return ent
-
 
     def entropy_loss(self):
         img = np.array(self.explanation.data.input)

@@ -251,7 +251,11 @@ def cmdargs():
         help="assist ReX with your input type, one of <tabular>, <spectral>, <RGB>, <L>, <voxel>, <audio>",
     )
 
-    parser.add_argument("--spectral", action="store_true", help="set ReX input type to <spectral>, shortcut for --mode spectral")
+    parser.add_argument(
+        "--spectral",
+        action="store_true",
+        help="set ReX input type to <spectral>, shortcut for --mode spectral",
+    )
 
     args = parser.parse_args()
     return args
@@ -445,7 +449,6 @@ def process_config_dict(config_file_args, args):
     eval_dict = explain_dict["evaluation"]
     if "insertion_step" in eval_dict:
         args.insertion_step = eval_dict["insertion_step"]
-
 
 
 def process_custom_script(script, args):
