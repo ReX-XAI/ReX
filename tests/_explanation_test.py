@@ -1,5 +1,11 @@
+import pytest
+
+from torch import save
+from tempfile import TemporaryFile
+
 from rex_xai.config import CausalArgs
 from rex_xai.explanation import _explanation
+from rex_xai.config import Strategy
 from syrupy.extensions.amber.serializer import AmberDataSerializer
 from syrupy.filters import props
 from syrupy.matchers import path_type
@@ -27,3 +33,16 @@ def test__explanation_snapshot(
             ),
         )
     )
+
+
+@pytest.mark.parametrize("strategy", ["global", "spatial"])
+def test_extract(exp_custom, strategy, snapshot):
+    if strategy == "global":
+        strategy = Strategy.Global
+    elif strategy == "spatial":
+        strategy = Strategy.Spatial
+    else:
+        raise ValueError("invalid strategy!")
+    exp_custom.extract(strategy)
+    
+    assert(exp_custom.final_mask == snapshot)

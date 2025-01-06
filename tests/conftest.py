@@ -7,6 +7,7 @@ from rex_xai._utils import get_device
 from rex_xai.explanation import (
     try_preprocess,
     get_prediction_func_from_args,
+    _explanation
 )
 
 
@@ -71,3 +72,9 @@ def cpu_device():
     device = get_device(gpu=False)
 
     return device
+
+@pytest.fixture
+def exp_custom(args_custom, model_shape, prediction_func, cpu_device):
+    exp = _explanation(args_custom, model_shape, prediction_func, cpu_device, db=None)
+
+    return exp

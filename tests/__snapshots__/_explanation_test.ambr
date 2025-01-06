@@ -128,3 +128,53 @@
           5.5      ]], dtype=float32),
   )
 # ---
+# name: test_extract[global]
+  tensor([[[False, False, False,  ..., False, False, False],
+           [False, False, False,  ..., False, False, False],
+           [False, False, False,  ..., False, False, False],
+           ...,
+           [False, False, False,  ..., False, False, False],
+           [False, False, False,  ..., False, False, False],
+           [False, False, False,  ..., False, False, False]],
+  
+          [[False, False, False,  ..., False, False, False],
+           [False, False, False,  ..., False, False, False],
+           [False, False, False,  ..., False, False, False],
+           ...,
+           [False, False, False,  ..., False, False, False],
+           [False, False, False,  ..., False, False, False],
+           [False, False, False,  ..., False, False, False]],
+  
+          [[False, False, False,  ..., False, False, False],
+           [False, False, False,  ..., False, False, False],
+           [False, False, False,  ..., False, False, False],
+           ...,
+           [False, False, False,  ..., False, False, False],
+           [False, False, False,  ..., False, False, False],
+           [False, False, False,  ..., False, False, False]]])
+# ---
+# name: test_extract[spatial]
+  tensor([[[False, False, False,  ..., False, False, False],
+           [False, False, False,  ..., False, False, False],
+           [False, False, False,  ..., False, False, False],
+           ...,
+           [False, False, False,  ..., False, False, False],
+           [False, False, False,  ..., False, False, False],
+           [False, False, False,  ..., False, False, False]],
+  
+          [[False, False, False,  ..., False, False, False],
+           [False, False, False,  ..., False, False, False],
+           [False, False, False,  ..., False, False, False],
+           ...,
+           [False, False, False,  ..., False, False, False],
+           [False, False, False,  ..., False, False, False],
+           [False, False, False,  ..., False, False, False]],
+  
+          [[False, False, False,  ..., False, False, False],
+           [False, False, False,  ..., False, False, False],
+           [False, False, False,  ..., False, False, False],
+           ...,
+           [False, False, False,  ..., False, False, False],
+           [False, False, False,  ..., False, False, False],
+           [False, False, False,  ..., False, False, False]]])
+# ---
