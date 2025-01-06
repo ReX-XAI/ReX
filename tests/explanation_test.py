@@ -9,13 +9,12 @@ from rex_xai.explanation import (
 
 
 def test_preprocess(args, model_shape, cpu_device, snapshot):
-    args.custom = None
     data = load_and_preprocess_data(model_shape, cpu_device, args)
     assert data == snapshot
 
 
-def test_preprocess_custom(args, model_shape, cpu_device, snapshot):
-    data = load_and_preprocess_data(model_shape, cpu_device, args)
+def test_preprocess_custom(args_custom, model_shape, cpu_device, snapshot):
+    data = load_and_preprocess_data(model_shape, cpu_device, args_custom)
     assert data == snapshot
 
 

@@ -1,6 +1,3 @@
-import pytest
-
-from rex_xai._utils import get_device
 from rex_xai.config import CausalArgs
 from rex_xai.explanation import _explanation, get_prediction_func_from_args
 from syrupy.extensions.amber.serializer import AmberDataSerializer
@@ -8,24 +5,9 @@ from syrupy.filters import props
 from syrupy.matchers import path_type
 
 
-@pytest.fixture
-def args_onnx(resnet50):
-    args = CausalArgs()
-    args.path = "imgs/dog.jpg"
-    args.iters = 2
-    args.search_limit = 1000
-    args.seed = 100
-    args.model = resnet50
-    args.gpu = False
-    return args
-
-
-device = get_device(gpu=False)
-
-
-def test__explanation_snapshot(args_onnx, snapshot):
+def test__explanation_snapshot(args_onnx, cpu_device, snapshot):
     prediction_func, model_shape = get_prediction_func_from_args(args_onnx)
-    exp = _explanation(args_onnx, model_shape, prediction_func, device, db=None)
+    exp = _explanation(args_onnx, model_shape, prediction_func, cpu_device, db=None)
 
     assert (
         exp

@@ -22,28 +22,46 @@ def resnet50():
 def args():
     args = CausalArgs()
     args.path = "tests/test_data/dog.jpg"
-    process_custom_script("tests/scripts/pytorch.py", args)
+    args.iters = 2
+    args.search_limit = 1000
+    args.gpu = False
 
     return args
 
 
 @pytest.fixture
-def model_shape(args):
-    prediction_func, model_shape = get_prediction_func_from_args(args)
+def args_custom(args):
+    process_custom_script("tests/scripts/pytorch.py", args)
+    args.seed = 42
+
+    return args
+
+
+@pytest.fixture
+def args_onnx(args, resnet50):
+    args.model = resnet50
+    args.seed = 100
+
+    return args
+
+
+@pytest.fixture
+def model_shape(args_custom):
+    prediction_func, model_shape = get_prediction_func_from_args(args_custom)
 
     return model_shape
 
 
 @pytest.fixture
-def prediction_func(args):
-    prediction_func, model_shape = get_prediction_func_from_args(args)
+def prediction_func(args_custom):
+    prediction_func, model_shape = get_prediction_func_from_args(args_custom)
 
     return prediction_func
 
 
 @pytest.fixture
-def data(args, model_shape, cpu_device):
-    data = try_preprocess(args, model_shape, device=cpu_device)
+def data(args_custom, model_shape, cpu_device):
+    data = try_preprocess(args_custom, model_shape, device=cpu_device)
 
     return data
 

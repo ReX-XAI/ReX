@@ -34,7 +34,7 @@
       no_expansions=50,
       norm=255.0,
       output=None,
-      path='imgs/dog.jpg',
+      path='tests/test_data/dog.jpg',
       processed=False,
       progress=True,
       queue_len=1,
