@@ -5,7 +5,6 @@
 from typing import List, Optional, Union
 from types import ModuleType
 import argparse
-from enum import Enum
 import os
 from os.path import exists, expanduser
 import importlib.util
@@ -15,13 +14,8 @@ import toml  # type: ignore
 
 from rex_xai.distributions import str2distribution
 from rex_xai.distributions import Distribution
+from rex_xai._utils import Strategy, Queue, ReXPathError, ReXTomlError, ReXError
 from rex_xai.logger import logger
-
-CAUSAL = Enum("CAUSAL", ["Responsibility"])
-
-Strategy = Enum("Strategy", ["Global", "Spatial", "Spotlight", "MultiSpotlight"])
-
-Queue = Enum("Queue", ["Area", "All", "Intersection", "DC"])
 
 
 class Args:
@@ -116,10 +110,9 @@ class CausalArgs(Args):
     def __init__(self) -> None:
         super().__init__()
         self.config_location = None
-        self.type = CAUSAL
         self.tree_depth: int = 10
         self.search_limit: Optional[int] = None
-        self.mask_value: int | float | str = 0
+        self.mask_value: Union[int, float, str] = 0
         self.confidence_filter = 0.0
         self.min_box_size: int = 10
         self.segmentation = False
@@ -154,14 +147,16 @@ class CausalArgs(Args):
         )
 
 
-def get_config_file(path):
-    """parses toml file into dictionary"""
+def read_config_file(path):
+    if path is None:
+        return None
+    if not os.path.isfile(path):
+        raise ReXPathError(path)
     try:
         file_args = toml.load(path)
         return file_args
     except Exception as e:
-        print(f"unable to read {path}: {e}")
-        exit(-1)
+        raise ReXTomlError(e)
 
 
 def cmdargs():
@@ -266,10 +261,8 @@ def match_strategy(cmd_args):
         return Strategy.MultiSpotlight
     if cmd_args.strategy == "linear" or cmd_args.strategy == "global":
         return Strategy.Global
-    if cmd_args.strategy == "spotlight":
-        return Strategy.Spotlight
     if cmd_args.strategy == "spatial":
-        pass
+        return Strategy.Spatial
     return Strategy.Spatial
 
 
@@ -290,13 +283,14 @@ def get_objective_function(multi_dict):
         f = multi_dict["obj_function"]
         if f == "mean":
             return np.mean
-        if f == "max":
+        elif f == "max":
             return np.max
-        if f == "min":
+        elif f == "min":
             return np.min
+        elif f == "none":
+            return "none"
     except KeyError:
-        pass
-    return np.mean
+        return "none"
 
 
 def shared_args(cmd_args, args: CausalArgs):
@@ -355,6 +349,7 @@ def process_config_dict(config_file_args, args):
         args.iters = causal_dict["iters"]
     if "min_box_size" in causal_dict:
         args.min_box_size = causal_dict["min_box_size"]
+        args.chunk_size = args.min_box_size
     if "confidence_filter" in causal_dict:
         args.confidence_filter = causal_dict["confidence_filter"]
     if "segmentation" in causal_dict:
@@ -448,6 +443,7 @@ def process_config_dict(config_file_args, args):
         args.insertion_step = eval_dict["insertion_step"]
 
 
+
 def process_custom_script(script, args):
     name, _ = os.path.splitext(script)
     spec = importlib.util.spec_from_file_location(name, script)
@@ -486,35 +482,28 @@ def load_config(config_path=None):
     if config_path is None:
         config_path = find_config_path()
 
-    args = CausalArgs()
-    args.config_location = config_path
+    default_args = CausalArgs()
+    default_args.config_location = config_path
 
-    if config_path is None:
-        logger.warning(
-            "Could not find a rex.toml, so running with defaults. This might not produce the effect you want..."
-        )
-        return args
-    else:
-        config_file_args = get_config_file(config_path)
-
+    try:
+        config_file_args = read_config_file(config_path)
         if config_file_args is None:
             logger.warning(
-                f"Error reading config file {config_path}, so running with defaults. This might not produce the effect you want..."
+                "Could not find a rex.toml, so running with defaults. This might not produce the effect you want..."
             )
-        else:
-            try:
-                process_config_dict(config_file_args, args)
-            except KeyError as e:
-                logger.warning(
-                    f"Key error {e} in {config_path}, so reverting to default args"
-                )
+            return default_args
+        try:
+            process_config_dict(config_file_args, default_args)
+            return default_args
+        except Exception:
+            return default_args
 
-    return args
+    except ReXError as e:
+        print(e)
+        exit(-1)
 
 
 def get_all_args():
-    # pylint: disable=too-many-branches
-    # pylint: disable=too-many-statements
     """parses all arguments from config file and command line"""
     cmd_args = cmdargs()
 
