@@ -55,7 +55,6 @@
       strategy=<Strategy.Spatial: 2>,
       surface=None,
       tree_depth=10,
-      type=<enum 'CAUSAL'>,
       verbosity=0,
       weighted=False,
     ),
