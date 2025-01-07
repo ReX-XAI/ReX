@@ -11,7 +11,7 @@ from rex_xai.explanation import (
 )
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def resnet50():
     resnet50_path = cached_path(
         "https://github.com/onnx/models/raw/bec48b6a70e5e9042c0badbaafefe4454e072d08/validated/vision/classification/resnet/model/resnet50-v1-7.onnx"
