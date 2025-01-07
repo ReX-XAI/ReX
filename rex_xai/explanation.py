@@ -308,8 +308,8 @@ def _explanation(
     if args.analyze:
         results = analyze(exp, data.mode)
         print(
-            f"INFO:ReX:area {results["area"]}, entropy {results["entropy_diff"]},",
-            f"insertion curve {results["insertion_curve"]}, deletion curve {results["deletion_curve"]}",
+            f"INFO:ReX:area {results['area']}, entropy {results['entropy_diff']},",
+            f"insertion curve {results['insertion_curve']}, deletion curve {results['deletion_curve']}",
         )
 
     end = time.time()
