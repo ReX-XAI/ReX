@@ -73,7 +73,7 @@ def data_custom(args_custom, model_shape, cpu_device):
     return data
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def cpu_device():
     device = get_device(gpu=False)
 
