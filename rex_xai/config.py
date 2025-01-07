@@ -468,9 +468,8 @@ def process_cmd_args(cmd_args, args):
     if cmd_args.script is not None:
         try:
             process_custom_script(cmd_args.script, args)
-        except ImportError:
-            exit(-1)
-        except Exception:
+        except Exception as e:
+            logger.fatal(e)
             exit(-1)
 
     args.path = cmd_args.filename

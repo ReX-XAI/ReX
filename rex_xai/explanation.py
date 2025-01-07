@@ -306,8 +306,8 @@ def _explanation(
 
     if args.analyze:
         results = analyze(exp, data.mode)
-        logger.info(
-            "area %f, entropy %f, insertion curve %f, deletion curve %f",
+        print(
+            "INFO:ReX:area %f, entropy %f, insertion curve %f, deletion curve %f",
             results["area"],
             results["entropy_diff"],
             results["insertion_curve"],
