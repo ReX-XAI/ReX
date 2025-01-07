@@ -1,4 +1,4 @@
-# This workflow will install ReX and carry out linting and type checking 
+# This workflow will install ReX and carry out linting and type checking
 
 name: Linting and type checking
 
@@ -6,7 +6,6 @@ on: pull_request
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -15,29 +14,26 @@ jobs:
 
     permissions:
       pull-requests: write
-    
-    steps:
-    - uses: actions/checkout@v4
-    - name: Install poetry
-      run: pipx install poetry
 
-    - name: Set up Python, install and cache dependencies
-      uses: actions/setup-python@v5
-      with:
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install poetry
+        run: pipx install poetry
+
+      - name: Set up Python, install and cache dependencies
+        uses: actions/setup-python@v5
+        with:
           python-version: ${{matrix.python-version}}
           cache: poetry
-    - run: poetry install --with dev
-    - run: echo "$(poetry env info --path)/bin" >> $GITHUB_PATH
+      - run: poetry install --with dev
+      - run: echo "$(poetry env info --path)/bin" >> $GITHUB_PATH
 
-    - name: Lint with Ruff
-      run: |
-        ruff check --output-format=github .
+      - name: Lint with Ruff
+        run: |
+          ruff check --output-format=github .
 
-    - name: Type checking with Pyright
-      uses: YajJackson/simple-pyright-action@v1.0.0
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        include-base-comparison: true
-        fail-on-issue-increase: true
-        include-file-comments: false
-
+      - name: Type checking with Pyright
+        uses: YajJackson/simple-pyright-action@v1.0.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          include-file-comments: false
