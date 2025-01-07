@@ -20,7 +20,7 @@ from rex_xai.box import average_box_size, initialise_tree
 from rex_xai.config import CausalArgs, Queue
 from rex_xai.input_data import Data
 from rex_xai.logger import logger
-from rex_xai.mutant import Mutant, get_combinations
+from rex_xai.mutant import Mutant, get_combinations, _apply_to_data
 from rex_xai.resp_maps import ResponsibilityMaps
 from rex_xai.prediction import Prediction
 
@@ -181,7 +181,9 @@ def causal_explanation(
 
                 if data.mode in ("spectral", "tabular"):
                     preds: List[Prediction] = [
-                        prediction_func(m.mask, data.target, binary_threshold=None)[0]
+                        prediction_func(_apply_to_data(m.mask, data, data.mask_value))[
+                            0
+                        ]
                         for m in mutants
                     ]
                 else:

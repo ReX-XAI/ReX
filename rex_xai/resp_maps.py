@@ -97,10 +97,14 @@ class ResponsibilityMaps:
                 box: Optional[Box] = find(search_tree, lambda n: n.name == box_name)
                 if box is not None and box.area() > 0:
                     index = np.uint(box_name[-1])
-                    section = resp_map[
-                        box.row_start : box.row_stop,
-                        box.col_start : box.col_stop,
-                    ]
+                    if data.mode in ("spectral", "tabular"):
+                        section = resp_map[0, box.col_start : box.col_stop]
+                    else:
+                        section = resp_map[
+                            box.row_start : box.row_stop,
+                            box.col_start : box.col_stop,
+                        ]
+                    # TODO I can't remember what any of this code does.
                     if all(section.shape):
                         if np.mean(section) == 0:
                             section += r[index]
