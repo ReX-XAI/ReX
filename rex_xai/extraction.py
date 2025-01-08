@@ -54,29 +54,6 @@ class Explanation:
         self.blank()
         if method == Strategy.Global:
             return self.__global()
-        if method == Strategy.MultiSpotlight:
-            logger.warning("not yet implemented, defaulting to global")
-            return self.__global()
-            # name = None
-            # ext = None
-            # if self.args.output is not None:
-            #     name, ext = os.path.splitext(os.path.basename((self.args.output)))
-            # # get default spatial with centre set at responsibility mass
-            # self.__spatial()
-            # self.save()
-            # for i in range(0, 10):
-            #     self.args.output = f"{name}_{i}{ext}" #type: ignore
-            #     m = MultiExplanation(self.map, self.data, self.target)
-            #     centre = m.spotlight_search(self.args)
-            #     print(centre, self.target.classification)
-            #     r = self.__spatial(centre=centre, expansion_limit=4)
-            #     while r == -1:
-            #         print("trying in new location")
-            #         centre = m.spotlight_search(self.args)
-            #         r = self.__spatial(centre=centre, expansion_limit=4)
-            #     if r != -1:
-            #         self.save()
-
         if method == Strategy.Spatial:
             if self.data.mode == "spectral":
                 logger.warning(

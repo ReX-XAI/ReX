@@ -3,235 +3,152 @@
 """generate multiple explanations from a responsibility landscape <pixel_ranking>"""
 
 import numpy as np
+import random
+import torch as tt
+from itertools import combinations
+from PIL import Image
 
-from numpy.typing import NDArray
-from rex_xai.input_data import Data
-from rex_xai.prediction import Prediction
-from rex_xai.config import CausalArgs
+from rex_xai.extraction import Explanation
 from rex_xai.distributions import random_coords, Distribution
+from rex_xai.logger import logger
+from rex_xai._utils import powerset, clause_area
 
 
-class MultiExplanation:
-    def __init__(self, maps, data: Data, target: Prediction):
-        self.maps = maps
-        self.target = target
-        self.data = data
+class MultiExplanation(Explanation):
+    def __init__(self, map, prediction_func, data, args, run_stats):
+        super().__init__(map, prediction_func, data, args, run_stats)
+        self.explanations = []
 
-    def __dice(self, d1: NDArray, d2: NDArray):
+    def extract(self, method=None):
+        target_map = self.maps.get(self.data.target.classification)
+        if target_map is not None:
+            self.maps = tt.from_numpy(target_map).to(self.data.device)
+            self.blank()
+            for i in range(0, self.args.spotlights):
+                logger.info("spotlight number %d", i + 1)
+                self.spotlight_search()
+                self.explanations.append(self.explanation)
+                self.blank()
+            logger.info(
+                "ReX has found a total of %d explanations via spotlight search",
+                len(self.explanations),
+            )
+
+    def __dice(self, d1, d2):
         """calculates dice coefficient between two numpy arrays of the same dimensions"""
         d_sum = d1.sum() + d2.sum()
         if d_sum == 0:
             return 0
-        intersection = np.logical_and(d1, d2)
-        return 2.0 * intersection.sum() / d_sum
+        intersection = tt.logical_and(d1, d2)
+        return np.abs((2.0 * intersection.sum() / d_sum).item())
 
-    def separate_by(self, dice_coefficient: float):
-        pass
+    def separate_by(self, dice_coefficient: float, reverse=True):
+        exps = []
+        sizes = dict()
 
-    def spotlight_search(self, args: CausalArgs, coords=None):
-        if coords is None:
-            origin = random_coords(
-                Distribution.Uniform,
-                [self.data.model_width * self.data.model_height],
-            )  # type: ignore
-            return np.unravel_index(
-                origin, (self.data.model_height, self.data.model_width)
-            )  # type: ignore
-        # pass
+        for i, exp in enumerate(self.explanations):
+            size = tt.count_nonzero(exp)
+            if size > 0:
+                exps.append(i)
+                sizes[i] = size
 
+        clause_len = 0
+        clauses = []
 
-# from itertools import combinations
-# import numpy as np
-# from numpy.typing import NDArray
-# from numpy.random import randn
-# from tqdm import trange
+        perms = combinations(exps, 2)
+        bad_pairs = set()
+        for perm in perms:
+            left, right = perm
+            if (
+                self.__dice(self.explanations[left], self.explanations[right])
+                > dice_coefficient
+            ):
+                bad_pairs.add(perm)
 
-# from rex_xai.config import CausalArgs
+        for s in powerset(exps, reverse=reverse):
+            found = True
+            for bp in bad_pairs:
+                if bp[0] in s and bp[1] in s:
+                    found = False
+                    break
+            if found:
+                if len(s) >= clause_len:
+                    clause_len = len(s)
+                    clauses.append(s)
+                else:
+                    break
 
-# from rex_xai.logger import logger
+        clauses = sorted(clauses, key=lambda x: clause_area(x, sizes))
+        return clauses
 
-# # from rex_xai.ranking import linear_search, neighbours, spatial_search
+    def contrastive(self, clauses):
+        for clause in clauses:
+            logger.info(f"looking at {clause}")
+            for part in powerset(clause, reverse=False):
+                logger.debug(f"   examining {part}")
+                mask = sum([self.explanations[x] for x in part])
+                mask = mask.to(tt.bool)  # type: ignore
+                d = tt.where(mask, 0, self.data.data)  # type: ignore
+                p = self.prediction_func(d)[0]
+                if p.classification != self.data.target.classification:
+                    original = np.array(self.data.input.resize((224, 224)))
+                    mask = mask.detach().cpu().numpy().transpose((1, 2, 0))
+                    img = np.where(mask, 0, original)
+                    img = Image.fromarray(img, "RGB")
+                    img.save(
+                        f"{self.data.target.classification}_to_{p.classification}.png"
+                    )
+                    return
+                logger.debug(f"    {p}")
 
+    def __random_step_from(self, origin, width, height, step=5):
+        c, r = origin
+        # flip a coin to move left (0) or right (1)
+        c_dir = random.randint(0, 1)
+        c = c - step if c_dir == 0 else c + step
+        if c < 0:
+            c = 0
+        if c > width:
+            c = width
 
-# def dice(im1, im2):
-#     """calculates dice coefficient between two numpy arrays of the same dimensions"""
-#     im_sum = im1.sum() + im2.sum()
-#     if im_sum == 0:
-#         return 0
-#     intersection = np.logical_and(im1, im2)
-#     return 2.0 * intersection.sum() / im_sum
+        # flip a coin to move down (0) or up (1)
+        r_dir = random.randint(0, 1)
+        r = r - step if r_dir == 0 else r + step
+        if r < 0:
+            r = 0
+        if r > height:
+            r = height
+        logger.debug(f"trying new location: moving from {origin} to {(c, r)}")
+        return (c, r)
 
+    def __random_location(self):
+        assert self.data.model_width is not None
+        assert self.data.model_height is not None
+        origin = random_coords(
+            Distribution.Uniform,
+            self.data.model_width * self.data.model_height,
+        )
 
-# def extract(explanations):
-#     """extract multiple explanations from a list of explanations"""
-#     out = []
-#     size = len(explanations)
-#     areas = np.zeros(size)
+        return np.unravel_index(
+            origin, (self.data.model_height, self.data.model_width)
+        )
 
-#     combs = list(combinations(np.arange(0, size, 1), 2))
-#     for comb in combs:
-#         im1 = explanations[comb[0]]
-#         im2 = explanations[comb[1]]
-#         out.append((comb, dice(im1, im2)))
-#         a1 = np.count_nonzero(im1)
-#         a2 = np.count_nonzero(im2)
-#         if areas[comb[0]] == 0.0:
-#             areas[comb[0]] = a1
-#         if areas[comb[1]] == 0.0:
-#             areas[comb[1]] = a2
+    def spotlight_search(self, origin=None):
+        if origin is None:
+            centre = self.__random_location()
+        else:
+            centre = origin
 
-#     mat = np.zeros(size * size).reshape((size, size))
-#     for x, y in out:
-#         if y > 0.0:
-#             if areas[x[0]] < areas[x[1]]:
-#                 mat[x[0], x[1]] += 1
-#             else:
-#                 mat[x[1], x[0]] += 1
+        r = self._Explanation__spatial(centre=centre, expansion_limit=4)
 
-#     results = mat.sum(axis=0)
-
-#     for v in np.argsort(results)[::-1]:
-#         if np.count_nonzero(mat) == 0:
-#             break
-#         mat[v, :] = 0
-#         mat[:, v] = 0
-#         r = mat.sum(axis=0)
-#         results -= r
-
-#     final = np.where(results == 0)
-#     return final, len(final[0]), areas
-
-
-# def overlap(exp1, exp2):
-#     """check overlap between two numpy arrays"""
-#     gt = len(np.where(exp1 + exp2 > 0.0)[0])
-#     ov = len(np.where(exp1 + exp2 == 2.0)[0])
-
-#     return ov / gt
-
-
-# def random_steps(r, c, step_size, lim_r, lim_c):
-#     """takes random steps within a landscape"""
-#     new_r = int(r + randn(1) * step_size)
-#     while new_r < 0 or new_r > lim_r:
-#         new_r = int(r + randn(1) * step_size)
-#     new_c = int(c + randn(1) * step_size)
-#     while new_c < 0 or new_c > lim_c:
-#         new_c = int(c + randn(1) * step_size)
-
-#     return new_r, new_c
-
-
-# def multi_spotlight(
-#     prediction_func,
-#     args: CausalArgs,
-#     pixel_ranking,
-# ):
-#     """launches multiple spotlight searches over a responsibility landscape"""
-#     results = []
-#     logger.info("find global maximum first")
-#     exp1 = linear_search(
-#         args.img_array,
-#         prediction_func,
-#         args.target,
-#         pixel_ranking,
-#         args.mask_value,
-#         args.chunk_size,
-#     )
-#     results.append(exp1)
-#     logger.info("starting spotlight search")
-#     for _ in trange(args.spotlights - 1, disable=True):
-#         results.append(
-#             spotlight_search(
-#                 prediction_func,
-#                 args,
-#                 pixel_ranking,
-#             )
-#         )
-#     results = list(filter(lambda mat: mat is not None and np.sum(mat) > 0, results))
-#     return results
-
-
-# def spotlight_search(
-#     prediction_func,
-#     args: CausalArgs,
-#     pixel_ranking: NDArray[np.float32],
-#     r=None,
-#     c=None,
-#     total_steps_remaining=20,
-# ):
-#     """performs a spotlight search over a responsibility landscape"""
-#     # if args.shape is None:
-#     #     args.shape = Shape(args.img_array.shape)
-
-#     if r is None:
-#         r = np.random.randint(args.spatial_radius // 2, args.shape.width)
-#     if c is None:
-#         c = np.random.randint(args.spatial_radius // 2, args.shape.height)
-
-#     # TODO this should be yet another hyperparameter
-#     while total_steps_remaining > 0:
-#         explanation = spatial_search(
-#             prediction_func,
-#             args,
-#             pixel_ranking,
-#             r,
-#             c,
-#         )
-#         if explanation is None:
-#             local = args.spotlight_objective_function(
-#                 neighbours(
-#                     args.shape,
-#                     args.spatial_radius,
-#                     r,
-#                     c,
-#                     pixel_ranking,
-#                     0.0,
-#                 )
-#             )
-#             attempts = args.spotlight_step * 2
-#             new_r, new_c = random_steps(
-#                 r, c, args.spotlight_step, args.shape.width, args.shape.height
-#             )
-#             near = args.spotlight_objective_function(
-#                 neighbours(
-#                     args.shape,
-#                     args.spatial_radius,
-#                     new_r,
-#                     new_c,
-#                     pixel_ranking,
-#                     0.0,
-#                 )
-#             )
-#             while local < near and attempts > 0:
-#                 near = args.spotlight_objective_function(
-#                     neighbours(
-#                         args.shape,
-#                         args.spatial_radius,
-#                         new_r,
-#                         new_c,
-#                         pixel_ranking,
-#                         0.0,
-#                     )
-#                 )
-#                 new_r, new_c = random_steps(
-#                     r,
-#                     c,
-#                     args.spotlight_step,
-#                     args.shape.width,
-#                     args.shape.height,
-#                 )
-#                 attempts -= 1
-#             if attempts == 0:
-#                 r, c = (
-#                     np.random.randint(args.spatial_radius // 2, args.shape.width),
-#                     np.random.randint(args.spatial_radius // 2, args.shape.height),
-#                 )
-#             else:
-#                 r = new_r
-#                 c = new_c
-#         else:
-#             return explanation
-
-#         total_steps_remaining -= 1
-#     return None
+        while r == -1:
+            if self.args.spotlight_objective_function == "none":
+                centre = self.__random_location()
+            else:
+                centre = self.__random_step_from(
+                    centre,
+                    self.data.model_height,
+                    self.data.model_width,
+                    step=self.args.spotlight_step,
+                )
+            r = self._Explanation__spatial(centre=centre, expansion_limit=4)

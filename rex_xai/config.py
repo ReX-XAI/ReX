@@ -75,6 +75,7 @@ class Args:
         self.spotlight_eta: float = 0.2
         self.spotlight_step: int = 5
         self.spotlight_objective_function = np.mean
+        self.permitted_overlap: float = 0.0 
         # analysis
         self.analyze: bool = False
         self.insertion_step = 100
@@ -221,6 +222,14 @@ def cmdargs():
         type=str,
         help="store output in sqlite database <DATABASE>, creating db if necessary",
     )
+
+    parser.add_argument(
+        "--multi",
+        nargs="?",
+        const=10,
+        help="multiple explanations, with optional number <x> of floodlights, defaults to value in rex.toml, or 10 if undefined",
+    )
+
     parser.add_argument(
         "--iters",
         type=int,
@@ -445,6 +454,15 @@ def process_config_dict(config_file_args, args):
     if "spotlight_step" in multi_dict:
         args.spotlight_step = multi_dict["spotlight_step"]
     args.spotlight_objective_function = get_objective_function(multi_dict)  # type: ignore
+    if "permitted_overlap" in multi_dict:
+        po = multi_dict["permitted_overlap"]
+        if isinstance(po, float):
+            if po > 1.0 or po < 0.0:
+                raise ReXTomlError(f"expected a value between 0.0 and 1.0, but got {po}")
+            else:
+                args.permitted_overlap = po
+        else:
+            raise ReXTomlError(f"expected float but got {type(po)}")
 
     eval_dict = explain_dict["evaluation"]
     if "insertion_step" in eval_dict:
@@ -482,8 +500,9 @@ def process_cmd_args(cmd_args, args):
     if cmd_args.analyze or cmd_args.analyse:
         args.analyze = True
 
-    if cmd_args.show_all:
-        args.all = True
+    if cmd_args.multi is not None:
+        args.strategy = Strategy.MultiSpotlight
+        args.spotlights = int(cmd_args.multi)
 
 
 def load_config(config_path=None):
@@ -503,11 +522,12 @@ def load_config(config_path=None):
         try:
             process_config_dict(config_file_args, default_args)
             return default_args
-        except Exception:
+        except Exception as e:
+            print(f"{e}, reverting to default args")
             return default_args
 
     except ReXError as e:
-        print(e)
+        logger.fatal(e)
         exit(-1)
 
 

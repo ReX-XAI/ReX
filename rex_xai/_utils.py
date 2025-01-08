@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
+
+from itertools import chain, combinations
 from enum import Enum
-from typing import Tuple, Union
+from typing import Tuple, Union, Dict
 from numpy.typing import NDArray
 import torch as tt
 import numpy as np
@@ -11,6 +13,24 @@ from rex_xai.box import Box
 Strategy = Enum("Strategy", ["Global", "Spatial", "Spotlight", "MultiSpotlight"])
 
 Queue = Enum("Queue", ["Area", "All", "Intersection", "DC"])
+
+def powerset(r, reverse=True):
+    ps = list(
+        chain.from_iterable(
+            combinations(r, lim) for lim in range(1, len(r) + 1)
+        )
+    )
+    if reverse:
+        return reversed(ps)
+    else:
+        return ps
+
+
+def clause_area(clause, areas: Dict) -> int:
+    tot = 0
+    for c in clause:
+        tot += areas[c]
+    return tot
 
 
 class ReXError(Exception):

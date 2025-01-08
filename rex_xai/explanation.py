@@ -17,6 +17,7 @@ from tqdm import trange  # type: ignore
 from rex_xai.config import CausalArgs
 from rex_xai.database import update_database
 from rex_xai.evaluation import Evaluation
+from rex_xai.multi_explanation import MultiExplanation
 from rex_xai.extraction import Explanation
 from rex_xai.input_data import Data
 from rex_xai.logger import logger
@@ -24,6 +25,7 @@ from rex_xai.onnx import get_prediction_function
 from rex_xai.resp_maps import ResponsibilityMaps
 from rex_xai.responsibility import causal_explanation
 from rex_xai.prediction import Prediction
+from rex_xai._utils import Strategy
 
 
 def try_preprocess(args: CausalArgs, model_shape: Tuple[int], device: tt.device):
@@ -303,7 +305,18 @@ def _explanation(
     start = time.time()
 
     exp = calculate_responsibility(data, args, prediction_func)
-    exp.extract(args.strategy)
+
+    if args.strategy == Strategy.MultiSpotlight:
+        print(data.target)
+        multi = MultiExplanation(exp.maps, prediction_func, data, args, dict())
+        multi.extract()
+        clauses = multi.separate_by(0.0)
+
+        multi.contrastive(clauses)
+    else:
+        single = Explanation(exp.maps, prediction_func, data, args, dict())
+        single.extract(args.strategy)
+
 
     if args.analyze:
         results = analyze(exp, data.mode)
