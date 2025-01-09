@@ -258,7 +258,7 @@ def analyze(exp: Explanation, data_mode: str | None):
     else:
         ent = None
 
-    iauc, dauc = eval.insertion_deletion_curve(exp.prediction_func)
+    iauc, dauc = eval.insertion_deletion_curve(exp.prediction_func, normalise=exp.args.normalise_curves)
 
     analysis_results = {
         "area": rat,
@@ -304,18 +304,18 @@ def _explanation(
 
     start = time.time()
 
-    exp = calculate_responsibility(data, args, prediction_func)
+    resp_object = calculate_responsibility(data, args, prediction_func)
 
     if args.strategy == Strategy.MultiSpotlight:
         print(data.target)
-        multi = MultiExplanation(exp.maps, prediction_func, data, args, dict())
-        multi.extract()
-        clauses = multi.separate_by(0.0)
+        exp = MultiExplanation(resp_object.maps, prediction_func, data, args, dict())
+        exp.extract()
+        clauses = exp.separate_by(0.0)
 
         multi.contrastive(clauses)
     else:
-        single = Explanation(exp.maps, prediction_func, data, args, dict())
-        single.extract(args.strategy)
+        exp = Explanation(resp_object.maps, prediction_func, data, args, dict())
+        exp.extract(args.strategy)
 
 
     if args.analyze:
@@ -444,7 +444,7 @@ def explanation(
         )
         args.batch = model_shape[0]
 
-    # multiple explanations
+    # directory of data to process
     if os.path.isdir(args.path):
         dir = args.path
         explanations = []
