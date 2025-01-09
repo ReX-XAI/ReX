@@ -29,6 +29,29 @@ def test__explanation_snapshot(
         )
     )
 
+def test__explanation_snapshot_diff_model_shape(
+    args_torch_swin_v2_t, model_shape_swin_v2_t, prediction_func_swin_v2_t, cpu_device, snapshot
+):
+    exp = _explanation(args_torch_swin_v2_t, model_shape_swin_v2_t, prediction_func_swin_v2_t, cpu_device, db=None)
+
+    assert (
+        exp
+        == snapshot(
+            exclude=props(
+                "obj_function",
+                "spotlight_objective_function",
+                "custom",
+                "custom_location",
+            ),  # paths that differ between systems, pointers to functions that will differ between runs
+            matcher=path_type(
+                types=(CausalArgs,),
+                replacer=lambda data, _: AmberDataSerializer.object_as_named_tuple(
+                    data
+                ),  # needed to allow exclude to work for custom classes
+            ),
+        )
+    )
+
 
 @pytest.mark.parametrize("strategy", ["global", "spatial"])
 def test_extract_analyze(exp_custom, strategy, snapshot):

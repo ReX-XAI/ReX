@@ -32,7 +32,14 @@ def args():
 
 @pytest.fixture
 def args_custom(args):
-    process_custom_script("tests/scripts/pytorch.py", args)
+    process_custom_script("tests/scripts/pytorch_resnet50.py", args)
+    args.seed = 42
+
+    return args
+
+@pytest.fixture
+def args_torch_swin_v2_t(args):
+    process_custom_script("tests/scripts/pytorch_swin_v2_t.py", args)
     args.seed = 42
 
     return args
@@ -56,6 +63,20 @@ def model_shape(args_custom):
 @pytest.fixture
 def prediction_func(args_custom):
     prediction_func, model_shape = get_prediction_func_from_args(args_custom)
+
+    return prediction_func
+
+
+@pytest.fixture
+def model_shape_swin_v2_t(args_torch_swin_v2_t):
+    prediction_func, model_shape = get_prediction_func_from_args(args_torch_swin_v2_t)
+
+    return model_shape
+
+
+@pytest.fixture
+def prediction_func_swin_v2_t(args_torch_swin_v2_t):
+    prediction_func, model_shape = get_prediction_func_from_args(args_torch_swin_v2_t)
 
     return prediction_func
 
