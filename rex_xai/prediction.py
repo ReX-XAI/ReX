@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
+from typing import Optional
 import torch as tt
 import torch.nn.functional as F
 from numpy.typing import NDArray
-from typing import Optional, List
+from typing import List
 from rex_xai._utils import ff
 
 
@@ -25,9 +26,12 @@ class Prediction:
     def __repr__(self) -> str:
         if self.bounding_box is None:
             if self.is_passing():
-                return f"CLASS: {self.classification}, CONF: {self.confidence:.5f}"
+                return f"FOUND_CLASS: {self.classification}, CONF: {self.confidence:.5f}"
             else:
-                return f"CLASS: {self.classification}, CONF: {self.confidence:.5f}, TARGET_CLASS: {self.target}, TARGET_CONFIDENCE: {ff(self.target_confidence, '.5f')}"
+                if self.target is None:
+                    return f"FOUND_CLASS: {self.classification}, FOUND_CONF: {self.confidence:.5f}, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a" 
+                else:
+                    return f"FOUND_CLASS: {self.classification}, FOUND_CONF: {self.confidence:.5f}, TARGET_CLASS: {self.target}, TARGET_CONFIDENCE: {ff(self.target_confidence, '.5f')}" 
 
         return f"CLASS: {self.classification}, CONF: {self.confidence:.5f}, TARGET_CLASS: {self.target}, TARGET_CONFIDENCE: {ff(self.target_confidence, '.5f')}, BOUNDING_BOX: {self.bounding_box}"
 
