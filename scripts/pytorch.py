@@ -46,7 +46,7 @@ def prediction_function(mutants, target=None, raw=False, binary_threshold=None):
         tensor = model(mutants)
         if raw:
             return F.softmax(tensor, dim=1)
-        return from_pytorch_tensor(tensor)
+        return from_pytorch_tensor(tensor, target=target)
 
 
 def model_shape():

@@ -85,7 +85,7 @@ class OnnxRunner:
             sys.exit(-1)
 
     def run_with_data_on_device(
-        self, tensors, device, tsize, binary_threshold, raw=False, device_id=0
+        self, tensors, device, tsize, binary_threshold, raw=False, device_id=0, target=None
     ):
         # input_shape = self.session.get_inputs()[0].shape # Gets the shape of the input (e.g [batch_size, 3, 224, 224])
         batch_size = len(tensors) if isinstance(tensors, list) else tensors.shape[0]
@@ -125,7 +125,7 @@ class OnnxRunner:
         )
 
         self.session.run_with_iobinding(binding)
-        return from_pytorch_tensor(z_tensor)
+        return from_pytorch_tensor(z_tensor, target=target)
 
     def gen_prediction_function(self):
         if self.device == "cpu" or self.setup == Setup.ONNXMPS:
@@ -145,7 +145,7 @@ class OnnxRunner:
                 device=self.device,
                 raw=False,
                 binary_threshold=None: self.run_with_data_on_device(
-                    tensor, device, len(tensor), binary_threshold
+                    tensor, device, len(tensor), binary_threshold, target=target
                 ),
                 self.input_shape,
             )
