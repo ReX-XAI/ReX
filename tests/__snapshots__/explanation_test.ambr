@@ -65,7 +65,6 @@
     explanation=None,
     final_mask=None,
     maps={207: 4},
-    mask_func=0,
     run_stats=dict({
       'avg_box_size': 128.16666666666669,
       'max_depth_reached': 6,
@@ -153,7 +152,6 @@
     explanation=None,
     final_mask=None,
     maps={207: 4},
-    mask_func=0,
     run_stats=dict({
       'avg_box_size': 86.0,
       'max_depth_reached': 5,
@@ -241,7 +239,6 @@
     explanation=None,
     final_mask=None,
     maps={207: 4},
-    mask_func=0,
     run_stats=dict({
       'avg_box_size': 215.25,
       'max_depth_reached': 6,
@@ -329,7 +326,6 @@
     explanation=None,
     final_mask=None,
     maps={207: 4},
-    mask_func=0,
     run_stats=dict({
       'avg_box_size': 850.3333333333334,
       'max_depth_reached': 7,
@@ -414,7 +410,6 @@
     explanation=None,
     final_mask=None,
     maps={207: 4},
-    mask_func=0,
     run_stats=dict({
       'avg_box_size': 183.5625,
       'max_depth_reached': 5,
