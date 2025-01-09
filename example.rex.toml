@@ -22,6 +22,9 @@
 # binary model confidence threshold. Anything >= threshold will be classified as 1, otherwise 0
 # binary_threshold = 0.5
 
+# norm
+# norm = 255.0
+
 [rex.visual]
 # whether to show progress bar in the terminal, defalts to true
 # progress_bar = false
@@ -117,10 +120,19 @@
 # decrease spotlight by this amount
 # spotlight_eta = 0.2
 
-# objective function for spotlight search. Possible options 'mean' | 'max' | 'min'
-# obj_function = 'mean'
+# objective function for spotlight search. Possible options 'mean' | 'max' | 'min' | "none"
+# obj_function = 'none'
+
+# how much overlap to allow between different explanations. This is the dice coefficient, so
+# 0.0 means no permitted overlap, and 1 total overlap permitted
+# permitted_overlap = 0.0
 
 [explanation.evaluation]
 
+# normalise insertion/deletion curves by confidence of original data
+# normalise_curves = false
+
 # insertion/deletion curve step size
 # insertion_step = 100
+
+
