@@ -48,7 +48,6 @@ class Explanation:
         self.prediction_func = prediction_func
         self.data = data
         self.args = args
-        self.mask_func = args.mask_value
         self.run_stats = run_stats
 
     def extract(self, method: Strategy):
@@ -115,7 +114,7 @@ class Explanation:
             limit += self.args.chunk_size
             for _, loc in chunk:
                 self.set_to_true(loc, mutant)
-            d = _apply_to_data(mutant, self.data, self.mask_func).squeeze(0)
+            d = _apply_to_data(mutant, self.data, self.data.mask_value).squeeze(0)
             masks.append(d)
             if len(masks) == self.args.batch:
                 preds = self.prediction_func(tt.stack(masks).to(self.data.device))
@@ -170,7 +169,7 @@ class Explanation:
                         f"no explanation found after {expansion_limit} expansions"
                     )
                     return -1
-            d = _apply_to_data(mask, self.data, self.mask_func)
+            d = _apply_to_data(mask, self.data, self.data.mask_value)
             p = self.prediction_func(d)[0]
             if p.classification == self.data.target.classification:  #  type: ignore
                 return self.__global(

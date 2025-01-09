@@ -139,8 +139,7 @@ def __group_spectral_parts(explanation):
     return res
 
 
-def spectral_plot(explanation, data: Data, ranking, colour, extra=False, path=None):
-    # plt.style.use("seaborn-v0_8")
+def spectral_plot(explanation, data: Data, ranking, colour, extra=True, path=None):
     explanation = explanation.squeeze()
     if extra:
         fig, axs = plt.subplots(nrows=2, ncols=1, sharex=True)
@@ -151,14 +150,14 @@ def spectral_plot(explanation, data: Data, ranking, colour, extra=False, path=No
     else:
         fig, ax = plt.subplots(nrows=1, ncols=1)
 
-    data = data.data[0, 0, :].detach().cpu().numpy()  # type: ignore
-    d_min = np.min(data)  # type: ignore
-    d_max = np.max(data)  # type: ignore
+    raw_data = data.data[0, 0, :].detach().cpu().numpy()  # type: ignore
+    d_min = np.min(raw_data)  # type: ignore
+    d_max = np.max(raw_data)  # type: ignore
 
     # if the spectrum hasn't been base shifted to 0, then we do it to make plotting easier,
     # but we will lie about it on the y axis
     if d_min < 0:
-        data += np.abs(d_min)
+        raw_data += np.abs(d_min)
         y_dmin = np.floor(d_min)
         y_dmax = np.ceil(d_max)
         ytx = np.abs(y_dmin) + y_dmax
@@ -167,7 +166,7 @@ def spectral_plot(explanation, data: Data, ranking, colour, extra=False, path=No
         ax.set_yticks(ticks, labels=labels)
         ranking = np.repeat(ranking, len(labels), axis=0)
 
-    ax.plot(data)  # type: ignore
+    ax.plot(raw_data)  # type: ignore
     ax.set_ylabel("Wave Intensity")
 
     k = data.target.classification  # type: ignore

@@ -251,6 +251,12 @@ def cmdargs():
         help="assist ReX with your input type, one of <tabular>, <spectral>, <RGB>, <L>, <voxel>, <audio>",
     )
 
+    parser.add_argument(
+        "--spectral",
+        action="store_true",
+        help="set ReX input type to <spectral>, shortcut for --mode spectral",
+    )
+
     args = parser.parse_args()
     return args
 
@@ -311,6 +317,8 @@ def shared_args(cmd_args, args: CausalArgs):
         args.db = cmd_args.database
     if cmd_args.mode is not None:
         args.mode = cmd_args.mode
+    if cmd_args.spectral is not None:
+        args.mode = "spectral"
 
     args.processed = cmd_args.processed
 
@@ -443,7 +451,6 @@ def process_config_dict(config_file_args, args):
         args.insertion_step = eval_dict["insertion_step"]
 
 
-
 def process_custom_script(script, args):
     name, _ = os.path.splitext(script)
     spec = importlib.util.spec_from_file_location(name, script)
@@ -451,7 +458,7 @@ def process_custom_script(script, args):
     try:
         spec.loader.exec_module(script)  # type: ignore
     except Exception as e:
-        logger.error(f"failed to load {name} because of {e}, exiting...")
+        logger.error("failed to load %s because of %s, exiting...", script, e)
         raise e
     args.custom = script
     args.custom_location = script
@@ -461,8 +468,9 @@ def process_cmd_args(cmd_args, args):
     if cmd_args.script is not None:
         try:
             process_custom_script(cmd_args.script, args)
-        except ImportError:
-            pass
+        except Exception as e:
+            logger.fatal(e)
+            exit(-1)
 
     args.path = cmd_args.filename
 
