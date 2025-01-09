@@ -85,7 +85,14 @@ class OnnxRunner:
             sys.exit(-1)
 
     def run_with_data_on_device(
-        self, tensors, device, tsize, binary_threshold, raw=False, device_id=0, target=None
+        self,
+        tensors,
+        device,
+        tsize,
+        binary_threshold,
+        raw=False,
+        device_id=0,
+        target=None,
     ):
         # input_shape = self.session.get_inputs()[0].shape # Gets the shape of the input (e.g [batch_size, 3, 224, 224])
         batch_size = len(tensors) if isinstance(tensors, list) else tensors.shape[0]

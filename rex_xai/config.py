@@ -75,7 +75,7 @@ class Args:
         self.spotlight_eta: float = 0.2
         self.spotlight_step: int = 5
         self.spotlight_objective_function = np.mean
-        self.permitted_overlap: float = 0.0 
+        self.permitted_overlap: float = 0.0
         # analysis
         self.analyze: bool = False
         self.insertion_step = 100
@@ -459,7 +459,9 @@ def process_config_dict(config_file_args, args):
         po = multi_dict["permitted_overlap"]
         if isinstance(po, float):
             if po > 1.0 or po < 0.0:
-                raise ReXTomlError(f"expected a value between 0.0 and 1.0, but got {po}")
+                raise ReXTomlError(
+                    f"expected a value between 0.0 and 1.0, but got {po}"
+                )
             else:
                 args.permitted_overlap = po
         else:

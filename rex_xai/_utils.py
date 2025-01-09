@@ -14,12 +14,9 @@ Strategy = Enum("Strategy", ["Global", "Spatial", "Spotlight", "MultiSpotlight"]
 
 Queue = Enum("Queue", ["Area", "All", "Intersection", "DC"])
 
+
 def powerset(r, reverse=True):
-    ps = list(
-        chain.from_iterable(
-            combinations(r, lim) for lim in range(1, len(r) + 1)
-        )
-    )
+    ps = list(chain.from_iterable(combinations(r, lim) for lim in range(1, len(r) + 1)))
     if reverse:
         return reversed(ps)
     else:

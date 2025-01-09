@@ -258,7 +258,9 @@ def analyze(exp: Explanation, data_mode: str | None):
     else:
         ent = None
 
-    iauc, dauc = eval.insertion_deletion_curve(exp.prediction_func, normalise=exp.args.normalise_curves)
+    iauc, dauc = eval.insertion_deletion_curve(
+        exp.prediction_func, normalise=exp.args.normalise_curves
+    )
 
     analysis_results = {
         "area": rat,
@@ -298,7 +300,9 @@ def _explanation(
     """
     data = load_and_preprocess_data(model_shape, device, args)
     data.set_mask_value(args.mask_value, device=data.device)
-    logger.debug("args.mask_value is %s, data.mask_value is %s", args.mask_value, data.mask_value)
+    logger.debug(
+        "args.mask_value is %s, data.mask_value is %s", args.mask_value, data.mask_value
+    )
 
     data.target = predict_target(data, prediction_func)
 
@@ -312,11 +316,10 @@ def _explanation(
         exp.extract()
         clauses = exp.separate_by(0.0)
 
-        multi.contrastive(clauses)
+        exp.contrastive(clauses)
     else:
         exp = Explanation(resp_object.maps, prediction_func, data, args, dict())
         exp.extract(args.strategy)
-
 
     if args.analyze:
         results = analyze(exp, data.mode)

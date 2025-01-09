@@ -129,9 +129,7 @@ class MultiExplanation(Explanation):
             self.data.model_width * self.data.model_height,
         )
 
-        return np.unravel_index(
-            origin, (self.data.model_height, self.data.model_width)
-        )
+        return np.unravel_index(origin, (self.data.model_height, self.data.model_width))
 
     def spotlight_search(self, origin=None):
         if origin is None:
