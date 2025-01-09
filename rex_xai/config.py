@@ -79,6 +79,7 @@ class Args:
         # analysis
         self.analyze: bool = False
         self.insertion_step = 100
+        self.normalise_curves = True
 
     def __repr__(self) -> str:
         return (
@@ -467,6 +468,8 @@ def process_config_dict(config_file_args, args):
     eval_dict = explain_dict["evaluation"]
     if "insertion_step" in eval_dict:
         args.insertion_step = eval_dict["insertion_step"]
+    if "normalise_curves" in eval_dict:
+        args.normalise_curves = eval_dict["normalise_curves"]
 
 
 def process_custom_script(script, args):
