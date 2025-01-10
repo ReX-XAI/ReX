@@ -15,8 +15,10 @@ from rex_xai.prediction import Prediction
 from rex_xai.extraction import Explanation
 from rex_xai.multi_explanation import MultiExplanation
 
+
 def _dataframe(db, table):
     return pd.read_sql_table(table, f"sqlite:///{db}")
+
 
 def _to_numpy(buffer, shape, dtype):
     return np.frombuffer(zlib.decompress(buffer), dtype=dtype).reshape(shape)
@@ -25,9 +27,12 @@ def _to_numpy(buffer, shape, dtype):
 def db_to_pandas(db, shape, dtype=np.float32, table="rex"):
     """for interactive use"""
     df = _dataframe(db, table=table)
-    df['responsibility'] = df['responsibility'].apply(lambda x: _to_numpy(x, (224, 224), dtype))
-    df['explanation'] = df['explanation'].apply(lambda x: _to_numpy(x, shape, dtype))
+    df["responsibility"] = df["responsibility"].apply(
+        lambda x: _to_numpy(x, (224, 224), dtype)
+    )
+    df["explanation"] = df["explanation"].apply(lambda x: _to_numpy(x, shape, dtype))
     return df
+
 
 def update_database(
     db,
