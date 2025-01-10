@@ -310,13 +310,13 @@ def _explanation(
 
     resp_object = calculate_responsibility(data, args, prediction_func)
 
-    if args.strategy == Strategy.MultiSpotlight:
-        print(data.target)
+    if args.strategy in (Strategy.MultiSpotlight, Strategy.Contrastive):
         exp = MultiExplanation(resp_object.maps, prediction_func, data, args, dict())
         exp.extract()
-        clauses = exp.separate_by(0.0)
+        clauses = exp.separate_by(args.permitted_overlap)
 
-        exp.contrastive(clauses)
+        if args.strategy == Strategy.Contrastive:
+            exp.contrastive(clauses)
     else:
         exp = Explanation(resp_object.maps, prediction_func, data, args, dict())
         exp.extract(args.strategy)

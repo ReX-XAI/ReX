@@ -232,6 +232,12 @@ def cmdargs():
     )
 
     parser.add_argument(
+        "--contrastive",
+        nargs="?",
+        const=10,
+        help="a contrastive explanation, both necessary and sufficient, needs optional number <x> of floodlights, defaults to value in rex.toml, or 10 if undefined",
+    )
+    parser.add_argument(
         "--iters",
         type=int,
         help="manually override the number of iterations set in the config file",
@@ -279,6 +285,8 @@ def match_strategy(cmd_args):
         return Strategy.Global
     if cmd_args.strategy == "spatial":
         return Strategy.Spatial
+    if cmd_args.strategy == "contrastive":
+        return Strategy.Contrastive
     return Strategy.Spatial
 
 
@@ -508,6 +516,10 @@ def process_cmd_args(cmd_args, args):
     if cmd_args.multi is not None:
         args.strategy = Strategy.MultiSpotlight
         args.spotlights = int(cmd_args.multi)
+
+    if cmd_args.contrastive is not None:
+        args.strategy = Strategy.Contrastive
+        args.spotlights = int(cmd_args.contrastive)
 
 
 def load_config(config_path=None):
