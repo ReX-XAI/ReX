@@ -4,12 +4,12 @@ import sqlalchemy as sa
 import zlib
 from sqlalchemy import Boolean, Float, String, create_engine
 from sqlalchemy import Column, Integer, Unicode
+from ast import literal_eval
 
 import pandas as pd
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 import numpy as np
 
-from rex_xai.logger import logger
 from rex_xai.config import CausalArgs, Strategy
 from rex_xai.prediction import Prediction
 from rex_xai.extraction import Explanation
@@ -24,13 +24,16 @@ def _to_numpy(buffer, shape, dtype):
     return np.frombuffer(zlib.decompress(buffer), dtype=dtype).reshape(shape)
 
 
-def db_to_pandas(db, shape, dtype=np.float32, table="rex"):
+def db_to_pandas(db, dtype=np.float32, table="rex"):
     """for interactive use"""
     df = _dataframe(db, table=table)
-    df["responsibility"] = df["responsibility"].apply(
-        lambda x: _to_numpy(x, (224, 224), dtype)
-    )
-    df["explanation"] = df["explanation"].apply(lambda x: _to_numpy(x, shape, dtype))
+
+    df["responsibility"] =  df.apply(
+        lambda row: _to_numpy(row['responsibility'], literal_eval(row["responsibility_shape"]), dtype), axis=1)
+
+    df["explanation"] =  df.apply(
+        lambda row: _to_numpy(row['explanation'], literal_eval(row["explanation_shape"]), np.bool_), axis=1)
+
     return df
 
 
@@ -43,6 +46,8 @@ def update_database(
     total_failing,
     max_depth_reached,
     avg_box_size,
+    multi=False,
+    multi_no=None,
 ):
     if isinstance(explanation, Explanation):
         add_to_database(
@@ -59,9 +64,23 @@ def update_database(
             avg_box_size,
         )
 
-    if isinstance(explanation, MultiExplanation):
-        logger.warning("multiexplanation not yet done")
-        pass
+    elif isinstance(explanation, MultiExplanation):
+        add_to_database(
+            db,
+            explanation.args,
+            target.classification,
+            target.confidence,
+            explanation.target_map,
+            explanation.explanations[multi_no].detach().cpu().numpy(),  # type: ignore
+            time_taken,
+            total_passing,
+            total_failing,
+            max_depth_reached,
+            avg_box_size,
+            multi=multi,
+            multi_no=multi_no,
+
+        )
 
 
 def add_to_database(
@@ -84,13 +103,18 @@ def add_to_database(
     else:
         id = hash(str(datetime.now().time()))
 
+    responsibility_shape = responsibility.shape
+    explanation_shape = explanation.shape
+
     object = DataBaseEntry(
         id,
         args.path,
         target,
         confidence,
         responsibility,
+        responsibility_shape,
         explanation,
+        explanation_shape,
         time_taken,
         depth_reached=depth_reached,
         avg_box_size=avg_box_size,
@@ -156,12 +180,12 @@ class DataBaseEntry(Base):
     confidence = Column(Float)
     time = Column(Float)
     responsibility = Column(NumpyType)
-    px_shape_x = Column(Integer)
-    px_shape_y = Column(Integer)
+    responsibility_shape = Column(Unicode)
     total_work = Column(Integer)
     passing = Column(Integer)
     failing = Column(Integer)
     explanation = Column(NumpyType)
+    explanation_shape = Column(Unicode)
     multi = Column(Boolean)
     multi_no = Column(Integer)
 
@@ -193,7 +217,9 @@ class DataBaseEntry(Base):
         target,
         confidence,
         responsibility,
+        responsibility_shape,
         explanation,
+        explanation_shape,
         time_taken,
         passing=None,
         failing=None,
@@ -221,9 +247,9 @@ class DataBaseEntry(Base):
         self.target = target
         self.confidence = confidence
         self.responsibility = responsibility
-        self.px_shape_x = responsibility.shape[0]
-        self.px_shape_y = responsibility.shape[1]
+        self.responsibility_shape = str(responsibility_shape)
         self.explanation = explanation
+        self.explanation_shape = str(explanation_shape)
         self.time = time_taken
         self.total_work = total_work
         self.passing = passing

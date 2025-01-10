@@ -105,7 +105,6 @@ class Explanation:
                         self.final_mask = mutant.zero_()
                         for _, loc in ranking[:limit]:
                             self.set_to_true(loc, self.final_mask)
-                        # np.save("test", self.final_mask.detach().cpu().numpy())
                         return
                 masks = []
 
