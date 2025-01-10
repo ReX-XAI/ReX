@@ -5,6 +5,7 @@ import zlib
 from sqlalchemy import Boolean, Float, String, create_engine
 from sqlalchemy import Column, Integer, Unicode
 
+import pandas as pd
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 import numpy as np
 
@@ -14,6 +15,19 @@ from rex_xai.prediction import Prediction
 from rex_xai.extraction import Explanation
 from rex_xai.multi_explanation import MultiExplanation
 
+def _dataframe(db, table):
+    return pd.read_sql_table(table, f"sqlite:///{db}")
+
+def _to_numpy(buffer, shape, dtype):
+    return np.frombuffer(zlib.decompress(buffer), dtype=dtype).reshape(shape)
+
+
+def db_to_pandas(db, shape, dtype=np.float32, table="rex"):
+    """for interactive use"""
+    df = _dataframe(db, table=table)
+    df['responsibility'] = df['responsibility'].apply(lambda x: _to_numpy(x, (224, 224), dtype))
+    df['explanation'] = df['explanation'].apply(lambda x: _to_numpy(x, shape, dtype))
+    return df
 
 def update_database(
     db,
@@ -50,7 +64,7 @@ def add_to_database(
     args: CausalArgs,
     target,
     confidence,
-    pixel_ranking,
+    responsibility,
     explanation,
     time_taken,
     passing,
@@ -70,7 +84,7 @@ def add_to_database(
         args.path,
         target,
         confidence,
-        pixel_ranking,
+        responsibility,
         explanation,
         time_taken,
         depth_reached=depth_reached,
@@ -136,7 +150,7 @@ class DataBaseEntry(Base):
     target = Column(Integer)
     confidence = Column(Float)
     time = Column(Float)
-    pixel_ranking = Column(NumpyType)
+    responsibility = Column(NumpyType)
     px_shape_x = Column(Integer)
     px_shape_y = Column(Integer)
     total_work = Column(Integer)
@@ -173,7 +187,7 @@ class DataBaseEntry(Base):
         path,
         target,
         confidence,
-        pixel_ranking,
+        responsibility,
         explanation,
         time_taken,
         passing=None,
@@ -201,9 +215,9 @@ class DataBaseEntry(Base):
         self.path = path
         self.target = target
         self.confidence = confidence
-        self.pixel_ranking = pixel_ranking
-        self.px_shape_x = pixel_ranking.shape[0]
-        self.px_shape_y = pixel_ranking.shape[1]
+        self.responsibility = responsibility
+        self.px_shape_x = responsibility.shape[0]
+        self.px_shape_y = responsibility.shape[1]
         self.explanation = explanation
         self.time = time_taken
         self.total_work = total_work
