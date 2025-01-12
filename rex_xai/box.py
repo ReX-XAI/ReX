@@ -226,16 +226,6 @@ class BoxInternal:
         Create 4 boxes from the original box passed in as an argument.
         Pick two axes to split on randomly using the axes class and create boxes.
         """
-        if self.distribution == Distribution.Adaptive:
-            pos = random_coords(self.distribution, self.corners(), map=map)
-        else:
-            h = int(self.row_stop - self.row_start)
-            w = int(self.col_stop - self.col_start)
-            d= int(self.depth_stop - self.depth_start) # depth
-            space: int = h * w
-            pos = random_coords(
-                self.distribution, space, h, w, self.distribution_args, map=map
-            )
 
         # Pick two axes to split on randomly using the axes class
         axes = [Axes.ROW, Axes.COL, Axes.DEPTH]
@@ -330,7 +320,9 @@ class BoxInternal:
         """returns the area of a box"""
 
         if self.depth_start is not None and self.depth_stop is not None:
-            return (self.row_stop - self.row_start) * (self.col_stop - self.col_start) * (self.depth_stop - self.depth_start)
+            return ((self.row_stop - self.row_start) *
+                    (self.col_stop - self.col_start) *
+                    (self.depth_stop - self.depth_start))
         else:
             if self.row_start == 0 and self.row_stop == 0:
                 return self.col_stop - self.col_start
@@ -385,29 +377,17 @@ def initialise_tree(
     r_lim, c_lim, distribution, distribution_args, r_start=0, c_start=0, d_start=0, d_lim=None
 ) -> Box:
     """initialise box tree with root node, the whole image"""
-    if d_lim is not None:
-        return Box(
-            r_start,
-            r_lim,
-            c_start,
-            c_lim,
-            d_start,
-            d_lim,
-            distribution,
-            distribution_args,
-            name="R",
-        )
-    else:
-        return Box(
-            r_start,
-            r_lim,
-            c_start,
-            c_lim,
-            distribution,
-            distribution_args,
-            name="R",
-        )
-
+    return Box(
+        r_start,
+        r_lim,
+        c_start,
+        c_lim,
+        depth_start=d_start,
+        depth_stop=d_lim,
+        distribution=distribution,
+        distribution_args=distribution_args,
+        name="R",
+    )
 
 def show_tree(tree):
     """Print the box tree to the terminal."""
