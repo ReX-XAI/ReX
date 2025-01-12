@@ -297,6 +297,28 @@ def overlay_grid(img, step_count=10):
 
     return img
 
+def voxel_plot(
+        args: CausalArgs, resp_map: ResponsibilityMaps, target: Prediction, data: Data, path = None):
+    """ Plot a 3D voxel plot of the responsibility map using mayavi """
+    from mayavi import mlab # TODO: Mayavi dependency for 3D models
+
+    data: np.ndarray = data.data
+    maps: np.ndarray = resp_map.get(target.classification)
+
+    data = data[0, :, :, :]  # Remove batch dimension
+
+    background = np.where(data < 0.05)  # Threshold for background voxels TODO: make this a parameter
+    maps[background] = np.min(maps)  # Set background to minimum value
+
+    mlab.figure()
+
+    mlab.contour3d(data, colormap='gray', transparent=True, opacity=0.5)
+    mlab.contour3d(maps, colormap='Reds', transparent=True, opacity=0.5)
+
+    if path is not None:
+        mlab.savefig(path)
+    else:
+        mlab.show()
 
 def save_image(explanation, data: Data, args: CausalArgs, path=None):
     mask = None
