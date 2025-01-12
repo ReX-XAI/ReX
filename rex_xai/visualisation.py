@@ -368,3 +368,30 @@ def save_image(explanation, data: Data, args: CausalArgs, path=None):
                 out.save(path)
 
             return out
+    elif data.mode == "voxel":
+        data: np.ndarray = data.data
+        explanation: np.ndarray = explanation.squeeze().detach().cpu().numpy()
+        data = data[0, :, :, :]  # Remove batch dimension
+
+        background = np.where(data < 0.05) # Threshold for background voxels TODO: make this a parameter
+        explanation[background] = np.min(explanation)
+
+        num_slices = 10
+        fig, axes = plt.subplots(3, num_slices, figsize=(15, 6))
+
+        for axis in explanation.shape:
+            slice_indices = np.linspace(0, explanation.shape[axis] - 1, num_slices, dtype=int)
+            for i, slice_index in enumerate(slice_indices):
+                ax = axes[axis, i]
+                data_slice = np.take(data, slice_index, axis=axis)
+                resp_slice = np.take(explanation, slice_index, axis=axis)
+                ax.imshow(data_slice, cmap='gray')
+                ax.imshow(resp_slice, cmap='coolwarm', alpha=0.4)
+                ax.axis('off')
+
+        plt.tight_layout()
+
+        if args.output is not None:
+            plt.savefig(args.output[0])
+        else:
+            plt.show()
