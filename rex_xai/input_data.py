@@ -33,9 +33,10 @@ class Data:
                 self.mode = mode
 
         self.model_shape = model_shape
-        height, width, channels, order = self.__get_shape()
+        height, width, channels, order, depth = self.__get_shape()
         self.model_height: Optional[int] = height
         self.model_width: Optional[int] = width
+        self.model_depth: Optional[int] = depth
         self.model_channels: Optional[int] = channels
         self.model_order = order
         self.mask_value = None
@@ -165,19 +166,25 @@ class Data:
             self.data = self._normalise(means, stds, astype, norm)
 
     def __get_shape(self):
+        """ returns height, width, channels, order, depth for the model """
         if (self.mode == "tabular" or self.mode == "spectral") and len(
             self.model_shape
         ) == 3:
-            return 1, self.model_shape[2], 1, None
+            return 1, self.model_shape[2], 1, None, None
         if self.mode in ("RGB", "RGBA", "L") and len(self.model_shape) == 4:
             _, a, b, c = self.model_shape
             if a == 1 or a == 3 or a == 4:
-                return b, c, a, "first"
+                return b, c, a, "first", None
             else:
-                return a, b, c, "last"
+                return a, b, c, "last", None
         if self.mode == "voxel":
-            pass
-        return None, None, None, None
+            if len(self.model_shape) == 4:
+                batch, w, h, d = self.model_shape # If batch is present
+                return w, h, None, None, d
+            else:
+                w, h, d = self.model_shape
+                return w, h, None, None, d
+        return None, None, None, None, None
 
     def set_mask_value(self, m, device="cpu"):
         assert self.data is not None

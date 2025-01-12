@@ -116,12 +116,21 @@ def causal_explanation(
         np.random.seed(args.seed + process)
         tt.manual_seed(args.seed + process)
 
-    search_tree = initialise_tree(
-        data.model_height,
-        data.model_width,
-        args.distribution,
-        args.distribution_args,
-    )
+    if data.model_depth is not None:
+        search_tree = initialise_tree(
+            data.model_height,
+            data.model_width,
+            args.distribution,
+            args.distribution_args,
+            d_lim=data.model_depth,
+        )
+    else:
+        search_tree = initialise_tree(
+            data.model_height,
+            data.model_width,
+            args.distribution,
+            args.distribution_args,
+        )
 
     total_work = 0
     total_passing = 0

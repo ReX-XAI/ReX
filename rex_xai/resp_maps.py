@@ -32,9 +32,13 @@ class ResponsibilityMaps:
         except KeyError:
             return None
 
-    def new_map(self, k: int, height, width):
-        self.maps[k] = np.zeros((height, width), dtype="float32")
-        self.counts[k] = 1
+    def new_map(self, k: int, height, width, depth=None):
+        if depth is not None:
+            self.maps[k] = np.zeros((height, width, depth), dtype="float32")
+            self.counts[k] = 1
+        else:
+            self.maps[k] = np.zeros((height, width), dtype="float32")
+            self.counts[k] = 1
 
     def items(self):
         return self.maps.items()
@@ -90,7 +94,10 @@ class ResponsibilityMaps:
                 logger.fatal("this is no search classification, so exiting here")
                 sys.exit(-1)
             if k not in self.maps:
-                self.new_map(k, data.model_height, data.model_width)
+                if data.model_depth is not None:
+                    self.new_map(k, data.model_height, data.model_width, data.model_depth)
+                else:
+                    self.new_map(k, data.model_height, data.model_width)
             resp_map = self.get(k)
             assert resp_map is not None
             for box_name in mutant.get_active_boxes():
@@ -99,6 +106,12 @@ class ResponsibilityMaps:
                     index = np.uint(box_name[-1])
                     if data.mode in ("spectral", "tabular"):
                         section = resp_map[0, box.col_start : box.col_stop]
+                    elif data.mode == "voxel":
+                        section = resp_map[
+                            box.row_start : box.row_stop,
+                            box.col_start : box.col_stop,
+                            box.depth_start : box.depth_stop,
+                        ]
                     else:
                         section = resp_map[
                             box.row_start : box.row_stop,

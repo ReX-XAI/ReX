@@ -169,7 +169,10 @@ def calculate_responsibility(
         )
 
     maps = ResponsibilityMaps()
-    maps.new_map(data.target.classification, data.model_height, data.model_width)
+    if data.model_height is not None:
+        maps.new_map(data.target.classification, data.model_height, data.model_width, data.model_depth)
+    else:
+        maps.new_map(data.target.classification, data.model_height, data.model_width)
 
     total_passing: int = 0
     total_failing: int = 0
