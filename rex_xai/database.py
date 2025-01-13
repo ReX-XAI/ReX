@@ -28,11 +28,19 @@ def db_to_pandas(db, dtype=np.float32, table="rex"):
     """for interactive use"""
     df = _dataframe(db, table=table)
 
-    df["responsibility"] =  df.apply(
-        lambda row: _to_numpy(row['responsibility'], literal_eval(row["responsibility_shape"]), dtype), axis=1)
+    df["responsibility"] = df.apply(
+        lambda row: _to_numpy(
+            row["responsibility"], literal_eval(row["responsibility_shape"]), dtype
+        ),
+        axis=1,
+    )
 
-    df["explanation"] =  df.apply(
-        lambda row: _to_numpy(row['explanation'], literal_eval(row["explanation_shape"]), np.bool_), axis=1)
+    df["explanation"] = df.apply(
+        lambda row: _to_numpy(
+            row["explanation"], literal_eval(row["explanation_shape"]), np.bool_
+        ),
+        axis=1,
+    )
 
     return df
 
@@ -56,7 +64,7 @@ def update_database(
             target.classification,
             target.confidence,
             explanation.target_map,
-            explanation.explanation.detach().cpu().numpy(),  # type: ignore
+            explanation.final_mask.detach().cpu().numpy(),
             time_taken,
             total_passing,
             total_failing,
@@ -79,7 +87,6 @@ def update_database(
             avg_box_size,
             multi=multi,
             multi_no=multi_no,
-
         )
 
 
@@ -105,6 +112,10 @@ def add_to_database(
 
     responsibility_shape = responsibility.shape
     explanation_shape = explanation.shape
+    print(responsibility_shape)
+    print(explanation_shape)
+    print(responsibility.dtype)
+    print(explanation.dtype)
 
     object = DataBaseEntry(
         id,

@@ -68,7 +68,7 @@ class Args:
         # args for spatial strategy
         self.spatial_radius: int = 25
         self.spatial_eta: float = 0.2
-        self.no_expansions = 50
+        self.no_expansions = 4
         # spotlight args
         self.spotlights: int = 10
         self.spotlight_size: int = 20

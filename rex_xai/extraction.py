@@ -2,7 +2,6 @@
 from typing import Optional
 
 import torch as tt
-import numpy as np
 
 from rex_xai import visualisation
 from rex_xai.input_data import Data
@@ -10,7 +9,7 @@ from rex_xai.config import CausalArgs
 from rex_xai.config import Strategy
 from rex_xai.logger import logger
 from rex_xai.mutant import _apply_to_data
-from rex_xai._utils import get_map_locations, set_boolean_mask_value
+from rex_xai._utils import get_map_locations, set_boolean_mask_value, SpatialSearch
 from rex_xai.resp_maps import ResponsibilityMaps
 
 
@@ -37,7 +36,8 @@ class Explanation:
             maps.subset(data.target.classification)
             self.maps = maps
 
-        self.target_map: np.ndarray = maps.get(data.target.classification)  # type: ignore
+        self.target_map = tt.from_numpy(maps.get(data.target.classification)).to('mps')
+        # self.target_map: np.ndarray = maps.get(data.target.classification)  # type: ignore
         if self.target_map is None:
             raise ValueError(
                 f"No responsibility map found for target {data.target.classification}!"
@@ -61,7 +61,7 @@ class Explanation:
                 )
                 self.__global()
             else:
-                self.__spatial()
+                _ = self.__spatial()
 
     def blank(self):
         assert self.data.data is not None
@@ -108,31 +108,53 @@ class Explanation:
                         return
                 masks = []
 
-    def __circle(self, centre, radius: int):
-        Y, X = np.ogrid[: self.data.model_height, : self.data.model_width]
+    def __generate_circle_coordinates(self, centre, radius: int):
+        # Y, X = np.ogrid[: self.data.model_height, : self.data.model_width]
+        print(radius)
+        # exit()
+        Y, X = tt.meshgrid(tt.arange(0, self.data.model_height), tt.arange(0, self.data.model_width), indexing="ij")
 
-        dist_from_centre = np.sqrt((Y - centre[0]) ** 2 + (X - centre[1]) ** 2)
+        # dist_from_centre = np.sqrt((Y - centre[0]) ** 2 + (X - centre[1]) ** 2)
+        dist_from_centre = tt.sqrt((Y.to('mps') - centre[0]) ** 2 + (X.to('mps') - centre[1]) ** 2)
 
         # this produces a H * W mask which can be using in conjunction with np.where()
-        mask = dist_from_centre <= radius
+        circle_mask = dist_from_centre <= radius
 
-        return tt.from_numpy(mask).to(self.data.device)
+        return circle_mask
+        # return tt.from_numpy(mask).to(self.data.device)
 
-    def __spatial(self, centre=None, expansion_limit=None) -> Optional[int]:
-        # we don't have a search location to start from, so we try to isolate one
-        map = self.target_map
-        if centre is None:
-            centre = np.unravel_index(np.argmax(map), map.shape)
-
-        start_radius = self.args.spatial_radius
+    def __draw_circle(self, centre, start_radius=None):
+        if start_radius is None:
+            start_radius = self.args.spatial_radius
         mask = tt.zeros(
             self.data.model_shape[1:], dtype=tt.bool, device=self.data.device
         )
-        circle = self.__circle(centre, start_radius)
+        circle_mask = self.__generate_circle_coordinates(centre, start_radius)
         if self.data.model_order == "first":
-            mask[:, circle] = True
+            mask = tt.where(circle_mask, True, False)
+            # mask[:, circle_mask] = True
         else:
-            mask[circle, :] = True
+            mask[circle_mask, :] = True
+        return start_radius, circle_mask, mask
+
+
+    def mean_masked_responsibility(self, mask):
+        # TODO check that self.maps is a singleton
+        masked_responsibility = tt.where(mask, self.target_map, 0)  #type: ignore
+        return tt.mean(masked_responsibility).item()
+
+    def __spatial(self, centre=None, expansion_limit=None) -> Optional[SpatialSearch]:
+        # we don't have a search location to start from, so we try to isolate one
+        map = self.target_map
+        if centre is None:
+            centre = tt.unravel_index(tt.argmax(map), map.shape)
+            # centre = np.unravel_index(np.argmax(map), map.shape)
+
+        start_radius, circle, mask = self.__draw_circle(centre)
+
+        limit = max([self.data.model_width, self.data.model_height])
+
+        mean_masked_responsibility = self.mean_masked_responsibility(mask)
 
         expansions = 0
         cutoff = (
@@ -144,17 +166,21 @@ class Explanation:
                     logger.info(
                         f"no explanation found after {expansion_limit} expansions"
                     )
-                    return -1
+                    return SpatialSearch.NotFound, mean_masked_responsibility
             d = _apply_to_data(mask, self.data, self.data.mask_value)
             p = self.prediction_func(d)[0]
             if p.classification == self.data.target.classification:  #  type: ignore
-                return self.__global(
-                    map=np.where(circle.detach().cpu().numpy(), map, 0)
+                self.__global(
+                    map=tt.where(circle, map, 0)
                 )
+                return SpatialSearch.Found, mean_masked_responsibility
             start_radius = int(start_radius * (1 + self.args.spatial_eta))
-            circle = self.__circle(centre, start_radius)
+            if start_radius > limit:
+                return SpatialSearch.NotFound, mean_masked_responsibility
+            _, circle, _ = self.__draw_circle(centre, start_radius)
             if self.data.model_order == "first":
-                mask[:, circle] = True
+                mask = tt.where(circle, True, False)
+                # mask[:, circle] = True
             else:
                 mask[circle, :] = True
             expansions += 1

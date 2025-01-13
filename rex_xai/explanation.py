@@ -313,14 +313,18 @@ def _explanation(
     clauses = None
 
     if args.strategy in (Strategy.MultiSpotlight, Strategy.Contrastive):
-        exp = MultiExplanation(resp_object.maps, prediction_func, data, args, resp_object.run_stats)
+        exp = MultiExplanation(
+            resp_object.maps, prediction_func, data, args, resp_object.run_stats
+        )
         exp.extract()
         clauses = exp.separate_by(args.permitted_overlap)
 
         if args.strategy == Strategy.Contrastive:
             exp.contrastive(clauses)
     else:
-        exp = Explanation(resp_object.maps, prediction_func, data, args, resp_object.run_stats)
+        exp = Explanation(
+            resp_object.maps, prediction_func, data, args, resp_object.run_stats
+        )
         exp.extract(args.strategy)
 
     if args.analyze:
@@ -359,18 +363,19 @@ def _explanation(
         if args.strategy == Strategy.MultiSpotlight:
             if clauses is not None and len(clauses) > 0:
                 logger.info("writing multiple explanations to database")
-                for c in (clauses[0]):
-                    update_database(db,
-                                    data.target,
-                                    exp,
-                                    time_taken,
-                                    exp.run_stats["total_passing"],
-                                    exp.run_stats["total_failing"],
-                                    exp.run_stats["max_depth_reached"],
-                                    exp.run_stats["avg_box_size"],
-                                    multi=True,
-                                    multi_no=c,
-                                    )
+                for c in clauses[0]:
+                    update_database(
+                        db,
+                        data.target,
+                        exp,
+                        time_taken,
+                        exp.run_stats["total_passing"],
+                        exp.run_stats["total_failing"],
+                        exp.run_stats["max_depth_reached"],
+                        exp.run_stats["avg_box_size"],
+                        multi=True,
+                        multi_no=c,
+                    )
         else:
             logger.info("writing to database")
             update_database(

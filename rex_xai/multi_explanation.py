@@ -6,12 +6,11 @@ import numpy as np
 import random
 import torch as tt
 from itertools import combinations
-from PIL import Image
 
 from rex_xai.extraction import Explanation
 from rex_xai.distributions import random_coords, Distribution
 from rex_xai.logger import logger
-from rex_xai._utils import powerset, clause_area
+from rex_xai._utils import powerset, clause_area, SpatialSearch
 
 
 class MultiExplanation(Explanation):
@@ -20,7 +19,8 @@ class MultiExplanation(Explanation):
         self.explanations = []
 
     def extract(self, method=None):
-        target_map = self.maps.get(self.data.target.classification)
+        print(type(self.maps))
+        target_map = self.maps.get(self.data.target.classification) # type: ignore
         if target_map is not None:
             self.maps = tt.from_numpy(target_map).to(self.data.device)
             self.blank()
@@ -91,6 +91,7 @@ class MultiExplanation(Explanation):
                 d = tt.where(mask, 0, self.data.data)  # type: ignore
                 p = self.prediction_func(d)[0]
                 if p.classification != self.data.target.classification:
+                    print("remove this")
                     original = np.array(self.data.input.resize((224, 224)))
                     mask = mask.detach().cpu().numpy().transpose((1, 2, 0))
                     img = np.where(mask, 0, original)
@@ -137,9 +138,9 @@ class MultiExplanation(Explanation):
         else:
             centre = origin
 
-        r = self._Explanation__spatial(centre=centre, expansion_limit=4)
+        r = self._Explanation__spatial(centre=centre, expansion_limit=self.args.no_expansions) #type: ignore
 
-        while r == -1:
+        while r == SpatialSearch.NotFound:
             if self.args.spotlight_objective_function == "none":
                 centre = self.__random_location()
             else:
@@ -149,4 +150,4 @@ class MultiExplanation(Explanation):
                     self.data.model_width,
                     step=self.args.spotlight_step,
                 )
-            r = self._Explanation__spatial(centre=centre, expansion_limit=4)
+            r = self._Explanation__spatial(centre=centre, expansion_limit=self.args.no_expansions) #type: ignore

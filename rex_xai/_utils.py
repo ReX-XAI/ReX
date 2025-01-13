@@ -14,6 +14,7 @@ Strategy = Enum("Strategy", ["Global", "Spatial", "MultiSpotlight", "Contrastive
 
 Queue = Enum("Queue", ["Area", "All", "Intersection", "DC"])
 
+SpatialSearch = Enum("SpatialSearch", ["NotFound", "Found"])
 
 def powerset(r, reverse=True):
     ps = list(chain.from_iterable(combinations(r, lim) for lim in range(1, len(r) + 1)))
@@ -82,6 +83,8 @@ def get_device(gpu: bool):
 
 
 def get_map_locations(map, reverse=True):
+    if isinstance(map, tt.Tensor):
+        map = map.detach().cpu().numpy()
     coords = []
     for i, r in enumerate(np.nditer(map)):
         coords.append((r, np.unravel_index(i, map.shape)))
