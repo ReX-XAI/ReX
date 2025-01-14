@@ -5,6 +5,7 @@
 from PIL import Image, ImageDraw
 import os
 
+import torch as tt
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -140,6 +141,11 @@ def __group_spectral_parts(explanation):
 
 
 def spectral_plot(explanation, data: Data, ranking, colour, extra=True, path=None):
+    if isinstance(ranking, tt.Tensor):
+        ranking = ranking.detach().cpu().numpy()
+    if isinstance(explanation, tt.Tensor):
+        explanation = explanation.detach().cpu().numpy()
+
     explanation = explanation.squeeze()
     if extra:
         fig, axs = plt.subplots(nrows=2, ncols=1, sharex=True)

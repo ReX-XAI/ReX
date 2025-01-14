@@ -19,8 +19,7 @@ class MultiExplanation(Explanation):
         self.explanations = []
 
     def extract(self, method=None):
-        print(type(self.maps))
-        target_map = self.maps.get(self.data.target.classification) # type: ignore
+        target_map = self.maps.get(self.data.target.classification)  # type: ignore
         if target_map is not None:
             self.maps = tt.from_numpy(target_map).to(self.data.device)
             self.blank()
@@ -90,15 +89,16 @@ class MultiExplanation(Explanation):
                 mask = mask.to(tt.bool)  # type: ignore
                 d = tt.where(mask, 0, self.data.data)  # type: ignore
                 p = self.prediction_func(d)[0]
-                if p.classification != self.data.target.classification:
-                    print("remove this")
-                    original = np.array(self.data.input.resize((224, 224)))
-                    mask = mask.detach().cpu().numpy().transpose((1, 2, 0))
-                    img = np.where(mask, 0, original)
-                    img = Image.fromarray(img, "RGB")
-                    img.save(
-                        f"{self.data.target.classification}_to_{p.classification}.png"
-                    )
+                if p.classification != self.data.target.classification:  # type: ignore
+                    logger.fatal("not yet finished")
+                    exit()
+                    # original = np.array(self.data.input.resize((224, 224)))
+                    # mask = mask.detach().cpu().numpy().transpose((1, 2, 0))
+                    # img = np.where(mask, 0, original)
+                    # img = Image.fromarray(img, "RGB")
+                    # img.save(
+                    #     f"{self.data.target.classification}_to_{p.classification}.png"
+                    # )
                     return
                 logger.debug(f"    {p}")
 
@@ -138,7 +138,9 @@ class MultiExplanation(Explanation):
         else:
             centre = origin
 
-        r = self._Explanation__spatial(centre=centre, expansion_limit=self.args.no_expansions) #type: ignore
+        r = self._Explanation__spatial(
+            centre=centre, expansion_limit=self.args.no_expansions
+        )  # type: ignore
 
         while r == SpatialSearch.NotFound:
             if self.args.spotlight_objective_function == "none":
@@ -150,4 +152,6 @@ class MultiExplanation(Explanation):
                     self.data.model_width,
                     step=self.args.spotlight_step,
                 )
-            r = self._Explanation__spatial(centre=centre, expansion_limit=self.args.no_expansions) #type: ignore
+            r = self._Explanation__spatial(
+                centre=centre, expansion_limit=self.args.no_expansions
+            )  # type: ignore

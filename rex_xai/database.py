@@ -1,15 +1,17 @@
 #!/usr/bin/env python
 from datetime import datetime
-import sqlalchemy as sa
 import zlib
+import torch as tt
+import sqlalchemy as sa
 from sqlalchemy import Boolean, Float, String, create_engine
 from sqlalchemy import Column, Integer, Unicode
+from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from ast import literal_eval
 
 import pandas as pd
-from sqlalchemy.orm import sessionmaker, DeclarativeBase
 import numpy as np
 
+from rex_xai.logger import logger
 from rex_xai.config import CausalArgs, Strategy
 from rex_xai.prediction import Prediction
 from rex_xai.extraction import Explanation
@@ -34,7 +36,7 @@ def db_to_pandas(db, dtype=np.float32, table="rex"):
         ),
         axis=1,
     )
-
+    #
     df["explanation"] = df.apply(
         lambda row: _to_numpy(
             row["explanation"], literal_eval(row["explanation_shape"]), np.bool_
@@ -57,37 +59,48 @@ def update_database(
     multi=False,
     multi_no=None,
 ):
-    if isinstance(explanation, Explanation):
-        add_to_database(
-            db,
-            explanation.args,
-            target.classification,
-            target.confidence,
-            explanation.target_map,
-            explanation.final_mask.detach().cpu().numpy(),
-            time_taken,
-            total_passing,
-            total_failing,
-            max_depth_reached,
-            avg_box_size,
-        )
+    if explanation.final_mask is None:
+        logger.warn("unable to update database as explanation is empty")
+        return
+    else:
+        target_map = explanation.target_map
+        final_mask = explanation.final_mask
+        classification = int(target.classification)  # type: ignore
 
-    elif isinstance(explanation, MultiExplanation):
-        add_to_database(
-            db,
-            explanation.args,
-            target.classification,
-            target.confidence,
-            explanation.target_map,
-            explanation.explanations[multi_no].detach().cpu().numpy(),  # type: ignore
-            time_taken,
-            total_passing,
-            total_failing,
-            max_depth_reached,
-            avg_box_size,
-            multi=multi,
-            multi_no=multi_no,
-        )
+        if isinstance(explanation, Explanation):
+            add_to_database(
+                db,
+                explanation.args,
+                classification,
+                target.confidence,
+                target_map,
+                final_mask,
+                time_taken,
+                total_passing,
+                total_failing,
+                max_depth_reached,
+                avg_box_size,
+            )
+
+        elif isinstance(explanation, MultiExplanation):
+            final_mask = explanation.explanations[multi_no]
+            if isinstance(final_mask, tt.Tensor):
+                final_mask = final_mask.detach().cpu().numpy()
+            add_to_database(
+                db,
+                explanation.args,
+                classification,
+                target.confidence,
+                target_map,
+                final_mask,
+                time_taken,
+                total_passing,
+                total_failing,
+                max_depth_reached,
+                avg_box_size,
+                multi=multi,
+                multi_no=multi_no,
+            )
 
 
 def add_to_database(
@@ -112,10 +125,6 @@ def add_to_database(
 
     responsibility_shape = responsibility.shape
     explanation_shape = explanation.shape
-    print(responsibility_shape)
-    print(explanation_shape)
-    print(responsibility.dtype)
-    print(explanation.dtype)
 
     object = DataBaseEntry(
         id,
@@ -160,27 +169,17 @@ class Base(DeclarativeBase):
     pass
 
 
-class RankingType(sa.types.TypeDecorator):
-    impl = sa.types.Text
-
-    def process_bind_param(self, value, _):
-        return str(value)
-
-    def process_result_value(self, value, _):
-        return value
-
-
 class NumpyType(sa.types.TypeDecorator):
     impl = sa.types.LargeBinary
 
-    def process_bind_param(self, value, _):
-        value = value.copy(order="C")
-        return zlib.compress(value, 9)
+    cache_ok = True
 
-    def process_result_value(self, value, _):
+    def process_bind_param(self, value, dialect):
         if value is not None:
-            # this still needs to be reshaped to recreate the original matrix
-            return np.frombuffer(zlib.decompress(value), dtype=np.float32)
+            return zlib.compress(value, 9)
+
+    def process_result_value(self, value, dialect):
+        return value
 
 
 class DataBaseEntry(Base):

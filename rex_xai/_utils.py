@@ -16,6 +16,7 @@ Queue = Enum("Queue", ["Area", "All", "Intersection", "DC"])
 
 SpatialSearch = Enum("SpatialSearch", ["NotFound", "Found"])
 
+
 def powerset(r, reverse=True):
     ps = list(chain.from_iterable(combinations(r, lim) for lim in range(1, len(r) + 1)))
     if reverse:

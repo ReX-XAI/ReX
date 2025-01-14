@@ -317,10 +317,11 @@ def _explanation(
             resp_object.maps, prediction_func, data, args, resp_object.run_stats
         )
         exp.extract()
-        clauses = exp.separate_by(args.permitted_overlap)
-
-        if args.strategy == Strategy.Contrastive:
+        if Strategy.Contrastive:
+            clauses = exp.separate_by(0.0)
             exp.contrastive(clauses)
+        else:
+            clauses = exp.separate_by(args.permitted_overlap)
     else:
         exp = Explanation(
             resp_object.maps, prediction_func, data, args, resp_object.run_stats

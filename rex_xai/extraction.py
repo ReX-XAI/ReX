@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from typing import Optional
+from typing import Optional, Tuple
 
 import torch as tt
 
@@ -36,8 +36,9 @@ class Explanation:
             maps.subset(data.target.classification)
             self.maps = maps
 
-        self.target_map = tt.from_numpy(maps.get(data.target.classification)).to('mps')
-        # self.target_map: np.ndarray = maps.get(data.target.classification)  # type: ignore
+        self.target_map = tt.from_numpy(maps.get(data.target.classification)).to(
+            data.device
+        )
         if self.target_map is None:
             raise ValueError(
                 f"No responsibility map found for target {data.target.classification}!"
@@ -62,6 +63,11 @@ class Explanation:
                 self.__global()
             else:
                 _ = self.__spatial()
+
+        if isinstance(self.final_mask, tt.Tensor):
+            self.final_mask = self.final_mask.detach().cpu().numpy()
+        if isinstance(self.target_map, tt.Tensor):
+            self.target_map = self.target_map.detach().cpu().numpy()
 
     def blank(self):
         assert self.data.data is not None
@@ -109,19 +115,21 @@ class Explanation:
                 masks = []
 
     def __generate_circle_coordinates(self, centre, radius: int):
-        # Y, X = np.ogrid[: self.data.model_height, : self.data.model_width]
-        print(radius)
-        # exit()
-        Y, X = tt.meshgrid(tt.arange(0, self.data.model_height), tt.arange(0, self.data.model_width), indexing="ij")
+        Y, X = tt.meshgrid(
+            tt.arange(0, self.data.model_height),
+            tt.arange(0, self.data.model_width),
+            indexing="ij",
+        )  # type: ignore
 
-        # dist_from_centre = np.sqrt((Y - centre[0]) ** 2 + (X - centre[1]) ** 2)
-        dist_from_centre = tt.sqrt((Y.to('mps') - centre[0]) ** 2 + (X.to('mps') - centre[1]) ** 2)
+        dist_from_centre = tt.sqrt(
+            (Y.to(self.data.device) - centre[0]) ** 2
+            + (X.to(self.data.device) - centre[1]) ** 2
+        )
 
-        # this produces a H * W mask which can be using in conjunction with np.where()
+        # this produces a H * W mask which can be using in conjunction with tt.where()
         circle_mask = dist_from_centre <= radius
 
         return circle_mask
-        # return tt.from_numpy(mask).to(self.data.device)
 
     def __draw_circle(self, centre, start_radius=None):
         if start_radius is None:
@@ -131,28 +139,24 @@ class Explanation:
         )
         circle_mask = self.__generate_circle_coordinates(centre, start_radius)
         if self.data.model_order == "first":
-            mask = tt.where(circle_mask, True, False)
-            # mask[:, circle_mask] = True
+            mask[:, circle_mask] = True
         else:
             mask[circle_mask, :] = True
         return start_radius, circle_mask, mask
 
-
     def mean_masked_responsibility(self, mask):
-        # TODO check that self.maps is a singleton
-        masked_responsibility = tt.where(mask, self.target_map, 0)  #type: ignore
+        masked_responsibility = tt.where(mask, self.target_map, 0)  # type: ignore
         return tt.mean(masked_responsibility).item()
 
-    def __spatial(self, centre=None, expansion_limit=None) -> Optional[SpatialSearch]:
+    def __spatial(
+        self, centre=None, expansion_limit=None
+    ) -> Optional[Tuple[SpatialSearch, float]]:
         # we don't have a search location to start from, so we try to isolate one
         map = self.target_map
         if centre is None:
             centre = tt.unravel_index(tt.argmax(map), map.shape)
-            # centre = np.unravel_index(np.argmax(map), map.shape)
 
         start_radius, circle, mask = self.__draw_circle(centre)
-
-        limit = max([self.data.model_width, self.data.model_height])
 
         mean_masked_responsibility = self.mean_masked_responsibility(mask)
 
@@ -170,17 +174,12 @@ class Explanation:
             d = _apply_to_data(mask, self.data, self.data.mask_value)
             p = self.prediction_func(d)[0]
             if p.classification == self.data.target.classification:  #  type: ignore
-                self.__global(
-                    map=tt.where(circle, map, 0)
-                )
+                self.__global(map=tt.where(circle, map, 0))
                 return SpatialSearch.Found, mean_masked_responsibility
             start_radius = int(start_radius * (1 + self.args.spatial_eta))
-            if start_radius > limit:
-                return SpatialSearch.NotFound, mean_masked_responsibility
             _, circle, _ = self.__draw_circle(centre, start_radius)
             if self.data.model_order == "first":
-                mask = tt.where(circle, True, False)
-                # mask[:, circle] = True
+                mask[:, circle] = True
             else:
                 mask[circle, :] = True
             expansions += 1
