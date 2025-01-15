@@ -16,7 +16,7 @@ def DNA_model():
 
 @pytest.fixture
 def args_spectral(args, DNA_model):
-    args.model = "../models/spectral_testing/simple_DNA_model.onnx"
+    args.model = DNA_model
     args.path = "tests/test_data/spectrum_class_DNA.npy"
     args.mode = 'spectral'
     args.mask_value = 'spectral'
