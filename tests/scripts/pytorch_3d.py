@@ -45,6 +45,3 @@ def prediction_function(mutants, target=None, raw=False, binary_threshold=None):
 
 def model_shape():
     return ["N", 64, 64, 64]
-
-if __name__ == "__main__":
-    print("Model loaded successfully!")

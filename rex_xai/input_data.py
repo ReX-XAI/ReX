@@ -15,7 +15,10 @@ def _guess_mode(input):
     try:
         return input.mode
     except Exception:
-        return "spectral"
+        if len(input.shape) == 4:
+            return "voxel" # Assuming first dimension is batch
+        else:
+            return "spectral"
 
 
 class Data:
