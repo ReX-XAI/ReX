@@ -45,7 +45,7 @@ class OnnxRunner:
         if tensor_size == 1:
             tensors = tensors.detach().cpu().numpy()  # type: ignore
         else:
-            tensors = np.stack([t.squeeze(0).detach().cpu().numpy() for t in tensors])  # type: ignore
+            tensors = np.stack([t.detach().cpu().numpy() for t in tensors])  # type: ignore
 
         preds = []
 
