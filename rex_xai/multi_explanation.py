@@ -2,6 +2,7 @@
 
 """generate multiple explanations from a responsibility landscape <pixel_ranking>"""
 
+import os
 import numpy as np
 import random
 import torch as tt
@@ -17,6 +18,11 @@ class MultiExplanation(Explanation):
     def __init__(self, map, prediction_func, data, args, run_stats):
         super().__init__(map, prediction_func, data, args, run_stats)
         self.explanations = []
+
+    def save(self, path, mask=None):
+        for i, mask in enumerate(self.explanations):
+            name, ext = os.path.splitext(path)
+            super().save(f"{name}_{i}{ext}", mask=mask)
 
     def extract(self, method=None):
         target_map = self.maps.get(self.data.target.classification)  # type: ignore
@@ -138,29 +144,29 @@ class MultiExplanation(Explanation):
         else:
             centre = origin
 
-        ret, resp = self._Explanation__spatial( #type: ignore
+        ret, resp = self._Explanation__spatial(  # type: ignore
             centre=centre, expansion_limit=self.args.no_expansions
         )
 
         while ret == SpatialSearch.NotFound:
             if self.args.spotlight_objective_function is None:
                 centre = self.__random_location()
-                ret, resp = self._Explanation__spatial( #type: ignore
+                ret, resp = self._Explanation__spatial(  # type: ignore
                     centre=centre, expansion_limit=self.args.no_expansions
                 )
             else:
                 new_resp = 0.0
                 while new_resp < resp:
                     centre = self.__random_step_from(
-                        centre, 
-                        self.data.model_height, 
-                        self.data.model_width, 
-                        step=self.args.spotlight_step
+                        centre,
+                        self.data.model_height,
+                        self.data.model_width,
+                        step=self.args.spotlight_step,
                     )
                     ret, new_resp = self._Explanation__spatial(
                         centre=centre, expansion_limit=1
                     )
-                    if ret == SpatialSearch.Found: 
+                    if ret == SpatialSearch.Found:
                         return
                 ret, resp = self._Explanation__spatial(
                     centre=centre, expansion_limit=self.args.no_expansions

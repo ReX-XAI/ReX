@@ -310,9 +310,9 @@ def get_objective_function(multi_dict):
         if f == "max":
             return tt.max
         if f == "none":
-            return 
+            return
     except KeyError:
-        return 
+        return
 
 
 def shared_args(cmd_args, args: CausalArgs):

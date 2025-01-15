@@ -116,10 +116,10 @@ class Explanation:
 
     def __generate_circle_coordinates(self, centre, radius: int):
         Y, X = tt.meshgrid(
-            tt.arange(0, self.data.model_height), 
-            tt.arange(0, self.data.model_width), 
+            tt.arange(0, self.data.model_height),
+            tt.arange(0, self.data.model_width),
             indexing="ij",
-        )  
+        )
 
         dist_from_centre = tt.sqrt(
             (Y.to(self.data.device) - centre[0]) ** 2
@@ -187,11 +187,14 @@ class Explanation:
                 mask[circle, :] = True
             expansions += 1
 
-    def save(self, path):
+    def save(self, path, mask=None):
         if self.data.mode in ("RGB", "L"):
             if path is None:
                 path = f"{self.data.target.classification}.png"  # type: ignore
-            visualisation.save_image(self.explanation, self.data, self.args, path=path)
+            if mask is None:
+                visualisation.save_image(self.explanation, self.data, self.args, path=path)
+            else:
+                visualisation.save_image(mask, self.data, self.args, path=path)
         if self.data.mode == "spectral":
             visualisation.spectral_plot(
                 self.explanation,
