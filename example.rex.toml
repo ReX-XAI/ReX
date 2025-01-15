@@ -88,6 +88,7 @@
 # distribution for splitting the box, defaults to uniform. Possible choices are 'uniform' | 'binom' | 'betabinom' | 'adaptive'
 # distribution = 'uniform'
 
+# blend one of the above distributions with the responsibility map treated as a distribution
 #blend = 0.5
 
 # supplimental arguments for distribution creation, these are ignored if <distribution> does not take any parameters
@@ -104,8 +105,8 @@
 # increment to change radius
 # radius_eta = 0.2
 
-# number of times to expand before quitting, defaults to 10
-# no_expansions = 50
+# number of times to expand before quitting, defaults to 4
+# no_expansions = 4
 
 [explanation.multi]
 # multi method (just spotlight so far)
@@ -120,7 +121,7 @@
 # decrease spotlight by this amount
 # spotlight_eta = 0.2
 
-# objective function for spotlight search. Possible options 'mean' | 'max' | 'min' | "none"
+# objective function for spotlight search. Possible options 'mean' | 'max' | "none"
 # obj_function = 'none'
 
 # how much overlap to allow between different explanations. This is the dice coefficient, so

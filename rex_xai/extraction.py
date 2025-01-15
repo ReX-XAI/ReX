@@ -116,10 +116,10 @@ class Explanation:
 
     def __generate_circle_coordinates(self, centre, radius: int):
         Y, X = tt.meshgrid(
-            tt.arange(0, self.data.model_height),
-            tt.arange(0, self.data.model_width),
+            tt.arange(0, self.data.model_height), 
+            tt.arange(0, self.data.model_width), 
             indexing="ij",
-        )  # type: ignore
+        )  
 
         dist_from_centre = tt.sqrt(
             (Y.to(self.data.device) - centre[0]) ** 2
@@ -146,7 +146,7 @@ class Explanation:
 
     def mean_masked_responsibility(self, mask):
         masked_responsibility = tt.where(mask, self.target_map, 0)  # type: ignore
-        return tt.mean(masked_responsibility).item()
+        return self.args.spotlight_objective_function(masked_responsibility).item()
 
     def __spatial(
         self, centre=None, expansion_limit=None
@@ -158,7 +158,10 @@ class Explanation:
 
         start_radius, circle, mask = self.__draw_circle(centre)
 
-        mean_masked_responsibility = self.mean_masked_responsibility(mask)
+        if self.args.spotlight_objective_function is None:
+            masked_responsibility = None
+        else:
+            masked_responsibility = self.mean_masked_responsibility(mask)
 
         expansions = 0
         cutoff = (
@@ -166,16 +169,16 @@ class Explanation:
         )
         while tt.count_nonzero(mask) < cutoff:
             if expansion_limit is not None:
-                if expansions >= expansion_limit:
+                if expansions >= expansion_limit and expansion_limit > 1:
                     logger.info(
                         f"no explanation found after {expansion_limit} expansions"
                     )
-                    return SpatialSearch.NotFound, mean_masked_responsibility
+                    return SpatialSearch.NotFound, masked_responsibility
             d = _apply_to_data(mask, self.data, self.data.mask_value)
             p = self.prediction_func(d)[0]
             if p.classification == self.data.target.classification:  #  type: ignore
                 self.__global(map=tt.where(circle, map, 0))
-                return SpatialSearch.Found, mean_masked_responsibility
+                return SpatialSearch.Found, masked_responsibility
             start_radius = int(start_radius * (1 + self.args.spatial_eta))
             _, circle, _ = self.__draw_circle(centre, start_radius)
             if self.data.model_order == "first":

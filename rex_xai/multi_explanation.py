@@ -26,7 +26,7 @@ class MultiExplanation(Explanation):
             for i in range(0, self.args.spotlights):
                 logger.info("spotlight number %d", i + 1)
                 self.spotlight_search()
-                self.explanations.append(self.explanation)
+                self.explanations.append(self.final_mask)
                 self.blank()
             logger.info(
                 "ReX has found a total of %d explanations via spotlight search",
@@ -100,7 +100,7 @@ class MultiExplanation(Explanation):
                     #     f"{self.data.target.classification}_to_{p.classification}.png"
                     # )
                     return
-                logger.debug(f"    {p}")
+                # logger.debug(f"    {p}")
 
     def __random_step_from(self, origin, width, height, step=5):
         c, r = origin
@@ -138,20 +138,30 @@ class MultiExplanation(Explanation):
         else:
             centre = origin
 
-        r = self._Explanation__spatial(
+        ret, resp = self._Explanation__spatial( #type: ignore
             centre=centre, expansion_limit=self.args.no_expansions
-        )  # type: ignore
+        )
 
-        while r == SpatialSearch.NotFound:
-            if self.args.spotlight_objective_function == "none":
+        while ret == SpatialSearch.NotFound:
+            if self.args.spotlight_objective_function is None:
                 centre = self.__random_location()
-            else:
-                centre = self.__random_step_from(
-                    centre,
-                    self.data.model_height,
-                    self.data.model_width,
-                    step=self.args.spotlight_step,
+                ret, resp = self._Explanation__spatial( #type: ignore
+                    centre=centre, expansion_limit=self.args.no_expansions
                 )
-            r = self._Explanation__spatial(
-                centre=centre, expansion_limit=self.args.no_expansions
-            )  # type: ignore
+            else:
+                new_resp = 0.0
+                while new_resp < resp:
+                    centre = self.__random_step_from(
+                        centre, 
+                        self.data.model_height, 
+                        self.data.model_width, 
+                        step=self.args.spotlight_step
+                    )
+                    ret, new_resp = self._Explanation__spatial(
+                        centre=centre, expansion_limit=1
+                    )
+                    if ret == SpatialSearch.Found: 
+                        return
+                ret, resp = self._Explanation__spatial(
+                    centre=centre, expansion_limit=self.args.no_expansions
+                )

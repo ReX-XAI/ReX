@@ -2,13 +2,13 @@
 
 """config management"""
 
+import torch as tt
 from typing import List, Optional, Union
 from types import ModuleType
 import argparse
 import os
 from os.path import exists, expanduser
 import importlib.util
-import numpy as np
 import toml  # type: ignore
 
 
@@ -74,7 +74,7 @@ class Args:
         self.spotlight_size: int = 20
         self.spotlight_eta: float = 0.2
         self.spotlight_step: int = 5
-        self.spotlight_objective_function = np.mean
+        self.spotlight_objective_function = None
         self.permitted_overlap: float = 0.0
         # analysis
         self.analyze: bool = False
@@ -306,15 +306,13 @@ def get_objective_function(multi_dict):
     try:
         f = multi_dict["obj_function"]
         if f == "mean":
-            return np.mean
-        elif f == "max":
-            return np.max
-        elif f == "min":
-            return np.min
-        elif f == "none":
-            return "none"
+            return tt.mean
+        if f == "max":
+            return tt.max
+        if f == "none":
+            return 
     except KeyError:
-        return "none"
+        return 
 
 
 def shared_args(cmd_args, args: CausalArgs):

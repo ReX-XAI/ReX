@@ -317,7 +317,8 @@ def _explanation(
             resp_object.maps, prediction_func, data, args, resp_object.run_stats
         )
         exp.extract()
-        if Strategy.Contrastive:
+
+        if args.strategy == Strategy.Contrastive:
             clauses = exp.separate_by(0.0)
             exp.contrastive(clauses)
         else:
