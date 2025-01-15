@@ -1,4 +1,5 @@
 import pytest
+from cached_path import cached_path
 
 from rex_xai.config import CausalArgs, Strategy
 from rex_xai.explanation import _explanation, get_prediction_func_from_args
@@ -7,8 +8,14 @@ from syrupy.filters import props
 from syrupy.matchers import path_type
 
 
+@pytest.fixture(scope="session")
+def DNA_model():
+    DNA_model_path = cached_path("https://github.com/ReX-XAI/models/raw/6f66a5c0e1480411436be828ee8312e72f0035e1/spectral/simple_DNA_model.onnx")
+    return DNA_model_path
+
+
 @pytest.fixture
-def args_spectral(args, resnet50):
+def args_spectral(args, DNA_model):
     args.model = "../models/spectral_testing/simple_DNA_model.onnx"
     args.path = "tests/test_data/spectrum_class_DNA.npy"
     args.mode = 'spectral'
