@@ -1,4 +1,5 @@
 import pytest
+import copy
 from cached_path import cached_path
 from rex_xai._utils import get_device
 from rex_xai.config import CausalArgs, process_custom_script, Strategy
@@ -19,7 +20,7 @@ def resnet50():
     return resnet50_path
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def args():
     args = CausalArgs()
     args.path = "tests/test_data/dog.jpg"
@@ -32,6 +33,7 @@ def args():
 
 @pytest.fixture
 def args_custom(args):
+    args = copy.deepcopy(args)
     process_custom_script("tests/scripts/pytorch_resnet50.py", args)
     args.seed = 42
 
@@ -39,6 +41,7 @@ def args_custom(args):
 
 @pytest.fixture
 def args_torch_swin_v2_t(args):
+    args = copy.deepcopy(args)
     process_custom_script("tests/scripts/pytorch_swin_v2_t.py", args)
     args.seed = 42
 
@@ -47,6 +50,7 @@ def args_torch_swin_v2_t(args):
 
 @pytest.fixture
 def args_onnx(args, resnet50):
+    args = copy.deepcopy(args)
     args.model = resnet50
     args.seed = 100
 
