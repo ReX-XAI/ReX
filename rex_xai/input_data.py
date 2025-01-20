@@ -7,6 +7,7 @@ from enum import Enum
 
 from rex_xai.occlusions import spectral_occlusion
 from rex_xai.prediction import Prediction
+from rex_xai.logger import logger
 
 Setup = Enum("Setup", ["ONNXMPS", "ONNX", "PYTORCH"])
 
@@ -182,6 +183,11 @@ class Data:
     def set_mask_value(self, m, device="cpu"):
         assert self.data is not None
         # if m is a number, then if might still need to be normalised
+
+        if m == "spectral" and self.mode != "spectral":
+            logger.warning("Mask value 'spectral' can only be used if mode is also 'spectral', using default mask value 0 instead")
+            m = 0
+
         match m:
             case int() | float() as m:
                 self.mask_value = m
