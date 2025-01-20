@@ -1,5 +1,4 @@
 import pytest
-import copy
 from rex_xai.config import CausalArgs, Strategy
 from rex_xai.explanation import _explanation, analyze
 from syrupy.extensions.amber.serializer import AmberDataSerializer
@@ -10,7 +9,6 @@ from syrupy.matchers import path_type
 def test__explanation_snapshot(
     args_custom, model_shape, prediction_func, cpu_device, batch, snapshot
 ):
-    args_custom = copy.deepcopy(args_custom)
     args_custom.batch = batch
     exp = _explanation(args_custom, model_shape, prediction_func, cpu_device, db=None)
 
