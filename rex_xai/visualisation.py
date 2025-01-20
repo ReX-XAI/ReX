@@ -19,7 +19,16 @@ from rex_xai.input_data import Data
 from rex_xai._utils import add_boundaries
 
 
-rgb_colours = [(1, 0, 0), (0, 1, 0), (0, 0, 0.5), (1, 1, 1), (1, 0, 1), (0, 1, 1), (1, 1, 0), (0.5, 0.5, 0.5)]
+rgb_colours = [
+    (1, 0, 0),
+    (0, 1, 0),
+    (0, 0, 0.5),
+    (1, 1, 1),
+    (1, 0, 1),
+    (0, 1, 1),
+    (1, 1, 0),
+    (0.5, 0.5, 0.5),
+]
 
 
 def plot_curve(curve, chunk_size, style="insertion", destination=None):
@@ -306,6 +315,7 @@ def overlay_grid(img, step_count=10):
 
     return img
 
+
 def __transpose_mask(explanation, mode, transposed):
     mask = None
     if transposed:
@@ -318,6 +328,7 @@ def __transpose_mask(explanation, mode, transposed):
         mask = explanation.squeeze(0).detach().cpu().numpy()
 
     return mask
+
 
 def save_multi_explanation(explanations, data, args: CausalArgs, path=None):
     composite_mask = None
@@ -341,20 +352,18 @@ def save_multi_explanation(explanations, data, args: CausalArgs, path=None):
                     composite_mask = np.where(explanation, 1, composite_mask)
 
             if data.mode == "first":
-                explanation = explanation[0, :, :] #type: ignore
+                explanation = explanation[0, :, :]  # type: ignore
             else:
-                explanation = explanation[:, :, 0] #type: ignore
+                explanation = explanation[:, :, 0]  # type: ignore
 
             img = add_boundaries(img, explanation, colour=rgb_colours[c])
 
         if composite_mask is not None and path is not None:
-
             cover = np.where(composite_mask, img, args.colour)
             cover = Image.fromarray(cover, data.mode)
             img = Image.fromarray(img, data.mode)
             out = Image.blend(cover, img, args.alpha)
             out.save(path)
-
 
 
 def save_image(explanation, data: Data, args: CausalArgs, path=None):

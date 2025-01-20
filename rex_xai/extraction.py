@@ -105,7 +105,8 @@ class Explanation:
                     if p.classification == self.data.target.classification:  #  type: ignore
                         logger.info(
                             "found an explanation of %d with  %f confidence",
-                            p.classification, p.confidence,
+                            p.classification,
+                            p.confidence,
                         )
                         self.explanation = masks[j]
                         self.final_mask = mutant.zero_()
@@ -192,7 +193,9 @@ class Explanation:
             if path is None:
                 path = f"{self.data.target.classification}.png"  # type: ignore
             if mask is None:
-                visualisation.save_image(self.explanation, self.data, self.args, path=path)
+                visualisation.save_image(
+                    self.explanation, self.data, self.args, path=path
+                )
             else:
                 visualisation.save_image(mask, self.data, self.args, path=path)
         if self.data.mode == "spectral":

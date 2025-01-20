@@ -28,7 +28,6 @@ class MultiExplanation(Explanation):
         elif multi_style == "superimposed":
             save_multi_explanation(self.explanations, self.data, self.args, path=path)
 
-
     def extract(self, method=None):
         target_map = self.maps.get(self.data.target.classification)  # type: ignore
         if target_map is not None:
@@ -51,7 +50,6 @@ class MultiExplanation(Explanation):
             return 0
         intersection = tt.logical_and(d1, d2)
         return np.abs((2.0 * intersection.sum() / d_sum).item())
-
 
     def separate_by(self, dice_coefficient: float, reverse=True):
         exps = []
