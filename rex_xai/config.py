@@ -61,6 +61,7 @@ class Args:
         self.resize = False
         self.grid = False
         self.heatmap_colours = "magma"
+        self.multi_style = "composite"
         # explanation production strategy
         self.strategy: Strategy = Strategy.Spatial
         self.chunk_size = 25
@@ -437,6 +438,8 @@ def process_config_dict(config_file_args, args):
             args.mark_segments = rex_dict["visual"]["mark_segments"]
         if "heatmap" in rex_dict["visual"]:
             args.heatmap_colours = rex_dict["visual"]["heatmap"]
+        if "multi_style" in rex_dict["visual"]:
+            args.multi_style = rex_dict["visual"]["multi_style"]
 
     explain_dict = config_file_args["explanation"]
     if "chunk" in explain_dict:

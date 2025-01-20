@@ -20,12 +20,16 @@ class MultiExplanation(Explanation):
         super().__init__(map, prediction_func, data, args, run_stats)
         self.explanations = []
 
-    def save(self, path, mask=None, multi=None, multi_style="superimposed"):
+    def save(self, path, mask=None, multi=None, multi_style=None):
+        if multi_style is None:
+            multi_style = self.args.multi_style
         if multi_style == "separate":
+            logger.info("saving explanations in multiple different files")
             for i, mask in enumerate(self.explanations):
                 name, ext = os.path.splitext(path)
                 super().save(f"{name}_{i}{ext}", mask=mask)
-        elif multi_style == "superimposed":
+        elif multi_style == "composite":
+            logger.info("using composite style to save explanations")
             save_multi_explanation(self.explanations, self.data, self.args, path=path)
 
     def extract(self, method=None):
