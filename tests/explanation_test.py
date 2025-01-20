@@ -1,5 +1,4 @@
 import pytest
-import copy
 
 from rex_xai.explanation import (
     try_preprocess,
@@ -28,7 +27,6 @@ def test_preprocess_custom(args_custom, model_shape, cpu_device, snapshot):
 def test_preprocess_spectral_mask_on_image_returns_warning(
     args, model_shape, cpu_device, snapshot, caplog
 ):
-    args = copy.deepcopy(args)
     args.mask_value = "spectral"
     data = try_preprocess(args, model_shape, device=cpu_device)
 
@@ -41,7 +39,6 @@ def test_preprocess_spectral_mask_on_image_returns_warning(
 
 
 def test_preprocess_nii_notimplemented(args, model_shape, cpu_device, caplog):
-    args = copy.deepcopy(args)
     args.path = "tests/test_data/dog.nii"
     data = try_preprocess(args, model_shape, device=cpu_device)
 
@@ -50,7 +47,6 @@ def test_preprocess_nii_notimplemented(args, model_shape, cpu_device, caplog):
 
 
 def test_preprocess_npy(args, model_shape, cpu_device, snapshot, caplog):
-    args = copy.deepcopy(args)
     args.path = "tests/test_data/DoublePeakClass 0 Mean.npy"
     try_preprocess(args, model_shape, device=cpu_device)
 
@@ -69,7 +65,6 @@ def test_predict_target(data, prediction_func):
 
 
 def test_validate_args(args):
-    args = copy.deepcopy(args)
     args.path = None  #  type: ignore
     with pytest.raises(FileNotFoundError):
         validate_args(args)
@@ -79,10 +74,6 @@ def test_validate_args(args):
                                                     ("betabinom", [1, 1]), ("betabinom", [0.5, 0.5]),
                                                     ("betabinom", [1, 0.5]), ("betabinom", [0.5, 1])])
 def test_calculate_responsibility(data_custom, args_custom, prediction_func, distribution, dist_args, snapshot):
-    args_custom.custom = None # remove custom module as it can't be copied and is no longer needed after data preprocessing
-    args_custom.custom_location = None # this is a duplicate of args_custom.custom and probably shouldn't be
-    args_custom = copy.deepcopy(args_custom)
-    data_custom = copy.deepcopy(data_custom)
     if distribution == "uniform":
         args_custom.distribution = Distribution.Uniform
     if distribution == "betabinom":

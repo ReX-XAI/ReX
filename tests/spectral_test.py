@@ -1,5 +1,4 @@
 import pytest
-import copy
 from cached_path import cached_path
 
 from rex_xai.config import CausalArgs, Strategy
@@ -17,7 +16,6 @@ def DNA_model():
 
 @pytest.fixture
 def args_spectral(args, DNA_model):
-    args = copy.deepcopy(args)
     args.model = DNA_model
     args.path = "tests/test_data/spectrum_class_DNA.npy"
     args.mode = 'spectral'
