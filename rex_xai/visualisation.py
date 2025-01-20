@@ -19,6 +19,9 @@ from rex_xai.input_data import Data
 from rex_xai._utils import add_boundaries
 
 
+rgb_colours = [(1, 0, 0), (0, 1, 0), (0, 0, 0.5), (1, 1, 1), (1, 0, 1), (0, 1, 1), (1, 1, 0), (0.5, 0.5, 0.5)]
+
+
 def plot_curve(curve, chunk_size, style="insertion", destination=None):
     # TODO check that this code still works
     """plots an insertion/deletion curve of a responsibility map"""
@@ -303,6 +306,56 @@ def overlay_grid(img, step_count=10):
 
     return img
 
+def __transpose_mask(explanation, mode, transposed):
+    mask = None
+    if transposed:
+        if mode == "RGB":
+            mask = explanation.squeeze().detach().cpu().numpy().transpose((1, 2, 0))
+        elif mode == "L":
+            mask = explanation.squeeze(0).detach().cpu().numpy().transpose((2, 1, 0))
+            mask = np.repeat(mask, 3, axis=-1)
+    else:
+        mask = explanation.squeeze(0).detach().cpu().numpy()
+
+    return mask
+
+def save_multi_explanation(explanations, data, args: CausalArgs, path=None):
+    composite_mask = None
+    img = None
+    if data.mode == "RGB" or data.mode == "L":
+        if data.mode == "L":
+            img = data.input.convert("RGB").resize(
+                (data.model_height, data.model_width)
+            )
+        else:
+            img = data.input.resize((data.model_height, data.model_width))
+
+    if img is not None:
+        img = np.array(img)
+        for c, explanation in enumerate(explanations):
+            explanation = __transpose_mask(explanation, data.mode, data.transposed)
+            if explanation is not None:
+                if composite_mask is None:
+                    composite_mask = explanation
+                else:
+                    composite_mask = np.where(explanation, 1, composite_mask)
+
+            if data.mode == "first":
+                explanation = explanation[0, :, :] #type: ignore
+            else:
+                explanation = explanation[:, :, 0] #type: ignore
+
+            img = add_boundaries(img, explanation, colour=rgb_colours[c])
+
+        if composite_mask is not None and path is not None:
+
+            cover = np.where(composite_mask, img, args.colour)
+            cover = Image.fromarray(cover, data.mode)
+            img = Image.fromarray(img, data.mode)
+            out = Image.blend(cover, img, args.alpha)
+            out.save(path)
+
+
 
 def save_image(explanation, data: Data, args: CausalArgs, path=None):
     mask = None
@@ -314,15 +367,7 @@ def save_image(explanation, data: Data, args: CausalArgs, path=None):
         else:
             img = data.input.resize((data.model_height, data.model_width))
 
-        if data.transposed:
-            if data.mode == "RGB":
-                mask = explanation.squeeze().detach().cpu().numpy().transpose((1, 2, 0))
-            if data.mode == "L":
-                mask = explanation.squeeze(0).detach().cpu().numpy().transpose(2, 1, 0)
-                mask = np.repeat(mask, 3, axis=-1)
-        else:
-            # else:
-            mask = explanation.squeeze(0).detach().cpu().numpy()
+        mask = __transpose_mask(explanation, data.mode, data.transposed)
 
         if mask is not None:
             if args.raw:

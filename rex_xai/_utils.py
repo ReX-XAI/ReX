@@ -66,8 +66,11 @@ def _xlogx(p):
         return p * np.log2(p)
 
 
-def add_boundaries(img: Union[NDArray, tt.Tensor], segs: NDArray) -> NDArray:
-    m = mark_boundaries(img, segs)
+def add_boundaries(img: Union[NDArray, tt.Tensor], segs: NDArray, colour=None) -> NDArray:
+    if colour is None:
+        m = mark_boundaries(img, segs)
+    else:
+        m = mark_boundaries(img, segs, colour)
     m *= 255  # type: ignore
     m = m.astype(np.uint8)
     return m

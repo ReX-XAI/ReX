@@ -104,8 +104,8 @@ class Explanation:
                 for j, p in enumerate(preds):
                     if p.classification == self.data.target.classification:  #  type: ignore
                         logger.info(
-                            "found an explanation of %f confidence",
-                            p.confidence,
+                            "found an explanation of %d with  %f confidence",
+                            p.classification, p.confidence,
                         )
                         self.explanation = masks[j]
                         self.final_mask = mutant.zero_()
@@ -187,7 +187,7 @@ class Explanation:
                 mask[circle, :] = True
             expansions += 1
 
-    def save(self, path, mask=None):
+    def save(self, path, mask=None, multi=None, multi_style=""):
         if self.data.mode in ("RGB", "L"):
             if path is None:
                 path = f"{self.data.target.classification}.png"  # type: ignore

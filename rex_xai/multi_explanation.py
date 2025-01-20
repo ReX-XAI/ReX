@@ -12,6 +12,7 @@ from rex_xai.extraction import Explanation
 from rex_xai.distributions import random_coords, Distribution
 from rex_xai.logger import logger
 from rex_xai._utils import powerset, clause_area, SpatialSearch
+from rex_xai.visualisation import save_multi_explanation
 
 
 class MultiExplanation(Explanation):
@@ -19,10 +20,14 @@ class MultiExplanation(Explanation):
         super().__init__(map, prediction_func, data, args, run_stats)
         self.explanations = []
 
-    def save(self, path, mask=None):
-        for i, mask in enumerate(self.explanations):
-            name, ext = os.path.splitext(path)
-            super().save(f"{name}_{i}{ext}", mask=mask)
+    def save(self, path, mask=None, multi=None, multi_style="superimposed"):
+        if multi_style == "separate":
+            for i, mask in enumerate(self.explanations):
+                name, ext = os.path.splitext(path)
+                super().save(f"{name}_{i}{ext}", mask=mask)
+        elif multi_style == "superimposed":
+            save_multi_explanation(self.explanations, self.data, self.args, path=path)
+
 
     def extract(self, method=None):
         target_map = self.maps.get(self.data.target.classification)  # type: ignore
@@ -46,6 +51,7 @@ class MultiExplanation(Explanation):
             return 0
         intersection = tt.logical_and(d1, d2)
         return np.abs((2.0 * intersection.sum() / d_sum).item())
+
 
     def separate_by(self, dice_coefficient: float, reverse=True):
         exps = []
@@ -148,6 +154,7 @@ class MultiExplanation(Explanation):
             centre=centre, expansion_limit=self.args.no_expansions
         )
 
+        # TODO include maximum attempts
         while ret == SpatialSearch.NotFound:
             if self.args.spotlight_objective_function is None:
                 centre = self.__random_location()
