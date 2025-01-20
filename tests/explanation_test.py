@@ -79,8 +79,6 @@ def test_validate_args(args):
                                                     ("betabinom", [1, 1]), ("betabinom", [0.5, 0.5]),
                                                     ("betabinom", [1, 0.5]), ("betabinom", [0.5, 1])])
 def test_calculate_responsibility(data_custom, args_custom, prediction_func, distribution, dist_args, snapshot):
-    args_custom.custom = None # remove custom module as it can't be copied and is no longer needed after data preprocessing
-    args_custom.custom_location = None # this is a duplicate of args_custom.custom and probably shouldn't be
     args_custom = copy.deepcopy(args_custom)
     data_custom = copy.deepcopy(data_custom)
     if distribution == "uniform":

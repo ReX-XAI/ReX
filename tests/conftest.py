@@ -31,15 +31,24 @@ def args():
     return args
 
 
-@pytest.fixture
-def args_custom(args):
+@pytest.fixture(scope="session")
+def args_custom_module(args):
     args = copy.deepcopy(args)
     process_custom_script("tests/scripts/pytorch_resnet50.py", args)
     args.seed = 42
 
     return args
 
-@pytest.fixture
+
+@pytest.fixture(scope="session")
+def args_custom(args):
+    args = copy.deepcopy(args)
+    args.seed = 42
+
+    return args
+
+
+@pytest.fixture(scope="session")
 def args_torch_swin_v2_t(args):
     args = copy.deepcopy(args)
     process_custom_script("tests/scripts/pytorch_swin_v2_t.py", args)
@@ -48,7 +57,7 @@ def args_torch_swin_v2_t(args):
     return args
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def args_onnx(args, resnet50):
     args = copy.deepcopy(args)
     args.model = resnet50
@@ -57,44 +66,44 @@ def args_onnx(args, resnet50):
     return args
 
 
-@pytest.fixture
-def model_shape(args_custom):
-    prediction_func, model_shape = get_prediction_func_from_args(args_custom)
+@pytest.fixture(scope="session")
+def model_shape(args_custom_module):
+    prediction_func, model_shape = get_prediction_func_from_args(args_custom_module)
 
     return model_shape
 
 
-@pytest.fixture
-def prediction_func(args_custom):
-    prediction_func, model_shape = get_prediction_func_from_args(args_custom)
+@pytest.fixture(scope="session")
+def prediction_func(args_custom_module):
+    prediction_func, model_shape = get_prediction_func_from_args(args_custom_module)
 
     return prediction_func
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def model_shape_swin_v2_t(args_torch_swin_v2_t):
     prediction_func, model_shape = get_prediction_func_from_args(args_torch_swin_v2_t)
 
     return model_shape
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def prediction_func_swin_v2_t(args_torch_swin_v2_t):
     prediction_func, model_shape = get_prediction_func_from_args(args_torch_swin_v2_t)
 
     return prediction_func
 
 
-@pytest.fixture
-def data(args_custom, model_shape, cpu_device):
-    data = try_preprocess(args_custom, model_shape, device=cpu_device)
+@pytest.fixture(scope="session")
+def data(args_custom_module, model_shape, cpu_device):
+    data = try_preprocess(args_custom_module, model_shape, device=cpu_device)
     return data
 
 
-@pytest.fixture
-def data_custom(args_custom, model_shape, cpu_device):
-    data = load_and_preprocess_data(model_shape, cpu_device, args_custom)
-    data.set_mask_value(args_custom.mask_value, device=data.device)
+@pytest.fixture(scope="session")
+def data_custom(args_custom_module, model_shape, cpu_device):
+    data = load_and_preprocess_data(model_shape, cpu_device, args_custom_module)
+    data.set_mask_value(args_custom_module.mask_value, device=data.device)
     return data
 
 
@@ -105,15 +114,15 @@ def cpu_device():
     return device
 
 
-@pytest.fixture
-def exp_custom(data_custom, args_custom, prediction_func):
+@pytest.fixture(scope="session")
+def exp_custom(data_custom, args_custom_module, prediction_func):
     data_custom.target = predict_target(data_custom, prediction_func)
-    exp = calculate_responsibility(data_custom, args_custom, prediction_func)
+    exp = calculate_responsibility(data_custom, args_custom_module, prediction_func)
 
     return exp
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def exp_onnx(args_onnx, cpu_device):
     prediction_func, model_shape = get_prediction_func_from_args(args_onnx)
     data = load_and_preprocess_data(model_shape, cpu_device, args_onnx)
@@ -123,7 +132,7 @@ def exp_onnx(args_onnx, cpu_device):
 
     return exp
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def exp_extracted(exp_custom):
     exp_custom.extract(Strategy.Global)
 
