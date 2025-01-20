@@ -27,22 +27,22 @@
 
 [rex.visual]
 # whether to show progress bar in the terminal, defalts to true
-# progress_bar = false
+# progress_bar = true
 
 # resize the explanation to the size of the original image. This uses cubic interpolation and will not be as visually accurate as not resizing, defaults to false
-# resize = true
+# resize = false
 
 # include classification and confidence information in title of plot, defaults to true
-# info = false
+# info = true
 
 # produce unvarnished image with actual masking value, defaults to false
 # raw = false
 
 # pretty printing colour for explanations, defaults to 200
-# colour = 150
+# colour = 200
 
 # matplotlib colourscheme for responsibility map plotting, defaults to 'magma'
-# heatmap = 'coolwarm'
+# heatmap = 'magma'
 
 # alpha blend for main image, defaults to 0.2 (PIL Image.blend parameter)
 # alpha = 0.2
@@ -52,6 +52,9 @@
 
 # mark quickshift segmentation on image
 # mark_segments = false
+
+# multi_style explanations, either <composite> or <separate>
+# multi_style = "composite"
 
 [causal]
 # maximum depth of tree, defaults to 10, note that search can actually go beyond this number on occasion, as the
