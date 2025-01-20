@@ -16,10 +16,10 @@ author = "David Kelly"
 extensions = [
     "autoapi.extension",
     "sphinx.ext.autodoc.typehints",
-    "myst_parser",
     "sphinx.ext.napoleon",
     "sphinx.ext.intersphinx",
     'sphinxarg.ext',
+    "myst_nb" 
 ]
 
 templates_path = ["_templates"]
