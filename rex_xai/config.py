@@ -76,6 +76,7 @@ class Args:
         self.spotlight_eta: float = 0.2
         self.spotlight_step: int = 5
         self.spotlight_objective_function = None
+        self.max_spotlight_budget = 40
         self.permitted_overlap: float = 0.0
         # analysis
         self.analyze: bool = False
@@ -312,7 +313,8 @@ def get_objective_function(multi_dict):
             return tt.max
         if f == "none":
             return
-    except KeyError:
+    except Exception:
+        print("WARN:ReX:unable to find objective function, so reverting to random")
         return
 
 
@@ -463,6 +465,8 @@ def process_config_dict(config_file_args, args):
         args.spotlight_eta = multi_dict["spotlight_eta"]
     if "spotlight_step" in multi_dict:
         args.spotlight_step = multi_dict["spotlight_step"]
+    if "max_spotlight_budget" in multi_dict:
+        args.max_spotlight_budget = multi_dict["max_spotlight_budget"]
     args.spotlight_objective_function = get_objective_function(multi_dict)  # type: ignore
     if "permitted_overlap" in multi_dict:
         po = multi_dict["permitted_overlap"]

@@ -124,7 +124,10 @@
 # decrease spotlight by this amount
 # spotlight_eta = 0.2
 
-# objective function for spotlight search. Possible options 'mean' | 'max' | "none"
+# maximum number of random steps that a spotlight can make before quitting
+# max_spotlight_budget = 40
+
+# objective function for spotlight search. Possible options 'mean' | 'max' | "none", defaults to "none"
 # obj_function = 'none'
 
 # how much overlap to allow between different explanations. This is the dice coefficient, so

@@ -104,7 +104,7 @@ class Explanation:
                 for j, p in enumerate(preds):
                     if p.classification == self.data.target.classification:  #  type: ignore
                         logger.info(
-                            "found an explanation of %d with  %f confidence",
+                            "found an explanation of %d with %f confidence",
                             p.classification,
                             p.confidence,
                         )
@@ -189,6 +189,8 @@ class Explanation:
             expansions += 1
 
     def save(self, path, mask=None, multi=None, multi_style=""):
+        # NOTE: the parameter multi_style="" is here simply to make overriding
+        # the save function in MultiExplanation typecheck
         if self.data.mode in ("RGB", "L"):
             if path is None:
                 path = f"{self.data.target.classification}.png"  # type: ignore

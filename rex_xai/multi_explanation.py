@@ -157,7 +157,9 @@ class MultiExplanation(Explanation):
         )
 
         # TODO include maximum attempts
-        while ret == SpatialSearch.NotFound:
+        steps = 0
+        while ret == SpatialSearch.NotFound and steps < self.args.max_spotlight_budget:
+            steps += 1
             if self.args.spotlight_objective_function is None:
                 centre = self.__random_location()
                 ret, resp = self._Explanation__spatial(  # type: ignore
@@ -172,11 +174,11 @@ class MultiExplanation(Explanation):
                         self.data.model_width,
                         step=self.args.spotlight_step,
                     )
-                    ret, new_resp = self._Explanation__spatial(
+                    ret, new_resp = self._Explanation__spatial( #type: ignore
                         centre=centre, expansion_limit=1
                     )
                     if ret == SpatialSearch.Found:
                         return
-                ret, resp = self._Explanation__spatial(
+                ret, resp = self._Explanation__spatial( #type: ignore
                     centre=centre, expansion_limit=self.args.no_expansions
                 )
