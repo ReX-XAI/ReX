@@ -188,9 +188,9 @@ class Explanation:
                 mask[circle, :] = True
             expansions += 1
 
-    def save(self, path, mask=None, multi=None, multi_style=""):
+    def save(self, path, mask=None, multi=None, multi_style="", clauses=None):
         # NOTE: the parameter multi_style="" is here simply to make overriding
-        # the save function in MultiExplanation typecheck
+        # the save function in MultiExplanation typecheck, same holds for clauses
         if self.data.mode in ("RGB", "L"):
             if path is None:
                 path = f"{self.data.target.classification}.png"  # type: ignore

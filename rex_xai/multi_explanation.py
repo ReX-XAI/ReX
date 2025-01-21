@@ -4,7 +4,7 @@
 
 import os
 import numpy as np
-import random
+
 import torch as tt
 from itertools import combinations
 
@@ -30,7 +30,22 @@ class MultiExplanation(Explanation):
                 super().save(f"{name}_{i}{ext}", mask=mask)
         elif multi_style == "composite":
             logger.info("using composite style to save explanations")
-            save_multi_explanation(self.explanations, self.data, self.args, clauses=clauses, path=path)
+            if clauses is None:
+                clauses = range(0, len(self.explanations))
+                save_multi_explanation(
+                    self.explanations, self.data, self.args, clauses=clauses, path=path
+                )
+            else:
+                for clause in clauses:
+                    name, ext = os.path.splitext(path)
+                    new_name = f"{name}_{clause}{ext}"
+                    save_multi_explanation(
+                        self.explanations,
+                        self.data,
+                        self.args,
+                        clauses=clause,
+                        path=new_name,
+                    )
 
     def extract(self, method=None):
         target_map = self.maps.get(self.data.target.classification)  # type: ignore
@@ -95,31 +110,33 @@ class MultiExplanation(Explanation):
         return clauses
 
     def contrastive(self, clauses):
-        for clause in clauses:
-            logger.info(f"looking at {clause}")
-            for part in powerset(clause, reverse=False):
-                logger.debug(f"   examining {part}")
-                mask = sum([self.explanations[x] for x in part])
-                mask = mask.to(tt.bool)  # type: ignore
-                d = tt.where(mask, 0, self.data.data)  # type: ignore
-                p = self.prediction_func(d)[0]
-                if p.classification != self.data.target.classification:  # type: ignore
-                    logger.fatal("not yet finished")
-                    exit()
-                    # original = np.array(self.data.input.resize((224, 224)))
-                    # mask = mask.detach().cpu().numpy().transpose((1, 2, 0))
-                    # img = np.where(mask, 0, original)
-                    # img = Image.fromarray(img, "RGB")
-                    # img.save(
-                    #     f"{self.data.target.classification}_to_{p.classification}.png"
-                    # )
-                    return
-                # logger.debug(f"    {p}")
+        logger.warn("not yet implemented")
+        return
+        # for clause in clauses:
+        #     logger.info(f"looking at {clause}")
+        #     for part in powerset(clause, reverse=False):
+        #         logger.debug(f"   examining {part}")
+        #         mask = sum([self.explanations[x] for x in part])
+        #         mask = mask.to(tt.bool)  # type: ignore
+        #         d = tt.where(mask, 0, self.data.data)  # type: ignore
+        #         p = self.prediction_func(d)[0]
+        #         if p.classification != self.data.target.classification:  # type: ignore
+        #             logger.fatal("not yet finished")
+        #             exit()
+        # original = np.array(self.data.input.resize((224, 224)))
+        # mask = mask.detach().cpu().numpy().transpose((1, 2, 0))
+        # img = np.where(mask, 0, original)
+        # img = Image.fromarray(img, "RGB")
+        # img.save(
+        #     f"{self.data.target.classification}_to_{p.classification}.png"
+        # )
+        # return
+        # logger.debug(f"    {p}")
 
     def __random_step_from(self, origin, width, height, step=5):
         c, r = origin
         # flip a coin to move left (0) or right (1)
-        c_dir = random.randint(0, 1)
+        c_dir = np.random.randint(0, 2)
         c = c - step if c_dir == 0 else c + step
         if c < 0:
             c = 0
@@ -127,7 +144,7 @@ class MultiExplanation(Explanation):
             c = width
 
         # flip a coin to move down (0) or up (1)
-        r_dir = random.randint(0, 1)
+        r_dir = np.random.randint(0, 2)
         r = r - step if r_dir == 0 else r + step
         if r < 0:
             r = 0
@@ -156,7 +173,6 @@ class MultiExplanation(Explanation):
             centre=centre, expansion_limit=self.args.no_expansions
         )
 
-        # TODO include maximum attempts
         steps = 0
         while ret == SpatialSearch.NotFound and steps < self.args.max_spotlight_budget:
             steps += 1
@@ -174,11 +190,11 @@ class MultiExplanation(Explanation):
                         self.data.model_width,
                         step=self.args.spotlight_step,
                     )
-                    ret, new_resp = self._Explanation__spatial( #type: ignore
+                    ret, new_resp = self._Explanation__spatial(  # type: ignore
                         centre=centre, expansion_limit=1
                     )
                     if ret == SpatialSearch.Found:
                         return
-                ret, resp = self._Explanation__spatial( #type: ignore
+                ret, resp = self._Explanation__spatial(  # type: ignore
                     centre=centre, expansion_limit=self.args.no_expansions
                 )

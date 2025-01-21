@@ -361,22 +361,22 @@ def _explanation(
             path = None
         else:
             path = args.output
-        exp.save(path)
+        exp.save(path, clauses=clauses)
 
     if db is not None:
         if args.strategy == Strategy.MultiSpotlight:
-                logger.info("writing multiple explanations to database")
-                update_database(
-                    db,
-                    data.target,
-                    exp,
-                    time_taken,
-                    exp.run_stats["total_passing"],
-                    exp.run_stats["total_failing"],
-                    exp.run_stats["max_depth_reached"],
-                    exp.run_stats["avg_box_size"],
-                    multi=True,
-                )
+            logger.info("writing multiple explanations to database")
+            update_database(
+                db,
+                data.target,
+                exp,
+                time_taken,
+                exp.run_stats["total_passing"],
+                exp.run_stats["total_failing"],
+                exp.run_stats["max_depth_reached"],
+                exp.run_stats["avg_box_size"],
+                multi=True,
+            )
         else:
             logger.info("writing to database")
             update_database(

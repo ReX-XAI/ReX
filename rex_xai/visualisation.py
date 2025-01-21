@@ -19,6 +19,8 @@ from rex_xai.input_data import Data
 from rex_xai._utils import add_boundaries
 
 
+# these colours are not particularly considered and obviously only cope with a
+# small number of explanations. This needs to be generative
 rgb_colours = [
     (1, 0, 0),
     (0, 1, 0),
@@ -28,6 +30,8 @@ rgb_colours = [
     (0, 1, 1),
     (1, 1, 0),
     (0.5, 0.5, 0.5),
+    (0.25, 0.25, 0.25),
+    (0, 0.75, 1),
 ]
 
 
@@ -330,7 +334,9 @@ def __transpose_mask(explanation, mode, transposed):
     return mask
 
 
-def save_multi_explanation(explanations, data, args: CausalArgs, clauses=None, path=None):
+def save_multi_explanation(
+    explanations, data, args: CausalArgs, clauses=None, path=None
+):
     composite_mask = None
     img = None
     if data.mode == "RGB" or data.mode == "L":
@@ -343,27 +349,29 @@ def save_multi_explanation(explanations, data, args: CausalArgs, clauses=None, p
 
     if img is not None:
         img = np.array(img)
-        for c, explanation in enumerate(explanations):
-            explanation = __transpose_mask(explanation, data.mode, data.transposed)
-            if explanation is not None:
-                if composite_mask is None:
-                    composite_mask = explanation
+        if clauses is not None:
+            for c in clauses:
+                explanation = explanations[c]
+                explanation = __transpose_mask(explanation, data.mode, data.transposed)
+                if explanation is not None:
+                    if composite_mask is None:
+                        composite_mask = explanation
+                    else:
+                        composite_mask = np.where(explanation, 1, composite_mask)
+
+                if data.mode == "first":
+                    explanation = explanation[0, :, :]  # type: ignore
                 else:
-                    composite_mask = np.where(explanation, 1, composite_mask)
+                    explanation = explanation[:, :, 0]  # type: ignore
 
-            if data.mode == "first":
-                explanation = explanation[0, :, :]  # type: ignore
-            else:
-                explanation = explanation[:, :, 0]  # type: ignore
+                img = add_boundaries(img, explanation, colour=rgb_colours[c])
 
-            img = add_boundaries(img, explanation, colour=rgb_colours[c])
-
-        if composite_mask is not None and path is not None:
-            cover = np.where(composite_mask, img, args.colour)
-            cover = Image.fromarray(cover, data.mode)
-            img = Image.fromarray(img, data.mode)
-            out = Image.blend(cover, img, args.alpha)
-            out.save(path)
+            if composite_mask is not None and path is not None:
+                cover = np.where(composite_mask, img, args.colour)
+                cover = Image.fromarray(cover, data.mode)
+                img = Image.fromarray(img, data.mode)
+                out = Image.blend(cover, img, args.alpha)
+                out.save(path)
 
 
 def save_image(explanation, data: Data, args: CausalArgs, path=None):

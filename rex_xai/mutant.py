@@ -43,9 +43,6 @@ __combinations = [
 
 
 def _apply_to_data(mask, data: Data, masking_func):
-    logger.debug(
-        "masking_func is %s, data.mask_value is %s", masking_func, data.mask_value
-    )
     if isinstance(masking_func, (float, int)):
         res = tt.where(mask, data.data, masking_func)  # type: ignore
         return res

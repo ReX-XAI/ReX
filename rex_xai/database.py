@@ -11,6 +11,7 @@ from ast import literal_eval
 import pandas as pd
 import numpy as np
 
+from rex_xai.logger import logger
 from rex_xai.config import CausalArgs, Strategy
 from rex_xai.prediction import Prediction
 from rex_xai.extraction import Explanation
@@ -57,7 +58,7 @@ def update_database(
     multi=False,
 ):
     target_map = explanation.target_map
-    
+
     if isinstance(target_map, tt.Tensor):
         target_map = target_map.detach().cpu().numpy()
 
@@ -86,7 +87,7 @@ def update_database(
         )
 
     else:
-        for c, final_mask in enumerate(explanation.explanations): 
+        for c, final_mask in enumerate(explanation.explanations):
             if isinstance(final_mask, tt.Tensor):
                 final_mask = final_mask.detach().cpu().numpy()
             add_to_database(
