@@ -40,9 +40,8 @@ class BoxInternal:
         self.row_stop: int = row_stop
         self.col_start: int = col_start
         self.col_stop: int = col_stop
-        if depth_start is not None and depth_stop is not None:
-            self.depth_start: int = depth_start
-            self.depth_stop: int = depth_stop
+        self.depth_start: int = depth_start
+        self.depth_stop: int = depth_stop
 
     def __repr__(self) -> str:
         if self.depth_start is not None and self.depth_stop is not None:
@@ -238,15 +237,19 @@ class BoxInternal:
         }
         range1 = ranges[selected_axes[0]]
         range2 = ranges[selected_axes[1]]
+
         # Get the random coordinates for the two axes
+        space = range1[1] - range1[0]
         c1 = random_coords(
-            self.distribution, [range1[0], range1[1], self.distribution_args]
+            self.distribution, space, range1[0], range1[1], self.distribution_args, map=map
         )
+        space = range2[1] - range2[0]
         c2 = random_coords(
-            self.distribution, [range2[0], range2[1], self.distribution_args]
+            self.distribution, space, range2[0], range2[1], self.distribution_args, map=map
         )
+
         # If any of the coordinates are None, return None
-        if c1 is None or c2 is None:
+        if c1 == -1 or c2 == -1:
             return None
         # Create boxes depending on the selected axes
         boxes = []
@@ -374,7 +377,7 @@ class Box(BoxInternal, NodeMixin):
 
 
 def initialise_tree(
-    r_lim, c_lim, distribution, distribution_args, r_start=0, c_start=0, d_start=0, d_lim=None
+    r_lim, c_lim, distribution, distribution_args, r_start=0, c_start=0, d_start=None, d_lim=None
 ) -> Box:
     """initialise box tree with root node, the whole image"""
     return Box(
