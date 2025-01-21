@@ -36,11 +36,11 @@ def preprocess(path, shape, device, mode) -> Data:
             model_width, model_depth, model_channels, model_order, and transposed.
     """
     transform = Resize(spatial_size=(64, 64, 64))
-    if type(path) == str:
+    if path is str:
         volume = LoadImage()(path)
         transformed_volume = transform(volume)
         data = Data(transformed_volume, shape, device, mode=mode, process=False)
-    elif type(path) == Tensor:
+    elif path is Tensor:
         transformed_volume = transform(path)
         data = Data(transformed_volume, shape, device, mode=mode, process=False)
     else:
