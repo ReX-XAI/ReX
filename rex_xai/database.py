@@ -11,11 +11,9 @@ from ast import literal_eval
 import pandas as pd
 import numpy as np
 
-from rex_xai.logger import logger
 from rex_xai.config import CausalArgs, Strategy
 from rex_xai.prediction import Prediction
 from rex_xai.extraction import Explanation
-from rex_xai.multi_explanation import MultiExplanation
 
 
 def _dataframe(db, table):
@@ -57,33 +55,38 @@ def update_database(
     max_depth_reached,
     avg_box_size,
     multi=False,
-    multi_no=None,
 ):
-    if explanation.final_mask is None:
-        logger.warn("unable to update database as explanation is empty")
-        return
-    else:
-        target_map = explanation.target_map
+    target_map = explanation.target_map
+    
+    if isinstance(target_map, tt.Tensor):
+        target_map = target_map.detach().cpu().numpy()
+
+    classification = int(target.classification)  # type: ignore
+
+    if not multi:
         final_mask = explanation.final_mask
-        classification = int(target.classification)  # type: ignore
+        if explanation.final_mask is None:
+            logger.warn("unable to update database as explanation is empty")
+            return
+        if isinstance(final_mask, tt.Tensor):
+            final_mask = final_mask.detach().cpu().numpy()
 
-        if isinstance(explanation, Explanation):
-            add_to_database(
-                db,
-                explanation.args,
-                classification,
-                target.confidence,
-                target_map,
-                final_mask,
-                time_taken,
-                total_passing,
-                total_failing,
-                max_depth_reached,
-                avg_box_size,
-            )
+        add_to_database(
+            db,
+            explanation.args,
+            classification,
+            target.confidence,
+            target_map,
+            final_mask,
+            time_taken,
+            total_passing,
+            total_failing,
+            max_depth_reached,
+            avg_box_size,
+        )
 
-        elif isinstance(explanation, MultiExplanation):
-            final_mask = explanation.explanations[multi_no]
+    else:
+        for c, final_mask in enumerate(explanation.explanations): 
             if isinstance(final_mask, tt.Tensor):
                 final_mask = final_mask.detach().cpu().numpy()
             add_to_database(
@@ -99,7 +102,7 @@ def update_database(
                 max_depth_reached,
                 avg_box_size,
                 multi=multi,
-                multi_no=multi_no,
+                multi_no=c,
             )
 
 
@@ -151,15 +154,15 @@ def add_to_database(
     object.passing = passing
     object.failing = failing
     object.total_work = passing + failing
+    object.method = str(args.strategy)
     if args.strategy == Strategy.Spatial:
         object.spatial_radius = args.spatial_radius
         object.spatial_eta = args.spatial_eta
     if args.strategy == Strategy.MultiSpotlight:
-        object.method = str(args.strategy)
         object.spotlights = args.spotlights
         object.spotlight_size = args.spotlight_size
         object.spotlight_eta = args.spotlight_eta
-        object.obj_function = str(args.spotlight_objective_function)
+        object.obj_function = args.spotlight_objective_function_name
 
     db.add(object)
     db.commit()
@@ -247,9 +250,9 @@ class DataBaseEntry(Base):
         initial_radius=None,
         radius_eta=None,
         method=None,
-        spotlights=None,
-        spotlight_size=None,
-        spotlight_eta=None,
+        spotlights=0,
+        spotlight_size=0,
+        spotlight_eta=0.0,
         obj_function=None,
     ):
         self.id = id

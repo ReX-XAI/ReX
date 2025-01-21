@@ -365,21 +365,18 @@ def _explanation(
 
     if db is not None:
         if args.strategy == Strategy.MultiSpotlight:
-            if clauses is not None and len(clauses) > 0:
                 logger.info("writing multiple explanations to database")
-                for c in clauses[0]:
-                    update_database(
-                        db,
-                        data.target,
-                        exp,
-                        time_taken,
-                        exp.run_stats["total_passing"],
-                        exp.run_stats["total_failing"],
-                        exp.run_stats["max_depth_reached"],
-                        exp.run_stats["avg_box_size"],
-                        multi=True,
-                        multi_no=c,
-                    )
+                update_database(
+                    db,
+                    data.target,
+                    exp,
+                    time_taken,
+                    exp.run_stats["total_passing"],
+                    exp.run_stats["total_failing"],
+                    exp.run_stats["max_depth_reached"],
+                    exp.run_stats["avg_box_size"],
+                    multi=True,
+                )
         else:
             logger.info("writing to database")
             update_database(

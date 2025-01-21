@@ -330,7 +330,7 @@ def __transpose_mask(explanation, mode, transposed):
     return mask
 
 
-def save_multi_explanation(explanations, data, args: CausalArgs, path=None):
+def save_multi_explanation(explanations, data, args: CausalArgs, clauses=None, path=None):
     composite_mask = None
     img = None
     if data.mode == "RGB" or data.mode == "L":

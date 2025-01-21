@@ -20,7 +20,7 @@ class MultiExplanation(Explanation):
         super().__init__(map, prediction_func, data, args, run_stats)
         self.explanations = []
 
-    def save(self, path, mask=None, multi=None, multi_style=None):
+    def save(self, path, mask=None, multi=None, multi_style=None, clauses=None):
         if multi_style is None:
             multi_style = self.args.multi_style
         if multi_style == "separate":
@@ -30,7 +30,7 @@ class MultiExplanation(Explanation):
                 super().save(f"{name}_{i}{ext}", mask=mask)
         elif multi_style == "composite":
             logger.info("using composite style to save explanations")
-            save_multi_explanation(self.explanations, self.data, self.args, path=path)
+            save_multi_explanation(self.explanations, self.data, self.args, clauses=clauses, path=path)
 
     def extract(self, method=None):
         target_map = self.maps.get(self.data.target.classification)  # type: ignore

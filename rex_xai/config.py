@@ -76,6 +76,7 @@ class Args:
         self.spotlight_eta: float = 0.2
         self.spotlight_step: int = 5
         self.spotlight_objective_function = None
+        self.spotlight_objective_function_name: str = "none"
         self.max_spotlight_budget = 40
         self.permitted_overlap: float = 0.0
         # analysis
@@ -101,7 +102,7 @@ class Args:
             + f"spotlights: {self.spotlights}, spotlight_size: {self.spotlight_size}, "
             + f"spotlight_eta: {self.spotlight_eta}, "
             + f"no_expansions: {self.no_expansions}, "
-            + f"obj_function: {self.spotlight_objective_function}, "
+            + f"obj_function: {self.spotlight_objective_function_name}, "
         )
 
 
@@ -308,14 +309,14 @@ def get_objective_function(multi_dict):
     try:
         f = multi_dict["obj_function"]
         if f == "mean":
-            return tt.mean
+            return tt.mean, f
         if f == "max":
-            return tt.max
+            return tt.max, f
         if f == "none":
-            return
+            return None, f
     except Exception:
         print("WARN:ReX:unable to find objective function, so reverting to random")
-        return
+        return None, "none"
 
 
 def shared_args(cmd_args, args: CausalArgs):
@@ -467,7 +468,9 @@ def process_config_dict(config_file_args, args):
         args.spotlight_step = multi_dict["spotlight_step"]
     if "max_spotlight_budget" in multi_dict:
         args.max_spotlight_budget = multi_dict["max_spotlight_budget"]
-    args.spotlight_objective_function = get_objective_function(multi_dict)  # type: ignore
+    obj_func, obj_func_name = get_objective_function(multi_dict)
+    args.spotlight_objective_function = obj_func
+    args.spotlight_objective_function_name = obj_func_name
     if "permitted_overlap" in multi_dict:
         po = multi_dict["permitted_overlap"]
         if isinstance(po, float):
