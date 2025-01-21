@@ -300,7 +300,11 @@ def overlay_grid(img, step_count=10):
 def voxel_plot(
         args: CausalArgs, resp_map: ResponsibilityMaps, target: Prediction, data: Data, path = None):
     """ Plot a 3D voxel plot of the responsibility map using mayavi """
-    from mayavi import mlab # TODO: Mayavi dependency for 3D models
+    try:
+        from mayavi import mlab
+    except ImportError:
+        print("Mayavi is not installed. Please install it using 'pip install mayavi' to visualise 3D data")
+        return
 
     data: np.ndarray = data.data
     maps: np.ndarray = resp_map.get(target.classification)

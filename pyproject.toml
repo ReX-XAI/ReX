@@ -45,6 +45,13 @@ torchvision = "^0.20.1"
 pytest-sugar = "^1.0.0"
 cached-path = "^1.6.3"
 
+[tool.poetry.group.3D]
+optional = true
+
+[tool.poetry.group.3D.dependencies]
+monai = "^0.7.0"
+mayavi = "^4.7.0"
+
 [tool.pyright]
 include = ["rex_xai"]
 exclude = ["scripts"]
