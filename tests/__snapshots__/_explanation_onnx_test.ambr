@@ -111,7 +111,7 @@
           [False, False, False, ..., False, False, False],
           [False, False, False, ..., False, False, False],
           [False, False, False, ..., False, False, False]]]),
-    maps={209: 5},
+    maps={209: 1},
     run_stats=dict({
       'avg_box_size': 2747.4166666666665,
       'max_depth_reached': 4,
