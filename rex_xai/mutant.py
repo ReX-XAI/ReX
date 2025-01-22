@@ -100,13 +100,6 @@ class Mutant:
         else:
             return int(tensor.item()) // self.channels
 
-    # def predict(self, prediction_func, data, target):
-    #     p = prediction_func(self.apply_to_data(data), target)
-    #     self.prediction = p
-    #
-    #     if data.classification == p.classification:
-    #         self.passing = True
-
     def set_static_mask_regions(self, names, search_tree):
         for name in names:
             box = find(search_tree, lambda node: node.name == name)
