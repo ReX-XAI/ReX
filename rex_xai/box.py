@@ -40,8 +40,8 @@ class BoxInternal:
         self.row_stop: int = row_stop
         self.col_start: int = col_start
         self.col_stop: int = col_stop
-        self.depth_start: int = depth_start
-        self.depth_stop: int = depth_stop
+        self.depth_start = depth_start
+        self.depth_stop = depth_stop
 
     def __repr__(self) -> str:
         if self.depth_start is not None and self.depth_stop is not None:
@@ -73,7 +73,7 @@ class BoxInternal:
         self.name += name
 
     def shape(self):
-        """returns (width, heigh) of a box if 2d data, else returns (width, height, depth)"""
+        """returns (width, height) of a box if 2d data, else returns (width, height, depth)"""
         if self.depth_start is not None and self.depth_stop is not None:
             return (
                 self.row_stop - self.row_start,
@@ -380,6 +380,8 @@ def initialise_tree(
     r_lim, c_lim, distribution, distribution_args, r_start=0, c_start=0, d_start=None, d_lim=None
 ) -> Box:
     """initialise box tree with root node, the whole image"""
+    if d_lim is not None:
+        d_start = 0
     return Box(
         r_start,
         r_lim,
