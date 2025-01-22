@@ -1,5 +1,5 @@
 # serializer version: 1
-# name: test_calculate_responsibility[betabinom-dist_args1]
+# name: test_calculate_responsibility[Distribution.BetaBinomial-dist_args1]
   Explanation(
     args=CausalArgs(
       all=False,
@@ -86,7 +86,7 @@
            5.833333 ]], dtype=float32),
   )
 # ---
-# name: test_calculate_responsibility[betabinom-dist_args2]
+# name: test_calculate_responsibility[Distribution.BetaBinomial-dist_args2]
   Explanation(
     args=CausalArgs(
       all=False,
@@ -173,7 +173,7 @@
            5.833333 ]], dtype=float32),
   )
 # ---
-# name: test_calculate_responsibility[betabinom-dist_args3]
+# name: test_calculate_responsibility[Distribution.BetaBinomial-dist_args3]
   Explanation(
     args=CausalArgs(
       all=False,
@@ -260,7 +260,7 @@
           8.5      ]], dtype=float32),
   )
 # ---
-# name: test_calculate_responsibility[betabinom-dist_args4]
+# name: test_calculate_responsibility[Distribution.BetaBinomial-dist_args4]
   Explanation(
     args=CausalArgs(
       all=False,
@@ -347,7 +347,7 @@
           11.666667 ]], dtype=float32),
   )
 # ---
-# name: test_calculate_responsibility[uniform-dist_args0]
+# name: test_calculate_responsibility[Distribution.Uniform-dist_args0]
   Explanation(
     args=CausalArgs(
       all=False,

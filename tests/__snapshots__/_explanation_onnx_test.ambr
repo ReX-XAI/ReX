@@ -128,7 +128,7 @@
            2.       ]], dtype=float32),
   )
 # ---
-# name: test_extract_analyze[global]
+# name: test_extract_analyze[Strategy.Global]
   tensor([[[False, False, False,  ..., False, False, False],
            [False, False, False,  ..., False, False, False],
            [False, False, False,  ..., False, False, False],
@@ -153,7 +153,7 @@
            [False, False, False,  ..., False, False, False],
            [False, False, False,  ..., False, False, False]]])
 # ---
-# name: test_extract_analyze[global].1
+# name: test_extract_analyze[Strategy.Global].1
   dict({
     'area': 0.1654,
     'deletion_curve': 0.0141,
@@ -161,7 +161,7 @@
     'insertion_curve': 0.621,
   })
 # ---
-# name: test_extract_analyze[spatial]
+# name: test_extract_analyze[Strategy.Spatial]
   tensor([[[False, False, False,  ..., False, False, False],
            [False, False, False,  ..., False, False, False],
            [False, False, False,  ..., False, False, False],
@@ -186,7 +186,7 @@
            [False, False, False,  ..., False, False, False],
            [False, False, False,  ..., False, False, False]]])
 # ---
-# name: test_extract_analyze[spatial].1
+# name: test_extract_analyze[Strategy.Spatial].1
   dict({
     'area': 0.3278,
     'deletion_curve': 0.0141,
