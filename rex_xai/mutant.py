@@ -98,6 +98,8 @@ class Mutant:
         tensor = tt.count_nonzero(self.mask)
         if tensor.numel() == 0 or tensor is None:
             return 0
+        elif self.channels == 0:
+            return int(tensor.item())
         else:
             return int(tensor.item()) // self.channels
 
