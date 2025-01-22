@@ -55,7 +55,8 @@ class MultiExplanation(Explanation):
             for i in range(0, self.args.spotlights):
                 logger.info("spotlight number %d", i + 1)
                 self.spotlight_search()
-                self.explanations.append(self.final_mask)
+                if self.final_mask is not None:
+                    self.explanations.append(self.final_mask)
                 self.blank()
             logger.info(
                 "ReX has found a total of %d explanations via spotlight search",
