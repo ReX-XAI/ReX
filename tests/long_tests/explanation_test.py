@@ -1,20 +1,25 @@
 import pytest
-
-from rex_xai.explanation import (
-    predict_target,
-    calculate_responsibility
-)
-
-from rex_xai.distributions import Distribution
 from rex_xai.config import CausalArgs
+from rex_xai.distributions import Distribution
+from rex_xai.explanation import calculate_responsibility, predict_target
 from syrupy.extensions.amber.serializer import AmberDataSerializer
 from syrupy.filters import props
 from syrupy.matchers import path_type
 
-@pytest.mark.parametrize("distribution,dist_args", [(Distribution.Uniform, []),
-                                                    (Distribution.BetaBinomial, [1, 1]), (Distribution.BetaBinomial, [0.5, 0.5]),
-                                                    (Distribution.BetaBinomial, [1, 0.5]), (Distribution.BetaBinomial, [0.5, 1])])
-def test_calculate_responsibility(data_custom, args_custom, prediction_func, distribution, dist_args, snapshot):
+
+@pytest.mark.parametrize(
+    "distribution,dist_args",
+    [
+        (Distribution.Uniform, []),
+        (Distribution.BetaBinomial, [1, 1]),
+        (Distribution.BetaBinomial, [0.5, 0.5]),
+        (Distribution.BetaBinomial, [1, 0.5]),
+        (Distribution.BetaBinomial, [0.5, 1]),
+    ],
+)
+def test_calculate_responsibility(
+    data_custom, args_custom, prediction_func, distribution, dist_args, snapshot
+):
     args_custom.distribution = distribution
     if dist_args:
         args_custom.distribution_args = dist_args

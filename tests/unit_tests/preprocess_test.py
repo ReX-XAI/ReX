@@ -1,10 +1,9 @@
 import pytest
-
 from rex_xai.explanation import (
-    try_preprocess,
-    predict_target,
     load_and_preprocess_data,
-    validate_args
+    predict_target,
+    try_preprocess,
+    validate_args,
 )
 
 

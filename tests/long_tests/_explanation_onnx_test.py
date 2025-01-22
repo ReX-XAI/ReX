@@ -1,7 +1,6 @@
 import pytest
-
 from rex_xai.config import CausalArgs, Strategy
-from rex_xai.explanation import _explanation, get_prediction_func_from_args, analyze
+from rex_xai.explanation import _explanation, analyze, get_prediction_func_from_args
 from syrupy.extensions.amber.serializer import AmberDataSerializer
 from syrupy.filters import props
 from syrupy.matchers import path_type
@@ -32,6 +31,6 @@ def test_extract_analyze(exp_onnx, strategy, snapshot):
     exp_onnx.extract(strategy)
     results = analyze(exp_onnx, "RGB")
     results_rounded = {k: round(v, 4) for k, v in results.items()}
-    
-    assert(exp_onnx.final_mask == snapshot)
+
+    assert exp_onnx.final_mask == snapshot
     assert results_rounded == snapshot

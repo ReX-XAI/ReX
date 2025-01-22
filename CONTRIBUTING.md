@@ -21,7 +21,7 @@ See the [poetry docs](https://python-poetry.org/docs/basic-usage/#using-your-vir
 We use [pytest](https://docs.pytest.org/en/stable/index.html) with the [pytest-cov](https://github.com/pytest-dev/pytest-cov) plugin.
 
 Run the tests by running `pytest`, which will automatically run all files of the form `test_*.py` or `*_test.py` in the current directory and its subdirectories.
-Run `pytest --cov=rex_ai tests/` to get a coverage report printed to the terminal.
+Run `pytest --cov=rex_xai tests/` to get a coverage report printed to the terminal.
 See [pytest-cov's documentation](https://pytest-cov.readthedocs.io/en/latest/) for additional reporting options.
 
 As the end-to-end tests which run the whole ReX pipeline can take a while to run, we have split the tests into two sub-directories: `tests/unit_tests/` and `tests/long_tests/`.

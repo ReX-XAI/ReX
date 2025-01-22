@@ -1,5 +1,6 @@
 import os
 
+
 def test_surface(exp_extracted, tmp_path):
     p = tmp_path / "surface.png"
     exp_extracted.surface_plot(path=p)
