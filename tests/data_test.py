@@ -16,7 +16,7 @@ def test_data():
 
 def test_set_mask_value(args_custom, model_shape, cpu_device, caplog):
     data = load_and_preprocess_data(model_shape, cpu_device, args_custom)
-    data.set_mask_value('spectral', device=data.device)
+    data.set_mask_value('spectral')
     
     assert caplog.records[0].msg == "Mask value 'spectral' can only be used if mode is also 'spectral', using default mask value 0 instead"
     assert data.mask_value == 0

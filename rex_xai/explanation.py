@@ -295,7 +295,7 @@ def _explanation(
 
     """
     data = load_and_preprocess_data(model_shape, device, args)
-    data.set_mask_value(args.mask_value, device=data.device)
+    data.set_mask_value(args.mask_value)
     logger.debug("args.mask_value is %s, data.mask_value is %s", args.mask_value, data.mask_value)
 
     data.target = predict_target(data, prediction_func)
