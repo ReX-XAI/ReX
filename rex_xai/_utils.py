@@ -54,6 +54,15 @@ class ReXPathError(ReXError):
         return f"ReXPathError: no such file exists at {self.message}"
 
 
+class ReXMapError(ReXError):
+    def __init__(self, message) -> None:
+        self.message = message
+        super().__init__(self.message)
+
+    def __str__(self) -> str:
+        return f"ReXMapError: {self.message}"
+
+
 def xlogx(ps):
     f = np.vectorize(_xlogx)
     return f(ps)
