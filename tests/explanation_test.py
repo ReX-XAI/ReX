@@ -70,14 +70,12 @@ def test_validate_args(args):
         validate_args(args)
 
 
-@pytest.mark.parametrize("distribution,dist_args", [("uniform", []),
-                                                    ("betabinom", [1, 1]), ("betabinom", [0.5, 0.5]),
-                                                    ("betabinom", [1, 0.5]), ("betabinom", [0.5, 1])])
+@pytest.mark.parametrize("distribution,dist_args", [(Distribution.Uniform, []),
+                                                    (Distribution.BetaBinomial, [1, 1]), (Distribution.BetaBinomial, [0.5, 0.5]),
+                                                    (Distribution.BetaBinomial, [1, 0.5]), (Distribution.BetaBinomial, [0.5, 1])])
 def test_calculate_responsibility(data_custom, args_custom, prediction_func, distribution, dist_args, snapshot):
-    if distribution == "uniform":
-        args_custom.distribution = Distribution.Uniform
-    if distribution == "betabinom":
-        args_custom.distribution = Distribution.BetaBinomial
+    args_custom.distribution = distribution
+    if dist_args:
         args_custom.distribution_args = dist_args
     data_custom.target = predict_target(data_custom, prediction_func)
     exp = calculate_responsibility(data_custom, args_custom, prediction_func)

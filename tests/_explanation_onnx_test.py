@@ -27,14 +27,8 @@ def test__explanation_snapshot(args_onnx, cpu_device, snapshot):
     )
 
 
-@pytest.mark.parametrize("strategy", ["global", "spatial"])
+@pytest.mark.parametrize("strategy", [Strategy.Global, Strategy.Spatial])
 def test_extract_analyze(exp_onnx, strategy, snapshot):
-    if strategy == "global":
-        strategy = Strategy.Global
-    elif strategy == "spatial":
-        strategy = Strategy.Spatial
-    else:
-        raise ValueError("invalid strategy!")
     exp_onnx.extract(strategy)
     results = analyze(exp_onnx, "RGB")
     results_rounded = {k: round(v, 4) for k, v in results.items()}

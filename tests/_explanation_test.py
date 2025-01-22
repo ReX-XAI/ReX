@@ -57,14 +57,8 @@ def test__explanation_snapshot_diff_model_shape(
     )
 
 
-@pytest.mark.parametrize("strategy", ["global", "spatial"])
+@pytest.mark.parametrize("strategy", [Strategy.Global, Strategy.Spatial])
 def test_extract_analyze(exp_custom, strategy, snapshot):
-    if strategy == "global":
-        strategy = Strategy.Global
-    elif strategy == "spatial":
-        strategy = Strategy.Spatial
-    else:
-        raise ValueError("invalid strategy!")
     exp_custom.extract(strategy)
     results = analyze(exp_custom, "RGB")
     results_rounded = {k: round(v, 4) for k, v in results.items()}
