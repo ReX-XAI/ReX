@@ -74,6 +74,7 @@ class Explanation:
         self.explanation = tt.zeros(
             self.data.data.shape, dtype=tt.bool, device=self.data.device
         )
+        self.final_mask = None
 
     def set_to_true(self, coords, mask=None):
         if mask is not None:
