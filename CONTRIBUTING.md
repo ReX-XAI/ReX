@@ -24,6 +24,24 @@ Run the tests by running `pytest`, which will automatically run all files of the
 Run `pytest --cov=rex_ai tests/` to get a coverage report printed to the terminal.
 See [pytest-cov's documentation](https://pytest-cov.readthedocs.io/en/latest/) for additional reporting options.
 
+As the end-to-end tests which run the whole ReX pipeline can take a while to run, we have split the tests into two sub-directories: `tests/unit_tests/` and `tests/long_tests/`.
+During development you may wish to only run the faster unit tests.
+You can do this by specifying the directory: `pytest tests/unit_tests/`
+Both sets of tests are run by GitHub Actions upon a pull request.
+
+### Updating snapshots
+
+Most of the end-to-end tests which run the whole ReX pipeline are 'snapshot tests' using the [syrupy](https://github.com/syrupy-project/syrupy) package.
+These tests involve comparing an object returned by the function under test to a previously saved 'snapshot' of that object.
+This can help identify unintentional changes in results that are introduced by new development.
+Note that snapshots are based on the text representation of an object, so don't necessarily capture *all* results you may care about.
+
+If a snapshot test fails, follow the steps below to confirm if the changes are expected or not and update the snapshots:
+
+* Run `pytest -vv` to see a detailed comparison of changes compared to the snapshot
+* Check whether these are expected or not. For example, if you have added an additional parameter in the `CausalArgs` class, you expect that parameter value to be missing from the snapshot.
+* If you only see expected differences in the snapshot, you can update the snapshots to match the new results by running `pytest --snapshot-update` and commit the updated files.
+
 ## Generating documentation with Sphinx
 
 Docs are automatically built on PRs and on updates to the repo's default branch, and are available at <http://rex-xai.readthedocs.io/>.
