@@ -79,9 +79,9 @@ def add_boundaries(
     img: Union[NDArray, tt.Tensor], segs: NDArray, colour=None
 ) -> NDArray:
     if colour is None:
-        m = mark_boundaries(img, segs)
+        m = mark_boundaries(img, segs, mode="thick")
     else:
-        m = mark_boundaries(img, segs, colour)
+        m = mark_boundaries(img, segs, colour, mode="thick")
     m *= 255  # type: ignore
     m = m.astype(np.uint8)
     return m
