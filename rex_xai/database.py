@@ -163,7 +163,7 @@ def add_to_database(
         object.spotlights = args.spotlights
         object.spotlight_size = args.spotlight_size
         object.spotlight_eta = args.spotlight_eta
-        object.obj_function = args.spotlight_objective_function_name
+        object.obj_function = args.spotlight_objective_function
 
     db.add(object)
     db.commit()

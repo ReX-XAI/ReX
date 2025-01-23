@@ -2,7 +2,6 @@
 
 """config management"""
 
-import torch as tt
 from typing import List, Optional, Union
 from types import ModuleType
 import argparse
@@ -75,8 +74,7 @@ class Args:
         self.spotlight_size: int = 20
         self.spotlight_eta: float = 0.2
         self.spotlight_step: int = 5
-        self.spotlight_objective_function = None
-        self.spotlight_objective_function_name: str = "none"
+        self.spotlight_objective_function: str = "none"
         self.max_spotlight_budget = 40
         self.permitted_overlap: float = 0.0
         # analysis
@@ -102,7 +100,7 @@ class Args:
             + f"spotlights: {self.spotlights}, spotlight_size: {self.spotlight_size}, "
             + f"spotlight_eta: {self.spotlight_eta}, "
             + f"no_expansions: {self.no_expansions}, "
-            + f"obj_function: {self.spotlight_objective_function_name}, "
+            + f"obj_function: {self.spotlight_objective_function}, "
         )
 
 
@@ -304,21 +302,6 @@ def match_queue_style(qs: str) -> Queue:
     return Queue.Intersection
 
 
-def get_objective_function(multi_dict):
-    """gets objective function for spotlight search"""
-    try:
-        f = multi_dict["obj_function"]
-        if f == "mean":
-            return tt.mean, f
-        if f == "max":
-            return tt.max, f
-        if f == "none":
-            return None, f
-    except Exception:
-        logger.warn("unable to find objective function, so reverting to random")
-        return None, "none"
-
-
 def shared_args(cmd_args, args: CausalArgs):
     """parses shared args"""
     if cmd_args.config is not None:
@@ -468,9 +451,8 @@ def process_config_dict(config_file_args, args):
         args.spotlight_step = multi_dict["spotlight_step"]
     if "max_spotlight_budget" in multi_dict:
         args.max_spotlight_budget = multi_dict["max_spotlight_budget"]
-    obj_func, obj_func_name = get_objective_function(multi_dict)
-    args.spotlight_objective_function = obj_func
-    args.spotlight_objective_function_name = obj_func_name
+    if "objective_function" in multi_dict:
+        args.spotlight_objective_function = multi_dict["objective_function"]
     if "permitted_overlap" in multi_dict:
         po = multi_dict["permitted_overlap"]
         if isinstance(po, float):

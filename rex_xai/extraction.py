@@ -146,9 +146,16 @@ class Explanation:
             mask[circle_mask, :] = True
         return start_radius, circle_mask, mask
 
-    def mean_masked_responsibility(self, mask):
+    def compute_masked_responsibility(self, mask):
         masked_responsibility = tt.where(mask, self.target_map, 0)  # type: ignore
-        return self.args.spotlight_objective_function(masked_responsibility).item()
+        logger.debug("using %s", self.args.spotlight_objective_function)
+        if self.args.spotlight_objective_function == "mean":
+            return tt.mean(masked_responsibility).item()
+        if self.args.spotlight_objective_function == "max":
+            return tt.max(masked_responsibility).item()
+        
+        logger.warn("unable to understand %s, so using mean for search", self.args.spotlight_objective_function)
+        return tt.mean(masked_responsibility).item()
 
     def __spatial(
         self, centre=None, expansion_limit=None
@@ -160,10 +167,10 @@ class Explanation:
 
         start_radius, circle, mask = self.__draw_circle(centre)
 
-        if self.args.spotlight_objective_function is None:
+        if self.args.spotlight_objective_function == "none":
             masked_responsibility = None
         else:
-            masked_responsibility = self.mean_masked_responsibility(mask)
+            masked_responsibility = self.compute_masked_responsibility(mask)
 
         expansions = 0
         cutoff = (

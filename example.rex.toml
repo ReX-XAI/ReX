@@ -128,7 +128,7 @@
 # max_spotlight_budget = 40
 
 # objective function for spotlight search. Possible options 'mean' | 'max' | "none", defaults to "none"
-# obj_function = 'none'
+# objective_function = 'none'
 
 # how much overlap to allow between different explanations. This is the dice coefficient, so
 # 0.0 means no permitted overlap, and 1 total overlap permitted

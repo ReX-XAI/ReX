@@ -184,7 +184,7 @@ class MultiExplanation(Explanation):
         steps = 0
         while ret == SpatialSearch.NotFound and steps < self.args.max_spotlight_budget:
             steps += 1
-            if self.args.spotlight_objective_function is None:
+            if self.args.spotlight_objective_function == "none":
                 centre = self.__random_location()
                 ret, resp = self._Explanation__spatial(  # type: ignore
                     centre=centre, expansion_limit=self.args.no_expansions
@@ -199,7 +199,7 @@ class MultiExplanation(Explanation):
                         step=self.args.spotlight_step,
                     )
                     ret, new_resp = self._Explanation__spatial(  # type: ignore
-                        centre=centre, expansion_limit=1
+                        centre=centre, expansion_limit=self.args.no_expansions
                     )
                     if ret == SpatialSearch.Found:
                         return
