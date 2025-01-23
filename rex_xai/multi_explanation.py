@@ -52,7 +52,14 @@ class MultiExplanation(Explanation):
         if target_map is not None:
             self.maps = tt.from_numpy(target_map).to(self.data.device)
             self.blank()
-            for i in range(0, self.args.spotlights):
+            # we start with the global max explanation
+            self._Explanation__global()
+            if self.final_mask is not None:
+                self.explanations.append(self.final_mask)
+
+            self.blank()
+
+            for i in range(0, self.args.spotlights - 1):
                 logger.info("spotlight number %d", i + 1)
                 self.spotlight_search()
                 if self.final_mask is not None:
