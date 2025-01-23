@@ -315,7 +315,7 @@ def get_objective_function(multi_dict):
         if f == "none":
             return None, f
     except Exception:
-        print("WARN:ReX:unable to find objective function, so reverting to random")
+        logger.warn("unable to find objective function, so reverting to random")
         return None, "none"
 
 
@@ -548,7 +548,7 @@ def load_config(config_path=None):
             process_config_dict(config_file_args, default_args)
             return default_args
         except Exception as e:
-            print(f"{e}, reverting to default args")
+            logger.warn("%s, reverting to default args", e)
             return default_args
 
     except ReXError as e:
