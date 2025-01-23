@@ -64,7 +64,7 @@ class Mutant:
         )  # the first element of shape is the batch information, so we drop that
         self.mode = data.mode
         self.channels: int = (
-            data.model_channels if data.model_channels is not None else 0
+            data.model_channels if data.model_channels is not None else 1
         )
         self.order = data.model_order
         self.mask = tt.zeros(self.shape, dtype=tt.bool, device=data.device)
