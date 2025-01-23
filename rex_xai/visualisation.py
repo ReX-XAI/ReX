@@ -17,22 +17,7 @@ from rex_xai.config import CausalArgs
 from rex_xai.resp_maps import ResponsibilityMaps
 from rex_xai.input_data import Data
 from rex_xai._utils import add_boundaries
-
-
-# these colours are not particularly considered and obviously only cope with a
-# small number of explanations. This needs to be generative
-rgb_colours = [
-    (1, 0, 0),
-    (0, 1, 0),
-    (0, 0, 0.5),
-    (1, 1, 1),
-    (1, 0, 1),
-    (0, 1, 1),
-    (1, 1, 0),
-    (0.5, 0.5, 0.5),
-    (0.25, 0.25, 0.25),
-    (0, 0.75, 1),
-]
+from rex_xai.logger import logger
 
 
 def plot_curve(curve, chunk_size, style="insertion", destination=None):
@@ -346,9 +331,20 @@ def save_multi_explanation(
             )
         else:
             img = data.input.resize((data.model_height, data.model_width))
+    else:
+        logger.warn("we do not yet handle multiple explanations for non-images")
+        raise NotImplementedError
+
+
 
     if img is not None:
         img = np.array(img)
+
+        space = np.linspace(0, 1, args.spotlights)
+        colour_space = mpl.colormaps[args.heatmap_colours].resampled(args.spotlights)
+        # colour space returns colours in RGBA space, so we drop the A at the end
+        rgb_colours = [colour_space(i)[:-1] for i in space]
+
         if clauses is not None:
             for c in clauses:
                 explanation = explanations[c]
@@ -359,8 +355,10 @@ def save_multi_explanation(
                     else:
                         composite_mask = np.where(explanation, 1, composite_mask)
 
-                if data.mode == "first":
-                    explanation = explanation[0, :, :]  # type: ignore
+
+                assert explanation is not None
+                if explanation.shape[0] == 3:
+                    explanation = explanation[0, :, :]
                 else:
                     explanation = explanation[:, :, 0]  # type: ignore
 
