@@ -172,7 +172,7 @@ class Explanation:
         while tt.count_nonzero(mask) < cutoff:
             if expansion_limit is not None:
                 if expansions >= expansion_limit and expansion_limit > 1:
-                    logger.info(
+                    logger.debug(
                         f"no explanation found after {expansion_limit} expansions"
                     )
                     return SpatialSearch.NotFound, masked_responsibility
