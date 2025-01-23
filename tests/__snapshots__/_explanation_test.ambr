@@ -51,7 +51,6 @@
       spatial_eta=0.2,
       spatial_radius=25,
       spotlight_eta=0.2,
-      spotlight_objective_function_name='none',
       spotlight_size=20,
       spotlight_step=5,
       spotlights=10,
