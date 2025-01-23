@@ -153,8 +153,11 @@ class Explanation:
             return tt.mean(masked_responsibility).item()
         if self.args.spotlight_objective_function == "max":
             return tt.max(masked_responsibility).item()
-        
-        logger.warn("unable to understand %s, so using mean for search", self.args.spotlight_objective_function)
+
+        logger.warn(
+            "unable to understand %s, so using mean for search",
+            self.args.spotlight_objective_function,
+        )
         return tt.mean(masked_responsibility).item()
 
     def __spatial(
