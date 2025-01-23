@@ -335,8 +335,6 @@ def save_multi_explanation(
         logger.warn("we do not yet handle multiple explanations for non-images")
         raise NotImplementedError
 
-
-
     if img is not None:
         img = np.array(img)
 
@@ -354,7 +352,6 @@ def save_multi_explanation(
                         composite_mask = explanation
                     else:
                         composite_mask = np.where(explanation, 1, composite_mask)
-
 
                 assert explanation is not None
                 if explanation.shape[0] == 3:
