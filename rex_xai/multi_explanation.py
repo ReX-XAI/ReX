@@ -39,8 +39,10 @@ class MultiExplanation(Explanation):
                 )
             else:
                 for clause in clauses:
-                    name, ext = os.path.splitext(path)
-                    new_name = f"{name}_{clause}{ext}"
+                    new_name = None
+                    if path is not None:
+                        name, ext = os.path.splitext(path)
+                        new_name = f"{name}_{clause}{ext}"
                     save_multi_explanation(
                         self.explanations,
                         self.data,
