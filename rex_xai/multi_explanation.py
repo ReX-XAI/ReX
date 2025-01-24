@@ -12,7 +12,7 @@ from rex_xai.extraction import Explanation
 from rex_xai.distributions import random_coords, Distribution
 from rex_xai.logger import logger
 from rex_xai._utils import powerset, clause_area, SpatialSearch
-from rex_xai.visualisation import save_multi_explanation
+from rex_xai.visualisation import save_multi_explanation, save_image, plot_image_grid
 
 
 class MultiExplanation(Explanation):
@@ -47,6 +47,14 @@ class MultiExplanation(Explanation):
                         clauses=clause,
                         path=new_name,
                     )
+
+    def show(self, path=None):
+        outs = []
+        for i, mask in enumerate(self.explanations):
+            out = save_image(mask,self.data, self.args, path=None)
+            outs.append(out)
+        
+        plot_image_grid(outs)
 
     def extract(self, method=None):
         target_map = self.maps.get(self.data.target.classification)  # type: ignore
