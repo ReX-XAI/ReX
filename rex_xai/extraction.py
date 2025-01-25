@@ -184,7 +184,7 @@ class Explanation:
             expansions += 1
 
     def save(self, path):
-        if self.data.mode in ("RGB", "L"):
+        if self.data.mode in ("RGB", "L", "voxel"):
             if path is None:
                 path = f"{self.data.target.classification}.png"  # type: ignore
             visualisation.save_image(self.explanation, self.data, self.args, path=path)
@@ -209,6 +209,13 @@ class Explanation:
                 self.args.heatmap_colours,
                 path=path,
             )
+        elif self.data.mode == "voxel":
+            visualisation.voxel_plot(
+                self.args,
+                self.target_map,
+                self.data.target,
+                path=path,
+            )
         else:
             return NotImplementedError
 
@@ -220,11 +227,18 @@ class Explanation:
                 self.data.target,  #  type: ignore
                 path=path,
             )
+        elif self.data.mode == "voxel":
+            visualisation.voxel_plot(
+                self.args,
+                self.target_map,
+                self.data.target,  #  type: ignore
+                path=path,
+            )
         else:
             return NotImplementedError
 
     def show(self, path=None):
-        if self.data.mode in ("RGB", "L"):
+        if self.data.mode in ("RGB", "L", "voxel"):
             out = visualisation.save_image(
                 self.explanation, self.data, self.args, path=path
             )

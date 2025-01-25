@@ -78,7 +78,7 @@ def plot_3d(path, ranking, ogrid, norm=255.0):
 
     img = img / norm  # type: ignore
     if ogrid:
-        x, y = np.ogrid[0 : img.shape[0], 0 : img.shape[1]]
+        x, y = np.ogrid[0: img.shape[0], 0: img.shape[1]]
     else:
         x, y = np.meshgrid(
             np.arange(0, ranking.shape[0], 1), np.arange(0, ranking.shape[1], 1)
@@ -101,7 +101,7 @@ def heatmap_plot(data: Data, resp_map, colour, path=None):
         background = data.input.resize(
             (data.model_height, data.model_width)
         )  # TODO check these dimensions
-        y, x = np.mgrid[0 : data.model_height, 0 : data.model_width]
+        y, x = np.mgrid[0: data.model_height, 0: data.model_width]
         fig, ax = plt.subplots(1, 1)
         ax.imshow(background)
         ax.contourf(x, y, resp_map, 15, cmap=mycmap)
@@ -201,10 +201,10 @@ def spectral_plot(explanation, data: Data, ranking, colour, extra=True, path=Non
 
 
 def surface_plot(
-    args: CausalArgs,
-    resp_map: np.ndarray,
-    target: Prediction,
-    path=None,
+        args: CausalArgs,
+        resp_map: np.ndarray,
+        target: Prediction,
+        path=None,
 ):
     """plots a 3d surface plot"""
     img, _x, _y = plot_3d(args.path, resp_map, True)
@@ -237,7 +237,7 @@ def surface_plot(
                 # confidence = 0.0
                 # if k == target.classification:
                 confidence = target.confidence
-                # else:
+                #  else:
                 #     for p in args.extra_targets:
                 #         if p.pred == k:
                 #             confidence = p.conf
@@ -297,17 +297,18 @@ def overlay_grid(img, step_count=10):
 
     return img
 
+
 def voxel_plot(
-        args: CausalArgs, resp_map: ResponsibilityMaps, target: Prediction, data: Data, path = None):
+        resp_map: np.ndarray, data: Data, path=None):
     """ Plot a 3D voxel plot of the responsibility map using mayavi """
     try:
         from mayavi import mlab
-    except ImportError:
-        print("Mayavi is not installed. Please install it using 'pip install mayavi' to visualise 3D data")
+    except ImportError as e:
+        print(f"Mayavi is not installed. Please install it using 'pip install mayavi' to visualise 3D data caused by {e}")
         return
 
     data: np.ndarray = data.data
-    maps: np.ndarray = resp_map.get(target.classification)
+    maps: np.ndarray = resp_map
 
     data = data[0, :, :, :]  # Remove batch dimension
 
@@ -323,6 +324,7 @@ def voxel_plot(
         mlab.savefig(path)
     else:
         mlab.show()
+
 
 def save_image(explanation, data: Data, args: CausalArgs, path=None):
     mask = None
@@ -377,14 +379,14 @@ def save_image(explanation, data: Data, args: CausalArgs, path=None):
         explanation: np.ndarray = explanation.squeeze().detach().cpu().numpy()
         data = data[0, :, :, :]  # Remove batch dimension
 
-        background = np.where(data < 0.05) # Threshold for background voxels TODO: make this a parameter
+        background = np.where(data < 0.05)  # Threshold for background voxels TODO: make this a parameter
         explanation[background] = np.min(explanation)
 
         num_slices = 10
         fig, axes = plt.subplots(3, num_slices, figsize=(15, 6))
 
-        for axis in explanation.shape:
-            slice_indices = np.linspace(0, explanation.shape[axis] - 1, num_slices, dtype=int)
+        for (axis, index) in enumerate(explanation.shape):
+            slice_indices = np.linspace(0, axis - 1, num_slices, dtype=int)
             for i, slice_index in enumerate(slice_indices):
                 ax = axes[axis, i]
                 data_slice = np.take(data, slice_index, axis=axis)
@@ -396,6 +398,6 @@ def save_image(explanation, data: Data, args: CausalArgs, path=None):
         plt.tight_layout()
 
         if args.output is not None:
-            plt.savefig(args.output[0])
+            plt.savefig(args.output)
         else:
             plt.show()
