@@ -43,7 +43,6 @@ __combinations = [
 
 
 def _apply_to_data(mask, data: Data, masking_func):
-    logger.debug("masking_func is %s, data.mask_value is %s", masking_func, data.mask_value)
     if isinstance(masking_func, (float, int)):
         res = tt.where(mask, data.data, masking_func)  # type: ignore
         return res
@@ -65,7 +64,7 @@ class Mutant:
         )  # the first element of shape is the batch information, so we drop that
         self.mode = data.mode
         self.channels: int = (
-            data.model_channels if data.model_channels is not None else 0
+            data.model_channels if data.model_channels is not None else 1
         )
         self.order = data.model_order
         self.mask = tt.zeros(self.shape, dtype=tt.bool, device=data.device)
@@ -100,13 +99,6 @@ class Mutant:
             return 0
         else:
             return int(tensor.item()) // self.channels
-
-    # def predict(self, prediction_func, data, target):
-    #     p = prediction_func(self.apply_to_data(data), target)
-    #     self.prediction = p
-    #
-    #     if data.classification == p.classification:
-    #         self.passing = True
 
     def set_static_mask_regions(self, names, search_tree):
         for name in names:

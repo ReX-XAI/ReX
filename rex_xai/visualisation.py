@@ -5,6 +5,7 @@
 from PIL import Image, ImageDraw
 import os
 
+import torch as tt
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -16,6 +17,7 @@ from rex_xai.config import CausalArgs
 from rex_xai.resp_maps import ResponsibilityMaps
 from rex_xai.input_data import Data
 from rex_xai._utils import add_boundaries
+from rex_xai.logger import logger
 
 
 def plot_curve(curve, chunk_size, style="insertion", destination=None):
@@ -140,6 +142,11 @@ def __group_spectral_parts(explanation):
 
 
 def spectral_plot(explanation, data: Data, ranking, colour, extra=True, path=None):
+    if isinstance(ranking, tt.Tensor):
+        ranking = ranking.detach().cpu().numpy()
+    if isinstance(explanation, tt.Tensor):
+        explanation = explanation.detach().cpu().numpy()
+
     explanation = explanation.squeeze()
     if extra:
         fig, axs = plt.subplots(nrows=2, ncols=1, sharex=True)
@@ -298,6 +305,70 @@ def overlay_grid(img, step_count=10):
     return img
 
 
+def __transpose_mask(explanation, mode, transposed):
+    mask = None
+    if transposed:
+        if mode == "RGB":
+            mask = explanation.squeeze().detach().cpu().numpy().transpose((1, 2, 0))
+        elif mode == "L":
+            mask = explanation.squeeze(0).detach().cpu().numpy().transpose((2, 1, 0))
+            mask = np.repeat(mask, 3, axis=-1)
+    else:
+        mask = explanation.squeeze(0).detach().cpu().numpy()
+
+    return mask
+
+
+def save_multi_explanation(
+    explanations, data, args: CausalArgs, clauses=None, path=None
+):
+    composite_mask = None
+    img = None
+    if data.mode == "RGB" or data.mode == "L":
+        if data.mode == "L":
+            img = data.input.convert("RGB").resize(
+                (data.model_height, data.model_width)
+            )
+        else:
+            img = data.input.resize((data.model_height, data.model_width))
+    else:
+        logger.warn("we do not yet handle multiple explanations for non-images")
+        raise NotImplementedError
+
+    if img is not None:
+        img = np.array(img)
+
+        space = np.linspace(0, 1, args.spotlights)
+        colour_space = mpl.colormaps[args.heatmap_colours].resampled(args.spotlights)
+        # colour space returns colours in RGBA space, so we drop the A at the end
+        rgb_colours = [colour_space(i)[:-1] for i in space]
+
+        if clauses is not None:
+            for c in clauses:
+                explanation = explanations[c]
+                explanation = __transpose_mask(explanation, data.mode, data.transposed)
+                if explanation is not None:
+                    if composite_mask is None:
+                        composite_mask = explanation
+                    else:
+                        composite_mask = np.where(explanation, 1, composite_mask)
+
+                assert explanation is not None
+                if explanation.shape[0] == 3:
+                    explanation = explanation[0, :, :]
+                else:
+                    explanation = explanation[:, :, 0]  # type: ignore
+
+                img = add_boundaries(img, explanation, colour=rgb_colours[c])
+
+            if composite_mask is not None and path is not None:
+                cover = np.where(composite_mask, img, args.colour)
+                cover = Image.fromarray(cover, data.mode)
+                img = Image.fromarray(img, data.mode)
+                out = Image.blend(cover, img, args.alpha)
+                out.save(path)
+
+
 def save_image(explanation, data: Data, args: CausalArgs, path=None):
     mask = None
     if data.mode == "RGB" or data.mode == "L":
@@ -308,15 +379,7 @@ def save_image(explanation, data: Data, args: CausalArgs, path=None):
         else:
             img = data.input.resize((data.model_height, data.model_width))
 
-        if data.transposed:
-            if data.mode == "RGB":
-                mask = explanation.squeeze().detach().cpu().numpy().transpose((1, 2, 0))
-            if data.mode == "L":
-                mask = explanation.squeeze(0).detach().cpu().numpy().transpose(2, 1, 0)
-                mask = np.repeat(mask, 3, axis=-1)
-        else:
-            # else:
-            mask = explanation.squeeze(0).detach().cpu().numpy()
+        mask = __transpose_mask(explanation, data.mode, data.transposed)
 
         if mask is not None:
             if args.raw:
@@ -346,3 +409,19 @@ def save_image(explanation, data: Data, args: CausalArgs, path=None):
                 out.save(path)
 
             return out
+
+
+def plot_image_grid(images, ncols=None):
+    # adapted from: https://stackoverflow.com/questions/41793931/plotting-images-side-by-side-using-matplotlib/66961099#66961099
+    '''Plot a grid of images'''
+    if not ncols:
+        factors = [i for i in range(1, len(images)+1) if len(images) % i == 0]
+        ncols = factors[len(factors) // 2] if len(factors) else len(images) // 4 + 1
+    nrows = int(len(images) / ncols) + int(len(images) % ncols)
+    imgs = [images[i] if len(images) > i else None for i in range(nrows * ncols)]
+    f, axes = plt.subplots(nrows, ncols, figsize=(3*ncols, 2*nrows))
+    axes = axes.flatten()[:len(imgs)]
+    for img, ax in zip(imgs, axes.flatten()):
+        ax.imshow(img)
+        ax.set_axis_off()
+    f.tight_layout()

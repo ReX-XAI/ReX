@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
+
+from itertools import chain, combinations
 from enum import Enum
-from typing import Tuple, Union
+from typing import Tuple, Union, Dict
 from numpy.typing import NDArray
 import torch as tt
 import numpy as np
@@ -8,9 +10,26 @@ from skimage.segmentation import mark_boundaries
 from rex_xai.logger import logger
 from rex_xai.box import Box
 
-Strategy = Enum("Strategy", ["Global", "Spatial", "Spotlight", "MultiSpotlight"])
+Strategy = Enum("Strategy", ["Global", "Spatial", "MultiSpotlight", "Contrastive"])
 
 Queue = Enum("Queue", ["Area", "All", "Intersection", "DC"])
+
+SpatialSearch = Enum("SpatialSearch", ["NotFound", "Found"])
+
+
+def powerset(r, reverse=True):
+    ps = list(chain.from_iterable(combinations(r, lim) for lim in range(1, len(r) + 1)))
+    if reverse:
+        return reversed(ps)
+    else:
+        return ps
+
+
+def clause_area(clause, areas: Dict) -> int:
+    tot = 0
+    for c in clause:
+        tot += areas[c]
+    return tot
 
 
 class ReXError(Exception):
@@ -35,6 +54,15 @@ class ReXPathError(ReXError):
         return f"ReXPathError: no such file exists at {self.message}"
 
 
+class ReXMapError(ReXError):
+    def __init__(self, message) -> None:
+        self.message = message
+        super().__init__(self.message)
+
+    def __str__(self) -> str:
+        return f"ReXMapError: {self.message}"
+
+
 def xlogx(ps):
     f = np.vectorize(_xlogx)
     return f(ps)
@@ -47,8 +75,13 @@ def _xlogx(p):
         return p * np.log2(p)
 
 
-def add_boundaries(img: Union[NDArray, tt.Tensor], segs: NDArray) -> NDArray:
-    m = mark_boundaries(img, segs)
+def add_boundaries(
+    img: Union[NDArray, tt.Tensor], segs: NDArray, colour=None
+) -> NDArray:
+    if colour is None:
+        m = mark_boundaries(img, segs, mode="thick")
+    else:
+        m = mark_boundaries(img, segs, colour, mode="thick")
     m *= 255  # type: ignore
     m = m.astype(np.uint8)
     return m
@@ -65,6 +98,8 @@ def get_device(gpu: bool):
 
 
 def get_map_locations(map, reverse=True):
+    if isinstance(map, tt.Tensor):
+        map = map.detach().cpu().numpy()
     coords = []
     for i, r in enumerate(np.nditer(map)):
         coords.append((r, np.unravel_index(i, map.shape)))

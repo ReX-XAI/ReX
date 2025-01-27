@@ -56,7 +56,7 @@ class Evaluation:
 
         return shannon_entropy(img), exp
 
-    def insertion_deletion_curve(self, prediction_func, normalize=True):
+    def insertion_deletion_curve(self, prediction_func, normalise=False):
         insertion_curve = []
         deletion_curve = []
 
@@ -111,7 +111,7 @@ class Evaluation:
         i_auc = simpson(insertion_curve, dx=step)
         d_auc = simpson(deletion_curve, dx=step)
 
-        if normalize:
+        if normalise:
             const = self.explanation.data.target.confidence * iters * step
             i_auc /= const
             d_auc /= const
