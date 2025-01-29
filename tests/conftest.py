@@ -9,6 +9,31 @@ from rex_xai.explanation import (
     predict_target,
     try_preprocess,
 )
+from syrupy.extensions.amber.serializer import AmberDataSerializer
+from syrupy.filters import props
+from syrupy.matchers import path_type
+
+
+@pytest.fixture
+def snapshot_explanation(snapshot):
+    return snapshot.with_defaults(
+        exclude=props(
+                "obj_function", # pointer to function that will differ between runs
+                "spotlight_objective_function", # pointer to function that will differ between runs
+                "custom", # path that differs between systems
+                "custom_location", # path that differs between systems
+                "model",
+                "target_map", # large array
+                "final_mask", # large array
+                "explanation" # large array
+            ), 
+            matcher=path_type(
+                types=(CausalArgs,),
+                replacer=lambda data, _: AmberDataSerializer.object_as_named_tuple(
+                    data
+                ),  # needed to allow exclude to work for custom classes
+            )
+    )
 
 
 @pytest.fixture(scope="session")

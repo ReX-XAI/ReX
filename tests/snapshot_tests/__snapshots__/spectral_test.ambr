@@ -13,8 +13,6 @@
       concentrate=False,
       confidence_filter=0.0,
       config_location=None,
-      custom=None,
-      custom_location=None,
       data_location=None,
       db=None,
       distribution=<Distribution.Uniform: 2>,
@@ -60,8 +58,6 @@
     ),
     data=Data: spectral, ['batch_size', 1, 1356], 1, 1356, 1, None
   	 Target:CLASS: 1, CONF: 0.99817, TARGET_CLASS: None, TARGET_CONFIDENCE: None,
-    explanation=tensor([[-1.9245, -1.8787, -1.9656,  ..., -0.6328, -0.5617, -0.7713]]),
-    final_mask=tensor([[ True,  True,  True,  ...,  True,  True, False]]),
     maps={1: 4},
     run_stats=dict({
       'avg_box_size': 339.0,
@@ -69,7 +65,8 @@
       'total_failing': 0,
       'total_passing': 56,
     }),
-    target_map=array([[14.000001, 14.000001, 14.000001, ..., 14.000001, 14.000001,
-          14.000001]], dtype=float32),
   )
+# ---
+# name: test__explanation_snapshot[1].1
+  3711909154719731854
 # ---

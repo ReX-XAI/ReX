@@ -32,7 +32,6 @@
       means=None,
       min_box_size=10,
       mode=None,
-      model=None,
       no_expansions=50,
       norm=255.0,
       output=None,
@@ -62,8 +61,6 @@
     ),
     data=Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
   	 Target:CLASS: 207, CONF: 0.20462, TARGET_CLASS: None, TARGET_CONFIDENCE: None,
-    explanation=None,
-    final_mask=None,
     maps={207: 4},
     run_stats=dict({
       'avg_box_size': 128.16666666666669,
@@ -71,19 +68,6 @@
       'total_failing': 177,
       'total_passing': 89,
     }),
-    target_map=array([[ 3.1666667,  4.6666665,  4.6666665, ...,  4.6666665,  4.6666665,
-           4.6666665],
-         [ 3.1666667,  4.6666665,  4.6666665, ...,  4.6666665,  4.6666665,
-           4.6666665],
-         [ 3.1666667,  4.6666665,  4.6666665, ...,  4.6666665,  4.6666665,
-           4.6666665],
-         ...,
-         [ 6.6666665, 13.666666 , 13.666666 , ...,  5.833333 ,  5.833333 ,
-           5.833333 ],
-         [ 6.6666665, 13.666666 , 13.666666 , ...,  5.833333 ,  5.833333 ,
-           5.833333 ],
-         [ 6.6666665, 13.666666 , 13.666666 , ...,  5.833333 ,  5.833333 ,
-           5.833333 ]], dtype=float32),
   )
 # ---
 # name: test_calculate_responsibility[Distribution.BetaBinomial-dist_args2]
@@ -119,7 +103,6 @@
       means=None,
       min_box_size=10,
       mode=None,
-      model=None,
       no_expansions=50,
       norm=255.0,
       output=None,
@@ -149,8 +132,6 @@
     ),
     data=Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
   	 Target:CLASS: 207, CONF: 0.20462, TARGET_CLASS: None, TARGET_CONFIDENCE: None,
-    explanation=None,
-    final_mask=None,
     maps={207: 4},
     run_stats=dict({
       'avg_box_size': 86.0,
@@ -158,19 +139,6 @@
       'total_failing': 141,
       'total_passing': 83,
     }),
-    target_map=array([[ 4.6666665,  4.6666665,  4.6666665, ...,  4.6666665,  4.6666665,
-           4.6666665],
-         [ 4.6666665,  4.6666665,  4.6666665, ...,  4.6666665,  4.6666665,
-           4.6666665],
-         [ 4.6666665,  4.6666665,  4.6666665, ...,  4.6666665,  4.6666665,
-           4.6666665],
-         ...,
-         [16.       , 16.       , 16.       , ..., 12.833334 ,  5.833333 ,
-           5.833333 ],
-         [16.       , 16.       , 16.       , ..., 12.833334 ,  5.833333 ,
-           5.833333 ],
-         [16.       , 16.       , 16.       , ..., 12.833334 ,  5.833333 ,
-           5.833333 ]], dtype=float32),
   )
 # ---
 # name: test_calculate_responsibility[Distribution.BetaBinomial-dist_args3]
@@ -206,7 +174,6 @@
       means=None,
       min_box_size=10,
       mode=None,
-      model=None,
       no_expansions=50,
       norm=255.0,
       output=None,
@@ -236,8 +203,6 @@
     ),
     data=Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
   	 Target:CLASS: 207, CONF: 0.20462, TARGET_CLASS: None, TARGET_CONFIDENCE: None,
-    explanation=None,
-    final_mask=None,
     maps={207: 4},
     run_stats=dict({
       'avg_box_size': 215.25,
@@ -245,19 +210,6 @@
       'total_failing': 102,
       'total_passing': 66,
     }),
-    target_map=array([[4.6666665, 4.6666665, 4.6666665, ..., 4.6666665, 4.6666665,
-          4.6666665],
-         [4.6666665, 4.6666665, 4.6666665, ..., 4.6666665, 4.6666665,
-          4.6666665],
-         [4.6666665, 4.6666665, 4.6666665, ..., 4.6666665, 4.6666665,
-          4.6666665],
-         ...,
-         [5.666667 , 5.666667 , 5.666667 , ..., 8.5      , 8.5      ,
-          8.5      ],
-         [5.666667 , 5.666667 , 5.666667 , ..., 8.5      , 8.5      ,
-          8.5      ],
-         [5.666667 , 5.666667 , 5.666667 , ..., 8.5      , 8.5      ,
-          8.5      ]], dtype=float32),
   )
 # ---
 # name: test_calculate_responsibility[Distribution.BetaBinomial-dist_args4]
@@ -293,7 +245,6 @@
       means=None,
       min_box_size=10,
       mode=None,
-      model=None,
       no_expansions=50,
       norm=255.0,
       output=None,
@@ -323,8 +274,6 @@
     ),
     data=Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
   	 Target:CLASS: 207, CONF: 0.20462, TARGET_CLASS: None, TARGET_CONFIDENCE: None,
-    explanation=None,
-    final_mask=None,
     maps={207: 4},
     run_stats=dict({
       'avg_box_size': 850.3333333333334,
@@ -332,19 +281,6 @@
       'total_failing': 157,
       'total_passing': 81,
     }),
-    target_map=array([[ 2.3333335,  2.3333335,  2.3333335, ...,  2.3333335,  2.3333335,
-           2.3333335],
-         [ 2.3333335,  2.3333335,  2.3333335, ...,  2.3333335,  2.3333335,
-           2.3333335],
-         [ 2.3333335,  2.3333335,  2.3333335, ...,  2.3333335,  2.3333335,
-           2.3333335],
-         ...,
-         [ 2.3333335,  2.3333335,  2.3333335, ..., 11.666667 , 11.666667 ,
-          11.666667 ],
-         [ 2.3333335,  2.3333335,  2.3333335, ..., 11.666667 , 11.666667 ,
-          11.666667 ],
-         [ 2.3333335,  2.3333335,  2.3333335, ..., 11.666667 , 11.666667 ,
-          11.666667 ]], dtype=float32),
   )
 # ---
 # name: test_calculate_responsibility[Distribution.Uniform-dist_args0]
@@ -377,7 +313,6 @@
       means=None,
       min_box_size=10,
       mode=None,
-      model=None,
       no_expansions=50,
       norm=255.0,
       output=None,
@@ -407,8 +342,6 @@
     ),
     data=Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
   	 Target:CLASS: 207, CONF: 0.20462, TARGET_CLASS: None, TARGET_CONFIDENCE: None,
-    explanation=None,
-    final_mask=None,
     maps={207: 4},
     run_stats=dict({
       'avg_box_size': 183.5625,
@@ -416,18 +349,5 @@
       'total_failing': 126,
       'total_passing': 84,
     }),
-    target_map=array([[6.6666665, 6.6666665, 6.6666665, ..., 6.6666665, 6.6666665,
-          6.6666665],
-         [6.6666665, 6.6666665, 6.6666665, ..., 6.6666665, 6.6666665,
-          6.6666665],
-         [6.6666665, 6.6666665, 6.6666665, ..., 6.6666665, 6.6666665,
-          6.6666665],
-         ...,
-         [5.5      , 5.5      , 5.5      , ..., 5.5      , 5.5      ,
-          5.5      ],
-         [5.5      , 5.5      , 5.5      , ..., 5.5      , 5.5      ,
-          5.5      ],
-         [5.5      , 5.5      , 5.5      , ..., 5.5      , 5.5      ,
-          5.5      ]], dtype=float32),
   )
 # ---

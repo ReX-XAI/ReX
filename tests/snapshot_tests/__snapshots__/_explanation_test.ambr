@@ -29,7 +29,6 @@
       means=None,
       min_box_size=10,
       mode=None,
-      model=None,
       no_expansions=50,
       norm=255.0,
       output=None,
@@ -59,52 +58,6 @@
     ),
     data=Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
   	 Target:CLASS: 207, CONF: 0.20462, TARGET_CLASS: None, TARGET_CONFIDENCE: None,
-    explanation=tensor([[[0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           ...,
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.]],
-  
-          [[0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           ...,
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.]],
-  
-          [[0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           ...,
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.]]]),
-    final_mask=tensor([[[False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           ...,
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False]],
-  
-          [[False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           ...,
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False]],
-  
-          [[False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           ...,
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False]]]),
     maps={207: 4},
     run_stats=dict({
       'avg_box_size': 183.5625,
@@ -112,20 +65,10 @@
       'total_failing': 126,
       'total_passing': 84,
     }),
-    target_map=array([[6.6666665, 6.6666665, 6.6666665, ..., 6.6666665, 6.6666665,
-          6.6666665],
-         [6.6666665, 6.6666665, 6.6666665, ..., 6.6666665, 6.6666665,
-          6.6666665],
-         [6.6666665, 6.6666665, 6.6666665, ..., 6.6666665, 6.6666665,
-          6.6666665],
-         ...,
-         [5.5      , 5.5      , 5.5      , ..., 5.5      , 5.5      ,
-          5.5      ],
-         [5.5      , 5.5      , 5.5      , ..., 5.5      , 5.5      ,
-          5.5      ],
-         [5.5      , 5.5      , 5.5      , ..., 5.5      , 5.5      ,
-          5.5      ]], dtype=float32),
   )
+# ---
+# name: test__explanation_snapshot[1].1
+  2537636458340732753
 # ---
 # name: test__explanation_snapshot[64]
   Explanation(
@@ -157,7 +100,6 @@
       means=None,
       min_box_size=10,
       mode=None,
-      model=None,
       no_expansions=50,
       norm=255.0,
       output=None,
@@ -187,52 +129,6 @@
     ),
     data=Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
   	 Target:CLASS: 207, CONF: 0.20462, TARGET_CLASS: None, TARGET_CONFIDENCE: None,
-    explanation=tensor([[[0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           ...,
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.]],
-  
-          [[0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           ...,
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.]],
-  
-          [[0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           ...,
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.]]]),
-    final_mask=tensor([[[False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           ...,
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False]],
-  
-          [[False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           ...,
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False]],
-  
-          [[False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           ...,
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False]]]),
     maps={207: 4},
     run_stats=dict({
       'avg_box_size': 183.5625,
@@ -240,20 +136,10 @@
       'total_failing': 126,
       'total_passing': 84,
     }),
-    target_map=array([[6.6666665, 6.6666665, 6.6666665, ..., 6.6666665, 6.6666665,
-          6.6666665],
-         [6.6666665, 6.6666665, 6.6666665, ..., 6.6666665, 6.6666665,
-          6.6666665],
-         [6.6666665, 6.6666665, 6.6666665, ..., 6.6666665, 6.6666665,
-          6.6666665],
-         ...,
-         [5.5      , 5.5      , 5.5      , ..., 5.5      , 5.5      ,
-          5.5      ],
-         [5.5      , 5.5      , 5.5      , ..., 5.5      , 5.5      ,
-          5.5      ],
-         [5.5      , 5.5      , 5.5      , ..., 5.5      , 5.5      ,
-          5.5      ]], dtype=float32),
   )
+# ---
+# name: test__explanation_snapshot[64].1
+  2537636458340732753
 # ---
 # name: test__explanation_snapshot_diff_model_shape[1]
   Explanation(
@@ -285,7 +171,6 @@
       means=None,
       min_box_size=10,
       mode=None,
-      model=None,
       no_expansions=50,
       norm=255.0,
       output=None,
@@ -315,52 +200,6 @@
     ),
     data=Data: RGB, ['N', 3, 256, 256], 256, 256, 3, first
   	 Target:CLASS: 215, CONF: 0.48740, TARGET_CLASS: None, TARGET_CONFIDENCE: None,
-    explanation=tensor([[[0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           ...,
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.]],
-  
-          [[0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           ...,
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.]],
-  
-          [[0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           ...,
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.]]]),
-    final_mask=tensor([[[False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           ...,
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False]],
-  
-          [[False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           ...,
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False]],
-  
-          [[False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           ...,
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False]]]),
     maps={215: 4},
     run_stats=dict({
       'avg_box_size': 262.0,
@@ -368,20 +207,10 @@
       'total_failing': 136,
       'total_passing': 60,
     }),
-    target_map=array([[2.3333335, 2.3333335, 2.3333335, ..., 2.3333335, 2.3333335,
-          2.3333335],
-         [2.3333335, 2.3333335, 2.3333335, ..., 2.3333335, 2.3333335,
-          2.3333335],
-         [2.3333335, 2.3333335, 2.3333335, ..., 2.3333335, 2.3333335,
-          2.3333335],
-         ...,
-         [5.666667 , 5.666667 , 5.666667 , ..., 8.166666 , 8.166666 ,
-          8.166666 ],
-         [5.666667 , 5.666667 , 5.666667 , ..., 8.166666 , 8.166666 ,
-          8.166666 ],
-         [5.666667 , 5.666667 , 5.666667 , ..., 8.166666 , 8.166666 ,
-          8.166666 ]], dtype=float32),
   )
+# ---
+# name: test__explanation_snapshot_diff_model_shape[1].1
+  1569716348101885070
 # ---
 # name: test__explanation_snapshot_diff_model_shape[64]
   Explanation(
@@ -413,7 +242,6 @@
       means=None,
       min_box_size=10,
       mode=None,
-      model=None,
       no_expansions=50,
       norm=255.0,
       output=None,
@@ -443,52 +271,6 @@
     ),
     data=Data: RGB, ['N', 3, 256, 256], 256, 256, 3, first
   	 Target:CLASS: 215, CONF: 0.48740, TARGET_CLASS: None, TARGET_CONFIDENCE: None,
-    explanation=tensor([[[0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           ...,
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.]],
-  
-          [[0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           ...,
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.]],
-  
-          [[0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           ...,
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.],
-           [0., 0., 0.,  ..., 0., 0., 0.]]]),
-    final_mask=tensor([[[False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           ...,
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False]],
-  
-          [[False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           ...,
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False]],
-  
-          [[False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           ...,
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False]]]),
     maps={215: 4},
     run_stats=dict({
       'avg_box_size': 262.0,
@@ -496,45 +278,13 @@
       'total_failing': 136,
       'total_passing': 60,
     }),
-    target_map=array([[2.3333335, 2.3333335, 2.3333335, ..., 2.3333335, 2.3333335,
-          2.3333335],
-         [2.3333335, 2.3333335, 2.3333335, ..., 2.3333335, 2.3333335,
-          2.3333335],
-         [2.3333335, 2.3333335, 2.3333335, ..., 2.3333335, 2.3333335,
-          2.3333335],
-         ...,
-         [5.666667 , 5.666667 , 5.666667 , ..., 8.166666 , 8.166666 ,
-          8.166666 ],
-         [5.666667 , 5.666667 , 5.666667 , ..., 8.166666 , 8.166666 ,
-          8.166666 ],
-         [5.666667 , 5.666667 , 5.666667 , ..., 8.166666 , 8.166666 ,
-          8.166666 ]], dtype=float32),
   )
 # ---
+# name: test__explanation_snapshot_diff_model_shape[64].1
+  1569716348101885070
+# ---
 # name: test_extract_analyze[Strategy.Global]
-  tensor([[[False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           ...,
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False]],
-  
-          [[False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           ...,
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False]],
-  
-          [[False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           ...,
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False]]])
+  -2185390445883109608
 # ---
 # name: test_extract_analyze[Strategy.Global].1
   dict({
@@ -545,29 +295,7 @@
   })
 # ---
 # name: test_extract_analyze[Strategy.Spatial]
-  tensor([[[False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           ...,
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False]],
-  
-          [[False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           ...,
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False]],
-  
-          [[False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           ...,
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False],
-           [False, False, False,  ..., False, False, False]]])
+  -2185390445883109608
 # ---
 # name: test_extract_analyze[Strategy.Spatial].1
   dict({
