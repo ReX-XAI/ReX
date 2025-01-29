@@ -50,9 +50,9 @@ optional = true
 
 [tool.poetry.group.3D.dependencies]
 monai = "^1.2.0"
-mayavi = "^4.7.0"
-vtk = "^9.0.0"
 nibabel = "^5.2.1"
+kaleido = "^0.2.1"
+plotly = "^5.24.1"
 
 [tool.pyright]
 include = ["rex_xai"]
