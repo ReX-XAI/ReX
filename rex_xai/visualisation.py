@@ -299,7 +299,7 @@ def overlay_grid(img, step_count=10):
 
 
 def voxel_plot(
-        resp_map: np.ndarray, data: Data, path=None):
+        args: CausalArgs, resp_map: np.ndarray, data: Data, path=None):
     """ Plot a 3D voxel plot of the responsibility map using plotly"""
     try:
         import plotly.graph_objs as go

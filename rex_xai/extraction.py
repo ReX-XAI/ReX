@@ -213,7 +213,7 @@ class Explanation:
             visualisation.voxel_plot(
                 self.args,
                 self.target_map,
-                self.data.target,
+                self.data,
                 path=path,
             )
         else:
@@ -224,7 +224,7 @@ class Explanation:
             visualisation.surface_plot(
                 self.args,
                 self.target_map,
-                self.data.target,  #  type: ignore
+                self.data.target,
                 path=path,
             )
         elif self.data.mode == "voxel":
