@@ -17,6 +17,7 @@ from tqdm import trange  # type: ignore
 from rex_xai.config import CausalArgs
 from rex_xai.database import update_database
 from rex_xai.evaluation import Evaluation
+from rex_xai.multi_explanation import MultiExplanation
 from rex_xai.extraction import Explanation
 from rex_xai.input_data import Data
 from rex_xai.logger import logger
@@ -24,6 +25,7 @@ from rex_xai.onnx import get_prediction_function
 from rex_xai.resp_maps import ResponsibilityMaps
 from rex_xai.responsibility import causal_explanation
 from rex_xai.prediction import Prediction
+from rex_xai._utils import Strategy
 
 
 def try_preprocess(args: CausalArgs, model_shape: Tuple[int], device: tt.device):
@@ -256,7 +258,9 @@ def analyze(exp: Explanation, data_mode: str | None):
     else:
         ent = None
 
-    iauc, dauc = eval.insertion_deletion_curve(exp.prediction_func)
+    iauc, dauc = eval.insertion_deletion_curve(
+        exp.prediction_func, normalise=exp.args.normalise_curves
+    )
 
     analysis_results = {
         "area": rat,
@@ -296,14 +300,36 @@ def _explanation(
     """
     data = load_and_preprocess_data(model_shape, device, args)
     data.set_mask_value(args.mask_value)
-    logger.debug("args.mask_value is %s, data.mask_value is %s", args.mask_value, data.mask_value)
+    logger.debug(
+        "args.mask_value is %s, data.mask_value is %s", args.mask_value, data.mask_value
+    )
 
     data.target = predict_target(data, prediction_func)
 
     start = time.time()
 
-    exp = calculate_responsibility(data, args, prediction_func)
-    exp.extract(args.strategy)
+    resp_object = calculate_responsibility(data, args, prediction_func)
+
+    clauses = None
+
+    if args.strategy in (Strategy.MultiSpotlight, Strategy.Contrastive):
+        exp = MultiExplanation(
+            resp_object.maps, prediction_func, data, args, resp_object.run_stats
+        )
+        exp.extract()
+
+        if args.strategy == Strategy.Contrastive:
+            clauses = exp.separate_by(0.0)
+            exp.contrastive(clauses)
+        else:
+            clauses = exp.separate_by(args.permitted_overlap)
+            logger.info(f"found the following sets of explanations {clauses}")
+            # TODO
+    else:
+        exp = Explanation(
+            resp_object.maps, prediction_func, data, args, resp_object.run_stats
+        )
+        exp.extract(args.strategy)
 
     if args.analyze:
         results = analyze(exp, data.mode)
@@ -335,20 +361,34 @@ def _explanation(
             path = None
         else:
             path = args.output
-        exp.save(path)
+        exp.save(path, clauses=clauses)
 
     if db is not None:
-        logger.info("writing to database")
-        update_database(
-            db,
-            data.target,  # type: ignore
-            exp,
-            time_taken,
-            exp.run_stats["total_passing"],
-            exp.run_stats["total_failing"],
-            exp.run_stats["max_depth_reached"],
-            exp.run_stats["avg_box_size"],
-        )
+        if args.strategy == Strategy.MultiSpotlight:
+            logger.info("writing multiple explanations to database")
+            update_database(
+                db,
+                data.target,
+                exp,
+                time_taken,
+                exp.run_stats["total_passing"],
+                exp.run_stats["total_failing"],
+                exp.run_stats["max_depth_reached"],
+                exp.run_stats["avg_box_size"],
+                multi=True,
+            )
+        else:
+            logger.info("writing to database")
+            update_database(
+                db,
+                data.target,  # type: ignore
+                exp,
+                time_taken,
+                exp.run_stats["total_passing"],
+                exp.run_stats["total_failing"],
+                exp.run_stats["max_depth_reached"],
+                exp.run_stats["avg_box_size"],
+            )
 
     return exp
 
@@ -431,7 +471,7 @@ def explanation(
         )
         args.batch = model_shape[0]
 
-    # multiple explanations
+    # directory of data to process
     if os.path.isdir(args.path):
         dir = args.path
         explanations = []

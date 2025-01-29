@@ -1,8 +1,7 @@
 #!/usr/bin/env python
-from typing import Optional
+from typing import Optional, Tuple
 
 import torch as tt
-import numpy as np
 
 from rex_xai import visualisation
 from rex_xai.input_data import Data
@@ -10,7 +9,7 @@ from rex_xai.config import CausalArgs
 from rex_xai.config import Strategy
 from rex_xai.logger import logger
 from rex_xai.mutant import _apply_to_data
-from rex_xai._utils import get_map_locations, set_boolean_mask_value
+from rex_xai._utils import get_map_locations, set_boolean_mask_value, SpatialSearch
 from rex_xai.resp_maps import ResponsibilityMaps
 
 
@@ -37,7 +36,9 @@ class Explanation:
             maps.subset(data.target.classification)
             self.maps = maps
 
-        self.target_map: np.ndarray = maps.get(data.target.classification)  # type: ignore
+        self.target_map = tt.from_numpy(maps.get(data.target.classification)).to(
+            data.device
+        )
         if self.target_map is None:
             raise ValueError(
                 f"No responsibility map found for target {data.target.classification}!"
@@ -54,29 +55,6 @@ class Explanation:
         self.blank()
         if method == Strategy.Global:
             return self.__global()
-        if method == Strategy.MultiSpotlight:
-            logger.warning("not yet implemented, defaulting to global")
-            return self.__global()
-            # name = None
-            # ext = None
-            # if self.args.output is not None:
-            #     name, ext = os.path.splitext(os.path.basename((self.args.output)))
-            # # get default spatial with centre set at responsibility mass
-            # self.__spatial()
-            # self.save()
-            # for i in range(0, 10):
-            #     self.args.output = f"{name}_{i}{ext}" #type: ignore
-            #     m = MultiExplanation(self.map, self.data, self.target)
-            #     centre = m.spotlight_search(self.args)
-            #     print(centre, self.target.classification)
-            #     r = self.__spatial(centre=centre, expansion_limit=4)
-            #     while r == -1:
-            #         print("trying in new location")
-            #         centre = m.spotlight_search(self.args)
-            #         r = self.__spatial(centre=centre, expansion_limit=4)
-            #     if r != -1:
-            #         self.save()
-
         if method == Strategy.Spatial:
             if self.data.mode == "spectral":
                 logger.warning(
@@ -84,13 +62,19 @@ class Explanation:
                 )
                 self.__global()
             else:
-                self.__spatial()
+                _ = self.__spatial()
+
+        if isinstance(self.final_mask, tt.Tensor):
+            self.final_mask = self.final_mask.detach().cpu().numpy()
+        if isinstance(self.target_map, tt.Tensor):
+            self.target_map = self.target_map.detach().cpu().numpy()
 
     def blank(self):
         assert self.data.data is not None
         self.explanation = tt.zeros(
             self.data.data.shape, dtype=tt.bool, device=self.data.device
         )
+        self.final_mask = None
 
     def set_to_true(self, coords, mask=None):
         if mask is not None:
@@ -121,42 +105,75 @@ class Explanation:
                 for j, p in enumerate(preds):
                     if p.classification == self.data.target.classification:  #  type: ignore
                         logger.info(
-                            "found an explanation of %f confidence",
+                            "found an explanation of %d with %f confidence",
+                            p.classification,
                             p.confidence,
                         )
                         self.explanation = masks[j]
                         self.final_mask = mutant.zero_()
                         for _, loc in ranking[:limit]:
                             self.set_to_true(loc, self.final_mask)
-                        # np.save("test", self.final_mask.detach().cpu().numpy())
                         return
                 masks = []
 
-    def __circle(self, centre, radius: int):
-        Y, X = np.ogrid[: self.data.model_height, : self.data.model_width]
+    def __generate_circle_coordinates(self, centre, radius: int):
+        Y, X = tt.meshgrid(
+            tt.arange(0, self.data.model_height),
+            tt.arange(0, self.data.model_width),
+            indexing="ij",
+        )
 
-        dist_from_centre = np.sqrt((Y - centre[0]) ** 2 + (X - centre[1]) ** 2)
+        dist_from_centre = tt.sqrt(
+            (Y.to(self.data.device) - centre[0]) ** 2
+            + (X.to(self.data.device) - centre[1]) ** 2
+        )
 
-        # this produces a H * W mask which can be using in conjunction with np.where()
-        mask = dist_from_centre <= radius
+        # this produces a H * W mask which can be using in conjunction with tt.where()
+        circle_mask = dist_from_centre <= radius
 
-        return tt.from_numpy(mask).to(self.data.device)
+        return circle_mask
 
-    def __spatial(self, centre=None, expansion_limit=None) -> Optional[int]:
-        # we don't have a search location to start from, so we try to isolate one
-        map = self.target_map
-        if centre is None:
-            centre = np.unravel_index(np.argmax(map), map.shape)
-
-        start_radius = self.args.spatial_radius
+    def __draw_circle(self, centre, start_radius=None):
+        if start_radius is None:
+            start_radius = self.args.spatial_radius
         mask = tt.zeros(
             self.data.model_shape[1:], dtype=tt.bool, device=self.data.device
         )
-        circle = self.__circle(centre, start_radius)
+        circle_mask = self.__generate_circle_coordinates(centre, start_radius)
         if self.data.model_order == "first":
-            mask[:, circle] = True
+            mask[:, circle_mask] = True
         else:
-            mask[circle, :] = True
+            mask[circle_mask, :] = True
+        return start_radius, circle_mask, mask
+
+    def compute_masked_responsibility(self, mask):
+        masked_responsibility = tt.where(mask, self.target_map, 0)  # type: ignore
+        logger.debug("using %s", self.args.spotlight_objective_function)
+        if self.args.spotlight_objective_function == "mean":
+            return tt.mean(masked_responsibility).item()
+        if self.args.spotlight_objective_function == "max":
+            return tt.max(masked_responsibility).item()
+
+        logger.warn(
+            "unable to understand %s, so using mean for search",
+            self.args.spotlight_objective_function,
+        )
+        return tt.mean(masked_responsibility).item()
+
+    def __spatial(
+        self, centre=None, expansion_limit=None
+    ) -> Optional[Tuple[SpatialSearch, float]]:
+        # we don't have a search location to start from, so we try to isolate one
+        map = self.target_map
+        if centre is None:
+            centre = tt.unravel_index(tt.argmax(map), map.shape)
+
+        start_radius, circle, mask = self.__draw_circle(centre)
+
+        if self.args.spotlight_objective_function == "none":
+            masked_responsibility = None
+        else:
+            masked_responsibility = self.compute_masked_responsibility(mask)
 
         expansions = 0
         cutoff = (
@@ -164,30 +181,36 @@ class Explanation:
         )
         while tt.count_nonzero(mask) < cutoff:
             if expansion_limit is not None:
-                if expansions >= expansion_limit:
-                    logger.info(
+                if expansions >= expansion_limit and expansion_limit > 1:
+                    logger.debug(
                         f"no explanation found after {expansion_limit} expansions"
                     )
-                    return -1
+                    return SpatialSearch.NotFound, masked_responsibility
             d = _apply_to_data(mask, self.data, self.data.mask_value)
             p = self.prediction_func(d)[0]
             if p.classification == self.data.target.classification:  #  type: ignore
-                return self.__global(
-                    map=np.where(circle.detach().cpu().numpy(), map, 0)
-                )
+                self.__global(map=tt.where(circle, map, 0))
+                return SpatialSearch.Found, masked_responsibility
             start_radius = int(start_radius * (1 + self.args.spatial_eta))
-            circle = self.__circle(centre, start_radius)
+            _, circle, _ = self.__draw_circle(centre, start_radius)
             if self.data.model_order == "first":
                 mask[:, circle] = True
             else:
                 mask[circle, :] = True
             expansions += 1
 
-    def save(self, path):
+    def save(self, path, mask=None, multi=None, multi_style="", clauses=None):
+        # NOTE: the parameter multi_style="" is here simply to make overriding
+        # the save function in MultiExplanation typecheck, same holds for clauses
         if self.data.mode in ("RGB", "L"):
             if path is None:
                 path = f"{self.data.target.classification}.png"  # type: ignore
-            visualisation.save_image(self.explanation, self.data, self.args, path=path)
+            if mask is None:
+                visualisation.save_image(
+                    self.explanation, self.data, self.args, path=path
+                )
+            else:
+                visualisation.save_image(mask, self.data, self.args, path=path)
         if self.data.mode == "spectral":
             visualisation.spectral_plot(
                 self.explanation,

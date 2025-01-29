@@ -185,7 +185,9 @@ class Data:
         # if m is a number, then if might still need to be normalised
 
         if m == "spectral" and self.mode != "spectral":
-            logger.warning("Mask value 'spectral' can only be used if mode is also 'spectral', using default mask value 0 instead")
+            logger.warning(
+                "Mask value 'spectral' can only be used if mode is also 'spectral', using default mask value 0 instead"
+            )
             m = 0
 
         match m:

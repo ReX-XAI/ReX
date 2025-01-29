@@ -40,7 +40,6 @@ def _2d_adaptive(map, args: Tuple[int, int, int, int], alpha=0.0, base=None) -> 
 
         # base = betabinom(0, len(sf), 1.1, 1.1)
         # if base is not None:
-        #     print('blending')
         #     sf = _blend(alpha, base)
         pos = np.random.choice(np.arange(0, len(sf)), p=sf)
         return pos
