@@ -300,11 +300,13 @@ def overlay_grid(img, step_count=10):
 
 def voxel_plot(
         resp_map: np.ndarray, data: Data, path=None):
-    """ Plot a 3D voxel plot of the responsibility map using mayavi """
+    """ Plot a 3D voxel plot of the responsibility map using plotly"""
     try:
-        from mayavi import mlab
+        import plotly.graph_objs as go
+        from plotly.subplots import make_subplots
+        from dash import Dash, dcc, html, Input, Output
     except ImportError as e:
-        print(f"Mayavi is not installed. Please install it using 'pip install mayavi' to visualise 3D data caused by {e}")
+        print(f"Plotly failed to import caused by {e}.")
         return
 
     data: np.ndarray = data.data
@@ -312,19 +314,88 @@ def voxel_plot(
 
     data = data[0, :, :, :]  # Remove batch dimension
 
-    background = np.where(data < 0.05)  # Threshold for background voxels TODO: make this a parameter
-    maps[background] = np.min(maps)  # Set background to minimum value
+    # background = np.where(data < 0.05)  # Threshold for background voxels TODO: make this a parameter
+    # maps[background] = np.min(maps)  # Set background to minimum value
 
-    mlab.figure()
+    assert data.shape == maps.shape, "data and resp_map must have the same shape!"
+    x, y, z = np.indices(data.shape)
 
-    mlab.contour3d(data, colormap='gray', transparent=True, opacity=0.5)
-    mlab.contour3d(maps, colormap='Reds', transparent=True, opacity=0.5)
+    app = Dash(__name__)
+
+    # 3D rendering OF
+    volume = go.Isosurface(
+        x=x.flatten(),
+        y=y.flatten(),
+        z=z.flatten(),
+        isomin=np.min(data),
+        isomax=np.max(data),
+        value=data.flatten(),
+        opacity=0.5,
+        caps=dict(x_show=True, y_show=True, z_show=True, x_fill=1),
+        colorscale='gray_r',
+        surface=dict(count=1, fill=0.5, show=True),
+    )
+
+    fig = go.Figure(data=volume).add_volume(
+        x=x.flatten(),
+        y=y.flatten(),
+        z=z.flatten(),
+        value=resp_map.flatten(),
+        isomin=np.min(data),
+        isomax=np.max(data),
+        opacity=0.1,
+        surface=dict(count=1, fill=0.5, show=True),
+        colorscale='reds',
+    )
+
+    app.layout = html.Div([
+        dcc.Graph(id='3d-plot', style={'height': '600px'},
+                  figure=fig),
+        html.Div([
+            dcc.Graph(id='x-slice'),
+            dcc.Graph(id='y-slice'),
+            dcc.Graph(id='z-slice'),
+        ], style={'display': 'flex', 'justify-content': 'space-around'}),
+
+    ], style={'width': '80%', 'margin': 'auto'})
+
+    @app.callback(
+        [Output('x-slice', 'figure'),
+         Output('y-slice', 'figure'),
+         Output('z-slice', 'figure')],
+        [Input('3d-plot', 'hoverData')]
+    )
+    def update_cross_sections(hover_data):
+        if hover_data is None:
+            hover_x, hover_y, hover_z = data.shape[0] // 2, data.shape[1] // 2, data.shape[2] // 2
+        else:
+            hover_x, hover_y, hover_z = hover_data['points'][0]['x'], hover_data['points'][0]['y'], \
+            hover_data['points'][0]['z']
+
+        x_slice = go.Figure()
+        x_slice.add_trace(go.Heatmap(z=data[int(hover_x), :, :], colorscale='gray_r', name='Data'))
+        x_slice.add_trace(go.Heatmap(z=resp_map[int(hover_x), :, :], colorscale='Blues', opacity=0.5, name='Resp Map'))
+
+        # Y-Slice
+        y_slice = go.Figure()
+        y_slice.add_trace(go.Heatmap(z=data[:, int(hover_y), :], colorscale='gray_r', name='Data'))
+        y_slice.add_trace(go.Heatmap(z=resp_map[:, int(hover_y), :], colorscale='Blues', opacity=0.5, name='Resp Map'))
+
+        # Z-Slice
+        z_slice = go.Figure()
+        z_slice.add_trace(go.Heatmap(z=data[:, :, int(hover_z)], colorscale='gray_r', name='Data'))
+        z_slice.add_trace(go.Heatmap(z=resp_map[:, :, int(hover_z)], colorscale='Blues', opacity=0.5, name='Resp Map'))
+
+        return x_slice, y_slice, z_slice
+
 
     if path is not None:
-        mlab.savefig(path)
+        if path.endswith(".png"):
+            fig.write_image(path)
+        else:
+            app.run_server(debug=True)
     else:
-        mlab.show()
-
+        app.run_server(debug=True)
 
 def save_image(explanation, data: Data, args: CausalArgs, path=None):
     mask = None
