@@ -357,11 +357,14 @@ def apply_boundaries_to_image(image, explanations, colours):
             explanation = explanation[:, :, 0]  # type: ignore
 
         image = add_boundaries(image, explanation, colour=colours[i])
-    
+
     return image
 
 
 def get_img_as_array(data):
+    """
+    Return original input image as a numpy array, resized to match model size and converted to RGB if necessary.
+    """
     if data.mode == "RGB" or data.mode == "L":
         if data.mode == "L":
             img = data.input.convert("RGB").resize(
@@ -370,35 +373,45 @@ def get_img_as_array(data):
         else:
             img = data.input.resize((data.model_height, data.model_width))
     else:
-        logger.warning("we do not yet handle multiple explanations for non-images")
         raise NotImplementedError
-    
+
     return np.array(img)
 
 
 def save_multi_explanation(
     explanations, data, args: CausalArgs, clause=None, path=None
 ):
-    
-    img = get_img_as_array(data)
+    if data.mode == "RGB" or data.mode == "L":
+        img = get_img_as_array(data)
+    else:
+        logger.warning("we do not yet handle multiple explanations for non-images")
+        raise NotImplementedError
+
     if img is not None:
         rgb_colours = generate_colours(args.spotlights, args.heatmap_colours)
 
         if clause is not None:
             # subset explanations and transpose if necessary
             explanations_subset = [explanations[c] for c in clause]
-            explanations_subset = [__transpose_mask(explanation, data.mode, data.transposed) for explanation in explanations_subset]
+            explanations_subset = [
+                __transpose_mask(explanation, data.mode, data.transposed)
+                for explanation in explanations_subset
+            ]
             composite_mask = make_composite_mask(explanations_subset)
 
             colours_subset = [rgb_colours[c] for c in clause]
             img = apply_boundaries_to_image(img, explanations_subset, colours_subset)
-            
-            if composite_mask is not None and path is not None:
+
+            if composite_mask is not None:
                 cover = np.where(composite_mask, img, args.colour)
                 cover = Image.fromarray(cover, data.mode)
                 img = Image.fromarray(img, data.mode)
                 out = Image.blend(cover, img, args.alpha)
-                out.save(path)
+
+                if path is None:
+                    return out
+                else:
+                    out.save(path)
 
 
 def save_image(explanation, data: Data, args: CausalArgs, path=None):
@@ -445,14 +458,14 @@ def save_image(explanation, data: Data, args: CausalArgs, path=None):
 
 def plot_image_grid(images, ncols=None):
     # adapted from: https://stackoverflow.com/questions/41793931/plotting-images-side-by-side-using-matplotlib/66961099#66961099
-    '''Plot a grid of images'''
+    """Plot a grid of images"""
     if not ncols:
-        factors = [i for i in range(1, len(images)+1) if len(images) % i == 0]
+        factors = [i for i in range(1, len(images) + 1) if len(images) % i == 0]
         ncols = factors[len(factors) // 2] if len(factors) else len(images) // 4 + 1
     nrows = int(len(images) / ncols) + int(len(images) % ncols)
     imgs = [images[i] if len(images) > i else None for i in range(nrows * ncols)]
-    f, axes = plt.subplots(nrows, ncols, figsize=(3*ncols, 2*nrows))
-    axes = axes.flatten()[:len(imgs)]
+    f, axes = plt.subplots(nrows, ncols, figsize=(3 * ncols, 2 * nrows))
+    axes = axes.flatten()[: len(imgs)]
     for img, ax in zip(imgs, axes.flatten()):
         ax.imshow(img)
         ax.set_axis_off()
