@@ -344,6 +344,8 @@ def save_multi_explanation(
         rgb_colours = [colour_space(i)[:-1] for i in space]
 
         if clauses is not None:
+            if isinstance(clauses, int):
+                clauses = [clauses]
             for c in clauses:
                 explanation = explanations[c]
                 explanation = __transpose_mask(explanation, data.mode, data.transposed)
