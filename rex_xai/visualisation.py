@@ -299,7 +299,7 @@ def overlay_grid(img, step_count=10):
 
 def remove_background(data: Data, resp_map: np.ndarray) -> np.ndarray:
     """Remove the background from the responsibility map if set in the Data object"""
-    data_m: np.ndarray = data.data
+    data_m: np.ndarray = data.data[0, :, :, :]
     # Set background to minimum value in the responsibility map if set in the Data object
     if data.background is not None and data.background is int or float:
         background = np.where(data_m == data.background)  # Threshold for background voxels

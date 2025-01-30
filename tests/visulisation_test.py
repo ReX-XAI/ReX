@@ -2,7 +2,6 @@
 import os
 
 import numpy as np
-from PIL.Image import Image
 
 from rex_xai.visualisation import voxel_plot, save_image
 from rex_xai.config import CausalArgs
@@ -34,8 +33,9 @@ def test_save_image_3d():
 def test_voxel_plot():
     resp_map = np.zeros((64, 64, 64), dtype=np.float32)
     resp_map[0:10, 20:25, 20:35] = 1
+    args = CausalArgs()
     # Create a cube in data
-    voxel_plot(resp_map, data_3d, path="test.png")
+    voxel_plot(args, resp_map, data_3d, path="test.png")
     assert os.path.exists("test.png")
     assert os.path.getsize("test.png") > 0
     os.remove("test.png")
