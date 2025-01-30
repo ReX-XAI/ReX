@@ -38,6 +38,7 @@ The function should return a Data object. The Data object contains the following
 - `model_channels` -> The number of channels in the model input
 - `transposed` -> Whether the data is transposed or not
 - `model_order` -> The order of the model input e.g. "first" or "last"
+- `background` -> The value of the background of the image e.g. 0 or 255 ... etc. For a range of values, use a tuple e.g. (0, 255)
 
 #### Prediction function
 
@@ -77,4 +78,4 @@ def model_shape():
 ```
 
 ---
-Example scripts can be found in the `tests/scripts` directory.
+Example scripts can be found in the `tests/scripts` and `scripts` directory.

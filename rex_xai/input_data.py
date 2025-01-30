@@ -43,6 +43,7 @@ class Data:
         self.model_channels: Optional[int] = channels if channels is not None else 0
         self.model_order = order
         self.mask_value = None
+        self.background = None
 
         if process:
             # RGB model but greyscale input so we convery greyscale to pseudo-RGB
