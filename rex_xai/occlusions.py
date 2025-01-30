@@ -2,6 +2,7 @@
 import torch as tt
 import numpy as np
 
+
 def __split_groups(neg_mask):
     # for some reason, it's much faster to do this on the cpu with numpy
     # than it is to use tensor_split
@@ -18,7 +19,7 @@ def spectral_occlusion(mask: tt.Tensor, data: tt.Tensor, noise=0.03, device="cpu
 
     @return torch.Tensor
     """
-    neg_mask = tt.where(mask == False)[1]
+    neg_mask = tt.where(mask == 0)[1]
     split = __split_groups(neg_mask.detach().cpu().numpy())
 
     # strangely, this all seems to run faster if we do it on the cpu.

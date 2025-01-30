@@ -101,6 +101,12 @@
 # iterate through pixel ranking in chunks, defaults to causal.min_box_size
 # chunk = 10
 
+# causal explanations are minimal by definition, but very small explanations might have very low confidence. ReX will keep 
+# looking for an explanation of confidence greater than or equal to the model confidence on <entire image * min_confidence_scalar>. 
+# This is especially useful to reduce errors due to floating point imprecision when batching calls to the model.
+# Defaults to 0.0, with maximum value 1.0. 
+# min_confidence_scalar = 0.0
+
 [explanation.spatial]
 # initial search radius
 # initial_radius = 25

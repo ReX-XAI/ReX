@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from typing import Optional, Tuple
+from typing import Optional
 
 import torch as tt
 
@@ -103,7 +103,11 @@ class Explanation:
             if len(masks) == self.args.batch:
                 preds = self.prediction_func(tt.stack(masks).to(self.data.device))
                 for j, p in enumerate(preds):
-                    if p.classification == self.data.target.classification:  #  type: ignore
+                    if (
+                        p.classification == self.data.target.classification
+                        and p.confidence >= self.data.target.confidence * self.args.min_confidence_scalar
+                    ):  #  type: ignore
+                        # if p.classification == self.data.target.classification:  #  type: ignore
                         logger.info(
                             "found an explanation of %d with %f confidence",
                             p.classification,
@@ -150,9 +154,13 @@ class Explanation:
 
     def compute_masked_responsibility(self, mask):
         try:
-            masked_responsibility = tt.where(mask, self.target_map, self.data.mask_value)  # type: ignore
+            masked_responsibility = tt.where(
+                mask, self.target_map, self.data.mask_value
+            )  # type: ignore
         except RuntimeError:
-            masked_responsibility = tt.where(mask.permute((2, 0, 1)), self.target_map, self.data.mask_value)  # type: ignore
+            masked_responsibility = tt.where(
+                mask.permute((2, 0, 1)), self.target_map, self.data.mask_value
+            )  # type: ignore
         except Exception as e:
             logger.fatal(e)
             exit()
@@ -169,13 +177,11 @@ class Explanation:
         )
         return tt.mean(masked_responsibility).item()
 
-    def __spatial(
-        self, centre=None, expansion_limit=None
-    ) -> Optional[Tuple[SpatialSearch, float]]:
+    def __spatial(self, centre=None, expansion_limit=None):
         # we don't have a search location to start from, so we try to isolate one
         map = self.target_map
         if centre is None:
-            centre = tt.unravel_index(tt.argmax(map), map.shape)
+            centre = tt.unravel_index(tt.argmax(map), map.shape)  # type: ignore
 
         start_radius, circle, mask = self.__draw_circle(centre)
 
@@ -197,8 +203,11 @@ class Explanation:
                     return SpatialSearch.NotFound, masked_responsibility
             d = _apply_to_data(mask, self.data, self.data.mask_value)
             p = self.prediction_func(d)[0]
-            if p.classification == self.data.target.classification:  #  type: ignore
-                self.__global(map=tt.where(circle, map, 0))
+            if (
+                p.classification == self.data.target.classification 
+                and p.confidence >= self.data.target.confidence * self.args.min_confidence_scalar
+            ): 
+                self.__global(map=tt.where(circle, map, 0))  # type: ignore
                 return SpatialSearch.Found, masked_responsibility
             start_radius = int(start_radius * (1 + self.args.spatial_eta))
             _, circle, _ = self.__draw_circle(centre, start_radius)
@@ -248,7 +257,7 @@ class Explanation:
         if self.data.mode in ("RGB", "L"):
             visualisation.surface_plot(
                 self.args,
-                self.target_map, #type: ignore
+                self.target_map,  # type: ignore
                 self.data.target,  #  type: ignore
                 path=path,
             )

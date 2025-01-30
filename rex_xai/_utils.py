@@ -145,7 +145,6 @@ def set_boolean_mask_value(
             tensor[0, h:w] = val
     # elif mode == "tabular":
 
-            
     elif mode == "voxel":
         logger.warning("not yet implemented")
 

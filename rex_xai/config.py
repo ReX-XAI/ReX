@@ -65,6 +65,7 @@ class Args:
         self.strategy: Strategy = Strategy.Global
         self.chunk_size = 25
         self.batch: int = 1
+        self.min_confidence_scalar = 0.0
         # args for spatial strategy
         self.spatial_radius: int = 25
         self.spatial_eta: float = 0.2
@@ -92,6 +93,7 @@ class Args:
             + f"heatmap_plot: {self.heatmap}, "
             + f"means: {self.means}, stds: {self.stds}, norm: {self.norm} "
             + f"explanation_strategy: {self.strategy}, "
+            + f"min_confidence_scalar: {self.min_confidence_scalar}, "
             + f"chunk size: {self.chunk_size}, "
             + f"spatial_radius: {self.spatial_radius}, "
             + f"spatial_eta: {self.spatial_eta}, seed: {self.seed}, "
@@ -430,6 +432,8 @@ def process_config_dict(config_file_args, args):
     explain_dict = config_file_args["explanation"]
     if "chunk" in explain_dict:
         args.chunk_size = explain_dict["chunk"]
+    if "min_confidence_scalar" in explain_dict:
+        args.min_confidence_scalar = explain_dict["min_confidence_scalar"]
 
     # spatial args
     spatial_dict = explain_dict["spatial"]

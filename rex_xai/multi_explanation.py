@@ -51,9 +51,9 @@ class MultiExplanation(Explanation):
     def show(self, path=None):
         outs = []
         for i, mask in enumerate(self.explanations):
-            out = save_image(mask,self.data, self.args, path=None)
+            out = save_image(mask, self.data, self.args, path=None)
             outs.append(out)
-        
+
         plot_image_grid(outs)
 
     def extract(self, method=None):
@@ -63,7 +63,7 @@ class MultiExplanation(Explanation):
             self.blank()
             # we start with the global max explanation
             logger.info("spotlight number 1 (global max)")
-            self._Explanation__global() #type: ignore
+            self._Explanation__global()  # type: ignore
             if self.final_mask is not None:
                 self.explanations.append(self.final_mask)
 
@@ -132,15 +132,22 @@ class MultiExplanation(Explanation):
             for subset in powerset(clause, reverse=False):
                 mask = sum([self.explanations[x] for x in subset])
                 mask = mask.to(tt.bool)  # type: ignore
-                sufficient = tt.where(mask, self.data.data, self.data.mask_value) #type: ignore
+                sufficient = tt.where(mask, self.data.data, self.data.mask_value)  # type: ignore
                 necessary = tt.where(mask, self.data.mask_value, self.data.data)  # type: ignore
                 ps = self.prediction_func(sufficient)[0]
                 pn = self.prediction_func(necessary)[0]
 
-                if ps.classification == self.data.target.classification and pn.classification != self.data.target.classification:  # type: ignore
+                if (
+                    ps.classification == self.data.target.classification
+                    and pn.classification != self.data.target.classification
+                ):  # type: ignore
                     logger.info(
-                        "subset: %s, sufficiency: %d, counterfactual: %d, target: %d", 
-                        subset, ps.classification, pn.classification, self.data.target.classification) #type: ignore
+                        "subset: %s, sufficiency: %d, counterfactual: %d, target: %d",
+                        subset,
+                        ps.classification,
+                        pn.classification,
+                        self.data.target.classification,
+                    )  # type: ignore
                     self.final_mask = mask
                     return subset
         logger.info("unable to find a counterfactual")
