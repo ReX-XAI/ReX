@@ -16,7 +16,7 @@ from rex_xai.config import CausalArgs
 from rex_xai.resp_maps import ResponsibilityMaps
 from rex_xai.input_data import Data
 from rex_xai._utils import add_boundaries
-
+from rex_xai.logger import logger
 
 def plot_curve(curve, chunk_size, style="insertion", destination=None):
     # TODO check that this code still works
@@ -297,55 +297,73 @@ def overlay_grid(img, step_count=10):
 
     return img
 
+def remove_background(data: Data, resp_map: np.ndarray) -> np.ndarray:
+    """Remove the background from the responsibility map if set in the Data object"""
+    data_m: np.ndarray = data.data
+    # Set background to minimum value in the responsibility map if set in the Data object
+    if data.background is not None and data.background is int or float:
+        background = np.where(data_m == data.background)  # Threshold for background voxels
+        resp_map[background] = np.min(resp_map)
+    elif data.background is not None and data.background is tuple:
+        # Background is a range of values so (x , y) where x is the lower bound and y is the upper bound
+        background = np.where((data_m >= data.background[0]) & (data_m <= data.background[1]))
+        resp_map[background] = np.min(resp_map)
+    elif data.background is not None:
+        logger.debug("Background is not set correctly, please check the value. "
+                     "Background value must be an int, float or tuple defining the range of values for the background.")
 
+    return resp_map
 def voxel_plot(
         args: CausalArgs, resp_map: np.ndarray, data: Data, path=None):
-    """ Plot a 3D voxel plot of the responsibility map using plotly"""
+    """
+    Plot a 3D voxel plot of the responsibility map using plotly.
+    - Assumes the data is greyscale
+    Produces an interactive 3D plot of the data and the responsibility map.
+    """
     try:
         import plotly.graph_objs as go
         from plotly.subplots import make_subplots
         from dash import Dash, dcc, html, Input, Output
     except ImportError as e:
-        print(f"Plotly failed to import caused by {e}.")
+        logger.error(f"Plotly failed to import caused by {e}.")
         return
 
-    data: np.ndarray = data.data
+    data_m: np.ndarray = data.data
     maps: np.ndarray = resp_map
 
-    data = data[0, :, :, :]  # Remove batch dimension
+    data_m = data_m[0, :, :, :]  # Remove batch dimension
 
-    # background = np.where(data < 0.05)  # Threshold for background voxels TODO: make this a parameter
-    # maps[background] = np.min(maps)  # Set background to minimum value
+    resp_map = remove_background(data, resp_map)
 
-    assert data.shape == maps.shape, "data and resp_map must have the same shape!"
-    x, y, z = np.indices(data.shape)
+    assert data_m.shape == maps.shape, "Data and Responsibility map must have the same shape!"
+    x, y, z = np.indices(data_m.shape)
 
     app = Dash(__name__)
 
-    # 3D rendering OF
+    # 3D rendering of the data
     volume = go.Isosurface(
         x=x.flatten(),
         y=y.flatten(),
         z=z.flatten(),
-        isomin=np.min(data),
-        isomax=np.max(data),
-        value=data.flatten(),
+        isomin=np.min(data_m),
+        isomax=np.max(data_m),
+        value=data_m.flatten(),
         opacity=0.5,
         caps=dict(x_show=True, y_show=True, z_show=True, x_fill=1),
         colorscale='gray_r',
         surface=dict(count=1, fill=0.5, show=True),
     )
-
+    # Add the 3d volume of responsibility map with the data volume
     fig = go.Figure(data=volume).add_volume(
         x=x.flatten(),
         y=y.flatten(),
         z=z.flatten(),
         value=resp_map.flatten(),
-        isomin=np.min(data),
-        isomax=np.max(data),
+        isomin=np.min(data_m),
+        isomax=np.max(data_m),
         opacity=0.1,
         surface=dict(count=1, fill=0.5, show=True),
-        colorscale='reds',
+        colorscale=args.heatmap_colours,
     )
 
     app.layout = html.Div([
@@ -367,27 +385,26 @@ def voxel_plot(
     )
     def update_cross_sections(hover_data):
         if hover_data is None:
-            hover_x, hover_y, hover_z = data.shape[0] // 2, data.shape[1] // 2, data.shape[2] // 2
+            hover_x, hover_y, hover_z = data_m.shape[0] // 2, data_m.shape[1] // 2, data_m.shape[2] // 2
         else:
             hover_x, hover_y, hover_z = hover_data['points'][0]['x'], hover_data['points'][0]['y'], \
             hover_data['points'][0]['z']
 
         x_slice = go.Figure()
-        x_slice.add_trace(go.Heatmap(z=data[int(hover_x), :, :], colorscale='gray_r', name='Data'))
-        x_slice.add_trace(go.Heatmap(z=resp_map[int(hover_x), :, :], colorscale='Blues', opacity=0.5, name='Resp Map'))
+        x_slice.add_trace(go.Heatmap(z=data_m[int(hover_x), :, :], colorscale='gray_r', name='Data'))
+        x_slice.add_trace(go.Heatmap(z=resp_map[int(hover_x), :, :], colorscale=args.heatmap_colours, opacity=0.5, name='Resp Map'))
 
         # Y-Slice
         y_slice = go.Figure()
-        y_slice.add_trace(go.Heatmap(z=data[:, int(hover_y), :], colorscale='gray_r', name='Data'))
-        y_slice.add_trace(go.Heatmap(z=resp_map[:, int(hover_y), :], colorscale='Blues', opacity=0.5, name='Resp Map'))
+        y_slice.add_trace(go.Heatmap(z=data_m[:, int(hover_y), :], colorscale='gray_r', name='Data'))
+        y_slice.add_trace(go.Heatmap(z=resp_map[:, int(hover_y), :], colorscale=args.heatmap_colours, opacity=0.5, name='Resp Map'))
 
         # Z-Slice
         z_slice = go.Figure()
-        z_slice.add_trace(go.Heatmap(z=data[:, :, int(hover_z)], colorscale='gray_r', name='Data'))
-        z_slice.add_trace(go.Heatmap(z=resp_map[:, :, int(hover_z)], colorscale='Blues', opacity=0.5, name='Resp Map'))
+        z_slice.add_trace(go.Heatmap(z=data_m[:, :, int(hover_z)], colorscale='gray_r', name='Data'))
+        z_slice.add_trace(go.Heatmap(z=resp_map[:, :, int(hover_z)], colorscale=args.heatmap_colours, opacity=0.5, name='Resp Map'))
 
         return x_slice, y_slice, z_slice
-
 
     if path is not None:
         if path.endswith(".png"):
@@ -446,12 +463,11 @@ def save_image(explanation, data: Data, args: CausalArgs, path=None):
 
             return out
     elif data.mode == "voxel":
-        data: np.ndarray = data.data
+        data_m: np.ndarray = data.data
         explanation: np.ndarray = explanation.squeeze().detach().cpu().numpy()
-        data = data[0, :, :, :]  # Remove batch dimension
+        data_m = data_m[0, :, :, :]  # Remove batch dimension
 
-        background = np.where(data < 0.05)  # Threshold for background voxels TODO: make this a parameter
-        explanation[background] = np.min(explanation)
+        explanation = remove_background(data, explanation)
 
         num_slices = 10
         fig, axes = plt.subplots(3, num_slices, figsize=(15, 6))
@@ -460,7 +476,7 @@ def save_image(explanation, data: Data, args: CausalArgs, path=None):
             slice_indices = np.linspace(0, axis - 1, num_slices, dtype=int)
             for i, slice_index in enumerate(slice_indices):
                 ax = axes[axis, i]
-                data_slice = np.take(data, slice_index, axis=axis)
+                data_slice = np.take(data_m, slice_index, axis=axis)
                 resp_slice = np.take(explanation, slice_index, axis=axis)
                 ax.imshow(data_slice, cmap='gray')
                 ax.imshow(resp_slice, cmap='coolwarm', alpha=0.4)
