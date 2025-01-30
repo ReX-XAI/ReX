@@ -54,7 +54,7 @@ class Explanation:
     def extract(self, method: Strategy):
         self.blank()
         if method == Strategy.Global:
-            return self.__global()
+            self.__global()
         if method == Strategy.Spatial:
             if self.data.mode == "spectral":
                 logger.warning(

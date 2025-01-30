@@ -33,7 +33,7 @@ jobs:
           ruff check --output-format=github .
 
       - name: Type checking with Pyright
-        uses: YajJackson/simple-pyright-action@v1.0.0
+        uses: YajJackson/simple-pyright-action@v1.1.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           include-file-comments: false
