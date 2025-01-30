@@ -318,13 +318,11 @@ def _explanation(
         )
         exp.extract()
 
+        clauses = exp.separate_by(args.permitted_overlap)
+        logger.info(f"found the following sets of explanations {clauses}")
+
         if args.strategy == Strategy.Contrastive:
-            clauses = exp.separate_by(0.0)
-            exp.contrastive(clauses)
-        else:
-            clauses = exp.separate_by(args.permitted_overlap)
-            logger.info(f"found the following sets of explanations {clauses}")
-            # TODO
+            clauses = exp.contrastive(clauses)
     else:
         exp = Explanation(
             resp_object.maps, prediction_func, data, args, resp_object.run_stats
