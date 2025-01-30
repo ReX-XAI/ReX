@@ -42,7 +42,7 @@ class Data:
         self.mask_value = None
 
         if process:
-            # RGB model but greyscale input so we convery greyscale to pseudo-RGB
+            # RGB model but greyscale input so we convert greyscale to pseudo-RGB
             if self.model_channels == 3 and self.mode == "L":
                 self.input = self.input.convert("RGB")
                 self.mode = "RGB"
@@ -52,6 +52,15 @@ class Data:
             else:
                 self.data = None
             self.transposed = False
+
+    def set_height(self, h: int):
+        self.model_height = h
+
+    def set_width(self, w: int):
+        self.model_width = w
+
+    def set_channels(self, c=None):
+        self.model_channels = c
 
     def __repr__(self) -> str:
         data_info = f"Data: {self.mode}, {self.model_shape}, {self.model_height}, {self.model_width}, {self.model_channels}, {self.model_order}"
@@ -73,24 +82,26 @@ class Data:
         assert self.data is not None
         if self.mode == "RGB" and self.model_order == "first":
             self.data = self.data.transpose(2, 0, 1)  # type: ignore
-            self.data = self.unsqueeze()
             self.transposed = True
         if self.mode == "L" and self.model_order == "first":
             self.data = self.data.transpose(1, 0)
-            self.data = self.unsqueeze()
             self.transposed = True
         if self.mode == "L" and self.model_order == "last":
             self.data = self.data.transpose(1, 0)
-            self.data = self.unsqueeze()
         if self.mode == "tabular" or self.mode == "spectral":
-            self.generic_tab_preprocess()
+            self.data = self.generic_tab_preprocess()
         if self.mode == "voxel":
             pass
+        self.data = self.try_unsqueeze()
 
     def generic_tab_preprocess(self):
-        arr = self.input.astype("float32")
+        if isinstance(self.input, np.ndarray):
+            self.data = self.input.astype("float32")
+            arr = tt.from_numpy(self.data).to(self.device)
+        else:
+            arr = self.input
         for _ in range(len(self.model_shape) - len(arr.shape)):
-            arr = np.expand_dims(arr, axis=0)
+            arr = arr.unsqueeze(0)
         return arr
 
     def load_data(self, astype="float32"):
@@ -134,7 +145,7 @@ class Data:
 
         return normed_data
 
-    def unsqueeze(self):
+    def try_unsqueeze(self):
         out = self.data
         if self.model_order == "first":
             dim = 0
@@ -161,7 +172,7 @@ class Data:
 
         if self.mode == "RGB" and self.data is not None:
             self.data = self._normalise(means, stds, astype, norm)
-            self.unsqueeze()
+            self.try_unsqueeze()
         if self.mode == "L":
             self.data = self._normalise(means, stds, astype, norm)
 

@@ -146,7 +146,6 @@ def causal_explanation(
             todo = len(sub_jobs) - 1
             for ai, active in enumerate(sub_jobs):
                 static = [sj for x, sj in enumerate(sub_jobs) if x != ai]
-                # reset = False
 
                 child_boxes = subbox(
                     search_tree,
@@ -161,7 +160,7 @@ def causal_explanation(
                     logger.debug("no children, breaking")
                     break
 
-                mutants = []
+                mutants = np.empty(14, dtype=np.object_)
                 if child_boxes is not None:
                     for j, combination in enumerate(get_combinations()):
                         nps = [child_boxes[i] for i in combination]
@@ -175,7 +174,7 @@ def causal_explanation(
                         )
                         m.set_active_mask_regions(nps)
                         m.set_static_mask_regions(static, search_tree)
-                        mutants.append(m)
+                        mutants[j] = m
 
                 work_done = len(mutants)
 
@@ -211,6 +210,7 @@ def causal_explanation(
                             data.target,
                             binary_threshold=args.binary_threshold,
                         )
+
 
                 for i, m in enumerate(mutants):
                     m.prediction = preds[i]

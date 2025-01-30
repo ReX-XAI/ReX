@@ -62,7 +62,7 @@ class Args:
         self.heatmap_colours = "magma"
         self.multi_style = "composite"
         # explanation production strategy
-        self.strategy: Strategy = Strategy.Spatial
+        self.strategy: Strategy = Strategy.Global
         self.chunk_size = 25
         self.batch: int = 1
         # args for spatial strategy
@@ -288,7 +288,7 @@ def match_strategy(cmd_args):
         return Strategy.Spatial
     if cmd_args.strategy == "contrastive":
         return Strategy.Contrastive
-    return Strategy.Spatial
+    return Strategy.Global
 
 
 def match_queue_style(qs: str) -> Queue:

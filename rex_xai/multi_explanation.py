@@ -62,14 +62,15 @@ class MultiExplanation(Explanation):
             self.maps = tt.from_numpy(target_map).to(self.data.device)
             self.blank()
             # we start with the global max explanation
-            self._Explanation__global()
+            logger.info("spotlight number 1 (global max)")
+            self._Explanation__global() #type: ignore
             if self.final_mask is not None:
                 self.explanations.append(self.final_mask)
 
             self.blank()
 
             for i in range(0, self.args.spotlights - 1):
-                logger.info("spotlight number %d", i + 1)
+                logger.info("spotlight number %d", i + 2)
                 self.spotlight_search()
                 if self.final_mask is not None:
                     self.explanations.append(self.final_mask)
@@ -127,28 +128,25 @@ class MultiExplanation(Explanation):
         return clauses
 
     def contrastive(self, clauses):
-        logger.warn("not yet implemented")
-        return
-        # for clause in clauses:
-        #     logger.info(f"looking at {clause}")
-        #     for part in powerset(clause, reverse=False):
-        #         logger.debug(f"   examining {part}")
-        #         mask = sum([self.explanations[x] for x in part])
-        #         mask = mask.to(tt.bool)  # type: ignore
-        #         d = tt.where(mask, 0, self.data.data)  # type: ignore
-        #         p = self.prediction_func(d)[0]
-        #         if p.classification != self.data.target.classification:  # type: ignore
-        #             logger.fatal("not yet finished")
-        #             exit()
-        # original = np.array(self.data.input.resize((224, 224)))
-        # mask = mask.detach().cpu().numpy().transpose((1, 2, 0))
-        # img = np.where(mask, 0, original)
-        # img = Image.fromarray(img, "RGB")
-        # img.save(
-        #     f"{self.data.target.classification}_to_{p.classification}.png"
-        # )
-        # return
-        # logger.debug(f"    {p}")
+        for clause in clauses:
+            for subset in powerset(clause, reverse=False):
+                mask = sum([self.explanations[x] for x in subset])
+                mask = mask.to(tt.bool)  # type: ignore
+                sufficient = tt.where(mask, self.data.data, self.data.mask_value) #type: ignore
+                necessary = tt.where(mask, self.data.mask_value, self.data.data)  # type: ignore
+                ps = self.prediction_func(sufficient)[0]
+                pn = self.prediction_func(necessary)[0]
+
+                logger.debug(
+                    "subset: %s, sufficiency: %d, counterfactual: %d, target: %d", 
+                    subset, ps.classification, pn.classification, self.data.target.classification) #type: ignore
+                if ps.classification == self.data.target.classification and pn.classification != self.data.target.classification:  # type: ignore
+                    logger.info(
+                        "subset: %s, sufficiency: %d, counterfactual: %d, target: %d", 
+                        subset, ps.classification, pn.classification, self.data.target.classification) #type: ignore
+                    self.final_mask = mask
+                    return
+        logger.info("unable to find a counterfactual")
 
     def __random_step_from(self, origin, width, height, step=5):
         c, r = origin

@@ -117,6 +117,8 @@ class Explanation:
                 masks = []
 
     def __generate_circle_coordinates(self, centre, radius: int):
+        assert self.data.model_height is not None
+        assert self.data.model_width is not None
         Y, X = tt.meshgrid(
             tt.arange(0, self.data.model_height),
             tt.arange(0, self.data.model_width),
@@ -147,7 +149,14 @@ class Explanation:
         return start_radius, circle_mask, mask
 
     def compute_masked_responsibility(self, mask):
-        masked_responsibility = tt.where(mask, self.target_map, 0)  # type: ignore
+        try:
+            masked_responsibility = tt.where(mask, self.target_map, self.data.mask_value)  # type: ignore
+        except RuntimeError:
+            masked_responsibility = tt.where(mask.permute((2, 0, 1)), self.target_map, self.data.mask_value)  # type: ignore
+        except Exception as e:
+            logger.fatal(e)
+            exit()
+
         logger.debug("using %s", self.args.spotlight_objective_function)
         if self.args.spotlight_objective_function == "mean":
             return tt.mean(masked_responsibility).item()
@@ -239,7 +248,7 @@ class Explanation:
         if self.data.mode in ("RGB", "L"):
             visualisation.surface_plot(
                 self.args,
-                self.target_map,
+                self.target_map, #type: ignore
                 self.data.target,  #  type: ignore
                 path=path,
             )
