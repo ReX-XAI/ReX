@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import torch as tt
 import numpy as np
+from scipy.ndimage import gaussian_filter
 
 
 def __split_groups(neg_mask):
@@ -42,3 +43,21 @@ def spectral_occlusion(mask: tt.Tensor, data: tt.Tensor, noise=0.03, device="cpu
         local_data[0, 0, start:stop] = interp
 
     return tt.from_numpy(local_data).to(device)
+
+# Occlusions such as beach, sky, and other context-based occlusions
+
+# Medical-based occlusions could be a CT scan of a healthy patient
+def context_occlusion(mask: tt.Tensor, data: tt.Tensor, context: tt.Tensor, noise=0.0):
+    """Linear interpolated occlusion for spectral data, with optional added noise.
+
+    @param mask: boolean valued NDArray
+    @param data: data to be occluded
+    @param context: data to be used as occlusion e.g. CT scan of a healthy patient or a road
+    @param noise: parameter for optional gaussian noise.
+        Set to 0.0 for no noise
+
+    @return torch.Tensor
+    """
+    if noise > 0.0:
+        context = gaussian_filter(context, sigma=noise)
+    return tt.where(mask == 0, context, data)

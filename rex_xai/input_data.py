@@ -5,7 +5,7 @@ import torch as tt
 
 from enum import Enum
 
-from rex_xai.occlusions import spectral_occlusion
+from rex_xai.occlusions import spectral_occlusion, context_occlusion
 from rex_xai.prediction import Prediction
 
 Setup = Enum("Setup", ["ONNXMPS", "ONNX", "PYTORCH"])
@@ -44,6 +44,7 @@ class Data:
         self.model_order = order
         self.mask_value = None
         self.background = None
+        self.context = None
 
         if process:
             # RGB model but greyscale input so we convery greyscale to pseudo-RGB
@@ -202,6 +203,9 @@ class Data:
                 self.mask_value = tt.mean(self.data).item()  # type: ignore
             case "spectral":
                 self.mask_value = lambda m, d: spectral_occlusion(m, d, device=device)
+            case "context":
+                self.mask_value = lambda m, d: context_occlusion(m, d, self.context)
+                # TODO: Add args for noise and setting the context as currently only available through custom script
             case _:
                 raise ValueError(
                     f"Invalid mask value {m}. Should be an integer, float, or one of 'min', 'mean', 'spectral'"

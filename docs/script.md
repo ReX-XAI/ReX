@@ -39,6 +39,7 @@ The function should return a Data object. The Data object contains the following
 - `transposed` -> Whether the data is transposed or not
 - `model_order` -> The order of the model input e.g. "first" or "last"
 - `background` -> The value of the background of the image e.g. 0 or 255 ... etc. For a range of values, use a tuple e.g. (0, 255)
+- `context` -> The context of the image e.g. the specific background like a beach or a road that can be used as an occlusion if specified as mask value
 
 #### Prediction function
 
