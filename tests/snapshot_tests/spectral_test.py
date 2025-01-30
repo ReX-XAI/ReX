@@ -25,7 +25,7 @@ def args_spectral(args, DNA_model):
 
 
 @pytest.mark.parametrize(
-    "batch", [1, pytest.param(64, marks=pytest.mark.xfail(reason="ONNXRuntimeError"))]
+    "batch", [1, 64]
 )
 def test__explanation_snapshot(args_spectral, cpu_device, batch, snapshot_explanation):
     args_spectral.batch = batch
