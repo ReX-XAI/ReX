@@ -32,9 +32,9 @@ class MultiExplanation(Explanation):
         elif multi_style == "composite":
             logger.info("using composite style to save explanations")
             if clauses is None:
-                clauses = range(0, len(self.explanations))
+                clause = range(0, len(self.explanations))
                 save_multi_explanation(
-                    self.explanations, self.data, self.args, clauses=clauses, path=path
+                    self.explanations, self.data, self.args, clause=clause, path=path
                 )
             else:
                 for clause in clauses:
@@ -44,7 +44,7 @@ class MultiExplanation(Explanation):
                         self.explanations,
                         self.data,
                         self.args,
-                        clauses=clause,
+                        clause=clause,
                         path=new_name,
                     )
 
