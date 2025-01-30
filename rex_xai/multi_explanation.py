@@ -137,15 +137,12 @@ class MultiExplanation(Explanation):
                 ps = self.prediction_func(sufficient)[0]
                 pn = self.prediction_func(necessary)[0]
 
-                logger.debug(
-                    "subset: %s, sufficiency: %d, counterfactual: %d, target: %d", 
-                    subset, ps.classification, pn.classification, self.data.target.classification) #type: ignore
                 if ps.classification == self.data.target.classification and pn.classification != self.data.target.classification:  # type: ignore
                     logger.info(
                         "subset: %s, sufficiency: %d, counterfactual: %d, target: %d", 
                         subset, ps.classification, pn.classification, self.data.target.classification) #type: ignore
                     self.final_mask = mask
-                    return
+                    return subset
         logger.info("unable to find a counterfactual")
 
     def __random_step_from(self, origin, width, height, step=5):
