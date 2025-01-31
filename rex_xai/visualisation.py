@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from scipy.ndimage import center_of_mass
 from skimage.segmentation import slic
+from torch import Tensor
 
 from rex_xai.prediction import Prediction
 from rex_xai.config import CausalArgs
@@ -328,7 +329,7 @@ def remove_background(data: Data, resp_map: np.ndarray) -> np.ndarray:
     return resp_map
 
 
-def voxel_plot(args: CausalArgs, resp_map: np.ndarray, data: Data, path=None):
+def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
     """
     Plot a 3D voxel plot of the responsibility map using plotly.
     - Assumes the data is greyscale
@@ -343,11 +344,11 @@ def voxel_plot(args: CausalArgs, resp_map: np.ndarray, data: Data, path=None):
         return
 
     data_m: np.ndarray = data.data
-    maps: np.ndarray = resp_map
+    maps: np.ndarray = resp_map.squeeze().detach().cpu().numpy()
 
     data_m = data_m[0, :, :, :]  # Remove batch dimension
 
-    resp_map = remove_background(data, resp_map)
+    resp_map = remove_background(data, maps)
 
     assert data_m.shape == maps.shape, (
         "Data and Responsibility map must have the same shape!"

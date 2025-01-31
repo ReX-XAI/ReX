@@ -56,7 +56,7 @@ def test_save_image_3d():
 
 
 def test_voxel_plot():
-    resp_map = np.zeros((64, 64, 64), dtype=np.float32)
+    resp_map = tt.zeros((64, 64, 64), dtype=tt.float32)
     resp_map[0:10, 20:25, 20:35] = 1
     args = CausalArgs()
     # Create a cube in data

@@ -50,7 +50,7 @@ def spectral_occlusion(mask: tt.Tensor, data: tt.Tensor, noise=0.03, device="cpu
 
 # Medical-based occlusions could be a CT scan of a healthy patient
 def context_occlusion(mask: tt.Tensor, data: tt.Tensor, context: tt.Tensor, noise=0.0):
-    """Linear interpolated occlusion for spectral data, with optional added noise.
+    """Context based occlusion with optional added noise.
 
     @param mask: boolean valued NDArray
     @param data: data to be occluded
