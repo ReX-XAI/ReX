@@ -281,9 +281,11 @@ def causal_explanation(
 
     # clear up unneeded mutants and boxes
     if data.device == "mps":
-        tt.mps.empty_cache()
+        with tt.no_grad():
+            tt.mps.empty_cache()
     elif data.device == "cuda":
-        tt.cuda.empty_cache()
+        with tt.no_grad():
+            tt.cuda.empty_cache()
 
     logger.info(
         "total work %d with %d passing and %d failing, max depth explored %d",
