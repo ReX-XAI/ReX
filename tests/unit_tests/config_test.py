@@ -12,7 +12,7 @@ def non_default_args():
     non_default_args.mask_value = "mean"
     non_default_args.seed = 42
     non_default_args.gpu = False
-    non_default_args.batch = 32 # NB diff name from toml file
+    non_default_args.batch_size = 32 # NB diff name from toml file
     # rex.onnx
     non_default_args.means = [0.485, 0.456, 0.406]
     non_default_args.stds = [0.229, 0.224, 0.225]
@@ -24,7 +24,7 @@ def non_default_args():
     non_default_args.alpha = 0.1
     non_default_args.raw = True
     non_default_args.resize = True
-    non_default_args.progress = False # NB diff name from toml file
+    non_default_args.progress_bar = False # NB diff name from toml file
     non_default_args.grid = True
     non_default_args.mark_segments = True
     non_default_args.heatmap_colours = 'viridis' # NB diff name from toml file
@@ -45,8 +45,8 @@ def non_default_args():
     non_default_args.distribution_args = [1.1, 1.1] # NB diff name from toml file
     # explanation
     non_default_args.chunk_size = 16 # NB diff name from toml file
-    non_default_args.spatial_radius = 20 # NB diff name from toml file
-    non_default_args.spatial_eta = 0.1 # NB diff name from toml file
+    non_default_args.spatial_initial_radius = 20 # NB diff name from toml file
+    non_default_args.spatial_radius_eta = 0.1 # NB diff name from toml file
     non_default_args.no_expansions = 1 
     # explanation.multi
     non_default_args.strategy = Strategy.MultiSpotlight # NB diff name from toml file

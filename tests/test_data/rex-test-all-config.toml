@@ -52,7 +52,7 @@ grid = true
 mark_segments = true
 
 # matplotlib colourscheme for responsibility map plotting, defaults to 'magma'
-heatmap = 'viridis'
+heatmap_colours = 'viridis'
 
 # multi_style explanations, either <composite> or <separate>
 multi_style = "separate"
@@ -96,25 +96,25 @@ distribution = 'betabinom'
 blend = 0.5
 
 # supplimental arguments for distribution creation, these are ignored if <distribution> does not take any parameters
-dist_args = [1.1, 1.1]
+distribution_args = [1.1, 1.1]
 
 [explanation]
 # iterate through pixel ranking in chunks, defaults to causal.min_box_size
-chunk = 16
+chunk_size = 16
 
 [explanation.spatial]
 # initial search radius
-initial_radius = 20
+spatial_initial_radius = 20
 
 # increment to change radius
-radius_eta = 0.1
+spatial_radius_eta = 0.1
 
 # number of times to expand before quitting, defaults to 4
 no_expansions = 1
 
 [explanation.multi]
 # multi method (just spotlight so far)
-method = 'spotlight'
+strategy = 'spotlight'
 
 # no of spotlights to launch
 spotlights = 5
@@ -131,7 +131,7 @@ spotlight_step = 10
 max_spotlight_budget = 30
 
 # objective function for spotlight search. Possible options 'mean' | 'max' | "none", defaults to "none"
-objective_function = 'mean'
+spotlight_objective_function = 'mean'
 
 # how much overlap to allow between different explanations. This is the dice coefficient, so
 # 0.0 means no permitted overlap, and 1 total overlap permitted
