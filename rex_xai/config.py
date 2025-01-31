@@ -357,20 +357,26 @@ def validate_float_arg(float_arg, lower, upper):
     
 
 def process_config_dict(config_file_args, args):
-    causal_dict = config_file_args["causal"]
-    apply_dict_to_args(causal_dict, args)
-    apply_dict_to_args(causal_dict["distribution"], args)
+    if "causal" in config_file_args.keys():
+        causal_dict = config_file_args["causal"]
+        apply_dict_to_args(causal_dict, args)
+        if "distribution" in causal_dict.keys():
+            apply_dict_to_args(causal_dict["distribution"], args)
 
-    rex_dict = config_file_args["rex"]
-    apply_dict_to_args(rex_dict, args)
-    apply_dict_to_args(rex_dict["visual"], args)
-    apply_dict_to_args(rex_dict["onnx"], args)
+    if "rex" in config_file_args.keys():
+        rex_dict = config_file_args["rex"]
+        apply_dict_to_args(rex_dict, args)
+        for subdict_name in ["visual", "onnx"]:
+            if subdict_name in rex_dict.keys():
+                apply_dict_to_args(rex_dict[subdict_name], args)
+                
 
-    explain_dict = config_file_args["explanation"]
-    apply_dict_to_args(explain_dict, args)
-    apply_dict_to_args(explain_dict["spatial"], args)
-    apply_dict_to_args(explain_dict["multi"], args)
-    apply_dict_to_args(explain_dict["evaluation"], args)
+    if "explanation" in config_file_args.keys():
+        explain_dict = config_file_args["explanation"]
+        apply_dict_to_args(explain_dict, args)
+        for subdict_name in ["spatial", "multi", "evaluation"]:
+            if subdict_name in explain_dict.keys():
+                apply_dict_to_args(explain_dict[subdict_name], args)
 
     if type(args.distribution) is str:
         args.distribution = str2distribution(args.distribution)
