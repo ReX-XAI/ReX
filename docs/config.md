@@ -11,8 +11,6 @@ gpu = false
 
 batch_size = 32
 
-[rex.onnx]
-
 [rex.visual]
 
 progress_bar = true
@@ -26,17 +24,7 @@ iters = 35
 [causal.distribution]
 
 distribution = 'uniform'
-
-[explanation]
-
-[explanation.spatial]
-
-[explanation.multi]
-
-[explanation.evaluation]
 ```
-
-N.B. that all section/subsection headers must be present even if no values in that section are set to non-default values.
 
 ## [rex] section
 
@@ -150,7 +138,7 @@ Include classification and confidence information in title of plot, and label ce
 Used with option `--surface`.
 Default: true.
 
-`heatmap = 'coolwarm'`
+`heatmap_colours = 'coolwarm'`
 
 Matplotlib colourscheme for responsibility map plotting.
 Used with option `--heatmap` and `--surface`.
@@ -246,7 +234,7 @@ Default: 'uniform'.
 <!-- Possible choices are 'uniform' | 'binom' | 'betabinom' | 'adaptive'. -->
 <!-- Uniform works, the others might not work at the moment. -->
 
-`dist_args = [1.1, 1.1]`
+`distribution_args = [1.1, 1.1]`
 
 Supplemental arguments for distribution creation, these are ignored if `distribution` does not take any parameters.
 Optional.
@@ -264,7 +252,7 @@ Default: 0.0. -->
 
 This section is for options related to identifying the explanation(s).
 
-`chunk = 10`
+`chunk_size = 10`
 
 To find a minimal sufficient explanation, ReX adds pixels according to the pixel ranking in chunks, then checks the classification of the output.
 This option sets the number of pixels that will be added at each iteration.
@@ -281,12 +269,12 @@ If a sufficient explanation cannot be found, the spotlight size will be increase
 
 <!-- Needs expanding into a separate page with illustrations. -->
 
-`initial_radius = 25`
+`spotlight_initial_radius = 25`
 
 Initial search radius.
 Default: 25.
 
-`radius_eta = 0.2`
+`spotlight_radius_eta = 0.2`
 
 Increment to increase radius.
 0.2 means an increase of 20%.
@@ -312,7 +300,10 @@ Could calculate % of image that would be covered? -->
 - if not found then revert to original size, move, and start again - how many times? TODO find out what this is and expose to user
 - if can't find anything, returns global explanation -->
 
-This option is currently disabled.
+`strategy = 'spotlight'`
+
+Multi-explanation method (only spotlight is currently implemented).
+
 
 <!-- method = 'spotlight' -->
 <!-- Multi-explanation method (only spotlight is currently implemented). -->
@@ -335,18 +326,32 @@ Default: 20.
 Increase spotlight radius by this amount.
 Default: 0.2
 
-`obj_function = 'mean'`
+`spotlight_objective_function = 'mean'`
 
 Objective function for spotlight search.
-Possible options 'mean' | 'max' | 'min'.
+Possible options 'mean' | 'max' | 'none'.
 If no explanation is found, the spotlight is moved towards a location defined by this function.
-<!-- Simplified stochastic hill climb - move spotlight towards area with mean/max/min repsonsibility -->
+Default: none.
+<!-- Simplified stochastic hill climb - move spotlight towards area with highest mean/max repsonsibility -->
 
 `spotlight_step = 5`
 
-If no explanation is found, the spotlight is moved this distance in pixels towards a location defined by `obj_function`.
+If no explanation is found, the spotlight is moved this distance in pixels towards a location defined by the `spotlight_objective_function`,
+or in a random direction if the `spotlight_objective_function` is "none".
 Default: 5.
 <!-- How far spotlight is moved. -->
+
+`max_spotlight_budget = 30`
+
+Maximum number of steps that a spotlight can make without finding an explanation, before quitting.
+The step direction is random or defined by the `spotlight_objective_function`.
+Default: 40.
+
+`permitted_overlap = 0.1`
+
+How much overlap to allow between different explanations when defining sets of non-overlapping explanations.
+This is the dice coefficient, so 0.0 means no overlap, and 1.0 means total overlap permitted.
+Default: 0.0
 
 ### [explanation.evaluation] section
 
