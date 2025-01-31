@@ -342,13 +342,17 @@ def find_config_path():
     return config_path
 
 
-def apply_dict_to_args(source, args):
+def apply_dict_to_args(source, args, allowed_values=None):
     for k, v in source.items():
         if type(v) is not dict:
+            if allowed_values is not None:
+                if k not in allowed_values:
+                    logger.warning("Invalid or misplaced parameter '%s', skipping!", k)
+                    continue
             if hasattr(args, k):
                 setattr(args, k, v)
             else:
-                logger.warning("Invalid parameter '%s', skipping!", k)
+                logger.warning("Parameter '%s' not in CausalArgs attributes, skipping!", k)
 
 
 def validate_float_arg(float_arg, lower, upper):
@@ -357,26 +361,44 @@ def validate_float_arg(float_arg, lower, upper):
     
 
 def process_config_dict(config_file_args, args):
+
+    expected_values = {
+        "rex": ["mask_value", "seed", "gpu", "batch_size"],
+        "onnx": ["means", "stds", "binary_threshold", "norm"],
+        "visual": ["info", "colour", "alpha", "raw", "resize", "progress_bar", 
+                   "grid", "mark_segments", "heatmap_colours", "multi_style"],
+        "causal": ["tree_depth", "search_limit", "iters", "min_box_size", 
+                   "confidence_filter", "weighted", "queue_style", "queue_len", 
+                   "concentrate"],
+        "distribution": ["distribution", "blend", "distribution_args"],
+        "explanation": ["chunk_size"],
+        "spatial": ["spatial_initial_radius", "spatial_radius_eta", "no_expansions"],
+        "multi": ["strategy", "spotlights", "spotlight_size", "spotlight_eta", 
+                  "spotlight_step", "max_spotlight_budget", 
+                  "spotlight_objective_function", "permitted_overlap"],
+        "evaluation": ["insertion_step", "normalise_curves"]
+    }
+
     if "causal" in config_file_args.keys():
         causal_dict = config_file_args["causal"]
-        apply_dict_to_args(causal_dict, args)
+        apply_dict_to_args(causal_dict, args, expected_values["causal"])
         if "distribution" in causal_dict.keys():
-            apply_dict_to_args(causal_dict["distribution"], args)
+            apply_dict_to_args(causal_dict["distribution"], args, expected_values["distribution"])
 
     if "rex" in config_file_args.keys():
         rex_dict = config_file_args["rex"]
-        apply_dict_to_args(rex_dict, args)
+        apply_dict_to_args(rex_dict, args, expected_values["rex"])
         for subdict_name in ["visual", "onnx"]:
             if subdict_name in rex_dict.keys():
-                apply_dict_to_args(rex_dict[subdict_name], args)
+                apply_dict_to_args(rex_dict[subdict_name], args, expected_values[subdict_name])
                 
 
     if "explanation" in config_file_args.keys():
         explain_dict = config_file_args["explanation"]
-        apply_dict_to_args(explain_dict, args)
+        apply_dict_to_args(explain_dict, args, expected_values["explanation"])
         for subdict_name in ["spatial", "multi", "evaluation"]:
             if subdict_name in explain_dict.keys():
-                apply_dict_to_args(explain_dict[subdict_name], args)
+                apply_dict_to_args(explain_dict[subdict_name], args, expected_values[subdict_name])
 
     if type(args.distribution) is str:
         args.distribution = str2distribution(args.distribution)
