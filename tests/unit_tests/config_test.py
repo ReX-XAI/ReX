@@ -1,7 +1,8 @@
-import pytest
+import copy
 
+import pytest
+from rex_xai._utils import Queue, ReXTomlError, Strategy
 from rex_xai.config import CausalArgs, process_config_dict, read_config_file
-from rex_xai._utils import Strategy, Queue
 from rex_xai.distributions import Distribution
 
 
@@ -12,7 +13,7 @@ def non_default_args():
     non_default_args.mask_value = "mean"
     non_default_args.seed = 42
     non_default_args.gpu = False
-    non_default_args.batch_size = 32 # NB diff name from toml file
+    non_default_args.batch_size = 32
     # rex.onnx
     non_default_args.means = [0.485, 0.456, 0.406]
     non_default_args.stds = [0.229, 0.224, 0.225]
@@ -24,11 +25,11 @@ def non_default_args():
     non_default_args.alpha = 0.1
     non_default_args.raw = True
     non_default_args.resize = True
-    non_default_args.progress_bar = False # NB diff name from toml file
+    non_default_args.progress_bar = False
     non_default_args.grid = True
     non_default_args.mark_segments = True
-    non_default_args.heatmap_colours = 'viridis' # NB diff name from toml file
-    non_default_args.multi_style = 'separate'
+    non_default_args.heatmap_colours = "viridis"
+    non_default_args.multi_style = "separate"
     # causal
     non_default_args.tree_depth = 5
     non_default_args.search_limit = 1000
@@ -42,20 +43,20 @@ def non_default_args():
     # causal.distribution
     non_default_args.distribution = Distribution.BetaBinomial
     non_default_args.blend = 0.5
-    non_default_args.distribution_args = [1.1, 1.1] # NB diff name from toml file
+    non_default_args.distribution_args = [1.1, 1.1]
     # explanation
-    non_default_args.chunk_size = 16 # NB diff name from toml file
-    non_default_args.spatial_initial_radius = 20 # NB diff name from toml file
-    non_default_args.spatial_radius_eta = 0.1 # NB diff name from toml file
-    non_default_args.no_expansions = 1 
+    non_default_args.chunk_size = 16
+    non_default_args.spatial_initial_radius = 20
+    non_default_args.spatial_radius_eta = 0.1
+    non_default_args.no_expansions = 1
     # explanation.multi
-    non_default_args.strategy = Strategy.MultiSpotlight # NB diff name from toml file
+    non_default_args.strategy = Strategy.MultiSpotlight
     non_default_args.spotlights = 5
     non_default_args.spotlight_size = 10
     non_default_args.spotlight_eta = 0.5
     non_default_args.spotlight_step = 10
     non_default_args.max_spotlight_budget = 30
-    non_default_args.spotlight_objective_function = 'mean'
+    non_default_args.spotlight_objective_function = "mean"
     non_default_args.permitted_overlap = 0.1
     # explanation.evaluation
     non_default_args.insertion_step = 50
@@ -71,3 +72,111 @@ def test_process_config_dict(non_default_args):
     process_config_dict(config_dict, args)
 
     assert vars(args) == vars(non_default_args)
+
+
+def test_process_config_dict_empty():
+    args = CausalArgs()
+    config_dict = {}
+    orig_args = copy.deepcopy(args)
+
+    process_config_dict(config_dict, args)
+
+    assert vars(args) == vars(orig_args)
+
+
+def test_process_config_dict_invalid_distribution():
+    args = CausalArgs()
+    config_dict = {
+        "causal": {"distribution": {"distribution": "an-invalid-distribution"}}
+    }
+
+    process_config_dict(config_dict, args)
+
+    assert args.distribution == Distribution.Uniform
+
+
+def test_process_config_dict_uniform_distribution():
+    args = CausalArgs()
+    config_dict = {
+        "causal": {
+            "distribution": {"distribution": "uniform", "distribution_args": [0.0, 0.0]}
+        }
+    }
+
+    process_config_dict(config_dict, args)
+
+    assert args.distribution == Distribution.Uniform
+    assert args.distribution_args is None
+
+
+def test_process_config_dict_distribution_args():
+    args = CausalArgs()
+    config_dict = {
+        "causal": {
+            "distribution": {
+                "distribution": "betabinom",
+                "distribution_args": [0.0, 0.0],
+            }
+        }
+    }
+
+    process_config_dict(config_dict, args)
+
+    assert args.distribution == Distribution.BetaBinomial
+    assert args.distribution_args == [0.0, 0.0]
+
+
+def test_process_config_dict_queue_style():
+    args = CausalArgs()
+    config_dict = {"causal": {"queue_style": "area"}}
+
+    process_config_dict(config_dict, args)
+    assert args.queue_style == Queue.Area
+
+
+def test_process_config_dict_queue_style_upper():
+    args = CausalArgs()
+    config_dict = {"causal": {"queue_style": "AREA"}}
+
+    process_config_dict(config_dict, args)
+    assert args.queue_style == Queue.Area
+
+
+def test_process_config_dict_queue_style_invalid():
+    args = CausalArgs()
+    config_dict = {"causal": {"queue_style": "an-invalid-queue-style"}}
+
+    process_config_dict(config_dict, args)
+    assert args.queue_style == Queue.Intersection
+
+
+def test_process_config_dict_strategy():
+    args = CausalArgs()
+    config_dict = {"explanation": {"multi": {"strategy": "spotlight"}}}
+
+    process_config_dict(config_dict, args)
+    assert args.strategy == Strategy.MultiSpotlight
+
+
+def test_process_config_dict_strategy_invalid():
+    args = CausalArgs()
+    config_dict = {"explanation": {"multi": {"strategy": "an-invalid-strategy"}}}
+
+    process_config_dict(config_dict, args)
+    assert args.strategy == Strategy.Spatial
+
+
+def test_process_config_dict_blend_invalid():
+    args = CausalArgs()
+    config_dict = {"causal": {"distribution": {"blend": 20}}}
+
+    with pytest.raises(ReXTomlError):
+        process_config_dict(config_dict, args)
+
+
+def test_process_config_dict_permitted_overlap_invalid():
+    args = CausalArgs()
+    config_dict = {"explanation": {"multi": {"permitted_overlap": -5}}}
+
+    with pytest.raises(ReXTomlError):
+        process_config_dict(config_dict, args)
