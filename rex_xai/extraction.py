@@ -46,6 +46,7 @@ class Explanation:
 
         self.explanation: Optional[tt.Tensor] = None
         self.final_mask = None
+        self.explanation_confidence = 0.0
         self.prediction_func = prediction_func
         self.data = data
         self.args = args
@@ -107,17 +108,17 @@ class Explanation:
                         p.classification == self.data.target.classification
                         and p.confidence >= self.data.target.confidence * self.args.min_confidence_scalar
                     ):  #  type: ignore
-                        # if p.classification == self.data.target.classification:  #  type: ignore
                         logger.info(
                             "found an explanation of %d with %f confidence",
                             p.classification,
                             p.confidence,
                         )
                         self.explanation = masks[j]
+                        self.explanation_confidence = p.confidence
                         self.final_mask = mutant.zero_()
                         for _, loc in ranking[:limit]:
                             self.set_to_true(loc, self.final_mask)
-                        return
+                        return p.confidence
                 masks = []
 
     def __generate_circle_coordinates(self, centre, radius: int):
@@ -200,15 +201,15 @@ class Explanation:
                     logger.debug(
                         f"no explanation found after {expansion_limit} expansions"
                     )
-                    return SpatialSearch.NotFound, masked_responsibility
+                    return SpatialSearch.NotFound, masked_responsibility, None
             d = _apply_to_data(mask, self.data, self.data.mask_value)
             p = self.prediction_func(d)[0]
             if (
                 p.classification == self.data.target.classification 
                 and p.confidence >= self.data.target.confidence * self.args.min_confidence_scalar
             ): 
-                self.__global(map=tt.where(circle, map, 0))  # type: ignore
-                return SpatialSearch.Found, masked_responsibility
+                conf = self.__global(map=tt.where(circle, map, 0))  # type: ignore
+                return SpatialSearch.Found, masked_responsibility, conf
             start_radius = int(start_radius * (1 + self.args.spatial_eta))
             _, circle, _ = self.__draw_circle(centre, start_radius)
             if self.data.model_order == "first":

@@ -19,6 +19,7 @@ class MultiExplanation(Explanation):
     def __init__(self, map, prediction_func, data, args, run_stats):
         super().__init__(map, prediction_func, data, args, run_stats)
         self.explanations = []
+        self.explanation_confidences = []
 
     def save(self, path, mask=None, multi=None, multi_style=None, clauses=None):
         if multi_style is None:
@@ -63,17 +64,18 @@ class MultiExplanation(Explanation):
             self.blank()
             # we start with the global max explanation
             logger.info("spotlight number 1 (global max)")
-            self._Explanation__global()  # type: ignore
+            conf = self._Explanation__global()  # type: ignore
             if self.final_mask is not None:
                 self.explanations.append(self.final_mask)
-
+                self.explanation_confidences.append(conf)
             self.blank()
 
             for i in range(0, self.args.spotlights - 1):
                 logger.info("spotlight number %d", i + 2)
-                self.spotlight_search()
+                conf = self.spotlight_search()
                 if self.final_mask is not None:
                     self.explanations.append(self.final_mask)
+                    self.explanation_confidences.append(conf)
                 self.blank()
             logger.info(
                 "ReX has found a total of %d explanations via spotlight search",
@@ -133,21 +135,15 @@ class MultiExplanation(Explanation):
                 mask = sum([self.explanations[x] for x in subset])
                 mask = mask.to(tt.bool)  # type: ignore
                 sufficient = tt.where(mask, self.data.data, self.data.mask_value)  # type: ignore
-                necessary = tt.where(mask, self.data.mask_value, self.data.data)  # type: ignore
+                counterfactual = tt.where(mask, self.data.mask_value, self.data.data)  # type: ignore
                 ps = self.prediction_func(sufficient)[0]
-                pn = self.prediction_func(necessary)[0]
+                pn = self.prediction_func(counterfactual)[0]
 
                 if (
-                    ps.classification == self.data.target.classification
-                    and pn.classification != self.data.target.classification
-                ):  # type: ignore
-                    logger.info(
-                        "subset: %s, sufficiency: %d, counterfactual: %d, target: %d",
-                        subset,
-                        ps.classification,
-                        pn.classification,
-                        self.data.target.classification,
-                    )  # type: ignore
+                    ps.classification == self.data.target.classification #type: ignore
+                    and pn.classification != self.data.target.classification #type: ignore
+                ): 
+                    logger.info("found sufficient and necessary explanation of class %d with confidence %f", ps.classification, pn.confidence)
                     self.final_mask = mask
                     return subset
         logger.info("unable to find a counterfactual")
@@ -188,16 +184,15 @@ class MultiExplanation(Explanation):
         else:
             centre = origin
 
-        ret, resp = self._Explanation__spatial(  # type: ignore
+        ret, resp, conf = self._Explanation__spatial(  # type: ignore
             centre=centre, expansion_limit=self.args.no_expansions
         )
 
         steps = 0
         while ret == SpatialSearch.NotFound and steps < self.args.max_spotlight_budget:
-            steps += 1
             if self.args.spotlight_objective_function == "none":
                 centre = self.__random_location()
-                ret, resp = self._Explanation__spatial(  # type: ignore
+                ret, resp, conf = self._Explanation__spatial(  # type: ignore
                     centre=centre, expansion_limit=self.args.no_expansions
                 )
             else:
@@ -209,11 +204,13 @@ class MultiExplanation(Explanation):
                         self.data.model_width,
                         step=self.args.spotlight_step,
                     )
-                    ret, new_resp = self._Explanation__spatial(  # type: ignore
+                    ret, new_resp, conf = self._Explanation__spatial(  # type: ignore
                         centre=centre, expansion_limit=self.args.no_expansions
                     )
                     if ret == SpatialSearch.Found:
-                        return
-                ret, resp = self._Explanation__spatial(  # type: ignore
+                        return conf
+                ret, resp, conf = self._Explanation__spatial(  # type: ignore
                     centre=centre, expansion_limit=self.args.no_expansions
                 )
+            steps += 1
+        return conf

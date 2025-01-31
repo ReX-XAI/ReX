@@ -72,6 +72,11 @@ def update_database(
         if isinstance(final_mask, tt.Tensor):
             final_mask = final_mask.detach().cpu().numpy()
 
+        try:
+            explanation_confidence = explanation.confidence
+        except Exception:
+            explanation_confidence = explanation.explanation_confidences[0]
+
         add_to_database(
             db,
             explanation.args,
@@ -79,6 +84,7 @@ def update_database(
             target.confidence,
             target_map,
             final_mask,
+            explanation_confidence,
             time_taken,
             total_passing,
             total_failing,
@@ -97,6 +103,7 @@ def update_database(
                 target.confidence,
                 target_map,
                 final_mask,
+                explanation.explanation_confidences[c],
                 time_taken,
                 total_passing,
                 total_failing,
@@ -114,6 +121,7 @@ def add_to_database(
     confidence,
     responsibility,
     explanation,
+    explanation_confidence,
     time_taken,
     passing,
     failing,
@@ -139,6 +147,7 @@ def add_to_database(
         responsibility_shape,
         explanation,
         explanation_shape,
+        explanation_confidence,
         time_taken,
         depth_reached=depth_reached,
         avg_box_size=avg_box_size,
@@ -200,6 +209,7 @@ class DataBaseEntry(Base):
     failing = Column(Integer)
     explanation = Column(NumpyType)
     explanation_shape = Column(Unicode)
+    explanation_confidence = Column(Float)
     multi = Column(Boolean)
     multi_no = Column(Integer)
 
@@ -234,6 +244,7 @@ class DataBaseEntry(Base):
         responsibility_shape,
         explanation,
         explanation_shape,
+        explanation_confidence,
         time_taken,
         passing=None,
         failing=None,
@@ -264,6 +275,7 @@ class DataBaseEntry(Base):
         self.responsibility_shape = str(responsibility_shape)
         self.explanation = explanation
         self.explanation_shape = str(explanation_shape)
+        self.explanation_confidence = explanation_confidence
         self.time = time_taken
         self.total_work = total_work
         self.passing = passing
