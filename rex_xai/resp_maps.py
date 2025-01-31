@@ -3,7 +3,6 @@ import numpy as np
 from typing import List
 
 from typing import Optional
-import sys
 
 try:
     from anytree.cachedsearch import find
@@ -15,6 +14,7 @@ from rex_xai.config import CausalArgs
 from rex_xai.mutant import Mutant
 from rex_xai.input_data import Data
 from rex_xai.logger import logger
+from rex_xai._utils import ReXMapError
 
 
 class ResponsibilityMaps:
@@ -25,12 +25,13 @@ class ResponsibilityMaps:
     def __repr__(self) -> str:
         return str(self.counts)
 
-    def get(self, k):
+    def get(self, k, increment=False):
         try:
-            self.counts[k] += 1
+            if increment:
+                self.counts[k] += 1  # type: ignore
             return self.maps[k]
         except KeyError:
-            return None
+            return
 
     def new_map(self, k: int, height, width, depth=None):
         if depth is not None:
@@ -86,13 +87,15 @@ class ResponsibilityMaps:
 
         for mutant in mutants:
             r = self.responsibility(mutant, args)
-            r_bad = np.where(r == 0)
+
             k = None
+            # check that there is a prediction value
             if mutant.prediction is not None:
                 k = mutant.prediction.classification
+            # if there's no prediction value, raise an exception
             if k is None:
-                logger.fatal("this is no search classification, so exiting here")
-                sys.exit(-1)
+                raise ReXMapError("the provided mutant has no known classification")
+            # check if k has been seen before and has a map. If k is new, make a new map
             if k not in self.maps:
                 if data.model_depth is not None:
                     self.new_map(
@@ -100,14 +103,34 @@ class ResponsibilityMaps:
                     )
                 else:
                     self.new_map(k, data.model_height, data.model_width)
-            resp_map = self.get(k)
-            assert resp_map is not None
+
+            # get the responsibility map for k
+            resp_map = self.get(k, increment=True)
+            if resp_map is None:
+                raise ValueError(
+                    f"unable to open or generate a responsibility map for classification {k}"
+                )
+
+            # we only increment responsibility for active boxes, not static boxes
             for box_name in mutant.get_active_boxes():
                 box: Optional[Box] = find(search_tree, lambda n: n.name == box_name)
                 if box is not None and box.area() > 0:
                     index = np.uint(box_name[-1])
-                    if data.mode in ("spectral", "tabular"):
+                    local_r = r[index]
+                    if args.concentrate:
+                        local_r *= 1.0 / box.area()
+                        # Don't delete this code just yet as this is an alternative (less brutal)
+                        # scaling strategy that needs further investigation
+                        # scale = depth - 1
+                        # local_r = 2**(local_r * scale)
+
+                    if data.mode == "spectral":
                         section = resp_map[0, box.col_start : box.col_stop]
+                    elif data.mode == "RGB":
+                        section = resp_map[
+                            box.row_start : box.row_stop,
+                            box.col_start : box.col_stop,
+                        ]
                     elif data.mode == "voxel":
                         section = resp_map[
                             box.row_start : box.row_stop,
@@ -115,27 +138,10 @@ class ResponsibilityMaps:
                             box.depth_start : box.depth_stop,
                         ]
                     else:
-                        section = resp_map[
-                            box.row_start : box.row_stop,
-                            box.col_start : box.col_stop,
-                        ]
-                    # TODO I can't remember what any of this code does.
-                    if all(section.shape):
-                        if np.mean(section) == 0:
-                            section += r[index]
-                        else:
-                            if args.concentrate:
-                                section += np.mean(section) * r[index]
-                            else:
-                                section += r[index]
-                    if args.concentrate:
-                        for ind in r_bad:
-                            for i in ind:
-                                box_name = box_name[:-1] + str(i)
-                                box: Optional[Box] = find(
-                                    search_tree, lambda n: n.name == box_name
-                                )
-                                section = 0.001
+                        logger.warn("not yet implemented")
+                        raise NotImplementedError
+
+                    section += local_r
             self.maps[k] = resp_map
 
     def subset(self, id):

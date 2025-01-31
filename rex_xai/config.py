@@ -8,7 +8,6 @@ import argparse
 import os
 from os.path import exists, expanduser
 import importlib.util
-import numpy as np
 import toml  # type: ignore
 
 
@@ -61,6 +60,7 @@ class Args:
         self.resize = False
         self.grid = False
         self.heatmap_colours = "magma"
+        self.multi_style = "composite"
         # explanation production strategy
         self.strategy: Strategy = Strategy.Spatial
         self.chunk_size = 25
@@ -68,16 +68,19 @@ class Args:
         # args for spatial strategy
         self.spatial_radius: int = 25
         self.spatial_eta: float = 0.2
-        self.no_expansions = 50
+        self.no_expansions = 4
         # spotlight args
         self.spotlights: int = 10
         self.spotlight_size: int = 20
         self.spotlight_eta: float = 0.2
         self.spotlight_step: int = 5
-        self.spotlight_objective_function = np.mean
+        self.spotlight_objective_function: str = "none"
+        self.max_spotlight_budget = 40
+        self.permitted_overlap: float = 0.0
         # analysis
         self.analyze: bool = False
         self.insertion_step = 100
+        self.normalise_curves = True
 
     def __repr__(self) -> str:
         return (
@@ -221,6 +224,20 @@ def cmdargs():
         type=str,
         help="store output in sqlite database <DATABASE>, creating db if necessary",
     )
+
+    parser.add_argument(
+        "--multi",
+        nargs="?",
+        const=10,
+        help="multiple explanations, with optional number <x> of floodlights, defaults to value in rex.toml, or 10 if undefined",
+    )
+
+    parser.add_argument(
+        "--contrastive",
+        nargs="?",
+        const=10,
+        help="a contrastive explanation, both necessary and sufficient, needs optional number <x> of floodlights, defaults to value in rex.toml, or 10 if undefined",
+    )
     parser.add_argument(
         "--iters",
         type=int,
@@ -269,6 +286,8 @@ def match_strategy(cmd_args):
         return Strategy.Global
     if cmd_args.strategy == "spatial":
         return Strategy.Spatial
+    if cmd_args.strategy == "contrastive":
+        return Strategy.Contrastive
     return Strategy.Spatial
 
 
@@ -281,22 +300,6 @@ def match_queue_style(qs: str) -> Queue:
     if qs == "dc":
         return Queue.DC
     return Queue.Intersection
-
-
-def get_objective_function(multi_dict):
-    """gets objective function for spotlight search"""
-    try:
-        f = multi_dict["obj_function"]
-        if f == "mean":
-            return np.mean
-        elif f == "max":
-            return np.max
-        elif f == "min":
-            return np.min
-        elif f == "none":
-            return "none"
-    except KeyError:
-        return "none"
 
 
 def shared_args(cmd_args, args: CausalArgs):
@@ -424,6 +427,8 @@ def process_config_dict(config_file_args, args):
             args.mark_segments = rex_dict["visual"]["mark_segments"]
         if "heatmap" in rex_dict["visual"]:
             args.heatmap_colours = rex_dict["visual"]["heatmap"]
+        if "multi_style" in rex_dict["visual"]:
+            args.multi_style = rex_dict["visual"]["multi_style"]
 
     explain_dict = config_file_args["explanation"]
     if "chunk" in explain_dict:
@@ -447,11 +452,27 @@ def process_config_dict(config_file_args, args):
         args.spotlight_eta = multi_dict["spotlight_eta"]
     if "spotlight_step" in multi_dict:
         args.spotlight_step = multi_dict["spotlight_step"]
-    args.spotlight_objective_function = get_objective_function(multi_dict)  # type: ignore
+    if "max_spotlight_budget" in multi_dict:
+        args.max_spotlight_budget = multi_dict["max_spotlight_budget"]
+    if "objective_function" in multi_dict:
+        args.spotlight_objective_function = multi_dict["objective_function"]
+    if "permitted_overlap" in multi_dict:
+        po = multi_dict["permitted_overlap"]
+        if isinstance(po, float):
+            if po > 1.0 or po < 0.0:
+                raise ReXTomlError(
+                    f"expected a value between 0.0 and 1.0, but got {po}"
+                )
+            else:
+                args.permitted_overlap = po
+        else:
+            raise ReXTomlError(f"expected float but got {type(po)}")
 
     eval_dict = explain_dict["evaluation"]
     if "insertion_step" in eval_dict:
         args.insertion_step = eval_dict["insertion_step"]
+    if "normalise_curves" in eval_dict:
+        args.normalise_curves = eval_dict["normalise_curves"]
 
 
 def process_custom_script(script, args):
@@ -485,8 +506,13 @@ def process_cmd_args(cmd_args, args):
     if cmd_args.analyze or cmd_args.analyse:
         args.analyze = True
 
-    if cmd_args.show_all:
-        args.all = True
+    if cmd_args.multi is not None:
+        args.strategy = Strategy.MultiSpotlight
+        args.spotlights = int(cmd_args.multi)
+
+    if cmd_args.contrastive is not None:
+        args.strategy = Strategy.Contrastive
+        args.spotlights = int(cmd_args.contrastive)
 
     return args
 
@@ -508,11 +534,14 @@ def load_config(config_path=None):
         try:
             process_config_dict(config_file_args, default_args)
             return default_args
-        except Exception:
+        except Exception as e:
+            logger.warn(
+                "exception of type %s: %s, so reverting to default args", type(e), e
+            )
             return default_args
 
     except ReXError as e:
-        print(e)
+        logger.fatal(e)
         exit(-1)
 
 

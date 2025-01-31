@@ -7,6 +7,7 @@ from enum import Enum
 
 from rex_xai.occlusions import spectral_occlusion, context_occlusion
 from rex_xai.prediction import Prediction
+from rex_xai.logger import logger
 
 Setup = Enum("Setup", ["ONNXMPS", "ONNX", "PYTORCH"])
 
@@ -191,9 +192,16 @@ class Data:
                 return w, h, None, None, d
         return None, None, None, None, None
 
-    def set_mask_value(self, m, device="cpu"):
+    def set_mask_value(self, m):
         assert self.data is not None
         # if m is a number, then if might still need to be normalised
+
+        if m == "spectral" and self.mode != "spectral":
+            logger.warning(
+                "Mask value 'spectral' can only be used if mode is also 'spectral', using default mask value 0 instead"
+            )
+            m = 0
+
         match m:
             case int() | float() as m:
                 self.mask_value = m
@@ -202,7 +210,7 @@ class Data:
             case "mean":
                 self.mask_value = tt.mean(self.data).item()  # type: ignore
             case "spectral":
-                self.mask_value = lambda m, d: spectral_occlusion(m, d, device=device)
+                self.mask_value = lambda m, d: spectral_occlusion(m, d, device=self.device)
             case "context":
                 self.mask_value = lambda m, d: context_occlusion(m, d, self.context)
                 # TODO: Add args for noise and setting the context as currently only available through custom script
