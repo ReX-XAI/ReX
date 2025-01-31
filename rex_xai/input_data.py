@@ -12,11 +12,11 @@ Setup = Enum("Setup", ["ONNXMPS", "ONNX", "PYTORCH"])
 
 
 def _guess_mode(input):
-    try:
+    if hasattr(input, "mode"):
         return input.mode
-    except Exception:
+    if hasattr(input, "shape"):
         if len(input.shape) == 4:
-            return "voxel" # Assuming first dimension is batch
+            return "voxel"
         else:
             return "spectral"
 
@@ -171,7 +171,7 @@ class Data:
             self.data = self._normalise(means, stds, astype, norm)
 
     def __get_shape(self):
-        """ returns height, width, channels, order, depth for the model """
+        """returns height, width, channels, order, depth for the model"""
         if (self.mode == "tabular" or self.mode == "spectral") and len(
             self.model_shape
         ) == 3:
@@ -184,7 +184,7 @@ class Data:
                 return a, b, c, "last", None
         if self.mode == "voxel":
             if len(self.model_shape) == 4:
-                batch, w, h, d = self.model_shape # If batch is present
+                batch, w, h, d = self.model_shape  # If batch is present
                 return w, h, None, None, d
             else:
                 w, h, d = self.model_shape

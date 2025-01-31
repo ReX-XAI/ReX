@@ -95,7 +95,9 @@ class ResponsibilityMaps:
                 sys.exit(-1)
             if k not in self.maps:
                 if data.model_depth is not None:
-                    self.new_map(k, data.model_height, data.model_width, data.model_depth)
+                    self.new_map(
+                        k, data.model_height, data.model_width, data.model_depth
+                    )
                 else:
                     self.new_map(k, data.model_height, data.model_width)
             resp_map = self.get(k)

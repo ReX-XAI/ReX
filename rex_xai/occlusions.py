@@ -44,7 +44,9 @@ def spectral_occlusion(mask: tt.Tensor, data: tt.Tensor, noise=0.03, device="cpu
 
     return tt.from_numpy(local_data).to(device)
 
+
 # Occlusions such as beach, sky, and other context-based occlusions
+
 
 # Medical-based occlusions could be a CT scan of a healthy patient
 def context_occlusion(mask: tt.Tensor, data: tt.Tensor, context: tt.Tensor, noise=0.0):

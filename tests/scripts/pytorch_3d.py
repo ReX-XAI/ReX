@@ -74,7 +74,7 @@ def prediction_function(mutants, target=None, raw=False, binary_threshold=None):
             A list of prediction objects which each contain the output tensor,
             the target label, the confidence of the label, the classification confidence,
             and the classification label.
-            
+
     """
     with tt.no_grad():
         tensor = model(mutants)

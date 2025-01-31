@@ -18,6 +18,7 @@ from rex_xai.input_data import Data
 from rex_xai._utils import add_boundaries
 from rex_xai.logger import logger
 
+
 def plot_curve(curve, chunk_size, style="insertion", destination=None):
     # TODO check that this code still works
     """plots an insertion/deletion curve of a responsibility map"""
@@ -78,7 +79,7 @@ def plot_3d(path, ranking, ogrid, norm=255.0):
 
     img = img / norm  # type: ignore
     if ogrid:
-        x, y = np.ogrid[0: img.shape[0], 0: img.shape[1]]
+        x, y = np.ogrid[0 : img.shape[0], 0 : img.shape[1]]
     else:
         x, y = np.meshgrid(
             np.arange(0, ranking.shape[0], 1), np.arange(0, ranking.shape[1], 1)
@@ -101,7 +102,7 @@ def heatmap_plot(data: Data, resp_map, colour, path=None):
         background = data.input.resize(
             (data.model_height, data.model_width)
         )  # TODO check these dimensions
-        y, x = np.mgrid[0: data.model_height, 0: data.model_width]
+        y, x = np.mgrid[0 : data.model_height, 0 : data.model_width]
         fig, ax = plt.subplots(1, 1)
         ax.imshow(background)
         ax.contourf(x, y, resp_map, 15, cmap=mycmap)
@@ -201,10 +202,10 @@ def spectral_plot(explanation, data: Data, ranking, colour, extra=True, path=Non
 
 
 def surface_plot(
-        args: CausalArgs,
-        resp_map: np.ndarray,
-        target: Prediction,
-        path=None,
+    args: CausalArgs,
+    resp_map: np.ndarray,
+    target: Prediction,
+    path=None,
 ):
     """plots a 3d surface plot"""
     img, _x, _y = plot_3d(args.path, resp_map, True)
@@ -297,24 +298,32 @@ def overlay_grid(img, step_count=10):
 
     return img
 
+
 def remove_background(data: Data, resp_map: np.ndarray) -> np.ndarray:
     """Remove the background from the responsibility map if set in the Data object"""
     data_m: np.ndarray = data.data[0, :, :, :]
     # Set background to minimum value in the responsibility map if set in the Data object
     if data.background is not None and data.background is int or float:
-        background = np.where(data_m == data.background)  # Threshold for background voxels
+        background = np.where(
+            data_m == data.background
+        )  # Threshold for background voxels
         resp_map[background] = np.min(resp_map)
     elif data.background is not None and data.background is tuple:
         # Background is a range of values so (x , y) where x is the lower bound and y is the upper bound
-        background = np.where((data_m >= data.background[0]) & (data_m <= data.background[1]))
+        background = np.where(
+            (data_m >= data.background[0]) & (data_m <= data.background[1])
+        )
         resp_map[background] = np.min(resp_map)
     elif data.background is not None:
-        logger.debug("Background is not set correctly, please check the value. "
-                     "Background value must be an int, float or tuple defining the range of values for the background.")
+        logger.debug(
+            "Background is not set correctly, please check the value. "
+            "Background value must be an int, float or tuple defining the range of values for the background."
+        )
 
     return resp_map
-def voxel_plot(
-        args: CausalArgs, resp_map: np.ndarray, data: Data, path=None):
+
+
+def voxel_plot(args: CausalArgs, resp_map: np.ndarray, data: Data, path=None):
     """
     Plot a 3D voxel plot of the responsibility map using plotly.
     - Assumes the data is greyscale
@@ -335,7 +344,9 @@ def voxel_plot(
 
     resp_map = remove_background(data, resp_map)
 
-    assert data_m.shape == maps.shape, "Data and Responsibility map must have the same shape!"
+    assert data_m.shape == maps.shape, (
+        "Data and Responsibility map must have the same shape!"
+    )
     x, y, z = np.indices(data_m.shape)
 
     app = Dash(__name__)
@@ -350,7 +361,7 @@ def voxel_plot(
         value=data_m.flatten(),
         opacity=0.5,
         caps=dict(x_show=True, y_show=True, z_show=True, x_fill=1),
-        colorscale='gray_r',
+        colorscale="gray_r",
         surface=dict(count=1, fill=0.5, show=True),
     )
     # Add the 3d volume of responsibility map with the data volume
@@ -366,43 +377,83 @@ def voxel_plot(
         colorscale=args.heatmap_colours,
     )
 
-    app.layout = html.Div([
-        dcc.Graph(id='3d-plot', style={'height': '600px'},
-                  figure=fig),
-        html.Div([
-            dcc.Graph(id='x-slice'),
-            dcc.Graph(id='y-slice'),
-            dcc.Graph(id='z-slice'),
-        ], style={'display': 'flex', 'justify-content': 'space-around'}),
-
-    ], style={'width': '80%', 'margin': 'auto'})
+    app.layout = html.Div(
+        [
+            dcc.Graph(id="3d-plot", style={"height": "600px"}, figure=fig),
+            html.Div(
+                [
+                    dcc.Graph(id="x-slice"),
+                    dcc.Graph(id="y-slice"),
+                    dcc.Graph(id="z-slice"),
+                ],
+                style={"display": "flex", "justify-content": "space-around"},
+            ),
+        ],
+        style={"width": "80%", "margin": "auto"},
+    )
 
     @app.callback(
-        [Output('x-slice', 'figure'),
-         Output('y-slice', 'figure'),
-         Output('z-slice', 'figure')],
-        [Input('3d-plot', 'hoverData')]
+        [
+            Output("x-slice", "figure"),
+            Output("y-slice", "figure"),
+            Output("z-slice", "figure"),
+        ],
+        [Input("3d-plot", "hoverData")],
     )
     def update_cross_sections(hover_data):
         if hover_data is None:
-            hover_x, hover_y, hover_z = data_m.shape[0] // 2, data_m.shape[1] // 2, data_m.shape[2] // 2
+            hover_x, hover_y, hover_z = (
+                data_m.shape[0] // 2,
+                data_m.shape[1] // 2,
+                data_m.shape[2] // 2,
+            )
         else:
-            hover_x, hover_y, hover_z = hover_data['points'][0]['x'], hover_data['points'][0]['y'], \
-            hover_data['points'][0]['z']
+            hover_x, hover_y, hover_z = (
+                hover_data["points"][0]["x"],
+                hover_data["points"][0]["y"],
+                hover_data["points"][0]["z"],
+            )
 
         x_slice = go.Figure()
-        x_slice.add_trace(go.Heatmap(z=data_m[int(hover_x), :, :], colorscale='gray_r', name='Data'))
-        x_slice.add_trace(go.Heatmap(z=resp_map[int(hover_x), :, :], colorscale=args.heatmap_colours, opacity=0.5, name='Resp Map'))
+        x_slice.add_trace(
+            go.Heatmap(z=data_m[int(hover_x), :, :], colorscale="gray_r", name="Data")
+        )
+        x_slice.add_trace(
+            go.Heatmap(
+                z=resp_map[int(hover_x), :, :],
+                colorscale=args.heatmap_colours,
+                opacity=0.5,
+                name="Resp Map",
+            )
+        )
 
         # Y-Slice
         y_slice = go.Figure()
-        y_slice.add_trace(go.Heatmap(z=data_m[:, int(hover_y), :], colorscale='gray_r', name='Data'))
-        y_slice.add_trace(go.Heatmap(z=resp_map[:, int(hover_y), :], colorscale=args.heatmap_colours, opacity=0.5, name='Resp Map'))
+        y_slice.add_trace(
+            go.Heatmap(z=data_m[:, int(hover_y), :], colorscale="gray_r", name="Data")
+        )
+        y_slice.add_trace(
+            go.Heatmap(
+                z=resp_map[:, int(hover_y), :],
+                colorscale=args.heatmap_colours,
+                opacity=0.5,
+                name="Resp Map",
+            )
+        )
 
         # Z-Slice
         z_slice = go.Figure()
-        z_slice.add_trace(go.Heatmap(z=data_m[:, :, int(hover_z)], colorscale='gray_r', name='Data'))
-        z_slice.add_trace(go.Heatmap(z=resp_map[:, :, int(hover_z)], colorscale=args.heatmap_colours, opacity=0.5, name='Resp Map'))
+        z_slice.add_trace(
+            go.Heatmap(z=data_m[:, :, int(hover_z)], colorscale="gray_r", name="Data")
+        )
+        z_slice.add_trace(
+            go.Heatmap(
+                z=resp_map[:, :, int(hover_z)],
+                colorscale=args.heatmap_colours,
+                opacity=0.5,
+                name="Resp Map",
+            )
+        )
 
         return x_slice, y_slice, z_slice
 
@@ -413,6 +464,7 @@ def voxel_plot(
             app.run_server(debug=True)
     else:
         app.run_server(debug=True)
+
 
 def save_image(explanation, data: Data, args: CausalArgs, path=None):
     mask = None
@@ -472,15 +524,15 @@ def save_image(explanation, data: Data, args: CausalArgs, path=None):
         num_slices = 10
         fig, axes = plt.subplots(3, num_slices, figsize=(15, 6))
 
-        for (axis, index) in enumerate(explanation.shape):
+        for axis, index in enumerate(explanation.shape):
             slice_indices = np.linspace(0, axis - 1, num_slices, dtype=int)
             for i, slice_index in enumerate(slice_indices):
                 ax = axes[axis, i]
                 data_slice = np.take(data_m, slice_index, axis=axis)
                 resp_slice = np.take(explanation, slice_index, axis=axis)
-                ax.imshow(data_slice, cmap='gray')
-                ax.imshow(resp_slice, cmap='coolwarm', alpha=0.4)
-                ax.axis('off')
+                ax.imshow(data_slice, cmap="gray")
+                ax.imshow(resp_slice, cmap="coolwarm", alpha=0.4)
+                ax.axis("off")
 
         plt.tight_layout()
 

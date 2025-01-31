@@ -11,11 +11,13 @@ import numpy as np
 
 from rex_xai.distributions import Distribution, random_coords
 
+
 # Enums for different axes
 class Axes:
     ROW = 0
     COL = 1
     DEPTH = 2
+
 
 class BoxInternal:
     """a box is part of an occulsion, a collection of boxes which form a mask over an image"""
@@ -86,7 +88,14 @@ class BoxInternal:
     def corners(self):
         """Return (Wstart, Wstop, Hstart, Hstop) of current box"""
         if self.depth_start is not None and self.depth_stop is not None:
-            return (self.row_start, self.row_stop, self.col_start, self.col_stop, self.depth_start, self.depth_stop)
+            return (
+                self.row_start,
+                self.row_stop,
+                self.col_start,
+                self.col_stop,
+                self.depth_start,
+                self.depth_stop,
+            )
         else:
             return (self.row_start, self.row_stop, self.col_start, self.col_stop)
 
@@ -233,7 +242,7 @@ class BoxInternal:
         ranges: Dict = {
             Axes.ROW: [self.row_start, self.row_stop],
             Axes.COL: [self.col_start, self.col_stop],
-            Axes.DEPTH: [self.depth_start, self.depth_stop]
+            Axes.DEPTH: [self.depth_start, self.depth_stop],
         }
         range1 = ranges[selected_axes[0]]
         range2 = ranges[selected_axes[1]]
@@ -241,11 +250,21 @@ class BoxInternal:
         # Get the random coordinates for the two axes
         space = range1[1] - range1[0]
         c1 = random_coords(
-            self.distribution, space, range1[0], range1[1], self.distribution_args, map=map
+            self.distribution,
+            space,
+            range1[0],
+            range1[1],
+            self.distribution_args,
+            map=map,
         )
         space = range2[1] - range2[0]
         c2 = random_coords(
-            self.distribution, space, range2[0], range2[1], self.distribution_args, map=map
+            self.distribution,
+            space,
+            range2[0],
+            range2[1],
+            self.distribution_args,
+            map=map,
         )
 
         # If any of the coordinates are None, return None
@@ -271,32 +290,80 @@ class BoxInternal:
             box: The original box to split on
         """
         if axes == Axes.ROW:
-            b0 = Box(box.row_start, c1, box.col_start, box.col_stop, box.depth_start, box.depth_stop,
-                     distribution=self.distribution, distribution_args=self.distribution_args,
-                     name=self.name)
+            b0 = Box(
+                box.row_start,
+                c1,
+                box.col_start,
+                box.col_stop,
+                box.depth_start,
+                box.depth_stop,
+                distribution=self.distribution,
+                distribution_args=self.distribution_args,
+                name=self.name,
+            )
             b0.update_name(":0")
-            b1 = Box(c1, box.row_stop, box.col_start, box.col_stop, box.depth_start, box.depth_stop,
-                     distribution=self.distribution, distribution_args=self.distribution_args,
-                     name=self.name)
+            b1 = Box(
+                c1,
+                box.row_stop,
+                box.col_start,
+                box.col_stop,
+                box.depth_start,
+                box.depth_stop,
+                distribution=self.distribution,
+                distribution_args=self.distribution_args,
+                name=self.name,
+            )
             return [b0, b1]
         if axes == Axes.COL:
-            b0 = Box(box.row_start, box.row_stop, box.col_start, c1, box.depth_start, box.depth_stop,
-                     distribution=self.distribution, distribution_args=self.distribution_args,
-                     name=self.name)
+            b0 = Box(
+                box.row_start,
+                box.row_stop,
+                box.col_start,
+                c1,
+                box.depth_start,
+                box.depth_stop,
+                distribution=self.distribution,
+                distribution_args=self.distribution_args,
+                name=self.name,
+            )
             b0.update_name(":0")
-            b1 = Box(box.row_start, box.row_stop, c1, box.col_stop, box.depth_start, box.depth_stop,
-                     distribution=self.distribution, distribution_args=self.distribution_args,
-                     name=self.name)
+            b1 = Box(
+                box.row_start,
+                box.row_stop,
+                c1,
+                box.col_stop,
+                box.depth_start,
+                box.depth_stop,
+                distribution=self.distribution,
+                distribution_args=self.distribution_args,
+                name=self.name,
+            )
             b1.update_name(":1")
             return [b0, b1]
         if axes == Axes.DEPTH:
-            b0 = Box(box.row_start, box.row_stop, box.col_start, box.col_stop, box.depth_start, c1,
-                     distribution=self.distribution, distribution_args=self.distribution_args,
-                     name=self.name)
+            b0 = Box(
+                box.row_start,
+                box.row_stop,
+                box.col_start,
+                box.col_stop,
+                box.depth_start,
+                c1,
+                distribution=self.distribution,
+                distribution_args=self.distribution_args,
+                name=self.name,
+            )
             b0.update_name(":0")
-            b1 = Box(box.row_start, box.row_stop, box.col_start, box.col_stop, c1, box.depth_stop,
-                     distribution=self.distribution, distribution_args=self.distribution_args,
-                     name=self.name)
+            b1 = Box(
+                box.row_start,
+                box.row_stop,
+                box.col_start,
+                box.col_stop,
+                c1,
+                box.depth_stop,
+                distribution=self.distribution,
+                distribution_args=self.distribution_args,
+                name=self.name,
+            )
             b1.update_name(":1")
             return [b0, b1]
 
@@ -323,9 +390,11 @@ class BoxInternal:
         """returns the area of a box"""
 
         if self.depth_start is not None and self.depth_stop is not None:
-            return ((self.row_stop - self.row_start) *
-                    (self.col_stop - self.col_start) *
-                    (self.depth_stop - self.depth_start))
+            return (
+                (self.row_stop - self.row_start)
+                * (self.col_stop - self.col_start)
+                * (self.depth_stop - self.depth_start)
+            )
         else:
             if self.row_start == 0 and self.row_stop == 0:
                 return self.col_stop - self.col_start
@@ -377,7 +446,14 @@ class Box(BoxInternal, NodeMixin):
 
 
 def initialise_tree(
-    r_lim, c_lim, distribution, distribution_args, r_start=0, c_start=0, d_start=None, d_lim=None
+    r_lim,
+    c_lim,
+    distribution,
+    distribution_args,
+    r_start=0,
+    c_start=0,
+    d_start=None,
+    d_lim=None,
 ) -> Box:
     """initialise box tree with root node, the whole image"""
     if d_lim is not None:
@@ -393,6 +469,7 @@ def initialise_tree(
         distribution_args=distribution_args,
         name="R",
     )
+
 
 def show_tree(tree):
     """Print the box tree to the terminal."""
@@ -410,14 +487,23 @@ def average_box_size(tree, d) -> float:
         return 0.0
 
 
-def box_dimensions(box: Box) -> tuple[int, int, int, int, int, int] | tuple[int, int, int, int]:
+def box_dimensions(
+    box: Box,
+) -> tuple[int, int, int, int, int, int] | tuple[int, int, int, int]:
     """Returns box dimensions as a 4-tuple or 6-tuple depending on whether the box is 2D or 3D.
 
     @param box: Box
     @return (int, int, int, int) | (int, int, int, int, int, int)
     """
     if box.depth_start is not None and box.depth_stop is not None:
-        return (box.row_start, box.row_stop, box.col_start, box.col_stop, box.depth_start, box.depth_stop)
+        return (
+            box.row_start,
+            box.row_stop,
+            box.col_start,
+            box.col_stop,
+            box.depth_start,
+            box.depth_stop,
+        )
     else:
         return (box.row_start, box.row_stop, box.col_start, box.col_stop)
 

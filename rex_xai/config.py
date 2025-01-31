@@ -317,7 +317,9 @@ def shared_args(cmd_args, args: CausalArgs):
         args.db = cmd_args.database
     if cmd_args.mode is not None:
         args.mode = cmd_args.mode
-    if cmd_args.spectral: # TODO: Check this cmd_args.spectral has default value of false
+    if (
+        cmd_args.spectral
+    ):  # TODO: Check this cmd_args.spectral has default value of false
         args.mode = "spectral"
 
     args.processed = cmd_args.processed
@@ -524,7 +526,7 @@ def get_all_args():
 
     args = load_config(config_path)
 
-    args = process_cmd_args(cmd_args, args) # TODO: Check that assignment makes sense
+    args = process_cmd_args(cmd_args, args)  # TODO: Check that assignment makes sense
 
     args = shared_args(cmd_args, args)
 
