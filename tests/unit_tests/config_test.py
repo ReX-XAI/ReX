@@ -53,6 +53,7 @@ def non_default_args():
     non_default_args.spotlights = 5
     non_default_args.spotlight_size = 10
     non_default_args.spotlight_eta = 0.5
+    non_default_args.spotlight_step = 10
     non_default_args.max_spotlight_budget = 30
     non_default_args.spotlight_objective_function = 'mean'
     non_default_args.permitted_overlap = 0.1
@@ -69,6 +70,4 @@ def test_process_config_dict(non_default_args):
 
     process_config_dict(config_dict, args)
 
-    print(args)
-    print(non_default_args)
-    assert args == non_default_args
+    assert vars(args) == vars(non_default_args)

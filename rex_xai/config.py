@@ -441,6 +441,11 @@ def process_config_dict(config_file_args, args):
         args.no_expansions = spatial_dict["no_expansions"]
 
     multi_dict = explain_dict["multi"]
+    if "method" in multi_dict:
+        if multi_dict["method"] == "spotlight":
+            args.strategy = Strategy.MultiSpotlight
+        else:
+            raise NotImplementedError("The only implemented method for multi-explanations is 'spotlight'")
     if "spotlights" in multi_dict:
         args.spotlights = multi_dict["spotlights"]
     if "spotlight_size" in multi_dict:
