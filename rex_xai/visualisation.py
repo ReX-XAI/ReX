@@ -337,7 +337,6 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
     """
     try:
         import plotly.graph_objs as go
-        from plotly.subplots import make_subplots
         from dash import Dash, dcc, html, Input, Output
     except ImportError as e:
         logger.error(f"Plotly failed to import caused by {e}.")

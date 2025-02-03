@@ -21,6 +21,7 @@ scikit-image = ">= 0.21.0"
 pandas = ">= 2.2.0"
 pillow = ">= 10.3.0"
 torch = ">= 2.6.0"
+kaleido = "0.2.1"
 
 [tool.poetry.scripts]
 ReX = "rex_xai.rex:main"
@@ -46,6 +47,7 @@ pytest-sugar = "^1.0.0"
 cached-path = "^1.6.3"
 plotly = "^5.4.0"
 dash = "^2.1.0"
+kaleido = "^0.2.1"
 
 [tool.poetry.group.3D]
 optional = true
