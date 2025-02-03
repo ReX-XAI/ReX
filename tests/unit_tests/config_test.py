@@ -89,7 +89,7 @@ def test_process_config_dict_invalid_arg(caplog):
     config_dict = {'explanation': {'chunk': 10 } }
 
     process_config_dict(config_dict, args)
-    assert caplog.records[0].msg == "Invalid or misplaced parameter '%s', skipping!"
+    assert caplog.records[0].message == "Invalid or misplaced parameter 'chunk', skipping!"
 
 
 def test_process_config_dict_invalid_distribution():
