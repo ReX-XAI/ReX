@@ -41,7 +41,7 @@ class Data:
         self.model_height: Optional[int] = height
         self.model_width: Optional[int] = width
         self.model_depth: Optional[int] = depth
-        self.model_channels: Optional[int] = channels if channels is not None else 0
+        self.model_channels: Optional[int] = channels if channels is not None else 1
         self.model_order = order
         self.mask_value = None
         self.background = None
