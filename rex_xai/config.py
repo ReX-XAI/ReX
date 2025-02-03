@@ -282,12 +282,14 @@ def match_strategy(strategy_string):
     """gets explanation extraction strategy"""
     if strategy_string == "multi" or strategy_string == "spotlight":
         return Strategy.MultiSpotlight
-    if strategy_string == "linear" or strategy_string == "global":
+    elif strategy_string == "linear" or strategy_string == "global":
         return Strategy.Global
-    if strategy_string == "spatial":
+    elif strategy_string == "spatial":
         return Strategy.Spatial
-    if strategy_string == "contrastive":
+    elif strategy_string == "contrastive":
         return Strategy.Contrastive
+    else:
+         logger.warning("Invalid strategy '%s', reverting to default value Strategy.Spatial", strategy_string)
     return Strategy.Spatial
 
 
@@ -295,10 +297,14 @@ def match_queue_style(qs: str) -> Queue:
     qs = qs.lower()
     if qs == "all":
         return Queue.All
-    if qs == "area":
+    elif qs == "area":
         return Queue.Area
-    if qs == "dc":
+    elif qs == "dc":
         return Queue.DC
+    elif qs == "intersection":
+        return Queue.Intersection
+    else:
+         logger.warning("Invalid queue style '%s', reverting to default value Queue.Intersection", qs)
     return Queue.Intersection
 
 

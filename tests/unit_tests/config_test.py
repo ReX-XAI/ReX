@@ -92,7 +92,7 @@ def test_process_config_dict_invalid_arg(caplog):
     assert caplog.records[0].message == "Invalid or misplaced parameter 'chunk', skipping!"
 
 
-def test_process_config_dict_invalid_distribution():
+def test_process_config_dict_invalid_distribution(caplog):
     args = CausalArgs()
     config_dict = {
         "causal": {"distribution": {"distribution": "an-invalid-distribution"}}
@@ -101,6 +101,7 @@ def test_process_config_dict_invalid_distribution():
     process_config_dict(config_dict, args)
 
     assert args.distribution == Distribution.Uniform
+    assert caplog.records[0].message == "Invalid distribution 'an-invalid-distribution', reverting to default value Distribution.Uniform"
 
 
 def test_process_config_dict_uniform_distribution():
@@ -150,12 +151,13 @@ def test_process_config_dict_queue_style_upper():
     assert args.queue_style == Queue.Area
 
 
-def test_process_config_dict_queue_style_invalid():
+def test_process_config_dict_queue_style_invalid(caplog):
     args = CausalArgs()
     config_dict = {"causal": {"queue_style": "an-invalid-queue-style"}}
 
     process_config_dict(config_dict, args)
     assert args.queue_style == Queue.Intersection
+    assert caplog.records[0].message == "Invalid queue style 'an-invalid-queue-style', reverting to default value Queue.Intersection"
 
 
 def test_process_config_dict_strategy():
@@ -166,12 +168,13 @@ def test_process_config_dict_strategy():
     assert args.strategy == Strategy.MultiSpotlight
 
 
-def test_process_config_dict_strategy_invalid():
+def test_process_config_dict_strategy_invalid(caplog):
     args = CausalArgs()
     config_dict = {"explanation": {"multi": {"strategy": "an-invalid-strategy"}}}
 
     process_config_dict(config_dict, args)
     assert args.strategy == Strategy.Spatial
+    assert caplog.records[0].message == "Invalid strategy 'an-invalid-strategy', reverting to default value Strategy.Spatial"
 
 
 def test_process_config_dict_blend_invalid():
