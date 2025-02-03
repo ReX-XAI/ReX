@@ -20,7 +20,7 @@ onnxruntime = ">= 1.18.0"
 scikit-image = ">= 0.21.0"
 pandas = ">= 2.2.0"
 pillow = ">= 10.3.0"
-torch = ">= 2.4.0"
+torch = ">= 2.6.0"
 
 [tool.poetry.scripts]
 ReX = "rex_xai.rex:main"
@@ -41,7 +41,7 @@ sphinx-autoapi = "^3.3.2"
 pyright = "^1.1.383"
 pytest-cov = "^5.0.0"
 syrupy = "^4.7.2"
-torchvision = "^0.20.1"
+torchvision = "^0.21.0"
 pytest-sugar = "^1.0.0"
 cached-path = "^1.6.3"
 
