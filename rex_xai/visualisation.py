@@ -305,6 +305,7 @@ def overlay_grid(img, step_count=10):
 
     return img
 
+
 def remove_background(data: Data, resp_map: np.ndarray) -> np.ndarray:
     """Remove the background from the responsibility map if set in the Data object"""
     data_m: np.ndarray = data.data[0, :, :, :]
@@ -605,14 +606,14 @@ def save_image(explanation, data: Data, args: CausalArgs, path=None):
 
 def plot_image_grid(images, ncols=None):
     # adapted from: https://stackoverflow.com/questions/41793931/plotting-images-side-by-side-using-matplotlib/66961099#66961099
-    '''Plot a grid of images'''
+    """Plot a grid of images"""
     if not ncols:
-        factors = [i for i in range(1, len(images)+1) if len(images) % i == 0]
+        factors = [i for i in range(1, len(images) + 1) if len(images) % i == 0]
         ncols = factors[len(factors) // 2] if len(factors) else len(images) // 4 + 1
     nrows = int(len(images) / ncols) + int(len(images) % ncols)
     imgs = [images[i] if len(images) > i else None for i in range(nrows * ncols)]
-    f, axes = plt.subplots(nrows, ncols, figsize=(3*ncols, 2*nrows))
-    axes = axes.flatten()[:len(imgs)]
+    f, axes = plt.subplots(nrows, ncols, figsize=(3 * ncols, 2 * nrows))
+    axes = axes.flatten()[: len(imgs)]
     for img, ax in zip(imgs, axes.flatten()):
         ax.imshow(img)
         ax.set_axis_off()

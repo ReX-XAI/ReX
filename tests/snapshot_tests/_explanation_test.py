@@ -2,6 +2,7 @@ import pytest
 from rex_xai.config import Strategy
 from rex_xai.explanation import _explanation, analyze
 
+
 @pytest.mark.parametrize("batch", [1, 64])
 def test__explanation_snapshot(
     args_custom, model_shape, prediction_func, cpu_device, batch, snapshot_explanation
@@ -20,7 +21,7 @@ def test__explanation_snapshot_diff_model_shape(
     prediction_func_swin_v2_t,
     cpu_device,
     batch,
-    snapshot_explanation
+    snapshot_explanation,
 ):
     args_torch_swin_v2_t.batch = batch
 

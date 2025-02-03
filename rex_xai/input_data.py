@@ -210,7 +210,9 @@ class Data:
             case "mean":
                 self.mask_value = tt.mean(self.data).item()  # type: ignore
             case "spectral":
-                self.mask_value = lambda m, d: spectral_occlusion(m, d, device=self.device)
+                self.mask_value = lambda m, d: spectral_occlusion(
+                    m, d, device=self.device
+                )
             case "context":
                 self.mask_value = lambda m, d: context_occlusion(m, d, self.context)
                 # TODO: Add args for noise and setting the context as currently only available through custom script

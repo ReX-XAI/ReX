@@ -51,9 +51,9 @@ class MultiExplanation(Explanation):
     def show(self, path=None):
         outs = []
         for i, mask in enumerate(self.explanations):
-            out = save_image(mask,self.data, self.args, path=None)
+            out = save_image(mask, self.data, self.args, path=None)
             outs.append(out)
-        
+
         plot_image_grid(outs)
 
     def extract(self, method=None):
