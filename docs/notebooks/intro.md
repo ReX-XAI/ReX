@@ -9,6 +9,8 @@ kernelspec:
   display_name: .venv
   language: python
   name: python3
+mystnb:
+  execution_timeout: 300
 ---
 
 # Using ReX interactively
@@ -147,10 +149,6 @@ We are now ready to run ReX and identify a causal explanation for this classific
 The main function in ReX is `calculate_responsibility`, which returns an `Explanation` object. We can then `extract` an explanation from this object. Here we will use the default `Spatial` strategy, which is stored in the `args` object. Additional strategies are available in the `rex_xai._utils.Strategy` Enum.
 
 ```{code-cell} ipython3
----
-mystnb:
-  execution_timeout: 300
----
 from rex_xai.explanation import calculate_responsibility
 
 exp = calculate_responsibility(data, args, prediction_function)
