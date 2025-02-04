@@ -9,7 +9,7 @@ def __split_groups(neg_mask):
     return np.split(neg_mask, np.where(np.diff(neg_mask) > 1)[0] + 1)
 
 
-def spectral_occlusion(mask: tt.Tensor, data: tt.Tensor, noise=0.03, device="cpu"):
+def spectral_occlusion(mask: tt.Tensor, data: tt.Tensor, noise=0.02, device="cpu"):
     """Linear interpolated occlusion for spectral data, with optional added noise.
 
     @param mask: boolean valued NDArray

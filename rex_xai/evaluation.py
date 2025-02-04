@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from typing import Tuple
 import numpy as np
 import torch as tt
 from scipy.integrate import simpson
@@ -39,7 +40,7 @@ class Evaluation:
                 / self.explanation.data.model_channels
             )
 
-    def spectral_entropy(self):
+    def spectral_entropy(self) -> Tuple[float, float]:
         """
         This code is a simplified version of
         https://github.com/raphaelvallat/antropy/blob/master/src/antropy/entropy.py
@@ -47,7 +48,8 @@ class Evaluation:
         _, psd = periodogram(self.explanation.target_map)
         psd_norm = psd / psd.sum()
         ent = -np.sum(xlogx(psd_norm))
-        return ent
+        max_ent = np.log(len(psd_norm[0]))
+        return ent, max_ent
 
     def entropy_loss(self):
         img = np.array(self.explanation.data.input)

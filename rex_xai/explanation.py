@@ -254,9 +254,10 @@ def analyze(exp: Explanation, data_mode: str | None):
         be, ae = eval.entropy_loss()  # type: ignore
         ent = be - ae
     elif data_mode in ("spectral", "tabular"):
-        ent = eval.spectral_entropy()
+        ent, max_ent = eval.spectral_entropy()
     else:
         ent = None
+        max_ent = None
 
     iauc, dauc = eval.insertion_deletion_curve(
         exp.prediction_func, normalise=exp.args.normalise_curves
@@ -264,7 +265,8 @@ def analyze(exp: Explanation, data_mode: str | None):
 
     analysis_results = {
         "area": rat,
-        "entropy_diff": ent,
+        "entropy": ent,
+        "max_entropy": max_ent,
         "insertion_curve": iauc,
         "deletion_curve": dauc,
     }
@@ -331,10 +333,17 @@ def _explanation(
 
     if args.analyze:
         results = analyze(exp, data.mode)
-        print(
-            f"INFO:ReX:area {results['area']}, entropy {results['entropy_diff']},",
-            f"insertion curve {results['insertion_curve']}, deletion curve {results['deletion_curve']}",
-        )
+        if args.mode == "spectral":
+            print(
+                f"INFO:ReX:area {results['area']}, responsibility entropy {results['entropy']},",
+                f"max entropy {results['max_entropy']}",
+                f"insertion curve {results['insertion_curve']}, deletion curve {results['deletion_curve']}",
+            )
+        else:
+            print(
+                f"INFO:ReX:area {results['area']}, entropy {results['entropy']},",
+                f"insertion curve {results['insertion_curve']}, deletion curve {results['deletion_curve']}",
+            )
 
     end = time.time()
     time_taken = end - start
@@ -430,7 +439,7 @@ def get_prediction_func_from_args(args: CausalArgs):
         prediction_func = args.custom.prediction_function  # type: ignore
         model_shape = args.custom.model_shape()  # type: ignore
     else:
-        ps = get_prediction_function(args.model, args.gpu)
+        ps = get_prediction_function(args.model, args.gpu, logger_level=args.verbosity)
         if ps is None:
             raise RuntimeError("Unable to create an onnx inference instance")
         else:

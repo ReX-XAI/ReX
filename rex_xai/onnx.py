@@ -158,14 +158,19 @@ class OnnxRunner:
             )
 
 
-def get_prediction_function(model_path, gpu: bool):
+def get_prediction_function(model_path, gpu: bool, logger_level=3):
     sess_options = ort.SessionOptions()
+
+    ort.set_default_logger_severity(3)
+
     # are we (trying to) run on the gpu?
     if gpu:
         logger.info("using gpu for onnx inference session")
         if platform.uname().system == "Darwin":
             # note this is only true for M+ chips
             providers = ["CoreMLExecutionProvider"]
+            sess_options.intra_op_num_threads = 8
+            sess_options.inter_op_num_threads = 8
             device = "mps"
             _, ext = os.path.splitext(os.path.basename(model_path))
             # for the moment, onnx does not seem to support data copying on mps, so we fall back to
