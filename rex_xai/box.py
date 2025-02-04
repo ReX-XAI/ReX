@@ -86,7 +86,7 @@ class BoxInternal:
             return (self.row_stop - self.row_start, self.col_stop - self.col_start)
 
     def corners(self):
-        """Return (Wstart, Wstop, Hstart, Hstop) of current box"""
+        """Return (Wstart, Wstop, Hstart, Hstop) of current box if 2d data, else returns (Wstart, Wstop, Hstart, Hstop. Dstart, Dstop)"""
         if self.depth_start is not None and self.depth_stop is not None:
             return (
                 self.row_start,
@@ -232,7 +232,7 @@ class BoxInternal:
     def __3d_parts(self, map=None):
         """
         Create 4 boxes from the original box passed in as an argument.
-        Pick two axes to split on randomly using the axes class and create boxes.
+        Pick two axes to split on randomly using the Axes class and create boxes.
         """
 
         # Pick two axes to split on randomly using the axes class
@@ -313,6 +313,7 @@ class BoxInternal:
                 distribution_args=self.distribution_args,
                 name=self.name,
             )
+            b1.update_name(":1")
             return [b0, b1]
         if axes == Axes.COL:
             b0 = Box(
