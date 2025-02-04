@@ -304,8 +304,8 @@ def match_queue_style(qs: str) -> Queue:
     elif qs == "intersection":
         return Queue.Intersection
     else:
-         logger.warning("Invalid queue style '%s', reverting to default value Queue.Intersection", qs)
-    return Queue.Intersection
+         logger.warning("Invalid queue style '%s', reverting to default value Queue.Area", qs)
+    return Queue.Area
 
 
 def shared_args(cmd_args, args: CausalArgs):
