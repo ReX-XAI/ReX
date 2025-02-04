@@ -137,18 +137,18 @@ def test_process_config_dict_distribution_args():
 
 def test_process_config_dict_queue_style():
     args = CausalArgs()
-    config_dict = {"causal": {"queue_style": "area"}}
+    config_dict = {"causal": {"queue_style": "all"}}
 
     process_config_dict(config_dict, args)
-    assert args.queue_style == Queue.Area
+    assert args.queue_style == Queue.All
 
 
 def test_process_config_dict_queue_style_upper():
     args = CausalArgs()
-    config_dict = {"causal": {"queue_style": "AREA"}}
+    config_dict = {"causal": {"queue_style": "ALL"}}
 
     process_config_dict(config_dict, args)
-    assert args.queue_style == Queue.Area
+    assert args.queue_style == Queue.All
 
 
 def test_process_config_dict_queue_style_invalid(caplog):
@@ -156,8 +156,8 @@ def test_process_config_dict_queue_style_invalid(caplog):
     config_dict = {"causal": {"queue_style": "an-invalid-queue-style"}}
 
     process_config_dict(config_dict, args)
-    assert args.queue_style == Queue.Intersection
-    assert caplog.records[0].message == "Invalid queue style 'an-invalid-queue-style', reverting to default value Queue.Intersection"
+    assert args.queue_style == Queue.Area
+    assert caplog.records[0].message == "Invalid queue style 'an-invalid-queue-style', reverting to default value Queue.Area"
 
 
 def test_process_config_dict_strategy():
