@@ -86,7 +86,7 @@ class BoxInternal:
             return (self.row_stop - self.row_start, self.col_stop - self.col_start)
 
     def corners(self):
-        """Return (Wstart, Wstop, Hstart, Hstop) of current box"""
+        """Return (Wstart, Wstop, Hstart, Hstop) of current box if 2d data, else returns (Wstart, Wstop, Hstart, Hstop. Dstart, Dstop)"""
         if self.depth_start is not None and self.depth_stop is not None:
             return (
                 self.row_start,
