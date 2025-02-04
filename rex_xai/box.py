@@ -232,7 +232,7 @@ class BoxInternal:
     def __3d_parts(self, map=None):
         """
         Create 4 boxes from the original box passed in as an argument.
-        Pick two axes to split on randomly using the axes class and create boxes.
+        Pick two axes to split on randomly using the Axes class and create boxes.
         """
 
         # Pick two axes to split on randomly using the axes class
