@@ -1,7 +1,7 @@
 ## Script usage
 ReX can take in scripts that define the model behaviour, the preprocessing for the model and how the model's output can be interpreted by ReX. This is to allow the users to provide custom preprocessing/models to ReX.
 
-As outline in the [command line section](command_line.md), the user can pass in the script using the `--script arg`.
+As outlined in the [command line section](command_line.md), the user can pass in the script using the `--script` argument.
 
 ```bash
 rex imgs/dog.jpg --script scripts/pytorch.py -vv --output dog_exp.jpg 
