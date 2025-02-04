@@ -313,6 +313,7 @@ class BoxInternal:
                 distribution_args=self.distribution_args,
                 name=self.name,
             )
+            b1.update_name(":1")
             return [b0, b1]
         if axes == Axes.COL:
             b0 = Box(
