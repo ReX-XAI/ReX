@@ -188,7 +188,7 @@ def causal_explanation(
                     ]
                 else:
                     # TODO this needs testing
-                    if args.batch == 1:
+                    if args.batch_size == 1:
                         preds = [
                             prediction_func(
                                 tt.where(m.mask, data.data, data.mask_value),  #  type: ignore

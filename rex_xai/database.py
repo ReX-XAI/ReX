@@ -157,8 +157,8 @@ def add_to_database(
     object.total_work = passing + failing
     object.method = str(args.strategy)
     if args.strategy == Strategy.Spatial:
-        object.spatial_radius = args.spatial_radius
-        object.spatial_eta = args.spatial_eta
+        object.spatial_radius = args.spatial_initial_radius
+        object.spatial_eta = args.spatial_radius_eta
     if args.strategy == Strategy.MultiSpotlight:
         object.spotlights = args.spotlights
         object.spotlight_size = args.spotlight_size
