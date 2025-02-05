@@ -140,10 +140,14 @@ class MultiExplanation(Explanation):
                 pn = self.prediction_func(counterfactual)[0]
 
                 if (
-                    ps.classification == self.data.target.classification #type: ignore
-                    and pn.classification != self.data.target.classification #type: ignore
-                ): 
-                    logger.info("found sufficient and necessary explanation of class %d with confidence %f", ps.classification, pn.confidence)
+                    ps.classification == self.data.target.classification  # type: ignore
+                    and pn.classification != self.data.target.classification  # type: ignore
+                ):
+                    logger.info(
+                        "found sufficient and necessary explanation of class %d with confidence %f",
+                        ps.classification,
+                        pn.confidence,
+                    )
                     self.final_mask = mask
                     return subset
         logger.info("unable to find a counterfactual")

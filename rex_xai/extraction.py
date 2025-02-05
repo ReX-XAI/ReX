@@ -101,12 +101,14 @@ class Explanation:
                 self.set_to_true(loc, mutant)
             d = _apply_to_data(mutant, self.data, self.data.mask_value).squeeze(0)
             masks.append(d)
-            if len(masks) == self.args.batch:
+            if len(masks) == self.args.batch_size:
                 preds = self.prediction_func(tt.stack(masks).to(self.data.device))
                 for j, p in enumerate(preds):
                     if (
                         p.classification == self.data.target.classification
-                        and p.confidence >= self.data.target.confidence * self.args.min_confidence_scalar
+                        and p.confidence
+                        >= self.data.target.confidence
+                        * self.args.minimum_confidence_threshold
                     ):  #  type: ignore
                         logger.info(
                             "found an explanation of %d with %f confidence",
@@ -142,7 +144,7 @@ class Explanation:
 
     def __draw_circle(self, centre, start_radius=None):
         if start_radius is None:
-            start_radius = self.args.spatial_radius
+            start_radius = self.args.spatial_initial_radius
         mask = tt.zeros(
             self.data.model_shape[1:], dtype=tt.bool, device=self.data.device
         )
@@ -205,12 +207,13 @@ class Explanation:
             d = _apply_to_data(mask, self.data, self.data.mask_value)
             p = self.prediction_func(d)[0]
             if (
-                p.classification == self.data.target.classification 
-                and p.confidence >= self.data.target.confidence * self.args.min_confidence_scalar
-            ): 
+                p.classification == self.data.target.classification  # type: ignore
+                and p.confidence
+                >= self.data.target.confidence * self.args.minimum_confidence_threshold  # type: ignore
+            ):
                 conf = self.__global(map=tt.where(circle, map, 0))  # type: ignore
                 return SpatialSearch.Found, masked_responsibility, conf
-            start_radius = int(start_radius * (1 + self.args.spatial_eta))
+            start_radius = int(start_radius * (1 + self.args.spatial_radius_eta))
             _, circle, _ = self.__draw_circle(centre, start_radius)
             if self.data.model_order == "first":
                 mask[:, circle] = True

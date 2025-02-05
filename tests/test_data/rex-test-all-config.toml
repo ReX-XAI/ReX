@@ -1,0 +1,146 @@
+[rex]
+# masking value for mutations, can be either an integer, float or
+# one of the following built-in occlusions 'spectral', 'min', 'mean'
+mask_value = "mean"
+
+# random seed, only set for reproducibility
+seed = 42
+
+# whether to use gpu or not, defaults to true
+gpu = false
+
+# batch size for the model
+batch_size = 32
+
+[rex.onnx]
+# means for min-max normalization
+means = [0.485, 0.456, 0.406]
+
+# standards devs for min-max normalization
+stds = [0.229, 0.224, 0.225]
+
+# binary model confidence threshold. Anything >= threshold will be classified as 1, otherwise 0
+binary_threshold = 0.5
+
+# norm
+norm = 1.0 
+
+[rex.visual]
+
+# include classification and confidence information in title of plot, defaults to true
+info = false
+
+# pretty printing colour for explanations, defaults to 200
+colour = 150
+
+# alpha blend for main image, defaults to 0.2 (PIL Image.blend parameter)
+alpha = 0.1
+
+# produce unvarnished image with actual masking value, defaults to false
+raw = true
+
+# resize the explanation to the size of the original image. This uses cubic interpolation and will not be as visually accurate as not resizing, defaults to false
+resize = true
+
+# whether to show progress bar in the terminal, defalts to true
+progress_bar = false
+
+# overlay a 10*10 grid on an explanation, defaults to false
+grid = true
+
+# mark quickshift segmentation on image
+mark_segments = true
+
+# matplotlib colourscheme for responsibility map plotting, defaults to 'magma'
+heatmap_colours = 'viridis'
+
+# multi_style explanations, either <composite> or <separate>
+multi_style = "separate"
+
+[causal]
+# maximum depth of tree, defaults to 10, note that search can actually go beyond this number on occasion, as the
+# check only occurs at the end of an iteration
+tree_depth = 5
+
+# limit on number of combinations to consider <per iteration>, defaults to none.
+# It is **not** the total work done by ReX over all iterations. Leaving the search limit at none
+# can potentially be very expensive.
+search_limit = 1000
+
+# number of times to run the algorithm, defaults to 20
+iters = 30
+
+# minimum child size, in pixels
+min_box_size = 20
+
+# remove passing mutants which have a confidence less thatn <confidence_filter>. Defaults to 0.0 (meaning all mutants are considered)
+confidence_filter = 0.5
+
+# whether to weight responsibility by prediction confidence, default to false
+weighted = true
+
+# queue_style = "intersection" | "area" | "all" | "dc", defaults to "area"
+queue_style = "intersection"
+
+# maximum number of things to hold in search queue, either an integer or 'all'
+queue_len = 2
+
+# concentrate: weight responsibility by size and depth of passing partition. Defaults to false
+concentrate = true
+
+[causal.distribution]
+# distribution for splitting the box, defaults to uniform. Possible choices are 'uniform' | 'binom' | 'betabinom' | 'adaptive'
+distribution = 'betabinom'
+
+# blend one of the above distributions with the responsibility map treated as a distribution
+blend = 0.5
+
+# supplimental arguments for distribution creation, these are ignored if <distribution> does not take any parameters
+distribution_args = [1.1, 1.1]
+
+[explanation]
+# iterate through pixel ranking in chunks, defaults to causal.min_box_size
+chunk_size = 16
+
+[explanation.spatial]
+# initial search radius
+spatial_initial_radius = 20
+
+# increment to change radius
+spatial_radius_eta = 0.1
+
+# number of times to expand before quitting, defaults to 4
+no_expansions = 1
+
+[explanation.multi]
+# multi method (just spotlight so far)
+strategy = 'spotlight'
+
+# no of spotlights to launch
+spotlights = 5
+
+# default size of spotlight
+spotlight_size = 10
+
+# decrease spotlight by this amount
+spotlight_eta = 0.5
+
+spotlight_step = 10
+
+# maximum number of random steps that a spotlight can make before quitting
+max_spotlight_budget = 30
+
+# objective function for spotlight search. Possible options 'mean' | 'max' | "none", defaults to "none"
+spotlight_objective_function = 'mean'
+
+# how much overlap to allow between different explanations. This is the dice coefficient, so
+# 0.0 means no permitted overlap, and 1 total overlap permitted
+permitted_overlap = 0.1
+
+[explanation.evaluation]
+
+# insertion/deletion curve step size
+insertion_step = 50
+
+# normalise insertion/deletion curves by confidence of original data
+normalise_curves = false

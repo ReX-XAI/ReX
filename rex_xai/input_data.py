@@ -209,7 +209,9 @@ class Data:
             case "mean":
                 self.mask_value = tt.mean(self.data).item()  # type: ignore
             case "spectral":
-                self.mask_value = lambda m, d: spectral_occlusion(m, d, device=self.device)
+                self.mask_value = lambda m, d: spectral_occlusion(
+                    m, d, device=self.device
+                )
             case _:
                 raise ValueError(
                     f"Invalid mask value {m}. Should be an integer, float, or one of 'min', 'mean', 'spectral'"

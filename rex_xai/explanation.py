@@ -179,7 +179,7 @@ def calculate_responsibility(
     avg_box_size: float = 0.0
 
     if args.iters > 0:
-        for i in trange(args.iters, disable=not args.progress):
+        for i in trange(args.iters, disable=not args.progress_bar):
             (
                 local_maps,
                 passing,
@@ -472,11 +472,11 @@ def explanation(
 
     prediction_func, model_shape = get_prediction_func_from_args(args)
 
-    if isinstance(model_shape[0], int) and model_shape[0] < args.batch:
+    if isinstance(model_shape[0], int) and model_shape[0] < args.batch_size:
         logger.warning(
             f"Resetting batch size to size of model's first axis: {model_shape[0]}"
         )
-        args.batch = model_shape[0]
+        args.batch_size = model_shape[0]
 
     # directory of data to process
     if os.path.isdir(args.path):

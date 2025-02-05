@@ -102,7 +102,7 @@ class Evaluation:
                 _apply_to_data(deletion_mask, self.explanation.data, 0).squeeze(0)
             )
 
-            if len(im) == self.explanation.args.batch:
+            if len(im) == self.explanation.args.batch_size:
                 self.__batch(im, dm, prediction_func, insertion_curve, deletion_curve)
                 im = []
                 dm = []
