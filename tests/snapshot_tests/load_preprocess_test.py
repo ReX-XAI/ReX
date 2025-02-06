@@ -1,6 +1,7 @@
 from rex_xai.explanation import (
     load_and_preprocess_data,
     try_preprocess,
+    get_prediction_func_from_args
 )
 
 
@@ -28,8 +29,11 @@ def test_preprocess_spectral_mask_on_image_returns_warning(
     assert data == snapshot
 
 
-def test_preprocess_npy(args, model_shape, cpu_device, snapshot, caplog):
+def test_preprocess_npy(args, DNA_model, cpu_device, snapshot, caplog):
     args.path = "tests/test_data/DoublePeakClass 0 Mean.npy"
+    args.model = DNA_model
+    _, model_shape = get_prediction_func_from_args(args)
+
     try_preprocess(args, model_shape, device=cpu_device)
 
     assert caplog.records[0].msg == "we do not generically handle this datatype"
@@ -37,3 +41,12 @@ def test_preprocess_npy(args, model_shape, cpu_device, snapshot, caplog):
     args.mode = "tabular"
     data = try_preprocess(args, model_shape, device=cpu_device)
     assert data == snapshot
+
+
+def test_preprocess_incompatible_shapes(args, model_shape, cpu_device, caplog):
+    args.path = "tests/test_data/DoublePeakClass 0 Mean.npy"
+    args.mode = "tabular"
+
+    try_preprocess(args, model_shape, device=cpu_device)
+
+    assert caplog.records[0].msg == "Incompatible 'mode' and 'model_shape', cannot get valid shape of Data object so returning None"

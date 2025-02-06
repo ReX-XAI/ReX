@@ -170,15 +170,17 @@ class Data:
             self.model_shape
         ) == 3:
             return 1, self.model_shape[2], 1, None
-        if self.mode in ("RGB", "RGBA", "L") and len(self.model_shape) == 4:
+        elif self.mode in ("RGB", "RGBA", "L") and len(self.model_shape) == 4:
             _, a, b, c = self.model_shape
             if a == 1 or a == 3 or a == 4:
                 return b, c, a, "first"
             else:
                 return a, b, c, "last"
-        if self.mode == "voxel":
+        elif self.mode == "voxel":
             pass
-        return None, None, None, None
+        else:
+            logger.warning("Incompatible 'mode' and 'model_shape', cannot get valid shape of Data object so returning None")
+            return None, None, None, None
 
     def set_mask_value(self, m):
         assert self.data is not None
