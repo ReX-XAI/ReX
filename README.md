@@ -8,13 +8,25 @@
 
 <!--- BADGES: START --->
 
-[![Docs](https://readthedocs.org/projects/rex-xai/badge/?version=latest)](https://rex-xai.readthedocs.io/en/latest/)git s
+[![Docs](https://readthedocs.org/projects/rex-xai/badge/?version=latest)](https://rex-xai.readthedocs.io/en/latest/)
 [![Tests](https://github.com/ReX-XAI/ReX/actions/workflows/build-and-test-python-package.yml/badge.svg)](https://github.com/ReX-XAI/ReX/actions/workflows/build-and-test-python-package.yml)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/ReX-XAI/ReX.jl/blob/main/LICENSE)
 
 <!--- BADGES: END --->
 
 ***
+
+ReX is a causal explainability tool for image classifiers.
+
+Given an input image and a classifier, ReX calculates a responsibility map across the data and identifies a minimal explanation.
+
+![ladybird](tests/test_data/ladybird.jpg "Original Image") ![responsibility map](assets/ladybird_rm.png "Responsibility Map") ![minimal explanation](assets/ladybird_301.png "Explanation")
+
+ReX is black-box, that is, agnostic to the internal structure of the classifier.
+We assume that we can modify the inputs and send them to the classifier, observing the output.
+ReX outperforms other tools on single explanations, non-contiguous explanations (for partially obscured images), and multiple explanations.
+
+For background information and detailed usage instructions, see our [documentation](https://rex-xai.readthedocs.io/en/latest/).
 
 <!--inclusion-marker-start-do-not-remove-->
 
