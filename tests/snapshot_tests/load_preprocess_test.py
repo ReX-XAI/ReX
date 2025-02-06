@@ -41,3 +41,12 @@ def test_preprocess_npy(args, DNA_model, cpu_device, snapshot, caplog):
     args.mode = "tabular"
     data = try_preprocess(args, model_shape, device=cpu_device)
     assert data == snapshot
+
+
+def test_preprocess_incompatible_shapes(args, model_shape, cpu_device, caplog):
+    args.path = "tests/test_data/DoublePeakClass 0 Mean.npy"
+    args.mode = "tabular"
+
+    try_preprocess(args, model_shape, device=cpu_device)
+
+    assert caplog.records[0].msg == "Incompatible 'mode' and 'model_shape', cannot get valid shape of Data object so returning None"
