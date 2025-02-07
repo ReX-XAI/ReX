@@ -1,6 +1,6 @@
 import pytest
-from rex_xai.config import validate_args, process_config_dict, CausalArgs
 from rex_xai._utils import ReXTomlError
+from rex_xai.config import CausalArgs, process_config_dict, validate_args
 
 
 def test_validate_args(args):
@@ -15,7 +15,10 @@ def test_process_config_dict_blend_invalid(caplog):
     process_config_dict(config_dict, args)
     with pytest.raises(ReXTomlError):
         validate_args(args)
-        assert caplog.records[0].message == "Invalid value '20': must be between 0.0 and 1.0"
+        assert (
+            caplog.records[0].message
+            == "Invalid value '20': must be between 0.0 and 1.0"
+        )
 
 
 def test_process_config_dict_permitted_overlap_invalid(caplog):
@@ -24,7 +27,10 @@ def test_process_config_dict_permitted_overlap_invalid(caplog):
     process_config_dict(config_dict, args)
     with pytest.raises(ReXTomlError):
         validate_args(args)
-        assert caplog.records[0].message == "Invalid value '-5': must be between 0.0 and 1.0"
+        assert (
+            caplog.records[0].message
+            == "Invalid value '-5': must be between 0.0 and 1.0"
+        )
 
 
 def test_process_config_dict_iters_invalid(caplog):
@@ -38,7 +44,7 @@ def test_process_config_dict_iters_invalid(caplog):
 
 def test_process_config_dict_raw_invalid(caplog):
     args = CausalArgs()
-    config_dict = {"rex": {"visual": {"raw": 100 }}}
+    config_dict = {"rex": {"visual": {"raw": 100}}}
     process_config_dict(config_dict, args)
     with pytest.raises(ReXTomlError):
         validate_args(args)
@@ -51,4 +57,7 @@ def test_process_config_dict_multi_style_invalid(caplog):
     process_config_dict(config_dict, args)
     with pytest.raises(ReXTomlError):
         validate_args(args)
-        assert caplog.records[0].message == "Invalid value 'an-invalid-style' for multi_style, must be 'composite' or 'separate'"
+        assert (
+            caplog.records[0].message
+            == "Invalid value 'an-invalid-style' for multi_style, must be 'composite' or 'separate'"
+        )

@@ -3,7 +3,6 @@ from rex_xai.explanation import (
     predict_target,
     try_preprocess,
 )
-from rex_xai.config import validate_args
 
 def test_preprocess_nii_notimplemented(args, model_shape, cpu_device, caplog):
     args.path = "tests/test_data/dog.nii"
