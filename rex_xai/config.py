@@ -422,33 +422,6 @@ def process_config_dict(config_file_args, args):
     if type(args.strategy) is str:
         args.strategy = match_strategy(args.strategy)
 
-    # values that must be between 0 and 1
-    for arg in ["blend", "permitted_overlap", "alpha", "confidence_filter", "spatial_radius_eta", "spotlight_eta", "binary_threshold"]:
-        val = getattr(args, arg)
-        if val is not None:
-            validate_numeric_arg_within_bounds(val, lower=0.0, upper=1.0)
-
-    # values that must be more than 0
-    for arg in ["iters", "min_box_size", "chunk_size", "spatial_initial_radius", "no_expansions", "spotlights", 
-                "spotlight_size", "spotlight_step", "max_spotlight_budget", "insertion_step"]:
-        val = getattr(args, arg)
-        if val is not None:
-            validate_numeric_arg_more_than(val, lower=0.0)
-    
-    # values that must be boolean
-    for arg in ["gpu", "info", "progress_bar", "raw", "resize", "grid", "mark_segments", "weighted", "concentrate", "normalise_curves"]:
-        val = getattr(args, arg)
-        if val is not None:
-            if not isinstance(val, bool):
-                raise ReXTomlError(f"Invalid value '{val}' for {arg}, must be boolean")
-
-    # custom treatment of specific values
-    validate_numeric_arg_within_bounds(args.colour, lower=0.0, upper=255.0)
-
-    if args.multi_style is not None:
-        if args.multi_style not in ["composite", "separate"]:
-            raise ReXTomlError(f"Invalid value '{args.multi_style}' for multi_style, must be 'composite' or 'separate'")
-
 
 def process_custom_script(script, args):
     name, _ = os.path.splitext(script)
@@ -541,7 +514,7 @@ def get_all_args():
 def validate_args(args: CausalArgs):
     """Validates a CausalArgs object.
 
-    Checks that ``args.path`` is not None.
+    Checks that ``args.path`` is not None, that boolean args are boolean, and that numeric args fall within correct bounds.
 
     Args:
         args: configuration values for ReX
@@ -549,3 +522,30 @@ def validate_args(args: CausalArgs):
 
     if args.path is None:
         raise FileNotFoundError("Input file path cannot be None")
+    
+    # values that must be between 0 and 1
+    for arg in ["blend", "permitted_overlap", "alpha", "confidence_filter", "spatial_radius_eta", "spotlight_eta", "binary_threshold"]:
+        val = getattr(args, arg)
+        if val is not None:
+            validate_numeric_arg_within_bounds(val, lower=0.0, upper=1.0)
+
+    # values that must be more than 0
+    for arg in ["iters", "min_box_size", "chunk_size", "spatial_initial_radius", "no_expansions", "spotlights", 
+                "spotlight_size", "spotlight_step", "max_spotlight_budget", "insertion_step"]:
+        val = getattr(args, arg)
+        if val is not None:
+            validate_numeric_arg_more_than(val, lower=0.0)
+    
+    # values that must be boolean
+    for arg in ["gpu", "info", "progress_bar", "raw", "resize", "grid", "mark_segments", "weighted", "concentrate", "normalise_curves"]:
+        val = getattr(args, arg)
+        if val is not None:
+            if not isinstance(val, bool):
+                raise ReXTomlError(f"Invalid value '{val}' for {arg}, must be boolean")
+
+    # custom treatment of specific values
+    validate_numeric_arg_within_bounds(args.colour, lower=0.0, upper=255.0)
+
+    if args.multi_style is not None:
+        if args.multi_style not in ["composite", "separate"]:
+            raise ReXTomlError(f"Invalid value '{args.multi_style}' for multi_style, must be 'composite' or 'separate'")
