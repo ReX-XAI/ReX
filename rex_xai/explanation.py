@@ -448,8 +448,6 @@ def explanation(
 
     """
 
-    validate_args(args)
-
     prediction_func, model_shape = get_prediction_func_from_args(args)
 
     if isinstance(model_shape[0], int) and model_shape[0] < args.batch_size:
