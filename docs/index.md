@@ -86,13 +86,13 @@ Rename this to `rex.toml` if you wish to use it.
 ### Explanation
 
 An explanation for a ladybird. This explanation was produced with 20 iterations, using the default masking colour (0). The minimal, sufficient explanation itself
-is pretty printed using the settings in `[rex.visual]` in `rex.toml`
+is pretty printed using the settings in `[rex.visual]` in `rex.toml`.
 
-![ladybird](tests/test_data/ladybird.jpg "Original Image") ![responsibility map](assets/ladybird_rm.png "Responsibility Map") ![minimal explanation](assets/ladybird_301.png "Explanation")
+![ladybird](../tests/test_data/ladybird.jpg "Original Image") ![responsibility map](../assets/ladybird_rm.png "Responsibility Map") ![minimal explanation](../assets/ladybird_301.png "Explanation")
 
 Setting `raw = true` in `rex.toml` produces the image which was actually classified by the model.
 
-![ladybird raw](assets/ladybird_301_raw.png)
+![ladybird raw](../assets/ladybird_301_raw.png)
 
 ### Multiple Explanations
 
@@ -100,16 +100,17 @@ Setting `raw = true` in `rex.toml` produces the image which was actually classif
 rex tests/test_data/peacock.jpg --model resnet50-v1-7.onnx --strategy multi --output peacock.png
 ```
 
-The number of explanations found depends on the model and some of the settings in `rex.toml`
-<img src="tests/test_data/peacock.jpg" alt="peacock" width="200"/> ![peacock 1](assets/peacock_84_00.png) ![peacock 2](assets/peacock_84_01.png) ![peacock 3](assets/peacock_84_02.png)
+The number of explanations found depends on the model and some of the settings in `rex.toml`.
+
+![peacock](../tests/test_data/peacock.jpg){w=200px} ![peacock 1](../assets/peacock_84_00.png) ![peacock 2](../assets/peacock_84_01.png) ![peacock 3](../assets/peacock_84_02.png)
 
 ### Occluded Images
 
-![occluded bus](tests/test_data/occluded_bus.jpg)
+![occluded bus](../tests/test_data/occluded_bus.jpg)
 
-![occluded_bus_rm](assets/occluded_bus_rm.png)
+![occluded_bus_rm](../assets/occluded_bus_rm.png)
 
-![bus_explanation](assets/bus_757.png)
+![bus_explanation](../assets/bus_757.png)
 
 ### Explanation Quality
 
@@ -125,9 +126,9 @@ INFO:ReX:area 0.000399, entropy difference 6.751189, insertion curve 0.964960, d
 rex tests/test_data/lizard.jpg --model resnet50-v1-7.onnx --predictions 5 --surface lizard_subs.png
 ```
 
-![lizard](tests/test_data/lizard.jpg)
+![lizard](../tests/test_data/lizard.jpg)
 
-![lizard_rm](assets/lizard_subs.png)
+![lizard_rm](../assets/lizard_subs.png)
 
 ```{toctree}
 :maxdepth: 2
