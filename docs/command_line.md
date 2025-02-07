@@ -53,16 +53,16 @@ options:
 ReX natively understands onnx files. Train or download a model (e.g. [Resnet50](https://github.com/onnx/models/blob/main/validated/vision/classification/resnet/model/resnet50-v1-7.onnx)) and, from this directory, run:
 
 ```bash
-rex imgs/dog.jpg --model resnet50-v1-7.onnx -vv --output dog_exp.jpg
+rex tests/test_data/dog.jpg --model resnet50-v1-7.onnx -vv --output dog_exp.jpg
 ```
 
 ### Pytorch
 
 ReX also works with PyTorch, but you will need to write some custom code to provide ReX with the prediction function and model shape, as well as preprocess the input data.
-See the sample script in `scripts/`.
+See the sample scripts in `tests/scripts/`.
 
 ```bash
-rex imgs/dog.jpg --script scripts/pytorch.py -vv --output dog_exp.jpg
+rex tests/test_data/dog.jpg --script tests/scripts/pytorch_resnet50.py -vv --output dog_exp.jpg
 ```
 
 ## Saving output in a database
@@ -125,4 +125,4 @@ If you have very specific requirements for preprocessing, you can write a standa
 rex <path_to_image> --model <path_to_model> --process_script <path_to_script.py>
 ```
 
-An example `preprocess` function is included in `scripts/pytorch.py`.
+An example `preprocess` function is included in `tests/scripts/pytorch_resnet50.py`.

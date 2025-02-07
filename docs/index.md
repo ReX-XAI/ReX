@@ -30,42 +30,49 @@ rex tests/test_data/dog.jpg --model resnet50-v1-7.onnx -vv --output dog_exp.jpg
 To view an interactive plot for the responsibility map, run::
 
 ```bash
-rex imgs/dog.jpg --model resnet50-v1-7.onnx -vv --surface
+rex tests/test_data/dog.jpg --model resnet50-v1-7.onnx -vv --surface
+```
+
+To save the extracted explanation to a file:
+
+```bash
+rex tests/test_data/dog.jpg --model resnet50-v1-7.onnx --output dog_exp.jpg
+```
+
+ReX also works with PyTorch, but you will need to write some custom code to provide ReX with the prediction function and model shape, as well as preprocess the input data.
+See the sample scripts in `tests/scripts/`.
+
+```bash
+rex tests/test_data/dog.jpg --script tests/scripts/pytorch_resnet50.py -vv --output dog_exp.jpg
 ```
 
 Other options:
 
 ```bash
-# with spatial search (the default)
-rex <path_to_image> --model <path_to_model>
-
-# with linear search
-rex <path_to_image> --model <path_to_model> --strategy linear
-
-# to save the extracted explanation
-rex <path_to_image> --model <path_to_model> --output <path_and_extension>
-
-# to view an interactive responsibility landscape
-rex <path_to_image> --model <path_to_model>  --surface
-
-# to save a responsibility landscape
-rex <path_to_image> --model <path_to_model>  --surface <path_and_extension>
+# with global search rather than the default spatial search
+rex <path_to_image> --model <path_to_model> --strategy global
 
 # to run multiple explanations
 rex <path_to_image> --model <path_to_model> --strategy multi
+
+# to view a responsibility landscape heatmap
+rex <path_to_image> --model <path_to_model>  --heatmap
+
+# to save a responsibility landscape surface plot
+rex <path_to_image> --model <path_to_model>  --surface <path_and_extension>
 ```
 
 ReX configuration is mainly handled via a config file; some options can also be set on the command line.
-ReX looks for the config file ``rex.toml`` in the current working directory and then ``$HOME/.config/rex.toml`` on unix-like systems.
+ReX looks for the config file `rex.toml` in the current working directory and then `$HOME/.config/rex.toml` on unix-like systems.
 
-If you want to use a custom location, use::
+If you want to use a custom location, use:
 
 ```bash
 rex <path_to_image> --model <path_to_model> --config <path_to_config>
 ```
 
-An example config file is included in the repo as ``example.rex.toml``.
-Rename this to ``rex.toml`` if you wish to use it.
+An example config file is included in the repo as `example.rex.toml`.
+Rename this to `rex.toml` if you wish to use it.
 
 ## Command line usage
 
@@ -81,7 +88,7 @@ Rename this to ``rex.toml`` if you wish to use it.
 An explanation for a ladybird. This explanation was produced with 20 iterations, using the default masking colour (0). The minimal, sufficient explanation itself
 is pretty printed using the settings in `[rex.visual]` in `rex.toml`
 
-![ladybird](imgs/ladybird.jpg "Original Image") ![responsibility map](assets/ladybird_rm.png "Responsibility Map") ![minimal explanation](assets/ladybird_301.png "Explanation")
+![ladybird](tests/test_data/ladybird.jpg "Original Image") ![responsibility map](assets/ladybird_rm.png "Responsibility Map") ![minimal explanation](assets/ladybird_301.png "Explanation")
 
 Setting `raw = true` in `rex.toml` produces the image which was actually classified by the model.
 
@@ -90,15 +97,15 @@ Setting `raw = true` in `rex.toml` produces the image which was actually classif
 ### Multiple Explanations
 
 ```bash
-rex imgs/peacock.jpg --model resnet50-v1-7.onnx --strategy multi --output peacock.png
+rex tests/test_data/peacock.jpg --model resnet50-v1-7.onnx --strategy multi --output peacock.png
 ```
 
 The number of explanations found depends on the model and some of the settings in `rex.toml`
-<img src="imgs/peacock.jpg" alt="peacock" width="200"/> ![peacock 1](assets/peacock_84_00.png) ![peacock 2](assets/peacock_84_01.png) ![peacock 3](assets/peacock_84_02.png)
+<img src="tests/test_data/peacock.jpg" alt="peacock" width="200"/> ![peacock 1](assets/peacock_84_00.png) ![peacock 2](assets/peacock_84_01.png) ![peacock 3](assets/peacock_84_02.png)
 
 ### Occluded Images
 
-![occluded bus](imgs/occluded_bus.jpg)
+![occluded bus](tests/test_data/occluded_bus.jpg)
 
 ![occluded_bus_rm](assets/occluded_bus_rm.png)
 
@@ -107,7 +114,7 @@ The number of explanations found depends on the model and some of the settings i
 ### Explanation Quality
 
 ```bash
-rex imgs/ladybird.jpg --script scripts/pytorch.py --analyse
+rex tests/test_data/ladybird.jpg --script tests/scripts/pytorch_resnet50.py --analyse
 
 INFO:ReX:area 0.000399, entropy difference 6.751189, insertion curve 0.964960, deletion curve 0.046096
 ```
@@ -115,13 +122,12 @@ INFO:ReX:area 0.000399, entropy difference 6.751189, insertion curve 0.964960, d
 ### Submaps
 
 ```bash
-rex imgs/lizard.jpg --model resnet50-v1-7.onnx --predictions 5 --surface lizard_subs.png
+rex tests/test_data/lizard.jpg --model resnet50-v1-7.onnx --predictions 5 --surface lizard_subs.png
 ```
 
-![lizard](imgs/lizard.jpg)
+![lizard](tests/test_data/lizard.jpg)
 
 ![lizard_rm](assets/lizard_subs.png)
-
 
 ```{toctree}
 :maxdepth: 2
