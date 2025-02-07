@@ -363,11 +363,11 @@ def apply_dict_to_args(source, args, allowed_values=None):
 
 def validate_numeric_arg_within_bounds(n, lower, upper):
     if n < lower or n > upper:
-        raise ReXTomlError(f"Invalid value for '{n}': must be between {lower} and {upper}")
+        raise ReXTomlError(f"Invalid value '{n}': must be between {lower} and {upper}")
     
 def validate_numeric_arg_more_than(n, lower):
     if not n > lower:
-        raise ReXTomlError(f"Invalid value for '{n}': must be more than {lower}")
+        raise ReXTomlError(f"Invalid value '{n}': must be more than {lower}")
     
 
 def process_config_dict(config_file_args, args):
@@ -422,18 +422,31 @@ def process_config_dict(config_file_args, args):
         args.strategy = match_strategy(args.strategy)
 
     # values that must be between 0 and 1
-    for val in ["blend", "permitted_overlap", "alpha", "confidence_filter", "spatial_radius_eta", "spotlight_eta", "binary_threshold"]:
-        arg = getattr(args, val)
-        if arg is not None:
-            validate_numeric_arg_within_bounds(arg, lower=0.0, upper=1.0)
+    for arg in ["blend", "permitted_overlap", "alpha", "confidence_filter", "spatial_radius_eta", "spotlight_eta", "binary_threshold"]:
+        val = getattr(args, arg)
+        if val is not None:
+            validate_numeric_arg_within_bounds(val, lower=0.0, upper=1.0)
 
     # values that must be more than 0
-    for val in ["iters", "min_box_size", "chunk_size", "spatial_initial_radius", "no_expansions", "spotlights", 
+    for arg in ["iters", "min_box_size", "chunk_size", "spatial_initial_radius", "no_expansions", "spotlights", 
                 "spotlight_size", "spotlight_step", "max_spotlight_budget", "insertion_step"]:
-        arg = getattr(args, val)
-        if arg is not None:
-            validate_numeric_arg_more_than(arg, lower=0.0)
+        val = getattr(args, arg)
+        if val is not None:
+            validate_numeric_arg_more_than(val, lower=0.0)
+    
+    # values that must be boolean
+    for arg in ["gpu", "info", "progress_bar", "raw", "resize", "grid", "mark_segments", "weighted", "concentrate", "normalise_curves"]:
+        val = getattr(args, arg)
+        if val is not None:
+            if not isinstance(val, bool):
+                raise ReXTomlError(f"Invalid value '{val}' for {arg}, must be boolean")
 
+    # custom treatment of specific values
+    validate_numeric_arg_within_bounds(args.colour, lower=0.0, upper=255.0)
+    
+    if args.multi_style is not None:
+        if args.multi_style not in ["composite", "separate"]:
+            raise ReXTomlError(f"Invalid value '{args.multi_style}' for multi_style, must be 'composite' or 'separate'")
 
 
 def process_custom_script(script, args):
