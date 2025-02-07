@@ -364,7 +364,8 @@ def apply_dict_to_args(source, args, allowed_values=None):
 def validate_numeric_arg_within_bounds(n, lower, upper):
     if n < lower or n > upper:
         raise ReXTomlError(f"Invalid value '{n}': must be between {lower} and {upper}")
-    
+
+
 def validate_numeric_arg_more_than(n, lower):
     if not n > lower:
         raise ReXTomlError(f"Invalid value '{n}': must be more than {lower}")
@@ -443,7 +444,7 @@ def process_config_dict(config_file_args, args):
 
     # custom treatment of specific values
     validate_numeric_arg_within_bounds(args.colour, lower=0.0, upper=255.0)
-    
+
     if args.multi_style is not None:
         if args.multi_style not in ["composite", "separate"]:
             raise ReXTomlError(f"Invalid value '{args.multi_style}' for multi_style, must be 'composite' or 'separate'")
@@ -535,3 +536,16 @@ def get_all_args():
         raise RuntimeError("either a <model>.onnx or a python file must be provided")
 
     return args
+
+
+def validate_args(args: CausalArgs):
+    """Validates a CausalArgs object.
+
+    Checks that ``args.path`` is not None.
+
+    Args:
+        args: configuration values for ReX
+    """
+
+    if args.path is None:
+        raise FileNotFoundError("Input file path cannot be None")
