@@ -9,7 +9,7 @@ import os
 from os.path import exists, expanduser
 import importlib.util
 import toml  # type: ignore
-
+import numpy as np
 
 from rex_xai.distributions import str2distribution
 from rex_xai.distributions import Distribution
@@ -361,9 +361,13 @@ def apply_dict_to_args(source, args, allowed_values=None):
                 logger.warning("Parameter '%s' not in CausalArgs attributes, skipping!", k)
 
 
-def validate_float_arg(float_arg, lower, upper):
-    if float_arg < lower or float_arg > upper:
-        raise ReXTomlError(f"Invalid value for '{float_arg}': must be between {lower} and {upper}")
+def validate_numeric_arg_within_bounds(n, lower, upper):
+    if n < lower or n > upper:
+        raise ReXTomlError(f"Invalid value for '{n}': must be between {lower} and {upper}")
+    
+def validate_numeric_arg_more_than(n, lower):
+    if not n > lower:
+        raise ReXTomlError(f"Invalid value for '{n}': must be more than {lower}")
     
 
 def process_config_dict(config_file_args, args):
@@ -417,8 +421,19 @@ def process_config_dict(config_file_args, args):
     if type(args.strategy) is str:
         args.strategy = match_strategy(args.strategy)
 
-    validate_float_arg(args.blend, 0.0, 1.0)
-    validate_float_arg(args.permitted_overlap, 0.0, 1.0)
+    # values that must be between 0 and 1
+    for val in ["blend", "permitted_overlap", "alpha", "confidence_filter", "spatial_radius_eta", "spotlight_eta", "binary_threshold"]:
+        arg = getattr(args, val)
+        if arg is not None:
+            validate_numeric_arg_within_bounds(arg, lower=0.0, upper=1.0)
+
+    # values that must be more than 0
+    for val in ["iters", "min_box_size", "chunk_size", "spatial_initial_radius", "no_expansions", "spotlights", 
+                "spotlight_size", "spotlight_step", "max_spotlight_budget", "insertion_step"]:
+        arg = getattr(args, val)
+        if arg is not None:
+            validate_numeric_arg_more_than(arg, lower=0.0)
+
 
 
 def process_custom_script(script, args):

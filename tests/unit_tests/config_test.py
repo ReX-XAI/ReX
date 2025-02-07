@@ -191,3 +191,11 @@ def test_process_config_dict_permitted_overlap_invalid():
 
     with pytest.raises(ReXTomlError):
         process_config_dict(config_dict, args)
+
+
+def test_process_config_dict_iters_invalid():
+    args = CausalArgs()
+    config_dict = {"causal": {"iters": 0}}
+
+    with pytest.raises(ReXTomlError):
+        process_config_dict(config_dict, args)
