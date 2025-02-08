@@ -43,6 +43,12 @@ def resnet50():
     )
     return resnet50_path
 
+@pytest.fixture(scope="session")
+def DNA_model():
+    DNA_model_path = cached_path(
+        "https://github.com/ReX-XAI/models/raw/6f66a5c0e1480411436be828ee8312e72f0035e1/spectral/simple_DNA_model.onnx"
+    )
+    return DNA_model_path
 
 @pytest.fixture
 def args():
