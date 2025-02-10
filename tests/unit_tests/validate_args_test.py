@@ -1,18 +1,17 @@
 import pytest
 from rex_xai._utils import ReXTomlError
-from rex_xai.config import CausalArgs, process_config_dict, validate_args
+from rex_xai.config import CausalArgs, validate_args
 
 
-def test_validate_args(args):
+def test_no_path(args):
     args.path = None  #  type: ignore
     with pytest.raises(FileNotFoundError):
         validate_args(args)
 
 
-def test_process_config_dict_blend_invalid(caplog):
+def test_blend_invalid(caplog):
     args = CausalArgs()
-    config_dict = {"causal": {"distribution": {"blend": 20}}}
-    process_config_dict(config_dict, args)
+    args.blend = 20
     with pytest.raises(ReXTomlError):
         validate_args(args)
         assert (
@@ -21,10 +20,9 @@ def test_process_config_dict_blend_invalid(caplog):
         )
 
 
-def test_process_config_dict_permitted_overlap_invalid(caplog):
+def test_permitted_overlap_invalid(caplog):
     args = CausalArgs()
-    config_dict = {"explanation": {"multi": {"permitted_overlap": -5}}}
-    process_config_dict(config_dict, args)
+    args.permitted_overlap = -5
     with pytest.raises(ReXTomlError):
         validate_args(args)
         assert (
@@ -33,28 +31,25 @@ def test_process_config_dict_permitted_overlap_invalid(caplog):
         )
 
 
-def test_process_config_dict_iters_invalid(caplog):
+def test_iters_invalid(caplog):
     args = CausalArgs()
-    config_dict = {"causal": {"iters": 0}}
-    process_config_dict(config_dict, args)
+    args.iters = 0
     with pytest.raises(ReXTomlError):
         validate_args(args)
         assert caplog.records[0].message == "Invalid value '0': must be more than 0.0"
 
 
-def test_process_config_dict_raw_invalid(caplog):
+def test_raw_invalid(caplog):
     args = CausalArgs()
-    config_dict = {"rex": {"visual": {"raw": 100}}}
-    process_config_dict(config_dict, args)
+    args.raw = 100  # type: ignore
     with pytest.raises(ReXTomlError):
         validate_args(args)
         assert caplog.records[0].message == "Invalid value '100': must be boolean"
 
 
-def test_process_config_dict_multi_style_invalid(caplog):
+def test_multi_style_invalid(caplog):
     args = CausalArgs()
-    config_dict = {"rex": {"visual": {"multi_style": "an-invalid-style"}}}
-    process_config_dict(config_dict, args)
+    args.multi_style = "an-invalid-style"
     with pytest.raises(ReXTomlError):
         validate_args(args)
         assert (
@@ -63,10 +58,9 @@ def test_process_config_dict_multi_style_invalid(caplog):
         )
 
 
-def test_process_config_dict_queue_len_invalid(caplog):
+def test_queue_len_invalid(caplog):
     args = CausalArgs()
-    config_dict = {"causal": {"queue_len": 7.5}}
-    process_config_dict(config_dict, args)
+    args.queue_len = 7.5  # type: ignore
     with pytest.raises(ReXTomlError):
         validate_args(args)
         assert (
@@ -75,19 +69,14 @@ def test_process_config_dict_queue_len_invalid(caplog):
         )
 
 
-def test_process_config_dict_distribution_args_invalid(caplog):
+def test_distribution_args_invalid(caplog):
     args = CausalArgs()
-    config_dict = {"distribution": {"distribution_args": 1}}
-    process_config_dict(config_dict, args)
+    args.distribution_args = 1  # type: ignore
     with pytest.raises(ReXTomlError):
         validate_args(args)
-        assert (
-            caplog.records[0].message
-            == "distribution args must be length 2, not 1"
-        )
+        assert caplog.records[0].message == "distribution args must be length 2, not 1"
 
-    config_dict = {"distribution": {"distribution_args": [0, -1]}}
-    process_config_dict(config_dict, args)
+    args.distribution_args = [0, -1]
     with pytest.raises(ReXTomlError):
         validate_args(args)
         assert (
@@ -95,10 +84,10 @@ def test_process_config_dict_distribution_args_invalid(caplog):
             == "All values in distribution args must be more than zero"
         )
 
-def test_process_config_dict_colour_map_invalid(caplog):
+
+def test_colour_map_invalid(caplog):
     args = CausalArgs()
-    config_dict = {"rex": {"visual": {"heatmap_colours": "RedBlue"}}}
-    process_config_dict(config_dict, args)
+    args.heatmap_colours = "RedBlue"
     with pytest.raises(ReXTomlError):
         validate_args(args)
         assert (
