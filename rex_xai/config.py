@@ -615,3 +615,18 @@ def validate_args(args: CausalArgs):
             raise ReXTomlError(
                 f"Invalid value '{args.multi_style}' for multi_style, must be 'composite' or 'separate'"
             )
+
+    validate_numeric_arg_more_than(args.queue_len, lower=0.0)
+    if not isinstance(args.queue_len, int):
+        if args.queue_len != "all":
+            raise ReXTomlError(
+                f"Invalid value '{args.queue_len}' for queue_len, must be 'all' or an integer"
+            )
+
+    if args.distribution_args is not None:
+        if len(args.distribution_args) != 2:
+            raise ReXTomlError(
+                f"distribution args must be length 2, not {len(args.distribution_args)}"
+            )
+        if not all([x > 0 for x in args.distribution_args]):
+            raise ReXTomlError("All values in distribution args must be more than zero")

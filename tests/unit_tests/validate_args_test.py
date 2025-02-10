@@ -61,3 +61,37 @@ def test_process_config_dict_multi_style_invalid(caplog):
             caplog.records[0].message
             == "Invalid value 'an-invalid-style' for multi_style, must be 'composite' or 'separate'"
         )
+
+
+def test_process_config_dict_queue_len_invalid(caplog):
+    args = CausalArgs()
+    config_dict = {"causal": {"queue_len": 7.5}}
+    process_config_dict(config_dict, args)
+    with pytest.raises(ReXTomlError):
+        validate_args(args)
+        assert (
+            caplog.records[0].message
+            == "Invalid value '7.5' for queue_len, must be 'all' or an integer"
+        )
+
+
+def test_process_config_dict_distribution_args_invalid(caplog):
+    args = CausalArgs()
+    config_dict = {"distribution": {"distribution_args": 1}}
+    process_config_dict(config_dict, args)
+    with pytest.raises(ReXTomlError):
+        validate_args(args)
+        assert (
+            caplog.records[0].message
+            == "distribution args must be length 2, not 1"
+        )
+
+    config_dict = {"distribution": {"distribution_args": [0, -1]}}
+    process_config_dict(config_dict, args)
+    with pytest.raises(ReXTomlError):
+        validate_args(args)
+        assert (
+            caplog.records[0].message
+            == "All values in distribution args must be more than zero"
+        )
+
