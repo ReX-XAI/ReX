@@ -625,7 +625,9 @@ def validate_args(args: CausalArgs):
             )
 
     if args.distribution_args is not None:
-        if len(args.distribution_args) != 2:
+        if not isinstance(args.distribution_args, list):
+            raise ReXTomlError(f"distribution args must be a list, not '{type(args.distribution_args)}'")
+        elif len(args.distribution_args) != 2:
             raise ReXTomlError(
                 f"distribution args must be length 2, not {len(args.distribution_args)}"
             )
