@@ -631,6 +631,8 @@ def validate_args(args: CausalArgs):
             )
         if not all([x > 0 for x in args.distribution_args]):
             raise ReXTomlError("All values in distribution args must be more than zero")
-        
+
     if args.heatmap_colours not in list(mpl.colormaps):
-        raise ReXTomlError(f"Invalid colourmap '{args.heatmap_colours}', must be a valid matplotlib colourmap")
+        raise ReXTomlError(
+            f"Invalid colourmap '{args.heatmap_colours}', must be a valid matplotlib colourmap"
+        )
