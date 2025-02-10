@@ -43,12 +43,11 @@ def test_save_image_3d(data_3d):
     os.remove(args.output)
 
 
-def test_voxel_plot(data_3d):
-    resp_map = tt.zeros((64, 64, 64), dtype=tt.float32)
-    resp_map[0:10, 20:25, 20:35] = 1
+def test_voxel_plot(data_3d, resp_map_3d):
     args = CausalArgs()
+    print(data_3d)
     # Create a cube in data
-    voxel_plot(args, resp_map, data_3d, path="test.png")
+    voxel_plot(args, resp_map_3d, data_3d, path="test.png")
     assert os.path.exists("test.png")
     assert os.path.getsize("test.png") > 0
     os.remove("test.png")

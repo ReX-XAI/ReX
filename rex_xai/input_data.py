@@ -55,6 +55,8 @@ class Data:
             if self.mode in ("tabular", "spectral"):
                 self.data = self.input
                 self.match_data_to_model_shape()
+            if self.mode == "voxel":
+                self.data = self.input
             else:
                 self.data = None
             self.transposed = False

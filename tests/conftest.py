@@ -1,4 +1,5 @@
 import numpy as np
+import torch as tt
 import pytest
 from cached_path import cached_path
 from rex_xai._utils import get_device
@@ -212,4 +213,6 @@ def resp_map_2d():
 
 @pytest.fixture
 def resp_map_3d():
-    return np.zeros((64, 64, 64), dtype="float32")
+    resp_map = tt.zeros((64, 64, 64), dtype=tt.float32)
+    resp_map[0:10, 20:25, 20:35] = 1
+    return resp_map
