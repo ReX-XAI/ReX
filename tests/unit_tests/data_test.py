@@ -20,6 +20,10 @@ def test_set_mask_value(args_custom, model_shape, cpu_device, caplog):
 
     assert (
         caplog.records[0].msg
+        == "Incompatible 'mode' and 'model_shape', cannot get valid shape of Data object so returning None"
+    )
+    assert (
+        caplog.records[1].msg
         == "Mask value 'spectral' can only be used if mode is also 'spectral', using default mask value 0 instead"
     )
     assert data.mask_value == 0

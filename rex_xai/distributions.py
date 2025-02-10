@@ -4,6 +4,7 @@ from typing import Optional, Tuple
 from enum import Enum
 import numpy as np
 from scipy.stats import binom, betabinom
+from rex_xai.logger import logger
 
 Distribution = Enum("Distribution", ["Binomial", "Uniform", "BetaBinomial", "Adaptive"])
 
@@ -52,12 +53,14 @@ def str2distribution(d: str) -> Distribution:
     """converts string into Distribution enum"""
     if d == "binom":
         return Distribution.Binomial
-    if d == "uniform":
+    elif d == "uniform":
         return Distribution.Uniform
-    if d == "betabinom":
+    elif d == "betabinom":
         return Distribution.BetaBinomial
-    if d == "adaptive":
+    elif d == "adaptive":
         return Distribution.Adaptive
+    else:
+        logger.warning("Invalid distribution '%s', reverting to default value Distribution.Uniform", d)
     return Distribution.Uniform
 
 

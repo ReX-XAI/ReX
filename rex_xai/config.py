@@ -46,7 +46,7 @@ class Args:
         # verbosity
         self.verbosity = 0
         # whether to show progress bar or not
-        self.progress = True
+        self.progress_bar = True
         # save explanation to output
         self.output = None
         self.surface: Optional[str] = None
@@ -64,10 +64,10 @@ class Args:
         # explanation production strategy
         self.strategy: Strategy = Strategy.Spatial
         self.chunk_size = 25
-        self.batch: int = 1
+        self.batch_size: int = 1
         # args for spatial strategy
-        self.spatial_radius: int = 25
-        self.spatial_eta: float = 0.2
+        self.spatial_initial_radius: int = 25
+        self.spatial_radius_eta: float = 0.2
         self.no_expansions = 4
         # spotlight args
         self.spotlights: int = 10
@@ -87,14 +87,14 @@ class Args:
             f"Args <file: {self.path}, model: {self.model}, "
             + f"gpu: {self.gpu}, "
             + f"mode: {self.mode}, "
-            + f"progress_bar: {self.progress}, "
+            + f"progress_bar: {self.progress_bar}, "
             + f"output_file: {self.output}, surface_plot: {self.surface}, "
             + f"heatmap_plot: {self.heatmap}, "
             + f"means: {self.means}, stds: {self.stds}, norm: {self.norm} "
             + f"explanation_strategy: {self.strategy}, "
             + f"chunk size: {self.chunk_size}, "
-            + f"spatial_radius: {self.spatial_radius}, "
-            + f"spatial_eta: {self.spatial_eta}, seed: {self.seed}, "
+            + f"spatial_radius: {self.spatial_initial_radius}, "
+            + f"spatial_eta: {self.spatial_radius_eta}, seed: {self.seed}, "
             + f"db: {self.db}, "
             + f"custom: {self.custom}, verbosity: {self.verbosity}, "
             + f"spotlights: {self.spotlights}, spotlight_size: {self.spotlight_size}, "
@@ -278,16 +278,18 @@ def cmdargs():
     return args
 
 
-def match_strategy(cmd_args):
+def match_strategy(strategy_string):
     """gets explanation extraction strategy"""
-    if cmd_args.strategy == "multi":
+    if strategy_string == "multi" or strategy_string == "spotlight":
         return Strategy.MultiSpotlight
-    if cmd_args.strategy == "linear" or cmd_args.strategy == "global":
+    elif strategy_string == "linear" or strategy_string == "global":
         return Strategy.Global
-    if cmd_args.strategy == "spatial":
+    elif strategy_string == "spatial":
         return Strategy.Spatial
-    if cmd_args.strategy == "contrastive":
+    elif strategy_string == "contrastive":
         return Strategy.Contrastive
+    else:
+         logger.warning("Invalid strategy '%s', reverting to default value Strategy.Spatial", strategy_string)
     return Strategy.Spatial
 
 
@@ -295,11 +297,15 @@ def match_queue_style(qs: str) -> Queue:
     qs = qs.lower()
     if qs == "all":
         return Queue.All
-    if qs == "area":
+    elif qs == "area":
         return Queue.Area
-    if qs == "dc":
+    elif qs == "dc":
         return Queue.DC
-    return Queue.Intersection
+    elif qs == "intersection":
+        return Queue.Intersection
+    else:
+         logger.warning("Invalid queue style '%s', reverting to default value Queue.Area", qs)
+    return Queue.Area
 
 
 def shared_args(cmd_args, args: CausalArgs):
@@ -345,134 +351,77 @@ def find_config_path():
     return config_path
 
 
-def process_config_dict(config_file_args, args):
-    causal_dict = config_file_args["causal"]
-    if "tree_depth" in causal_dict:
-        args.tree_depth = causal_dict["tree_depth"]
-    if "search_limit" in causal_dict:
-        args.search_limit = causal_dict["search_limit"]
-    if "weighted" in causal_dict:
-        args.weighted = causal_dict["weighted"]
-    if "queue_len" in causal_dict:
-        ql = causal_dict["queue_len"]
-        if ql != "all":
-            args.queue_len = causal_dict["queue_len"]
-    if "queue_style" in causal_dict:
-        args.queue_style = match_queue_style(causal_dict["queue_style"])
-    if "iters" in causal_dict:
-        args.iters = causal_dict["iters"]
-    if "min_box_size" in causal_dict:
-        args.min_box_size = causal_dict["min_box_size"]
-        args.chunk_size = args.min_box_size
-    if "confidence_filter" in causal_dict:
-        args.confidence_filter = causal_dict["confidence_filter"]
-    if "segmentation" in causal_dict:
-        args.segmentation = causal_dict["segmentation"]
-    if "concentrate" in causal_dict:
-        args.concentrate = causal_dict["concentrate"]
-
-    dist = causal_dict["distribution"]
-    d = dist["distribution"]
-    args.distribution = str2distribution(d)
-    if "dist_args" in dist:
-        args.distribution_args = dist["dist_args"]
-    if "blend" in dist:
-        b = dist["blend"]
-        if b < 0.0 or b > 1.0:
-            logger.error("impossible blend value")
-            raise ValueError
-        args.blend = dist["blend"]
-    if args.distribution == Distribution.Uniform:
-        args.distribution_args = None
-
-    rex_dict = config_file_args["rex"]
-    if "mask_value" in rex_dict:
-        args.mask_value = rex_dict["mask_value"]
-    if "seed" in rex_dict:
-        args.seed = rex_dict["seed"]
-    if "gpu" in rex_dict:
-        args.gpu = rex_dict["gpu"]
-    if "batch_size" in rex_dict:
-        args.batch = rex_dict["batch_size"]
-
-    if "onnx" in rex_dict:
-        onnx = rex_dict["onnx"]
-        if "means" in onnx:
-            args.means = onnx["means"]
-        if "stds" in onnx:
-            args.stds = onnx["stds"]
-        if "binary_threshold" in onnx:
-            args.binary_threshold = onnx["binary_threshold"]
-        if "norm" in onnx:
-            args.norm = onnx["norm"]
-
-    if "visual" in rex_dict:
-        if "info" in rex_dict["visual"]:
-            args.info = rex_dict["visual"]["info"]
-        if "colour" in rex_dict["visual"]:
-            args.colour = rex_dict["visual"]["colour"]
-        if "color" in rex_dict["visual"]:
-            args.colour = rex_dict["visual"]["color"]
-        if "alpha" in rex_dict["visual"]:
-            args.alpha = rex_dict["visual"]["alpha"]
-        if "raw" in rex_dict["visual"]:
-            args.raw = rex_dict["visual"]["raw"]
-        if "resize" in rex_dict["visual"]:
-            args.resize = rex_dict["visual"]["resize"]
-        if "progress_bar" in rex_dict["visual"]:
-            args.progress = rex_dict["visual"]["progress_bar"]
-        if "grid" in rex_dict["visual"]:
-            args.grid = rex_dict["visual"]["grid"]
-        if "mark_segments" in rex_dict["visual"]:
-            args.mark_segments = rex_dict["visual"]["mark_segments"]
-        if "heatmap" in rex_dict["visual"]:
-            args.heatmap_colours = rex_dict["visual"]["heatmap"]
-        if "multi_style" in rex_dict["visual"]:
-            args.multi_style = rex_dict["visual"]["multi_style"]
-
-    explain_dict = config_file_args["explanation"]
-    if "chunk" in explain_dict:
-        args.chunk_size = explain_dict["chunk"]
-
-    # spatial args
-    spatial_dict = explain_dict["spatial"]
-    if "initial_radius" in spatial_dict:
-        args.spatial_radius = spatial_dict["initial_radius"]
-    if "radius_eta" in spatial_dict:
-        args.spatial_eta = spatial_dict["radius_eta"]
-    if "no_expansions" in spatial_dict:
-        args.no_expansions = spatial_dict["no_expansions"]
-
-    multi_dict = explain_dict["multi"]
-    if "spotlights" in multi_dict:
-        args.spotlights = multi_dict["spotlights"]
-    if "spotlight_size" in multi_dict:
-        args.spotlight_size = multi_dict["spotlight_size"]
-    if "spotlight_eta" in multi_dict:
-        args.spotlight_eta = multi_dict["spotlight_eta"]
-    if "spotlight_step" in multi_dict:
-        args.spotlight_step = multi_dict["spotlight_step"]
-    if "max_spotlight_budget" in multi_dict:
-        args.max_spotlight_budget = multi_dict["max_spotlight_budget"]
-    if "objective_function" in multi_dict:
-        args.spotlight_objective_function = multi_dict["objective_function"]
-    if "permitted_overlap" in multi_dict:
-        po = multi_dict["permitted_overlap"]
-        if isinstance(po, float):
-            if po > 1.0 or po < 0.0:
-                raise ReXTomlError(
-                    f"expected a value between 0.0 and 1.0, but got {po}"
-                )
+def apply_dict_to_args(source, args, allowed_values=None):
+    for k, v in source.items():
+        if type(v) is not dict:
+            if allowed_values is not None:
+                if k not in allowed_values:
+                    logger.warning("Invalid or misplaced parameter '%s', skipping!", k)
+                    continue
+            if hasattr(args, k):
+                setattr(args, k, v)
             else:
-                args.permitted_overlap = po
-        else:
-            raise ReXTomlError(f"expected float but got {type(po)}")
+                logger.warning("Parameter '%s' not in CausalArgs attributes, skipping!", k)
 
-    eval_dict = explain_dict["evaluation"]
-    if "insertion_step" in eval_dict:
-        args.insertion_step = eval_dict["insertion_step"]
-    if "normalise_curves" in eval_dict:
-        args.normalise_curves = eval_dict["normalise_curves"]
+
+def validate_float_arg(float_arg, lower, upper):
+    if float_arg < lower or float_arg > upper:
+        raise ReXTomlError(f"Invalid value for '{float_arg}': must be between {lower} and {upper}")
+    
+
+def process_config_dict(config_file_args, args):
+
+    expected_values = {
+        "rex": ["mask_value", "seed", "gpu", "batch_size"],
+        "onnx": ["means", "stds", "binary_threshold", "norm"],
+        "visual": ["info", "colour", "alpha", "raw", "resize", "progress_bar", 
+                   "grid", "mark_segments", "heatmap_colours", "multi_style"],
+        "causal": ["tree_depth", "search_limit", "iters", "min_box_size", 
+                   "confidence_filter", "weighted", "queue_style", "queue_len", 
+                   "concentrate"],
+        "distribution": ["distribution", "blend", "distribution_args"],
+        "explanation": ["chunk_size"],
+        "spatial": ["spatial_initial_radius", "spatial_radius_eta", "no_expansions"],
+        "multi": ["strategy", "spotlights", "spotlight_size", "spotlight_eta", 
+                  "spotlight_step", "max_spotlight_budget", 
+                  "spotlight_objective_function", "permitted_overlap"],
+        "evaluation": ["insertion_step", "normalise_curves"]
+    }
+
+    if "causal" in config_file_args.keys():
+        causal_dict = config_file_args["causal"]
+        apply_dict_to_args(causal_dict, args, expected_values["causal"])
+        if "distribution" in causal_dict.keys():
+            apply_dict_to_args(causal_dict["distribution"], args, expected_values["distribution"])
+
+    if "rex" in config_file_args.keys():
+        rex_dict = config_file_args["rex"]
+        apply_dict_to_args(rex_dict, args, expected_values["rex"])
+        for subdict_name in ["visual", "onnx"]:
+            if subdict_name in rex_dict.keys():
+                apply_dict_to_args(rex_dict[subdict_name], args, expected_values[subdict_name])
+                
+
+    if "explanation" in config_file_args.keys():
+        explain_dict = config_file_args["explanation"]
+        apply_dict_to_args(explain_dict, args, expected_values["explanation"])
+        for subdict_name in ["spatial", "multi", "evaluation"]:
+            if subdict_name in explain_dict.keys():
+                apply_dict_to_args(explain_dict[subdict_name], args, expected_values[subdict_name])
+
+    if type(args.distribution) is str:
+        args.distribution = str2distribution(args.distribution)
+        if args.distribution == Distribution.Uniform:
+            args.distribution_args = None
+    
+    if type(args.queue_style) is str:
+        args.queue_style = match_queue_style(args.queue_style)
+    
+    if type(args.strategy) is str:
+        args.strategy = match_strategy(args.strategy)
+
+    validate_float_arg(args.blend, 0.0, 1.0)
+    validate_float_arg(args.permitted_overlap, 0.0, 1.0)
 
 
 def process_custom_script(script, args):
@@ -498,7 +447,7 @@ def process_cmd_args(cmd_args, args):
 
     args.path = cmd_args.filename
 
-    args.strategy = match_strategy(cmd_args)
+    args.strategy = match_strategy(cmd_args.strategy)
 
     if cmd_args.iters is not None:
         args.iters = cmd_args.iters
