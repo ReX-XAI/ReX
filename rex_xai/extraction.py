@@ -249,10 +249,11 @@ class Explanation:
                 path=path,
             )
         elif self.data.mode == "voxel":
+            logger.warning("Surface plot not available for voxel data using voxel plot instead")
             visualisation.voxel_plot(
                 self.args,
                 self.target_map,
-                self.data.target,  #  type: ignore
+                self.data,
                 path=path,
             )
         else:

@@ -51,7 +51,7 @@ class BoxInternal:
                 f"Box < name: {self.name}, row_start: {self.row_start}, "
                 + f"row_stop: {self.row_stop}, col_start: {self.col_start}, "
                 + f"col_stop: {self.col_stop}, depth_start: {self.depth_start}, "
-                + f"depth_stop: {self.depth_stop}, area: {self.area()}"
+                + f"depth_stop: {self.depth_stop}, volume: {self.area()}"
             )
         else:
             return (
@@ -382,6 +382,7 @@ class BoxInternal:
         if mode == "RGB" or mode == "L":
             return self.__2d_parts(map=map)
 
+        # we have a 3 dimension data
         if mode == "voxel":
             return self.__3d_parts(map=map)
 

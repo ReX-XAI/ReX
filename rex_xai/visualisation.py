@@ -322,7 +322,7 @@ def remove_background(data: Data, resp_map: np.ndarray) -> np.ndarray:
         )
         resp_map[background] = np.min(resp_map)
     elif data.background is not None:
-        logger.debug(
+        logger.warn(
             "Background is not set correctly, please check the value. "
             "Background value must be an int, float or tuple defining the range of values for the background."
         )
@@ -593,7 +593,7 @@ def save_image(explanation, data: Data, args: CausalArgs, path=None):
                 data_slice = np.take(data_m, slice_index, axis=axis)
                 resp_slice = np.take(explanation, slice_index, axis=axis)
                 ax.imshow(data_slice, cmap="gray")
-                ax.imshow(resp_slice, cmap="coolwarm", alpha=0.4)
+                ax.imshow(resp_slice, cmap=args.heatmap_colours, alpha=0.4)
                 ax.axis("off")
 
         plt.tight_layout()

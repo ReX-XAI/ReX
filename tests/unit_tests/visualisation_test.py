@@ -1,11 +1,9 @@
 import os
 
-import numpy as np
 import torch as tt
 from rex_xai.visualisation import save_image, voxel_plot
 
 from rex_xai.config import CausalArgs
-from rex_xai.input_data import Data
 
 
 def test_surface(exp_extracted, tmp_path):
@@ -31,17 +29,7 @@ def test_save_exp(exp_extracted, tmp_path):
     assert os.path.exists(p)
     assert os.stat(p).st_size > 0
 
-
-# 3D Data for 3D visualisation tests:
-voxel = np.zeros((1, 64, 64, 64), dtype=np.float32)
-voxel[0:30, 20:30, 20:35] = 1
-
-data_3d = Data(input=voxel, model_shape=[1, 64, 64, 64], device="cpu")
-data_3d.mode = "voxel"
-data_3d.data = voxel
-
-
-def test_save_image_3d():
+def test_save_image_3d(data_3d):
     # Explanation mask for the voxel data - random values of 0s and 1s
     explanation = tt.zeros((1, 64, 64, 64), dtype=tt.bool, device="cpu")
     explanation[0, 32:64, 32:64, 32:64] = 1
@@ -55,7 +43,7 @@ def test_save_image_3d():
     os.remove(args.output)
 
 
-def test_voxel_plot():
+def test_voxel_plot(data_3d):
     resp_map = tt.zeros((64, 64, 64), dtype=tt.float32)
     resp_map[0:10, 20:25, 20:35] = 1
     args = CausalArgs()
