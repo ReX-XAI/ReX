@@ -4,6 +4,7 @@ from cached_path import cached_path
 from rex_xai._utils import get_device
 from rex_xai.box import initialise_tree
 from rex_xai.config import CausalArgs, process_custom_script, Strategy
+from rex_xai.distributions import Distribution
 from rex_xai.explanation import (
     calculate_responsibility,
     get_prediction_func_from_args,
@@ -184,7 +185,7 @@ def box_3d():
         r_start=0,
         c_start=0,
         d_start=0,
-        distribution="uniform",
+        distribution=Distribution.Uniform,
         distribution_args=None,
     )
 
@@ -195,7 +196,7 @@ def box_2d():
         c_lim=64,
         r_start=0,
         c_start=0,
-        distribution="uniform",
+        distribution=Distribution.Uniform,
         distribution_args=None,
     )
 

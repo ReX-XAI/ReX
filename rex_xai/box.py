@@ -246,9 +246,10 @@ class BoxInternal:
         }
         range1 = ranges[selected_axes[0]]
         range2 = ranges[selected_axes[1]]
-
+        print(range1, range2)
         # Get the random coordinates for the two axes
         space = range1[1] - range1[0]
+        print(space)
         c1 = random_coords(
             self.distribution,
             space,
@@ -266,7 +267,7 @@ class BoxInternal:
             self.distribution_args,
             map=map,
         )
-
+        print(c1, c2)
         # If any of the coordinates are None, return None
         if c1 == -1 or c2 == -1:
             return None
@@ -301,7 +302,6 @@ class BoxInternal:
                 distribution_args=self.distribution_args,
                 name=self.name,
             )
-            b0.update_name(":0")
             b1 = Box(
                 c1,
                 box.row_stop,
@@ -313,7 +313,6 @@ class BoxInternal:
                 distribution_args=self.distribution_args,
                 name=self.name,
             )
-            b1.update_name(":1")
             return [b0, b1]
         if axes == Axes.COL:
             b0 = Box(
@@ -327,7 +326,6 @@ class BoxInternal:
                 distribution_args=self.distribution_args,
                 name=self.name,
             )
-            b0.update_name(":0")
             b1 = Box(
                 box.row_start,
                 box.row_stop,
@@ -339,7 +337,6 @@ class BoxInternal:
                 distribution_args=self.distribution_args,
                 name=self.name,
             )
-            b1.update_name(":1")
             return [b0, b1]
         if axes == Axes.DEPTH:
             b0 = Box(
@@ -353,7 +350,6 @@ class BoxInternal:
                 distribution_args=self.distribution_args,
                 name=self.name,
             )
-            b0.update_name(":0")
             b1 = Box(
                 box.row_start,
                 box.row_stop,
@@ -365,7 +361,6 @@ class BoxInternal:
                 distribution_args=self.distribution_args,
                 name=self.name,
             )
-            b1.update_name(":1")
             return [b0, b1]
 
     def spawn_children(self, min_size, mode, map=None) -> List[Box] | Tuple | None:

@@ -18,7 +18,7 @@ def test_initialise_tree_3d(box_3d):
 
     assert (
             box_3d.__repr__()
-            == "Box < name: R, row_start: 0, row_stop: 64, col_start: 0, col_stop: 64, depth_start: 0, depth_stop: 64, area: 262144"
+            == "Box < name: R, row_start: 0, row_stop: 64, col_start: 0, col_stop: 64, depth_start: 0, depth_stop: 64, volume: 262144"
     )
 
     assert box_3d.shape() == (64, 64, 64)
@@ -46,7 +46,7 @@ def test_initialise_tree_2d(box_2d):
     )  # TODO: Box_dimensions has the same functionality as corners, should we remove one of them.
 
 def test_spawn_children_3d(box_3d, resp_map_3d):
-    children_3d = box_3d.spawn_children(min_size=20, mode="voxel", map=map_3d)
+    children_3d = box_3d.spawn_children(min_size=20, mode="voxel", map=resp_map_3d)
     assert len(children_3d) == 4
     assert children_3d[0].area() < 262144
 
@@ -58,9 +58,12 @@ def test_spawn_children_3d(box_3d, resp_map_3d):
     )
     assert total_area_3d == 262144
 
+    for i in range(4):
+        assert children_3d[i].name == f"R:{i}"
+
 
 def test_spawn_children_2d(box_2d, resp_map_2d):
-    children_2d = box_2d.spawn_children(min_size=2, mode="RGB", map=maps_2d)
+    children_2d = box_2d.spawn_children(min_size=2, mode="RGB", map=resp_map_2d)
     assert len(children_2d) == 4
     assert children_2d[0].area() < 4096
 
@@ -71,3 +74,6 @@ def test_spawn_children_2d(box_2d, resp_map_2d):
         + children_2d[3].area()
     )
     assert total_area_2d == 4096
+
+    for i in range(4):
+        assert children_2d[i].name == f"R:{i}"
