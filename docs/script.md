@@ -9,9 +9,18 @@ rex imgs/dog.jpg --script scripts/pytorch.py -vv --output dog_exp.jpg
 
 ### Contents of the python script
 There are three main components to the script:
-- A preprocess function -> preprocess(path, shape, device, mode) -> Data
-- A function that calls the model -> prediction_function(mutants, target=None, raw=False, binary_threshold=None):
-- Model shape function -> model_shape() -> Tuple  
+- A preprocess function which takes in the following parameters and returns a Data object:
+  - path: The path to the image
+  - shape: The shape of the model input
+  - device: The device the data is on e.g. "cuda"
+  - mode: The mode of the data e.g. "RGB", "L", "voxel"
+- A function that calls the model called prediction_function that takes in the following parameters and returns a list of Prediction objects:
+  - mutants: Mutants created by ReX to run inference on
+  - target: The target class , default None
+  - raw: Whether to return the raw output (e.g. the probability of the classification) or not, default False
+  - binary_threshold: The threshold for binary classification e.g. 0.5 , default None
+- Model shape function that returns the shape of the model input
+- Any other helper functions that are needed for the above functions
 
 #### Preprocessing function
 
