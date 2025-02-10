@@ -1,6 +1,8 @@
+import numpy as np
 import pytest
 from cached_path import cached_path
 from rex_xai._utils import get_device
+from rex_xai.box import initialise_tree
 from rex_xai.config import CausalArgs, process_custom_script, Strategy
 from rex_xai.explanation import (
     calculate_responsibility,
@@ -12,6 +14,8 @@ from rex_xai.explanation import (
 from syrupy.extensions.amber.serializer import AmberDataSerializer
 from syrupy.filters import props
 from syrupy.matchers import path_type
+
+from rex_xai.input_data import Data
 
 
 @pytest.fixture
@@ -151,3 +155,54 @@ def exp_extracted(exp_custom):
     exp_custom.extract(Strategy.Global)
 
     return exp_custom
+
+@pytest.fixture
+def data_3d():
+    voxel = np.zeros((1, 64, 64, 64), dtype=np.float32)
+    voxel[0:30, 20:30, 20:35] = 1
+    return Data(
+        input=voxel,
+        model_shape=[1, 64, 64, 64],
+        device="cpu",
+        mode="voxel"
+    )
+
+@pytest.fixture
+def data_2d():
+    return Data(
+        input=np.arange(1, 64, 64),
+        model_shape=[1, 64, 64],
+        device="cpu"
+    )
+
+@pytest.fixture
+def box_3d():
+    return initialise_tree(
+        r_lim=64,
+        c_lim=64,
+        d_lim=64,
+        r_start=0,
+        c_start=0,
+        d_start=0,
+        distribution="uniform",
+        distribution_args=None,
+    )
+
+@pytest.fixture
+def box_2d():
+    return initialise_tree(
+        r_lim=64,
+        c_lim=64,
+        r_start=0,
+        c_start=0,
+        distribution="uniform",
+        distribution_args=None,
+    )
+
+@pytest.fixture
+def resp_map_2d():
+    return np.zeros((64, 64), dtype="float32")
+
+@pytest.fixture
+def resp_map_3d():
+    return np.zeros((64, 64, 64), dtype="float32")
