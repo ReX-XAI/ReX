@@ -9,6 +9,7 @@ from os.path import exists, expanduser
 from types import ModuleType
 from typing import List, Optional, Union
 
+import matplotlib as mpl
 import toml  # type: ignore
 
 from rex_xai._utils import Queue, ReXError, ReXPathError, ReXTomlError, Strategy
@@ -630,3 +631,6 @@ def validate_args(args: CausalArgs):
             )
         if not all([x > 0 for x in args.distribution_args]):
             raise ReXTomlError("All values in distribution args must be more than zero")
+        
+    if args.heatmap_colours not in list(mpl.colormaps):
+        raise ReXTomlError(f"Invalid colourmap '{args.heatmap_colours}', must be a valid matplotlib colourmap")

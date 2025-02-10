@@ -95,3 +95,13 @@ def test_process_config_dict_distribution_args_invalid(caplog):
             == "All values in distribution args must be more than zero"
         )
 
+def test_process_config_dict_colour_map_invalid(caplog):
+    args = CausalArgs()
+    config_dict = {"rex": {"visual": {"heatmap_colours": "RedBlue"}}}
+    process_config_dict(config_dict, args)
+    with pytest.raises(ReXTomlError):
+        validate_args(args)
+        assert (
+            caplog.records[0].message
+            == "Invalid colourmap 'RedBlue', must be a valid matplotlib colourmap"
+        )
