@@ -74,8 +74,8 @@ def update_database(
             final_mask = final_mask.detach().cpu().numpy()
 
         try:
-            explanation_confidence = explanation.confidence
-        except Exception:
+            explanation_confidence = explanation.explanation_confidence
+        except AttributeError:
             explanation_confidence = explanation.explanation_confidences[0]
 
         add_to_database(
