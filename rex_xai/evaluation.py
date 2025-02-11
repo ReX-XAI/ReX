@@ -26,17 +26,21 @@ class Evaluation:
         ):
             raise ValueError("Invalid Explanation object")
 
-        map = self.explanation.target_map
+        try:
+            final_mask = self.explanation.final_mask.squeeze().item()
+        except Exception:
+            final_mask = self.explanation.final_mask
+
         try:
             return (
-                tt.count_nonzero(self.explanation.explanation.squeeze()).item()
-                / map.size
+                tt.count_nonzero(final_mask)
+                / final_mask.size
                 / self.explanation.data.model_channels
             )
         except TypeError:
             return (
-                np.count_nonzero(self.explanation.explanation)
-                / map.size
+                np.count_nonzero(final_mask)
+                / final_mask.size
                 / self.explanation.data.model_channels
             )
 
