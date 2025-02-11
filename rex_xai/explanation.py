@@ -333,7 +333,7 @@ def _explanation(
 
     if args.analyze:
         results = analyze(exp, data.mode)
-        if args.mode == "spectral":
+        if data.mode == "spectral":
             print(
                 f"INFO:ReX:area {results['area']}, responsibility entropy {results['entropy']},",
                 f"max entropy {results['max_entropy']}",
