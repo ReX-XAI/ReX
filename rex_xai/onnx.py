@@ -51,6 +51,7 @@ class OnnxRunner:
 
         try:
             prediction = self.session.run(None, {self.input_name: tensors})[0]
+            print(prediction)
             for i in range(0, prediction.shape[0]):
                 confidences = softmax(prediction[i])
                 if raw:

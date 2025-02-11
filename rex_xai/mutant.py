@@ -142,7 +142,7 @@ class Mutant:
             m = self.apply_to_data(data)
             fig = plt.figure()
             ax = fig.add_subplot(111)
-            ax.plot(m[0][0])
+            ax.plot(m[0][0].detach().cpu().numpy())
             plt.savefig(f"{self.get_name()}.png")
         # 3d image
         if data.mode == "voxel":

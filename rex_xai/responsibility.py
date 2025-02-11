@@ -215,6 +215,9 @@ def causal_explanation(
                     m.prediction = preds[i]
                     m.update_status(data.target)
 
+                for m in mutants:
+                    m.save_mutant(data)
+
                 passing: List[Mutant] = list(
                     filter(
                         lambda m: m.passing

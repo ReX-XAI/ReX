@@ -125,6 +125,10 @@ class BoxInternal:
         )
         b3.update_name(":3")
 
+        print(b0)
+        print(b1)
+        print(b2)
+        print(b3)
         return [b0, b1, b2, b3]
 
     def __2d_parts(self, map=None):
