@@ -84,7 +84,7 @@ class BoxInternal:
         b0 = Box(
             0,
             0,
-            0,
+            self.col_start,
             ordered[0],
             distribution=self.distribution,
             distribution_args=self.distribution_args,
