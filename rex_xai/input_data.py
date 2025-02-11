@@ -193,12 +193,9 @@ class Data:
         if self.mode == "voxel":
             pass
 
-        print(self.mode)
-        print(self.model_shape)
-
-        raise ReXDataError("Incompatible 'mode' and 'model_shape', cannot get valid shape of Data object so returning None")
-
-
+        raise ReXDataError(
+            "Incompatible 'mode' and 'model_shape', cannot get valid shape of Data object so returning None"
+        )
 
         # elif self.mode in ("RGB", "RGBA", "L") and len(self.model_shape) == 4:
         #     _, a, b, c = self.model_shape

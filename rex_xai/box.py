@@ -139,7 +139,7 @@ class BoxInternal:
             )
 
         if pos is None:
-            return 
+            return
         coords = np.unravel_index(
             pos,
             (self.row_stop - self.row_start, self.col_stop - self.col_start),
