@@ -67,20 +67,23 @@ def str2distribution(d: str) -> Distribution:
     return Distribution.Uniform
 
 
-def random_coords(d: Optional[Distribution], *args, map=None) -> int:
+def random_coords(d: Optional[Distribution], *args, map=None) -> Optional[int]:
     """generates random coordinates given a distribution and args"""
 
-    if d == Distribution.Adaptive:
-        return _2d_adaptive(map, args[0])
+    try:
+        if d == Distribution.Adaptive:
+            return _2d_adaptive(map, args[0])
 
-    if d == Distribution.Uniform:
-        return np.random.randint(1, args[0])  # type: ignore
+        if d == Distribution.Uniform:
+            return np.random.randint(1, args[0])  # type: ignore
 
-    if d == Distribution.Binomial:
-        start, stop, *dist_args = args[0]
-        return binom(stop - start - 1, dist_args).rvs() + start
+        if d == Distribution.Binomial:
+            start, stop, *dist_args = args[0]
+            return binom(stop - start - 1, dist_args).rvs() + start
 
-    if d == Distribution.BetaBinomial:
-        return _betabinom2d(args[1], args[2], args[3][0], args[3][1])
+        if d == Distribution.BetaBinomial:
+            return _betabinom2d(args[1], args[2], args[3][0], args[3][1])
 
-    return -1
+        return None
+    except ValueError:
+        return None
