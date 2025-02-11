@@ -25,23 +25,24 @@ def _to_numpy(buffer, shape, dtype):
     return np.frombuffer(zlib.decompress(buffer), dtype=dtype).reshape(shape)
 
 
-def db_to_pandas(db, dtype=np.float32, table="rex"):
+def db_to_pandas(db, dtype=np.float32, table="rex", process=True):
     """for interactive use"""
     df = _dataframe(db, table=table)
 
-    df["responsibility"] = df.apply(
-        lambda row: _to_numpy(
-            row["responsibility"], literal_eval(row["responsibility_shape"]), dtype
-        ),
-        axis=1,
-    )
-    #
-    df["explanation"] = df.apply(
-        lambda row: _to_numpy(
-            row["explanation"], literal_eval(row["explanation_shape"]), np.bool_
-        ),
-        axis=1,
-    )
+    if process:
+        df["responsibility"] = df.apply(
+            lambda row: _to_numpy(
+                row["responsibility"], literal_eval(row["responsibility_shape"]), dtype
+            ),
+            axis=1,
+        )
+        #
+        df["explanation"] = df.apply(
+            lambda row: _to_numpy(
+                row["explanation"], literal_eval(row["explanation_shape"]), np.bool_
+            ),
+            axis=1,
+        )
 
     return df
 
