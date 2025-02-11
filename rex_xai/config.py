@@ -282,6 +282,8 @@ def cmdargs():
 
 def match_strategy(strategy_string):
     """gets explanation extraction strategy"""
+    if strategy_string is None:
+        return Strategy.Global
     if strategy_string == "multi" or strategy_string == "spotlight":
         return Strategy.MultiSpotlight
     elif strategy_string == "linear" or strategy_string == "global":
