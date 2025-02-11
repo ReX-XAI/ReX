@@ -332,7 +332,7 @@ def shared_args(cmd_args, args: CausalArgs):
         args.db = cmd_args.database
     if cmd_args.mode is not None:
         args.mode = cmd_args.mode
-    if cmd_args.spectral is not None:
+    if cmd_args.spectral:
         args.mode = "spectral"
 
     args.processed = cmd_args.processed

@@ -28,9 +28,8 @@ def preprocess(path, shape, device, mode) -> Data:
         ]
     )
     img = Image.open(path).convert("RGB")
-    data = Data(img, shape, device, mode=mode, process=False)
+    data = Data(img, shape, device, mode='RGB', process=False)
     data.data = transform(img).unsqueeze(0).to(device)  # type: ignore
-    data.mode = "RGB"
     data.model_shape = shape
     data.model_height = 224
     data.model_width = 224

@@ -8,6 +8,7 @@ from enum import Enum
 from rex_xai.occlusions import spectral_occlusion
 from rex_xai.prediction import Prediction
 from rex_xai.logger import logger
+from rex_xai._utils import ReXDataError
 
 Setup = Enum("Setup", ["ONNXMPS", "ONNX", "PYTORCH"])
 
@@ -27,11 +28,9 @@ class Data:
         self.device = device
         self.setup: Optional[Setup] = None
 
-        if process:
-            if mode is None:
-                self.mode = _guess_mode(input)
-            else:
-                self.mode = mode
+        self.mode = mode
+        if process and mode is None:
+            self.mode = _guess_mode(input)
 
         self.model_shape = model_shape
         height, width, channels, order = self.__get_shape()
@@ -177,21 +176,41 @@ class Data:
             self.data = self._normalise(means, stds, astype, norm)
 
     def __get_shape(self):
-        if (self.mode == "tabular" or self.mode == "spectral") and len(
-            self.model_shape
-        ) == 3:
-            return 1, self.model_shape[2], 1, None
-        elif self.mode in ("RGB", "RGBA", "L") and len(self.model_shape) == 4:
-            _, a, b, c = self.model_shape
-            if a == 1 or a == 3 or a == 4:
-                return b, c, a, "first"
-            else:
-                return a, b, c, "last"
-        elif self.mode == "voxel":
+        if self.mode == "spectral":
+            # an array of the form (h, w), so no channel info or order
+            if len(self.model_shape) == 2:
+                return self.model_shape[0], self.model_shape[1], 1, None
+            # an array of the form (batch, h, w), so no channel info or order
+            if len(self.model_shape) == 3:
+                return self.model_shape[1], self.model_shape[2], 1, None
+        if self.mode in ("RGB", "RGBA"):
+            if len(self.model_shape) == 4:
+                _, a, b, c = self.model_shape
+                if a in (1, 3, 4):
+                    return b, c, a, "first"
+                else:
+                    return a, b, c, "last"
+        if self.mode == "voxel":
             pass
-        else:
-            logger.warning("Incompatible 'mode' and 'model_shape', cannot get valid shape of Data object so returning None")
-            return None, None, None, None
+
+        print(self.mode)
+        print(self.model_shape)
+
+        raise ReXDataError("Incompatible 'mode' and 'model_shape', cannot get valid shape of Data object so returning None")
+
+
+
+        # elif self.mode in ("RGB", "RGBA", "L") and len(self.model_shape) == 4:
+        #     _, a, b, c = self.model_shape
+        #     if a == 1 or a == 3 or a == 4:
+        #         return b, c, a, "first"
+        #     else:
+        #         return a, b, c, "last"
+        # elif self.mode == "voxel":
+        #     pass
+        # else:
+        #     logger.warning("Incompatible 'mode' and 'model_shape', cannot get valid shape of Data object so returning None")
+        #     return None, None, None, None
 
     def set_mask_value(self, m):
         assert self.data is not None

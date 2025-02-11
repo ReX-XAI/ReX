@@ -59,9 +59,9 @@ def try_preprocess(args: CausalArgs, model_shape: Tuple[int], device: tt.device)
         except AttributeError:
             pass
 
-        # if not args.processed:
-        data = Data(Image.open(args.path), model_shape, device)
-        # data = Data(Image.open(args.path).convert("RGB"), model_shape, device)
+        # data = Data(Image.open(args.path), model_shape, device)
+        data = Data(Image.open(args.path).convert("RGB"), model_shape, device)
+        data.mode = "RGB"
         data.generic_image_preprocess(means=args.means, stds=args.stds, norm=args.norm)
 
     # a compressed numpy array file
