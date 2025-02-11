@@ -2,6 +2,7 @@
 import torch as tt
 import numpy as np
 
+
 def __split_groups(neg_mask):
     # for some reason, it's much faster to do this on the cpu with numpy
     # than it is to use tensor_split
@@ -37,6 +38,5 @@ def spectral_occlusion(mask: tt.Tensor, data: tt.Tensor, noise=0.02, device="cpu
             interp += np.random.normal(0, noise, len(interp))
 
         local_data[0, 0, start:stop] = interp
-
 
     return tt.from_numpy(local_data).to(device)
