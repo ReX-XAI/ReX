@@ -529,7 +529,7 @@ def load_config(config_path=None):
             process_config_dict(config_file_args, default_args)
             return default_args
         except Exception as e:
-            logger.warn(
+            logger.warning(
                 "exception of type %s: %s, so reverting to default args", type(e), e
             )
             return default_args
