@@ -314,8 +314,8 @@ def _explanation(
 
     resp_object = calculate_responsibility(data, args, prediction_func)
 
+    logger.info("Extracting explanation from responsibility map")
     clauses = None
-
     if args.strategy in (Strategy.MultiSpotlight, Strategy.Contrastive):
         exp = MultiExplanation(
             resp_object.maps, prediction_func, data, args, resp_object.run_stats
