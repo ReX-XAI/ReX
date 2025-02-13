@@ -195,7 +195,7 @@ def cmdargs():
         "--verbose",
         action="count",
         default=1,
-        help="verbosity level, either -v or -vv, or -vvv",
+        help="increase verbosity level, either -v or -vv",
     )
 
     parser.add_argument(
