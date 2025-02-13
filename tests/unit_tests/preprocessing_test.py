@@ -24,3 +24,15 @@ def test_validate_args(args):
     args.path = None  #  type: ignore
     with pytest.raises(FileNotFoundError):
         validate_args(args)
+
+
+def test_preprocess_rgba(args, model_shape, prediction_func, cpu_device, caplog):
+    args.path = "assets/rex_logo.png"
+    data = try_preprocess(args, model_shape, device=cpu_device)
+    predict_target(data, prediction_func)
+    
+    assert caplog.records[0].msg == "RGBA input image provided, converting to RGB"
+    assert data.mode == "RGB"
+    assert data.input.mode == "RGB"
+    assert data.data.shape[1] == 3 # batch, channels, height, width
+
