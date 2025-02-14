@@ -10,7 +10,7 @@ from anytree import LevelOrderGroupIter, NodeMixin, RenderTree
 import numpy as np
 
 from rex_xai.distributions import Distribution, random_coords
-
+from rex_xai.logger import logger
 
 # Enums for different axes
 class Axes:
@@ -246,10 +246,9 @@ class BoxInternal:
         }
         range1 = ranges[selected_axes[0]]
         range2 = ranges[selected_axes[1]]
-        print(range1, range2)
+        logger.debug(f"Selected axes: {selected_axes}, which have a range of values, {range1} and {range2}")
         # Get the random coordinates for the two axes
         space = range1[1] - range1[0]
-        print(space)
         c1 = random_coords(
             self.distribution,
             space,
@@ -267,7 +266,7 @@ class BoxInternal:
             self.distribution_args,
             map=map,
         )
-        print(c1, c2)
+        logger.debug(f"Random coordinates picked: {c1} and {c2}")
         # If any of the coordinates are None, return None
         if c1 == -1 or c2 == -1:
             return None
