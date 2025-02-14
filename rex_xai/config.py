@@ -379,6 +379,8 @@ def validate_numeric_arg_more_than(n, lower):
 
 
 def process_config_dict(config_file_args, args):
+    # when adding a new config argument, you should also modify validate_args()
+    # to add a validation check for that argument
     expected_values = {
         "rex": ["mask_value", "seed", "gpu", "batch_size"],
         "onnx": ["means", "stds", "binary_threshold", "norm"],
@@ -626,7 +628,9 @@ def validate_args(args: CausalArgs):
 
     if args.distribution_args is not None:
         if not isinstance(args.distribution_args, list):
-            raise ReXTomlError(f"distribution args must be a list, not '{type(args.distribution_args)}'")
+            raise ReXTomlError(
+                f"distribution args must be a list, not '{type(args.distribution_args)}'"
+            )
         elif len(args.distribution_args) != 2:
             raise ReXTomlError(
                 f"distribution args must be length 2, not {len(args.distribution_args)}"
