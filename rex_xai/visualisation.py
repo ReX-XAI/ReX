@@ -344,8 +344,10 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
         return
 
     data_m: np.ndarray = data.data
-    maps: np.ndarray = resp_map.squeeze().detach().cpu().numpy()
+    if isinstance(resp_map, tt.Tensor):
+        resp_map = resp_map.squeeze().detach().cpu().numpy()
 
+    maps: np.ndarray = resp_map
     data_m = data_m[0, :, :, :]  # Remove batch dimension
 
     resp_map = remove_background(data, maps)
@@ -578,7 +580,10 @@ def save_image(explanation, data: Data, args: CausalArgs, path=None):
             return out
     elif data.mode == "voxel":
         data_m: np.ndarray = data.data
-        explanation: np.ndarray = explanation.squeeze().detach().cpu().numpy()
+        if isinstance(explanation, tt.Tensor):
+            explanation = explanation.squeeze().detach().cpu().numpy()
+        else:
+            explanation = explanation.squeeze()
         data_m = data_m[0, :, :, :]  # Remove batch dimension
 
         explanation = remove_background(data, explanation)
