@@ -397,19 +397,6 @@ def _explanation(
     return exp
 
 
-def validate_args(args: CausalArgs):
-    """Validates a CausalArgs object.
-
-    Checks that ``args.path`` is not None.
-
-    Args:
-        args: configuration values for ReX
-    """
-
-    if args.path is None:
-        raise FileNotFoundError("Input file path cannot be None")
-
-
 def get_prediction_func_from_args(args: CausalArgs):
     """Takes a CausalArgs object and gets the prediction function and model shape.
 
@@ -464,8 +451,6 @@ def explanation(
             calculated using the given ``args``.
 
     """
-
-    validate_args(args)
 
     prediction_func, model_shape = get_prediction_func_from_args(args)
 
