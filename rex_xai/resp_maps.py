@@ -97,12 +97,9 @@ class ResponsibilityMaps:
                 raise ReXMapError("the provided mutant has no known classification")
             # check if k has been seen before and has a map. If k is new, make a new map
             if k not in self.maps:
-                if data.model_depth is not None:
-                    self.new_map(
-                        k, data.model_height, data.model_width, data.model_depth
-                    )
-                else:
-                    self.new_map(k, data.model_height, data.model_width)
+                self.new_map(
+                    k, data.model_height, data.model_width, data.model_depth
+                )
 
             # get the responsibility map for k
             resp_map = self.get(k, increment=True)
