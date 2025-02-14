@@ -59,8 +59,12 @@ def try_preprocess(args: CausalArgs, model_shape: Tuple[int], device: tt.device)
         except AttributeError:
             pass
 
-        # if not args.processed:
-        data = Data(Image.open(args.path), model_shape, device)
+        img = Image.open(args.path)
+        if img.mode == "RGBA":
+            logger.warning("RGBA input image provided, converting to RGB")
+            img = img.convert("RGB")
+        
+        data = Data(img, model_shape, device)
         # data = Data(Image.open(args.path).convert("RGB"), model_shape, device)
         data.generic_image_preprocess(means=args.means, stds=args.stds, norm=args.norm)
 
