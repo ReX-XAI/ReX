@@ -331,10 +331,13 @@ def shared_args(cmd_args, args: CausalArgs):
         args.db = cmd_args.database
     if cmd_args.mode is not None:
         args.mode = cmd_args.mode
-    if cmd_args.spectral is not None:
+    if (
+        cmd_args.spectral
+    ):  # TODO: Check this cmd_args.spectral has default value of false
         args.mode = "spectral"
 
     args.processed = cmd_args.processed
+    return args
 
 
 def find_config_path():
@@ -500,6 +503,8 @@ def process_cmd_args(cmd_args, args):
         args.strategy = Strategy.Contrastive
         args.spotlights = int(cmd_args.contrastive)
 
+    return args
+
 
 def load_config(config_path=None):
     if config_path is None:
@@ -539,9 +544,9 @@ def get_all_args():
 
     args = load_config(config_path)
 
-    process_cmd_args(cmd_args, args)
+    args = process_cmd_args(cmd_args, args)  # TODO: Check that assignment makes sense
 
-    shared_args(cmd_args, args)
+    args = shared_args(cmd_args, args)
 
     if args.model is None and args.custom_location is None:
         raise RuntimeError("either a <model>.onnx or a python file must be provided")

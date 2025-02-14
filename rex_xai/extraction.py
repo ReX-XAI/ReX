@@ -202,7 +202,7 @@ class Explanation:
     def save(self, path, mask=None, multi=None, multi_style="", clauses=None):
         # NOTE: the parameter multi_style="" is here simply to make overriding
         # the save function in MultiExplanation typecheck, same holds for clauses
-        if self.data.mode in ("RGB", "L"):
+        if self.data.mode in ("RGB", "L", "voxel"):
             if path is None:
                 path = f"{self.data.target.classification}.png"  # type: ignore
             if mask is None:
@@ -221,8 +221,6 @@ class Explanation:
             )
         if self.data.mode == "tabular":
             pass
-        if self.data.mode == "voxel":
-            pass
 
     def heatmap_plot(self, path=None):
         if self.data.mode in ("RGB", "L"):
@@ -230,6 +228,13 @@ class Explanation:
                 self.data,
                 self.target_map,
                 self.args.heatmap_colours,
+                path=path,
+            )
+        elif self.data.mode == "voxel":
+            visualisation.voxel_plot(
+                self.args,
+                self.target_map,
+                self.data,
                 path=path,
             )
         else:
@@ -240,14 +245,22 @@ class Explanation:
             visualisation.surface_plot(
                 self.args,
                 self.target_map,
-                self.data.target,  #  type: ignore
+                self.data.target,
+                path=path,
+            )
+        elif self.data.mode == "voxel":
+            logger.warning("Surface plot not available for voxel data using voxel plot instead")
+            visualisation.voxel_plot(
+                self.args,
+                self.target_map,
+                self.data,
                 path=path,
             )
         else:
             return NotImplementedError
 
     def show(self, path=None):
-        if self.data.mode in ("RGB", "L"):
+        if self.data.mode in ("RGB", "L", "voxel"):
             out = visualisation.save_image(
                 self.explanation, self.data, self.args, path=path
             )

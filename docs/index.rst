@@ -30,3 +30,4 @@ For more information and links to the papers, see the :doc:`background` page.
    background.md
    command_line.md
    config.md
+   scripts.md

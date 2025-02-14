@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from scipy.ndimage import center_of_mass
 from skimage.segmentation import slic
+from torch import Tensor
 
 from rex_xai.prediction import Prediction
 from rex_xai.config import CausalArgs
@@ -305,6 +306,174 @@ def overlay_grid(img, step_count=10):
     return img
 
 
+def remove_background(data: Data, resp_map: np.ndarray) -> np.ndarray:
+    """Remove the background from the responsibility map if set in the Data object"""
+    data_m: np.ndarray = data.data[0, :, :, :]
+    # Set background to minimum value in the responsibility map if set in the Data object
+    if data.background is not None and data.background is int or float:
+        background = np.where(
+            data_m == data.background
+        )  # Threshold for background voxels
+        resp_map[background] = np.min(resp_map)
+    elif data.background is not None and data.background is tuple:
+        # Background is a range of values so (x , y) where x is the lower bound and y is the upper bound
+        background = np.where(
+            (data_m >= data.background[0]) & (data_m <= data.background[1])
+        )
+        resp_map[background] = np.min(resp_map)
+    elif data.background is not None:
+        logger.warn(
+            "Background is not set correctly, please check the value. "
+            "Background value must be an int, float or tuple defining the range of values for the background."
+        )
+
+    return resp_map
+
+
+def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
+    """
+    Plot a 3D voxel plot of the responsibility map using plotly.
+    - Assumes the data is greyscale
+    Produces an interactive 3D plot of the data and the responsibility map.
+    """
+    try:
+        import plotly.graph_objs as go
+        from dash import Dash, dcc, html, Input, Output
+    except ImportError as e:
+        logger.error(f"Plotly failed to import caused by {e}.")
+        return
+
+    data_m: np.ndarray = data.data
+    if isinstance(resp_map, tt.Tensor):
+        resp_map = resp_map.squeeze().detach().cpu().numpy()
+
+    maps: np.ndarray = resp_map
+    data_m = data_m[0, :, :, :]  # Remove batch dimension
+
+    resp_map = remove_background(data, maps)
+
+    assert data_m.shape == maps.shape, (
+        "Data and Responsibility map must have the same shape!"
+    )
+    x, y, z = np.indices(data_m.shape)
+
+    app = Dash(__name__)
+
+    # 3D rendering of the data
+    volume = go.Isosurface(
+        x=x.flatten(),
+        y=y.flatten(),
+        z=z.flatten(),
+        isomin=np.min(data_m),
+        isomax=np.max(data_m),
+        value=data_m.flatten(),
+        opacity=0.5,
+        caps=dict(x_show=True, y_show=True, z_show=True, x_fill=1),
+        colorscale="gray_r",
+        surface=dict(count=1, fill=0.5, show=True),
+    )
+    # Add the 3d volume of responsibility map with the data volume
+    fig = go.Figure(data=volume).add_volume(
+        x=x.flatten(),
+        y=y.flatten(),
+        z=z.flatten(),
+        value=resp_map.flatten(),
+        isomin=np.min(data_m),
+        isomax=np.max(data_m),
+        opacity=0.1,
+        surface=dict(count=1, fill=0.5, show=True),
+        colorscale=args.heatmap_colours,
+    )
+
+    app.layout = html.Div(
+        [
+            dcc.Graph(id="3d-plot", style={"height": "600px"}, figure=fig),
+            html.Div(
+                [
+                    dcc.Graph(id="x-slice"),
+                    dcc.Graph(id="y-slice"),
+                    dcc.Graph(id="z-slice"),
+                ],
+                style={"display": "flex", "justify-content": "space-around"},
+            ),
+        ],
+        style={"width": "80%", "margin": "auto"},
+    )
+
+    @app.callback(
+        [
+            Output("x-slice", "figure"),
+            Output("y-slice", "figure"),
+            Output("z-slice", "figure"),
+        ],
+        [Input("3d-plot", "hoverData")],
+    )
+    def update_cross_sections(hover_data):
+        if hover_data is None:
+            hover_x, hover_y, hover_z = (
+                data_m.shape[0] // 2,
+                data_m.shape[1] // 2,
+                data_m.shape[2] // 2,
+            )
+        else:
+            hover_x, hover_y, hover_z = (
+                hover_data["points"][0]["x"],
+                hover_data["points"][0]["y"],
+                hover_data["points"][0]["z"],
+            )
+
+        x_slice = go.Figure()
+        x_slice.add_trace(
+            go.Heatmap(z=data_m[int(hover_x), :, :], colorscale="gray_r", name="Data")
+        )
+        x_slice.add_trace(
+            go.Heatmap(
+                z=resp_map[int(hover_x), :, :],
+                colorscale=args.heatmap_colours,
+                opacity=0.5,
+                name="Resp Map",
+            )
+        )
+
+        # Y-Slice
+        y_slice = go.Figure()
+        y_slice.add_trace(
+            go.Heatmap(z=data_m[:, int(hover_y), :], colorscale="gray_r", name="Data")
+        )
+        y_slice.add_trace(
+            go.Heatmap(
+                z=resp_map[:, int(hover_y), :],
+                colorscale=args.heatmap_colours,
+                opacity=0.5,
+                name="Resp Map",
+            )
+        )
+
+        # Z-Slice
+        z_slice = go.Figure()
+        z_slice.add_trace(
+            go.Heatmap(z=data_m[:, :, int(hover_z)], colorscale="gray_r", name="Data")
+        )
+        z_slice.add_trace(
+            go.Heatmap(
+                z=resp_map[:, :, int(hover_z)],
+                colorscale=args.heatmap_colours,
+                opacity=0.5,
+                name="Resp Map",
+            )
+        )
+
+        return x_slice, y_slice, z_slice
+
+    if path is not None:
+        if path.endswith(".png"):
+            fig.write_image(path)
+        else:
+            app.run_server(debug=True)
+    else:
+        app.run_server(debug=True)
+
+
 def __transpose_mask(explanation, mode, transposed):
     mask = None
     if transposed:
@@ -409,18 +578,47 @@ def save_image(explanation, data: Data, args: CausalArgs, path=None):
                 out.save(path)
 
             return out
+    elif data.mode == "voxel":
+        data_m: np.ndarray = data.data
+        if isinstance(explanation, tt.Tensor):
+            explanation = explanation.squeeze().detach().cpu().numpy()
+        else:
+            explanation = explanation.squeeze()
+        data_m = data_m[0, :, :, :]  # Remove batch dimension
+
+        explanation = remove_background(data, explanation)
+
+        num_slices = 10
+        fig, axes = plt.subplots(3, num_slices, figsize=(15, 6))
+
+        for axis, index in enumerate(explanation.shape):
+            slice_indices = np.linspace(0, axis - 1, num_slices, dtype=int)
+            for i, slice_index in enumerate(slice_indices):
+                ax = axes[axis, i]
+                data_slice = np.take(data_m, slice_index, axis=axis)
+                resp_slice = np.take(explanation, slice_index, axis=axis)
+                ax.imshow(data_slice, cmap="gray")
+                ax.imshow(resp_slice, cmap=args.heatmap_colours, alpha=0.4)
+                ax.axis("off")
+
+        plt.tight_layout()
+
+        if args.output is not None:
+            plt.savefig(args.output)
+        else:
+            plt.show()
 
 
 def plot_image_grid(images, ncols=None):
     # adapted from: https://stackoverflow.com/questions/41793931/plotting-images-side-by-side-using-matplotlib/66961099#66961099
-    '''Plot a grid of images'''
+    """Plot a grid of images"""
     if not ncols:
-        factors = [i for i in range(1, len(images)+1) if len(images) % i == 0]
+        factors = [i for i in range(1, len(images) + 1) if len(images) % i == 0]
         ncols = factors[len(factors) // 2] if len(factors) else len(images) // 4 + 1
     nrows = int(len(images) / ncols) + int(len(images) % ncols)
     imgs = [images[i] if len(images) > i else None for i in range(nrows * ncols)]
-    f, axes = plt.subplots(nrows, ncols, figsize=(3*ncols, 2*nrows))
-    axes = axes.flatten()[:len(imgs)]
+    f, axes = plt.subplots(nrows, ncols, figsize=(3 * ncols, 2 * nrows))
+    axes = axes.flatten()[: len(imgs)]
     for img, ax in zip(imgs, axes.flatten()):
         ax.imshow(img)
         ax.set_axis_off()

@@ -14,7 +14,12 @@ from rex_xai.explanation import calculate_responsibility, predict_target
     ],
 )
 def test_calculate_responsibility(
-    data_custom, args_custom, prediction_func, distribution, dist_args, snapshot_explanation
+    data_custom,
+    args_custom,
+    prediction_func,
+    distribution,
+    dist_args,
+    snapshot_explanation,
 ):
     args_custom.distribution = distribution
     if dist_args:

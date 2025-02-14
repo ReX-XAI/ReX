@@ -5,6 +5,7 @@ from rex_xai.explanation import (
     try_preprocess,
 )
 
+
 def test_preprocess_nii_notimplemented(args, model_shape, cpu_device, caplog):
     args.path = "tests/test_data/dog.nii"
     data = try_preprocess(args, model_shape, device=cpu_device)
