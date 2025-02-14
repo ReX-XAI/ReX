@@ -2,18 +2,18 @@
 
 """config management"""
 
-from typing import List, Optional, Union
-from types import ModuleType
 import argparse
+import importlib.util
 import os
 from os.path import exists, expanduser
-import importlib.util
+from types import ModuleType
+from typing import List, Optional, Union
+
+import matplotlib as mpl
 import toml  # type: ignore
 
-
-from rex_xai.distributions import str2distribution
-from rex_xai.distributions import Distribution
-from rex_xai._utils import Strategy, Queue, ReXPathError, ReXTomlError, ReXError
+from rex_xai._utils import Queue, ReXError, ReXPathError, ReXTomlError, Strategy
+from rex_xai.distributions import Distribution, str2distribution
 from rex_xai.logger import logger
 
 
@@ -292,10 +292,11 @@ def match_strategy(strategy_string):
         return Strategy.Spatial
     elif strategy_string == "contrastive":
         return Strategy.Contrastive
-    logger.warning(
-        "Invalid strategy '%s', reverting to default value Strategy.Global",
-        strategy_string,
-    )
+    else:
+        logger.warning(
+            "Invalid strategy '%s', reverting to default value Strategy.Global",
+            strategy_string,
+        )
     return Strategy.Global
 
 
@@ -371,11 +372,14 @@ def apply_dict_to_args(source, args, allowed_values=None):
                 )
 
 
-def validate_float_arg(float_arg, lower, upper):
-    if float_arg < lower or float_arg > upper:
-        raise ReXTomlError(
-            f"Invalid value for '{float_arg}': must be between {lower} and {upper}"
-        )
+def validate_numeric_arg_within_bounds(n, lower, upper):
+    if n < lower or n > upper:
+        raise ReXTomlError(f"Invalid value '{n}': must be between {lower} and {upper}")
+
+
+def validate_numeric_arg_more_than(n, lower):
+    if not n > lower:
+        raise ReXTomlError(f"Invalid value '{n}': must be more than {lower}")
 
 
 def process_config_dict(config_file_args, args):
@@ -457,9 +461,6 @@ def process_config_dict(config_file_args, args):
 
     if type(args.strategy) is str:
         args.strategy = match_strategy(args.strategy)
-
-    validate_float_arg(args.blend, 0.0, 1.0)
-    validate_float_arg(args.permitted_overlap, 0.0, 1.0)
 
 
 def process_custom_script(script, args):
@@ -548,3 +549,98 @@ def get_all_args():
         raise RuntimeError("either a <model>.onnx or a python file must be provided")
 
     return args
+
+
+def validate_args(args: CausalArgs):
+    """Validates a CausalArgs object.
+
+    Checks that ``args.path`` is not None, that boolean args are boolean, and that numeric args fall within correct bounds.
+
+    Args:
+        args: configuration values for ReX
+    """
+
+    if args.path is None:
+        raise FileNotFoundError("Input file path cannot be None")
+
+    # values that must be between 0 and 1
+    for arg in [
+        "blend",
+        "permitted_overlap",
+        "alpha",
+        "confidence_filter",
+        "spatial_radius_eta",
+        "spotlight_eta",
+        "binary_threshold",
+    ]:
+        val = getattr(args, arg)
+        if val is not None:
+            validate_numeric_arg_within_bounds(val, lower=0.0, upper=1.0)
+
+    # values that must be more than 0
+    for arg in [
+        "iters",
+        "min_box_size",
+        "chunk_size",
+        "spatial_initial_radius",
+        "no_expansions",
+        "spotlights",
+        "spotlight_size",
+        "spotlight_step",
+        "max_spotlight_budget",
+        "insertion_step",
+    ]:
+        val = getattr(args, arg)
+        if val is not None:
+            validate_numeric_arg_more_than(val, lower=0.0)
+
+    # values that must be boolean
+    for arg in [
+        "gpu",
+        "info",
+        "progress_bar",
+        "raw",
+        "resize",
+        "grid",
+        "mark_segments",
+        "weighted",
+        "concentrate",
+        "normalise_curves",
+    ]:
+        val = getattr(args, arg)
+        if val is not None:
+            if not isinstance(val, bool):
+                raise ReXTomlError(f"Invalid value '{val}' for {arg}, must be boolean")
+
+    # custom treatment of specific values
+    validate_numeric_arg_within_bounds(args.colour, lower=0.0, upper=255.0)
+
+    if args.multi_style is not None:
+        if args.multi_style not in ["composite", "separate"]:
+            raise ReXTomlError(
+                f"Invalid value '{args.multi_style}' for multi_style, must be 'composite' or 'separate'"
+            )
+
+    validate_numeric_arg_more_than(args.queue_len, lower=0.0)
+    if not isinstance(args.queue_len, int):
+        if args.queue_len != "all":
+            raise ReXTomlError(
+                f"Invalid value '{args.queue_len}' for queue_len, must be 'all' or an integer"
+            )
+
+    if args.distribution_args is not None:
+        if not isinstance(args.distribution_args, list):
+            raise ReXTomlError(
+                f"distribution args must be a list, not '{type(args.distribution_args)}'"
+            )
+        elif len(args.distribution_args) != 2:
+            raise ReXTomlError(
+                f"distribution args must be length 2, not {len(args.distribution_args)}"
+            )
+        if not all([x > 0 for x in args.distribution_args]):
+            raise ReXTomlError("All values in distribution args must be more than zero")
+
+    if args.heatmap_colours not in list(mpl.colormaps):
+        raise ReXTomlError(
+            f"Invalid colourmap '{args.heatmap_colours}', must be a valid matplotlib colourmap"
+        )

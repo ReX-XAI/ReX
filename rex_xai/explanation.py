@@ -59,9 +59,12 @@ def try_preprocess(args: CausalArgs, model_shape: Tuple[int], device: tt.device)
         except AttributeError:
             pass
 
-        # data = Data(Image.open(args.path), model_shape, device)
-        data = Data(Image.open(args.path).convert("RGB"), model_shape, device)
-        data.mode = "RGB"
+        img = Image.open(args.path)
+        if img.mode == "RGBA":
+            logger.warning("RGBA input image provided, converting to RGB")
+            img = img.convert("RGB")
+
+        data = Data(img, model_shape, device)
         data.generic_image_preprocess(means=args.means, stds=args.stds, norm=args.norm)
 
     # a compressed numpy array file
@@ -400,19 +403,6 @@ def _explanation(
     return exp
 
 
-def validate_args(args: CausalArgs):
-    """Validates a CausalArgs object.
-
-    Checks that ``args.path`` is not None.
-
-    Args:
-        args: configuration values for ReX
-    """
-
-    if args.path is None:
-        raise FileNotFoundError("Input file path cannot be None")
-
-
 def get_prediction_func_from_args(args: CausalArgs):
     """Takes a CausalArgs object and gets the prediction function and model shape.
 
@@ -467,8 +457,6 @@ def explanation(
             calculated using the given ``args``.
 
     """
-
-    validate_args(args)
 
     prediction_func, model_shape = get_prediction_func_from_args(args)
 
