@@ -16,33 +16,32 @@
 # means for min-max normalization
 # means = [0.485, 0.456, 0.406]
 
-# standards devs for min-max normalization
 # stds = [0.229, 0.224, 0.225]
 
 # binary model confidence threshold. Anything >= threshold will be classified as 1, otherwise 0
 # binary_threshold = 0.5
 
-# norm
 # norm = 255.0
+norm = 1.0
 
 [rex.visual]
-# whether to show progress bar in the terminal, defalts to true
-# progress_bar = true
+# whether to show progress bar in the terminal, defaults to true
+# progress_bar = false
 
 # resize the explanation to the size of the original image. This uses cubic interpolation and will not be as visually accurate as not resizing, defaults to false
-# resize = false
+# resize = true
 
 # include classification and confidence information in title of plot, defaults to true
-# info = true
+# info = false
 
 # produce unvarnished image with actual masking value, defaults to false
 # raw = false
 
 # pretty printing colour for explanations, defaults to 200
-# colour = 200
+# colour = 100
 
 # matplotlib colourscheme for responsibility map plotting, defaults to 'magma'
-# heatmap = 'magma'
+# heatmap_colours = 'coolwarm'
 
 # alpha blend for main image, defaults to 0.2 (PIL Image.blend parameter)
 # alpha = 0.2
@@ -85,27 +84,26 @@
 # queue_len = 1
 
 # concentrate: weight responsibility by size and depth of passing partition. Defaults to false
-# concentrate = false
+# concentrate = true
 
 [causal.distribution]
 # distribution for splitting the box, defaults to uniform. Possible choices are 'uniform' | 'binom' | 'betabinom' | 'adaptive'
 # distribution = 'uniform'
 
-# blend one of the above distributions with the responsibility map treated as a distribution
-#blend = 0.5
+# blend = 0.5
 
 # supplimental arguments for distribution creation, these are ignored if <distribution> does not take any parameters
 # dist_args = [1.1, 1.1]
 
 [explanation]
 # iterate through pixel ranking in chunks, defaults to causal.min_box_size
-# chunk = 10
+# chunk_size = 10
 
 # causal explanations are minimal by definition, but very small explanations might have very low confidence. ReX will keep 
-# looking for an explanation of confidence greater than or equal to the model confidence on <entire image * min_confidence_scalar>. 
+# looking for an explanation of confidence greater than or equal to the model confidence on <entire image * minimum_confidence_threshold>. 
 # This is especially useful to reduce errors due to floating point imprecision when batching calls to the model.
 # Defaults to 0.0, with maximum value 1.0. 
-# min_confidence_scalar = 0.0
+# minimum_confidence_threshold = 0.1
 
 [explanation.spatial]
 # initial search radius
@@ -114,7 +112,7 @@
 # increment to change radius
 # radius_eta = 0.2
 
-# number of times to expand before quitting, defaults to 4
+# number of times to expand before quitting, defaults to 10
 # no_expansions = 4
 
 [explanation.multi]
@@ -133,12 +131,10 @@
 # maximum number of random steps that a spotlight can make before quitting
 # max_spotlight_budget = 40
 
-# objective function for spotlight search. Possible options 'mean' | 'max' | "none", defaults to "none"
+# objective function for spotlight search. Possible options 'mean' | 'max' | "none"
 # objective_function = 'none'
 
-# how much overlap to allow between different explanations. This is the dice coefficient, so
-# 0.0 means no permitted overlap, and 1 total overlap permitted
-# permitted_overlap = 0.0
+# permitted_overlap = 0.5
 
 [explanation.evaluation]
 
