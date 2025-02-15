@@ -29,6 +29,7 @@
       max_spotlight_budget=40,
       means=None,
       min_box_size=10,
+      minimum_confidence_threshold=0.0,
       mode=None,
       multi_style='composite',
       no_expansions=4,
@@ -54,7 +55,7 @@
       spotlight_step=5,
       spotlights=10,
       stds=None,
-      strategy=<Strategy.Spatial: 2>,
+      strategy=<Strategy.Global: 1>,
       surface=None,
       tree_depth=10,
       verbosity=0,
@@ -62,6 +63,7 @@
     ),
     data=Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
   	 Target:FOUND_CLASS: 209, FOUND_CONF: 0.39424, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a,
+    explanation_confidence=0.12158223,
     maps={209: 1},
     run_stats=dict({
       'avg_box_size': 2747.4166666666665,
@@ -72,16 +74,16 @@
   )
 # ---
 # name: test__explanation_snapshot.1
-  5309067273286887403
+  7409862900317702363
 # ---
 # name: test_extract_analyze[Strategy.Global]
   976237796511694519
 # ---
 # name: test_extract_analyze[Strategy.Global].1
   dict({
-    'area': 0.1654,
+    'area': 0.0551,
     'deletion_curve': 0.0141,
-    'entropy_diff': 5.3764,
+    'entropy': 5.3764,
     'insertion_curve': 0.621,
   })
 # ---
@@ -90,9 +92,9 @@
 # ---
 # name: test_extract_analyze[Strategy.Spatial].1
   dict({
-    'area': 0.3278,
+    'area': 0.1093,
     'deletion_curve': 0.0141,
-    'entropy_diff': 3.8607,
+    'entropy': 3.8607,
     'insertion_curve': 0.621,
   })
 # ---

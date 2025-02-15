@@ -40,7 +40,7 @@ def test__explanation_snapshot_diff_model_shape(
 def test_extract_analyze(exp_custom, strategy, snapshot):
     exp_custom.extract(strategy)
     results = analyze(exp_custom, "RGB")
-    results_rounded = {k: round(v, 4) for k, v in results.items()}
+    results_rounded = {k: round(v, 4) for k, v in results.items() if v is not None}
 
     assert hash(tuple(exp_custom.final_mask.reshape(-1).tolist())) == snapshot
     assert results_rounded == snapshot

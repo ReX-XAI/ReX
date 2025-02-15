@@ -29,7 +29,7 @@ class Data:
         self.setup: Optional[Setup] = None
 
         self.mode = mode
-        if process and mode is None:
+        if mode is None:
             self.mode = _guess_mode(input)
 
         self.model_shape = model_shape
@@ -194,7 +194,7 @@ class Data:
             pass
 
         raise ReXDataError(
-            "Incompatible 'mode' and 'model_shape', cannot get valid shape of Data object so returning None"
+            f"Incompatible 'mode' {self.mode}  and 'model_shape' ({self.model_shape}), cannot get valid shape of Data object so returning None"
         )
 
         # elif self.mode in ("RGB", "RGBA", "L") and len(self.model_shape) == 4:

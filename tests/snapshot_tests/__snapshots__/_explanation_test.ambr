@@ -29,6 +29,7 @@
       max_spotlight_budget=40,
       means=None,
       min_box_size=10,
+      minimum_confidence_threshold=0.0,
       mode=None,
       multi_style='composite',
       no_expansions=4,
@@ -54,7 +55,7 @@
       spotlight_step=5,
       spotlights=10,
       stds=None,
-      strategy=<Strategy.Spatial: 2>,
+      strategy=<Strategy.Global: 1>,
       surface=None,
       tree_depth=10,
       verbosity=0,
@@ -62,6 +63,7 @@
     ),
     data=Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
   	 Target:FOUND_CLASS: 207, FOUND_CONF: 0.20462, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a,
+    explanation_confidence=0.015131033025681973,
     maps={207: 1},
     run_stats=dict({
       'avg_box_size': 183.5625,
@@ -104,6 +106,7 @@
       max_spotlight_budget=40,
       means=None,
       min_box_size=10,
+      minimum_confidence_threshold=0.0,
       mode=None,
       multi_style='composite',
       no_expansions=4,
@@ -129,7 +132,7 @@
       spotlight_step=5,
       spotlights=10,
       stds=None,
-      strategy=<Strategy.Spatial: 2>,
+      strategy=<Strategy.Global: 1>,
       surface=None,
       tree_depth=10,
       verbosity=0,
@@ -137,6 +140,7 @@
     ),
     data=Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
   	 Target:FOUND_CLASS: 207, FOUND_CONF: 0.20462, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a,
+    explanation_confidence=0.01513106282800436,
     maps={207: 1},
     run_stats=dict({
       'avg_box_size': 183.5625,
@@ -179,6 +183,7 @@
       max_spotlight_budget=40,
       means=None,
       min_box_size=10,
+      minimum_confidence_threshold=0.0,
       mode=None,
       multi_style='composite',
       no_expansions=4,
@@ -204,7 +209,7 @@
       spotlight_step=5,
       spotlights=10,
       stds=None,
-      strategy=<Strategy.Spatial: 2>,
+      strategy=<Strategy.Global: 1>,
       surface=None,
       tree_depth=10,
       verbosity=0,
@@ -212,6 +217,7 @@
     ),
     data=Data: RGB, ['N', 3, 256, 256], 256, 256, 3, first
   	 Target:FOUND_CLASS: 215, FOUND_CONF: 0.48740, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a,
+    explanation_confidence=0.037296317517757416,
     maps={215: 1},
     run_stats=dict({
       'avg_box_size': 262.0,
@@ -222,7 +228,7 @@
   )
 # ---
 # name: test__explanation_snapshot_diff_model_shape[1].1
-  1569716348101885070
+  -5471936325618413956
 # ---
 # name: test__explanation_snapshot_diff_model_shape[64]
   Explanation(
@@ -254,6 +260,7 @@
       max_spotlight_budget=40,
       means=None,
       min_box_size=10,
+      minimum_confidence_threshold=0.0,
       mode=None,
       multi_style='composite',
       no_expansions=4,
@@ -279,7 +286,7 @@
       spotlight_step=5,
       spotlights=10,
       stds=None,
-      strategy=<Strategy.Spatial: 2>,
+      strategy=<Strategy.Global: 1>,
       surface=None,
       tree_depth=10,
       verbosity=0,
@@ -287,6 +294,7 @@
     ),
     data=Data: RGB, ['N', 3, 256, 256], 256, 256, 3, first
   	 Target:FOUND_CLASS: 215, FOUND_CONF: 0.48740, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a,
+    explanation_confidence=0.0372963547706604,
     maps={215: 1},
     run_stats=dict({
       'avg_box_size': 262.0,
@@ -297,16 +305,16 @@
   )
 # ---
 # name: test__explanation_snapshot_diff_model_shape[64].1
-  1569716348101885070
+  -5471936325618413956
 # ---
 # name: test_extract_analyze[Strategy.Global]
   -2185390445883109608
 # ---
 # name: test_extract_analyze[Strategy.Global].1
   dict({
-    'area': 0.0112,
+    'area': 0.0037,
     'deletion_curve': 1.0199,
-    'entropy_diff': 7.1353,
+    'entropy': 7.1353,
     'insertion_curve': 1.2399,
   })
 # ---
@@ -315,9 +323,9 @@
 # ---
 # name: test_extract_analyze[Strategy.Spatial].1
   dict({
-    'area': 0.0112,
+    'area': 0.0037,
     'deletion_curve': 1.0199,
-    'entropy_diff': 7.1353,
+    'entropy': 7.1353,
     'insertion_curve': 1.2399,
   })
 # ---

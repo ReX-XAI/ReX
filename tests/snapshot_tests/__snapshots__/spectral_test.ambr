@@ -29,6 +29,7 @@
       max_spotlight_budget=40,
       means=None,
       min_box_size=10,
+      minimum_confidence_threshold=0.0,
       mode='spectral',
       multi_style='composite',
       no_expansions=4,
@@ -62,9 +63,10 @@
     ),
     data=Data: spectral, ['batch_size', 1, 1356], 1, 1356, 1, None
   	 Target:FOUND_CLASS: 1, FOUND_CONF: 0.99817, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a,
+    explanation_confidence=0.998168,
     maps={1: 1},
     run_stats=dict({
-      'avg_box_size': 339.0,
+      'avg_box_size': 22.875,
       'max_depth_reached': 2,
       'total_failing': 0,
       'total_passing': 56,
@@ -104,6 +106,7 @@
       max_spotlight_budget=40,
       means=None,
       min_box_size=10,
+      minimum_confidence_threshold=0.0,
       mode='spectral',
       multi_style='composite',
       no_expansions=4,
@@ -137,9 +140,10 @@
     ),
     data=Data: spectral, ['batch_size', 1, 1356], 1, 1356, 1, None
   	 Target:FOUND_CLASS: 1, FOUND_CONF: 0.99817, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a,
+    explanation_confidence=0.998168,
     maps={1: 1},
     run_stats=dict({
-      'avg_box_size': 339.0,
+      'avg_box_size': 22.875,
       'max_depth_reached': 2,
       'total_failing': 0,
       'total_passing': 56,

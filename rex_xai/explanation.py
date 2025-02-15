@@ -253,14 +253,13 @@ def analyze(exp: Explanation, data_mode: str | None):
     """
     eval = Evaluation(exp)
     rat = eval.ratio()
-    if data_mode in ("RGB", "L"):
+    ent = None
+    max_ent = None
+    if data_mode in ("RGB", "RGBA", "L"):
         be, ae = eval.entropy_loss()  # type: ignore
         ent = be - ae
     elif data_mode in ("spectral", "tabular"):
         ent, max_ent = eval.spectral_entropy()
-    else:
-        ent = None
-        max_ent = None
 
     iauc, dauc = eval.insertion_deletion_curve(
         exp.prediction_func, normalise=exp.args.normalise_curves
@@ -338,13 +337,13 @@ def _explanation(
         results = analyze(exp, data.mode)
         if data.mode == "spectral":
             print(
-                f"INFO:ReX:area {results['area']}, responsibility entropy {results['entropy']},",
+                f"INFO:ReX:classification {exp.data.target.classification}, area {results['area']}, responsibility entropy {results['entropy']},",
                 f"max entropy {results['max_entropy']}",
                 f"insertion curve {results['insertion_curve']}, deletion curve {results['deletion_curve']}",
             )
         else:
             print(
-                f"INFO:ReX:area {results['area']}, entropy {results['entropy']},",
+                f"INFO:ReX:classification {exp.data.target.classification}, area {results['area']}, entropy {results['entropy']},",
                 f"insertion curve {results['insertion_curve']}, deletion curve {results['deletion_curve']}",
             )
 
