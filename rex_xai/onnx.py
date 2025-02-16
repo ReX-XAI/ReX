@@ -120,7 +120,10 @@ class OnnxRunner:
         )
 
         output_shape = [batch_size] + list(self.output_shape[1:])
+
         z_tensor = tt.empty(output_shape, dtype=tt.float32, device=device).contiguous()
+        if raw:
+            print(z_tensor.shape)
 
         binding.bind_output(
             name=self.output_name,
@@ -132,6 +135,8 @@ class OnnxRunner:
         )
 
         self.session.run_with_iobinding(binding)
+        if raw:
+            return z_tensor
         return from_pytorch_tensor(z_tensor, target=target)
 
     def gen_prediction_function(self):
@@ -152,7 +157,7 @@ class OnnxRunner:
                 device=self.device,
                 raw=False,
                 binary_threshold=None: self.run_with_data_on_device(
-                    tensor, device, len(tensor), binary_threshold, target=target
+                    tensor, device, len(tensor), binary_threshold, raw=raw, target=target
                 ),
                 self.input_shape,
             )
@@ -168,7 +173,7 @@ def get_prediction_function(model_path, gpu: bool, logger_level=3):
         logger.info("using gpu for onnx inference session")
         if platform.uname().system == "Darwin":
             # note this is only true for M+ chips
-            providers = ["CoreMLExecutionProvider"]
+            providers = ["CoreMLExecutionProvider", "CPUExecutionProvider"]
             sess_options.intra_op_num_threads = 8
             sess_options.inter_op_num_threads = 8
             device = "mps"
@@ -177,7 +182,7 @@ def get_prediction_function(model_path, gpu: bool, logger_level=3):
             # copying data to the cpu for inference
             setup = Setup.ONNXMPS
         else:
-            providers = ["CUDAExecutionProvider"]
+            providers = ["CUDAExecutionProvider", "CPUExecutionProvider"]
             device = "cuda"
             setup = Setup.PYTORCH
 
