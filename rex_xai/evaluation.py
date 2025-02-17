@@ -52,7 +52,7 @@ class Evaluation:
         _, psd = periodogram(self.explanation.target_map)
         psd_norm = psd / psd.sum()
         ent = -np.sum(xlogx(psd_norm))
-        max_ent = np.log(len(psd_norm[0]))
+        max_ent = np.log2(len(psd_norm[0]))
         return ent, max_ent
 
     def entropy_loss(self):
