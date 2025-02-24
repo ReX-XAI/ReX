@@ -23,4 +23,4 @@ def main():
     if args.db is not None:
         db = initialise_rex_db(args.db)
 
-    _ = explanation(args, device, db)
+    explanation(args, device, db)

@@ -157,7 +157,12 @@ class OnnxRunner:
                 device=self.device,
                 raw=False,
                 binary_threshold=None: self.run_with_data_on_device(
-                    tensor, device, len(tensor), binary_threshold, raw=raw, target=target
+                    tensor,
+                    device,
+                    len(tensor),
+                    binary_threshold,
+                    raw=raw,
+                    target=target,
                 ),
                 self.input_shape,
             )

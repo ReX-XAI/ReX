@@ -8,6 +8,7 @@ import sys
 import time
 from typing import List, Tuple, Union
 
+from scipy.io import loadmat
 import numpy as np
 import torch as tt
 from PIL import Image
@@ -33,7 +34,7 @@ def try_preprocess(args: CausalArgs, model_shape: Tuple[int], device: tt.device)
 
     Data preprocessing is based on file extension and (possibly) user-defined mode.
     File extensions in ``[".jpg", ".jpeg", ".png", ".tif", ".tiff"]`` are treated
-    as images, ".npy" are treated as Numpy arrays, and ".nii" are treated as nifti files.
+    as images, ".npy" and ".mat" are treated as Numpy arrays, and ".nii" are treated as nifti files.
     For any other file extension, we create a ``Data`` object without pre-processing.
 
     Args:
@@ -67,10 +68,14 @@ def try_preprocess(args: CausalArgs, model_shape: Tuple[int], device: tt.device)
         data = Data(img, model_shape, device)
         data.generic_image_preprocess(means=args.means, stds=args.stds, norm=args.norm)
 
-    # a compressed numpy array file
-    elif ext in ".npy":
+    # a numpy "npy" array or matlab "mat" file
+    elif ext in (".npy", ".mat"):
         if args.mode in ("tabular", "spectral"):
-            data = Data(np.load(args.path), model_shape, mode=args.mode, device=device)
+            if ext == ".mat":
+                raw_data = np.load(loadmat(args.path)['val'])
+            else:
+                raw_data = np.load(args.path)
+            data = Data(raw_data, model_shape, mode=args.mode, device=device)
             data.data = data.generic_tab_preprocess()
         else:
             logger.fatal("we do not generically handle this datatype")
@@ -282,6 +287,7 @@ def _explanation(
     prediction_func,
     device: tt.device,
     db: Session | None = None,
+    path=None,
 ):
     """Takes a CausalArgs object and model information and returns a Explanation.
 
@@ -352,7 +358,9 @@ def _explanation(
     logger.info(time_taken)
 
     if args.surface is not None:
-        if args.surface == "show":
+        if path is not None:
+            pass
+        elif args.surface == "show":
             path = None
         else:
             path = args.surface
@@ -366,10 +374,11 @@ def _explanation(
         exp.heatmap_plot(path)
 
     if args.output is not None:
-        if args.output == "show":
-            path = None
-        else:
-            path = args.output
+        if path is None:
+            if args.output == "show":
+                path = None
+            else:
+                path = args.output
         exp.save(path, clauses=clauses)
 
     if db is not None:
@@ -468,18 +477,25 @@ def explanation(
     # directory of data to process
     if os.path.isdir(args.path):
         dir = args.path
-        explanations = []
         for dir, _, files in os.walk(args.path):
             for f in files:
                 to_process = os.path.join(dir, f)
                 logger.info("processing %s", to_process)
                 current_args = copy.copy(args)
                 current_args.path = to_process
-                explanations.append(
+                if args.output is not None and args.output != "show":
+                    name, _ = os.path.splitext(f)
+                    _explanation(
+                        current_args,
+                        model_shape,
+                        prediction_func,
+                        device,
+                        db,
+                        path=new_out,
+                    )
+                else:
                     _explanation(current_args, model_shape, prediction_func, device, db)
-                )
-        return explanations
 
     else:
         # a single explanation
-        return _explanation(args, model_shape, prediction_func, device, db)
+        _explanation(args, model_shape, prediction_func, device, db)

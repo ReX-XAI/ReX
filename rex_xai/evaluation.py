@@ -27,20 +27,20 @@ class Evaluation:
             raise ValueError("Invalid Explanation object")
 
         try:
-            final_mask = self.explanation.final_mask.squeeze().item() #type: ignore
+            final_mask = self.explanation.final_mask.squeeze().item()  # type: ignore
         except Exception:
             final_mask = self.explanation.final_mask
 
         try:
             return (
-                tt.count_nonzero(final_mask) #type: ignore
-                / final_mask.size #type: ignore
+                tt.count_nonzero(final_mask)  # type: ignore
+                / final_mask.size  # type: ignore
                 / self.explanation.data.model_channels
             ).item()
         except TypeError:
             return (
-                np.count_nonzero(final_mask) #type: ignore
-                / final_mask.size #type: ignore
+                np.count_nonzero(final_mask)  # type: ignore
+                / final_mask.size  # type: ignore
                 / self.explanation.data.model_channels
             )
 
@@ -52,7 +52,10 @@ class Evaluation:
         _, psd = periodogram(self.explanation.target_map)
         psd_norm = psd / psd.sum()
         ent = -np.sum(xlogx(psd_norm))
-        max_ent = np.log2(len(psd_norm[0]))
+        if len(psd_norm.shape) == 2:
+            max_ent = np.log2(len(psd_norm[0]))
+        else:
+            max_ent = np.log2(len(psd_norm))
         return ent, max_ent
 
     def entropy_loss(self):
