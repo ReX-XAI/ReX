@@ -163,12 +163,38 @@ def read_config_file(path):
     except Exception as e:
         raise ReXTomlError(e)
 
+def rex_ascii():
+    return ("                       @@@@@@@@@@@@@@@                                \n" +
+            "                       @@  @@@@@@@@@@@                                \n" +
+            "                     @@@@  @@@@@@@@@@@@@@@@@                          \n" +
+            "                     @@@@@@@@@@@@@@@@@@@@@@@                          \n" +
+            "                     @@@@@@@@@@@@@@@@@@@@@@@                          \n" +
+            "                     @@@@@@@@@@                                       \n" +
+            "                     @@@@@@@@@@@@@@@@         %%%                     \n" +
+            "   @@              @@@@@@@@@@@                %%%%                    \n" +
+            "   @@              @@@@@@@   %%@               %%%%             %%    \n" +
+            "   @@            @@@@@@@@ @%%%%%%%              %%%%           %%     \n" +
+            "   @@@@        @@@@@@@@@@ %%%%  %%%%%%           %%%%        %%       \n" +
+            "   @@@@@@    @@@@@@@@@@@@ %%%%     %%%%%%      %   %%%     %%         \n" +
+            "   @@@@@@@@@@@@@@@@@@@@@@ %%%%       %      %%      %%%   %           \n" +
+            "     @@@@@@@@@@@@@@@@@@@@ %%%%    %%      %          %%%%             \n" +
+            "       @@@@@@@@@@@@@@@@@@ %%%   %%     %%%%%%%%%%%    %%%             \n" +
+            "         @@@@@@@@@@@@@@@@ %%%  %%%%   %%%%           % %%%            \n" +
+            "         @@@@@@@@@@@@@@@  %%%   %%%%   %%%%        %@   %%%           \n" +
+            "           @@@@@@@@@@@@@  %%%    %%%%    %%%     %%      %%%          \n" +
+            "             @@@@@@  @@@  %%%     %%%%    %%%% %%         %%%%        \n" +
+            "             @@@@        %%%%      %%%%%   %%%%            %%%%  %    \n" +
+            "             @@          %%%%        %%%%   %%%%%@          %%%%%     \n" +
+            "             @@@@        %            %%      %              %%       \n\n\n" +
+            "   Explaining AI throught causal Responsibilty EXplanations\n")
+                                                                      
 
 def cmdargs():
     """parses command line flags"""
     parser = argparse.ArgumentParser(
         prog="ReX",
-        description="Explaining AI through causal reasoning",
+        description=f"{rex_ascii()}",
+        formatter_class=argparse.RawTextHelpFormatter
     )
     parser.add_argument(
         "filename",
@@ -189,7 +215,7 @@ def cmdargs():
     )
 
     parser.add_argument(
-        "--script", type=str, help="custom loading and preprocessing script"
+        "--script", type=str, help="custom loading and preprocessing script, mostly for use with pytorch models"
     )
 
     parser.add_argument(
