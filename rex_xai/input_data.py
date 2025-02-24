@@ -38,19 +38,20 @@ class Data:
         self.model_width: Optional[int] = width
         self.model_channels: Optional[int] = channels
         self.model_order = order
-        self.mask_value = None
+        # self.mask_value = None
 
         if process:
             # RGB model but greyscale input so we convert greyscale to pseudo-RGB
             if self.model_channels == 3 and self.mode == "L":
                 self.input = self.input.convert("RGB")
                 self.mode = "RGB"
-            if self.mode in ("tabular", "spectral"):
+            elif self.mode == "RGB" and self.model_order == "first":
+                self.transposed = True
+            elif self.mode in ("tabular", "spectral"):
                 self.data = self.input
                 self.match_data_to_model_shape()
             else:
-                self.data = None
-            self.transposed = False
+                raise NotImplementedError
 
     def set_height(self, h: int):
         self.model_height = h

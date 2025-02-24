@@ -35,8 +35,8 @@ class Args:
         # for reproducability
         self.seed: Union[int, float, None] = None
         # for custom scripts (when used as cmdline tool)
-        self.custom: Optional[ModuleType] = None
-        self.custom_location = None
+        self.script: Optional[ModuleType] = None
+        self.script_location = None
         self.processed = False
         # onnx processing
         self.means = None
@@ -98,7 +98,7 @@ class Args:
             + f"spatial_radius: {self.spatial_initial_radius}, "
             + f"spatial_eta: {self.spatial_radius_eta}, seed: {self.seed}, "
             + f"db: {self.db}, "
-            + f"custom: {self.custom}, verbosity: {self.verbosity}, "
+            + f"script: {self.script_location}, verbosity: {self.verbosity}, "
             + f"spotlights: {self.spotlights}, spotlight_size: {self.spotlight_size}, "
             + f"spotlight_eta: {self.spotlight_eta}, "
             + f"no_expansions: {self.no_expansions}, "
@@ -498,8 +498,8 @@ def process_custom_script(script, args):
     except Exception as e:
         logger.error("failed to load %s because of %s, exiting...", script, e)
         raise e
-    args.custom = script
-    args.custom_location = script
+    args.script = script
+    args.script_location = script
 
 
 def process_cmd_args(cmd_args, args):
@@ -571,7 +571,7 @@ def get_all_args():
 
     shared_args(cmd_args, args)
 
-    if args.model is None and args.custom_location is None:
+    if args.model is None and args.script_location is None:
         raise RuntimeError("either a <model>.onnx or a python file must be provided")
 
     return args

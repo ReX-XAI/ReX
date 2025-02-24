@@ -26,7 +26,7 @@ from rex_xai.onnx import get_prediction_function
 from rex_xai.resp_maps import ResponsibilityMaps
 from rex_xai.responsibility import causal_explanation
 from rex_xai.prediction import Prediction
-from rex_xai._utils import Strategy
+from rex_xai._utils import Strategy, ReXScriptError
 
 
 def try_preprocess(args: CausalArgs, model_shape: Tuple[int], device: tt.device):
@@ -96,7 +96,7 @@ def load_and_preprocess_data(
 ):
     """Loads input data from filepath and does preprocessing.
 
-    Uses a custom preprocesssing function if this is defined in ``args.custom.preprocess``,
+    Uses a custom preprocesssing function if this is defined in ``args.script.preprocess``,
     otherwise :py:func:`~rex_xai.explanation.try_preprocess()`.
 
     Args:
@@ -109,8 +109,11 @@ def load_and_preprocess_data(
         Data: the processed input data
 
     """
-    if args.custom is not None and hasattr(args.custom, "preprocess"):
-        data = args.custom.preprocess(args.path, model_shape, device, mode=args.mode)
+    if args.script is not None:
+        if hasattr(args.script, "preprocess"):
+            data = args.script.preprocess(args.path, model_shape, device, mode=args.mode)
+        else:
+            raise ReXScriptError(f"{args.script_location} is missing a preprocess() function")
     else:
         # no custom preprocessing, so we make our best guess as to what to do
         data = try_preprocess(args, model_shape, device)
@@ -414,7 +417,7 @@ def _explanation(
 def get_prediction_func_from_args(args: CausalArgs):
     """Takes a CausalArgs object and gets the prediction function and model shape.
 
-    If ``args.custom`` specifies a prediction function and model shape, returns these.
+    If ``args.script`` specifies a prediction function and model shape, returns these.
     Otherwise gets the prediction function and model shape from the provided model
     file.
 
@@ -431,11 +434,9 @@ def get_prediction_func_from_args(args: CausalArgs):
         RuntimeError: if an onnx inference instance cannot be created from the provided model file.
 
     """
-    if hasattr(args.custom, "prediction_function") and hasattr(
-        args.custom, "model_shape"
-    ):
-        prediction_func = args.custom.prediction_function  # type: ignore
-        model_shape = args.custom.model_shape()  # type: ignore
+    if hasattr(args.script, "prediction_function") and hasattr(args.script, "model_shape"):
+        prediction_func =  args.script.prediction_function  # type: ignore
+        model_shape = args.script.model_shape()  # type: ignore
     else:
         ps = get_prediction_function(args.model, args.gpu, logger_level=args.verbosity)
         if ps is None:
@@ -491,7 +492,7 @@ def explanation(
                         prediction_func,
                         device,
                         db,
-                        path=new_out,
+                        # path=new_out,
                     )
                 else:
                     _explanation(current_args, model_shape, prediction_func, device, db)
