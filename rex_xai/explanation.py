@@ -6,7 +6,7 @@ import copy
 import os
 import sys
 import time
-from typing import List, Tuple, Union
+from typing import Tuple, Optional
 
 from scipy.io import loadmat
 import numpy as np
@@ -72,7 +72,7 @@ def try_preprocess(args: CausalArgs, model_shape: Tuple[int], device: tt.device)
     elif ext in (".npy", ".mat"):
         if args.mode in ("tabular", "spectral"):
             if ext == ".mat":
-                raw_data = np.load(loadmat(args.path)['val'])
+                raw_data = np.load(loadmat(args.path)["val"])
             else:
                 raw_data = np.load(args.path)
             data = Data(raw_data, model_shape, mode=args.mode, device=device)
@@ -111,9 +111,13 @@ def load_and_preprocess_data(
     """
     if args.script is not None:
         if hasattr(args.script, "preprocess"):
-            data = args.script.preprocess(args.path, model_shape, device, mode=args.mode)
+            data = args.script.preprocess(
+                args.path, model_shape, device, mode=args.mode
+            )
         else:
-            raise ReXScriptError(f"{args.script_location} is missing a preprocess() function")
+            raise ReXScriptError(
+                f"{args.script_location} is missing a preprocess() function"
+            )
     else:
         # no custom preprocessing, so we make our best guess as to what to do
         data = try_preprocess(args, model_shape, device)
@@ -434,8 +438,10 @@ def get_prediction_func_from_args(args: CausalArgs):
         RuntimeError: if an onnx inference instance cannot be created from the provided model file.
 
     """
-    if hasattr(args.script, "prediction_function") and hasattr(args.script, "model_shape"):
-        prediction_func =  args.script.prediction_function  # type: ignore
+    if hasattr(args.script, "prediction_function") and hasattr(
+        args.script, "model_shape"
+    ):
+        prediction_func = args.script.prediction_function  # type: ignore
         model_shape = args.script.model_shape()  # type: ignore
     else:
         ps = get_prediction_function(args.model, args.gpu, logger_level=args.verbosity)
@@ -449,7 +455,7 @@ def get_prediction_func_from_args(args: CausalArgs):
 
 def explanation(
     args: CausalArgs, device: tt.device, db: Session | None = None
-) -> Union[Explanation, List[Explanation]]:
+) -> Optional[Explanation]:
     """Takes a CausalArgs object and returns a Explanation.
 
     Takes a CausalArgs object and returns either an Explanation, or a list of Explanations
@@ -478,6 +484,7 @@ def explanation(
     # directory of data to process
     if os.path.isdir(args.path):
         dir = args.path
+        path = None
         for dir, _, files in os.walk(args.path):
             for f in files:
                 to_process = os.path.join(dir, f)
@@ -485,18 +492,19 @@ def explanation(
                 current_args = copy.copy(args)
                 current_args.path = to_process
                 if args.output is not None and args.output != "show":
-                    name, _ = os.path.splitext(f)
-                    _explanation(
-                        current_args,
-                        model_shape,
-                        prediction_func,
-                        device,
-                        db,
-                        # path=new_out,
-                    )
-                else:
-                    _explanation(current_args, model_shape, prediction_func, device, db)
+                    out_dir = os.path.dirname(args.output)
+                    name, ext = os.path.splitext(args.output)
+                    fname, _ = os.path.splitext(f)
+                    path = f"{out_dir}_{fname}_{name}{ext}"
+                _explanation(
+                    current_args,
+                    model_shape,
+                    prediction_func,
+                    device,
+                    db,
+                    path=path,
+                )
 
     else:
         # a single explanation
-        _explanation(args, model_shape, prediction_func, device, db)
+        return _explanation(args, model_shape, prediction_func, device, db)
