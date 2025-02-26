@@ -32,9 +32,9 @@ class MultiExplanation(Explanation):
         elif multi_style == "composite":
             logger.info("using composite style to save explanations")
             if clauses is None:
-                clauses = range(0, len(self.explanations))
+                clause = range(0, len(self.explanations))
                 save_multi_explanation(
-                    self.explanations, self.data, self.args, clauses=clauses, path=path
+                    self.explanations, self.data, self.args, clause=clause, path=path
                 )
             else:
                 for clause in clauses:
@@ -44,17 +44,41 @@ class MultiExplanation(Explanation):
                         self.explanations,
                         self.data,
                         self.args,
-                        clauses=clause,
+                        clause=clause,
                         path=new_name,
                     )
 
-    def show(self, path=None):
+    def show(self, path=None, multi_style=None, clauses=None):
+        if multi_style is None:
+            multi_style = self.args.multi_style
         outs = []
-        for i, mask in enumerate(self.explanations):
-            out = save_image(mask,self.data, self.args, path=None)
-            outs.append(out)
-        
-        plot_image_grid(outs)
+        if multi_style == "separate":
+            for i, mask in enumerate(self.explanations):
+                out = save_image(mask,self.data, self.args, path=None)
+                outs.append(out)
+    
+        elif multi_style == "composite":
+            if clauses is None:
+                clause = tuple([i for i in range(len(self.explanations))])
+                out = save_multi_explanation(
+                    self.explanations, self.data, self.args, clause=clause, path=None
+                )
+                outs.append(out)
+            else:
+                for clause in clauses:
+                    out = save_multi_explanation(
+                        self.explanations,
+                        self.data,
+                        self.args,
+                        clause=clause,
+                        path=None,
+                    )
+                    outs.append(out)
+ 
+        if len(outs) > 1:
+            plot_image_grid(outs)
+        else:
+            return outs[0]
 
     def extract(self, method=None):
         target_map = self.maps.get(self.data.target.classification)  # type: ignore
