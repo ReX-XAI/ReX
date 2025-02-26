@@ -1,4 +1,4 @@
-# ReX: Causal Responsibility Explanations for image classifiers
+# ReX: Causal *R*esponsibility *EX*planations for image classifiers
 
 <picture>
  <source media="(prefers-color-scheme: dark)" srcset="assets/rex_logo.png">
@@ -14,17 +14,17 @@
 
 <!--- BADGES: END --->
 
-***
+---
 
-ReX is a causal explainability tool for image classifiers.
+ReX is a causal explainability tool for image classifiers. It also works on tabular and 3D data.
 
-Given an input image and a classifier, ReX calculates a responsibility map across the data and identifies a minimal explanation.
+Given an input image and a classifier, ReX calculates a causal responsibility map across the data and identifies a minimal, sufficient, explanation.
 
 ![ladybird](tests/test_data/ladybird.jpg "Original Image") ![responsibility map](assets/ladybird_rm.png "Responsibility Map") ![minimal explanation](assets/ladybird_301.png "Explanation")
 
 ReX is black-box, that is, agnostic to the internal structure of the classifier.
-We assume that we can modify the inputs and send them to the classifier, observing the output.
-ReX outperforms other tools on single explanations, non-contiguous explanations (for partially obscured images), and multiple explanations.
+ReX finds single explanations, non-contiguous explanations (for partially obscured images), multiple independent explanations, contrastive explanations and lots of other things!
+It has a host of options and parameters, allowing you to fine tune it to your data.
 
 For background information and detailed usage instructions, see our [documentation](https://rex-xai.readthedocs.io/en/latest/).
 
