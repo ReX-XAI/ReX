@@ -44,6 +44,8 @@
       queue_style=<Queue.Area: 1>,
       raw=False,
       resize=False,
+      script=None,
+      script_location=None,
       search_limit=1000,
       seed=100,
       segmentation=False,

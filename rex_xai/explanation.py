@@ -6,7 +6,7 @@ import copy
 import os
 import sys
 import time
-from typing import Tuple, Optional
+from typing import Tuple, List, Union
 
 from scipy.io import loadmat
 import numpy as np
@@ -455,7 +455,7 @@ def get_prediction_func_from_args(args: CausalArgs):
 
 def explanation(
     args: CausalArgs, device: tt.device, db: Session | None = None
-) -> Optional[Explanation]:
+) -> Union[Explanation, List[Explanation]]:
     """Takes a CausalArgs object and returns a Explanation.
 
     Takes a CausalArgs object and returns either an Explanation, or a list of Explanations
@@ -483,6 +483,7 @@ def explanation(
 
     # directory of data to process
     if os.path.isdir(args.path):
+        explanations = []
         dir = args.path
         path = None
         for dir, _, files in os.walk(args.path):
@@ -496,7 +497,7 @@ def explanation(
                     name, ext = os.path.splitext(args.output)
                     fname, _ = os.path.splitext(f)
                     path = f"{out_dir}_{fname}_{name}{ext}"
-                _explanation(
+                exp = _explanation(
                     current_args,
                     model_shape,
                     prediction_func,
@@ -504,6 +505,8 @@ def explanation(
                     db,
                     path=path,
                 )
+                explanations.append(exp)
+        return explanations
 
     else:
         # a single explanation
