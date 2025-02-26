@@ -374,130 +374,92 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
     )
     x, y, z = np.indices(data_m.shape)
 
+    x_max, y_max, z_max = data.shape
+
     app = Dash(__name__)
 
-    # 3D rendering of the data
-    volume = go.Mesh3d(
-        x=x.flatten(),
-        y=y.flatten(),
-        z=z.flatten(),
-        cmin=np.min(data_m),
-        cmax=np.max(data_m),
-        intensity=data_m.flatten(),
-        opacity=0.6,
-        colorscale="gray_r",
-    )
-    # Add the 3d volume of responsibility map with the data volume
-    fig = go.Figure(data=volume).add_mesh3d(
-        x=x.flatten(),
-        y=y.flatten(),
-        z=z.flatten(),
-        intensity=resp_map.flatten(),
-        cmin=np.min(data_m),
-        cmax=np.max(data_m),
-        opacity=0.3,
-        colorscale=args.heatmap_colours,
-    )
+    app.layout = html.Div([
+        html.Div([
+            # X Slice
+            html.Div([
+                html.Label("X Slice", style={"font-weight": "bold", "margin-bottom": "10px"}),
+                dcc.Graph(id="x-slice", style={"width": "100%", "height": "auto", "max-width": "400px"}),
+                dcc.Slider(0, x_max - 1, 1, value=x_max // 2, id="x-slider",
+                           marks={0: "0", x_max - 1: str(x_max - 1)},
+                           vertical=True, tooltip={"always_visible": True}),
+            ], style={"display": "flex", "align-items": "center", "gap": "20px", "flex": "1"}),
 
-    app.layout = html.Div(
-        [
-            dcc.Graph(id="3d-plot", style={"height": "600px"}, figure=fig),
-            html.Div(
-                [
-                    dcc.Graph(id="x-slice", style={"padding": "10px"}),
-                    dcc.Graph(id="y-slice", style={"padding": "10px"}),
-                    dcc.Graph(id="z-slice", style={"padding": "10px"}),
-                ],
-                style={
-                    "display": "flex",
-                    "justify-content": "center",
-                    "align-items": "center",
-                    "gap": "20px",
-                    "marginTop": "20px",
-                },
-            ),
-        ],
-        style={"width": "80%", "margin": "auto"},
-    )
+            # Y Slice
+            html.Div([
+                html.Label("Y Slice", style={"font-weight": "bold", "margin-bottom": "10px"}),
+                dcc.Graph(id="y-slice", style={"width": "100%", "height": "auto", "max-width": "400px"}),
+                dcc.Slider(0, y_max - 1, 1, value=y_max // 2, id="y-slider",
+                           marks={0: "0", y_max - 1: str(y_max - 1)},
+                           vertical=True, tooltip={"always_visible": True}),
+            ], style={"display": "flex", "align-items": "center", "gap": "20px", "flex": "1"}),
+
+        ], style={"display": "flex", "justify-content": "center", "gap": "40px"}),
+
+        # Z Slice
+        html.Div([
+            html.Label("Z Slice", style={"font-weight": "bold", "margin-bottom": "10px"}),
+            dcc.Graph(id="z-slice", style={"width": "100%", "height": "auto", "max-width": "400px"}),
+            dcc.Slider(0, z_max - 1, 1, value=z_max // 2, id="z-slider",
+                       marks={0: "0", z_max - 1: str(z_max - 1)},
+                       vertical=True, tooltip={"always_visible": True}),
+        ], style={"display": "flex", "align-items": "center", "gap": "20px", "margin-top": "40px"}),
+
+        # Opacity Slider
+        html.Div([
+            html.Label("Opacity"),
+            dcc.Slider(0, 1, 0.1, value=0.5, id="opacity-slider",
+                       tooltip={"always_visible": True}, marks={0: "0", 1: "1"},
+                       vertical=True)
+        ], style={"position": "absolute", "top": "10%", "right": "10%", "width": "100px"}),
+
+    ], style={"width": "3000x", "height": "20px", "margin": "auto", "padding": "20px", "display": "flex",
+              "flex-direction": "column", "gap": "40px"})
 
     @app.callback(
-        [
-            Output("x-slice", "figure"),
-            Output("y-slice", "figure"),
-            Output("z-slice", "figure"),
-        ],
-        [Input("3d-plot", "hoverData")],
+        Output("x-slice", "figure"),
+        Output("y-slice", "figure"),
+        Output("z-slice", "figure"),
+        Input("x-slider", "value"),
+        Input("y-slider", "value"),
+        Input("z-slider", "value"),
+        Input("opacity-slider", "value"),
     )
-    def update_cross_sections(hover_data):
-        if hover_data is None:
-            hover_x, hover_y, hover_z = (
-                data_m.shape[0] // 2,
-                data_m.shape[1] // 2,
-                data_m.shape[2] // 2,
-            )
-        else:
-            hover_x, hover_y, hover_z = (
-                hover_data["points"][0]["x"],
-                hover_data["points"][0]["y"],
-                hover_data["points"][0]["z"],
-            )
-
+    def update_slices(x_idx, y_idx, z_idx, opacity):
+        # X-Slice (YZ plane)
         x_slice = go.Figure()
         x_slice.add_trace(
-            go.Heatmap(z=data_m[int(hover_x), :, :], colorscale="gray_r", name="Data", zmin=0, zmax=1)
-        )
+            go.Heatmap(z=data[x_idx, :, :], colorscale="gray_r", name="Data", zmin=0, zmax=1, showscale=False))
         x_slice.add_trace(
-            go.Heatmap(
-                z=resp_map[int(hover_x), :, :],
-                colorscale=args.heatmap_colours,
-                opacity=0.5,
-                name="Resp Map",
-                showscale=False,
-                zmin=0, zmax=1
-            )
-        )
+            go.Heatmap(z=resp_map[x_idx, :, :], colorscale=args.heatmap_colours, opacity=opacity, name="Resp Map", zmin=0, zmax=1))
+        x_slice.update_layout(title=f"YZ Plane at {x_idx}")
 
-        # Y-Slice
+        # Y-Slice (XZ plane)
         y_slice = go.Figure()
         y_slice.add_trace(
-            go.Heatmap(z=data_m[:, int(hover_y), :], colorscale="gray_r", name="Data", zmin=0, zmax=1)
-        )
+            go.Heatmap(z=data[:, y_idx, :], colorscale="gray_r", name="Data", zmin=0, zmax=1, showscale=False))
         y_slice.add_trace(
-            go.Heatmap(
-                z=resp_map[:, int(hover_y), :],
-                colorscale=args.heatmap_colours,
-                opacity=0.5,
-                name="Resp Map",
-                showscale=False,
-                zmin=0, zmax=1
-            )
-        )
+            go.Heatmap(z=resp_map[:, y_idx, :], colorscale=args.heatmap_colours, opacity=opacity, name="Resp Map", zmin=0, zmax=1))
+        y_slice.update_layout(title=f"XZ Plane at {y_idx}")
 
-        # Z-Slice
+        # Z-Slice (XY plane)
         z_slice = go.Figure()
         z_slice.add_trace(
-            go.Heatmap(z=data_m[:, :, int(hover_z)], colorscale="gray_r", name="Data", zmin=0, zmax=1)
-        )
+            go.Heatmap(z=data[:, :, z_idx], colorscale="gray_r", name="Data", zmin=0, zmax=1, showscale=False))
         z_slice.add_trace(
-            go.Heatmap(
-                z=resp_map[:, :, int(hover_z)],
-                colorscale=args.heatmap_colours,
-                opacity=0.5,
-                name="Resp Map",
-                showscale=False,
-                zmin=0, zmax=1
-            )
-        )
+            go.Heatmap(z=resp_map[:, :, z_idx], colorscale=args.heatmap_colours, opacity=opacity, name="Resp Map", zmin=0, zmax=1))
+        z_slice.update_layout(title=f"XY Planne at {z_idx}")
 
         return x_slice, y_slice, z_slice
 
-    if path is not None:
-        if path.endswith(".png"):
-            fig.write_image(path)
-        else:
-            app.run_server(debug=False)
+    if path is None:
+        app.run_server(debug=False, use_reloader=False)
     else:
-        app.run_server(debug=False)
+        logger.error("Saving 3D voxel plot is not supported yet as it is interactive.")
 
 
 def __transpose_mask(explanation, mode, transposed):
