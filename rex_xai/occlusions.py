@@ -49,7 +49,7 @@ def spectral_occlusion(mask: tt.Tensor, data: tt.Tensor, noise=0.03, device="cpu
 
 
 # Medical-based occlusions could be a CT scan of a healthy patient
-def context_occlusion(mask: tt.Tensor, data: tt.Tensor, context: tt.Tensor, noise=0.0):
+def context_occlusion(mask: tt.Tensor, data: tt.Tensor, context: tt.Tensor, noise=0.5):
     """Context based occlusion with optional added noise.
 
     @param mask: boolean valued NDArray
@@ -61,5 +61,5 @@ def context_occlusion(mask: tt.Tensor, data: tt.Tensor, context: tt.Tensor, nois
     @return torch.Tensor
     """
     if noise > 0.0:
-        context = gaussian_filter(context, sigma=noise)
+        context = tt.tensor(gaussian_filter(context, sigma=noise), dtype=tt.float32)
     return tt.where(mask == 0, context, data)

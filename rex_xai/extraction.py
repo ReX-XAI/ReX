@@ -113,6 +113,7 @@ class Explanation:
                         self.final_mask = mutant.zero_()
                         for _, loc in ranking[:limit]:
                             self.set_to_true(loc, self.final_mask)
+                        logger.debug("final mask found: %s", self.final_mask)
                         return
                 masks = []
 
