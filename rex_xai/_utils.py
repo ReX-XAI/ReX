@@ -53,6 +53,7 @@ class ReXPathError(ReXError):
     def __str__(self) -> str:
         return f"ReXPathError: no such file exists at {self.message}"
 
+
 class ReXScriptError(ReXError):
     def __init__(self, message) -> None:
         self.message = message
@@ -60,6 +61,7 @@ class ReXScriptError(ReXError):
 
     def __str__(self) -> str:
         return f"ReXScriptError: {self.message}"
+
 
 class ReXDataError(ReXError):
     def __init__(self, message) -> None:
