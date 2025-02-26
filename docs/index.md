@@ -3,7 +3,8 @@
 **ReX** is a causal explainability tool for image classifiers.
 ReX is black-box, that is, agnostic to the internal structure of the classifier.
 We assume that we can modify the inputs and send them to the classifier, observing the output.
-ReX outperforms other tools on single explanations, non-contiguous explanations (for partially obscured images), and multiple explanations.
+ReX provides sufficient, minimal single explanations, non-contiguous explanations (for partially obscured images), multiple explanations
+and contrastive explanations (sufficient, necessary and minimal).
 
 ```{image} ../assets/rex-structure-600x129.png
 :alt: ReX organisation
@@ -49,11 +50,11 @@ rex tests/test_data/dog.jpg --script tests/scripts/pytorch_resnet50.py -vv --out
 Other options:
 
 ```bash
-# with global search rather than the default spatial search
-rex <path_to_image> --model <path_to_model> --strategy global
+# with spatial search rather than the default global search
+rex <path_to_image> --model <path_to_model> --strategy spatial
 
 # to run multiple explanations
-rex <path_to_image> --model <path_to_model> --strategy multi
+rex <path_to_image> --model <path_to_model> --multi
 
 # to view a responsibility landscape heatmap
 rex <path_to_image> --model <path_to_model>  --heatmap
@@ -120,21 +121,21 @@ rex tests/test_data/ladybird.jpg --script tests/scripts/pytorch_resnet50.py --an
 INFO:ReX:area 0.000399, entropy difference 6.751189, insertion curve 0.964960, deletion curve 0.046096
 ```
 
-### Submaps
-
-```bash
-rex tests/test_data/lizard.jpg --model resnet50-v1-7.onnx --predictions 5 --surface lizard_subs.png
-```
-
-![lizard](../tests/test_data/lizard.jpg)
-
-![lizard_rm](../assets/lizard_subs.png)
-
-```{toctree}
-:maxdepth: 2
-:caption: Contents:
-
-background.md
-command_line.md
-config.md
-```
+<!--### Submaps-->
+<!---->
+<!--```bash-->
+<!--rex tests/test_data/lizard.jpg --model resnet50-v1-7.onnx --predictions 5 --surface lizard_subs.png-->
+<!--```-->
+<!---->
+<!--![lizard](../tests/test_data/lizard.jpg)-->
+<!---->
+<!--![lizard_rm](../assets/lizard_subs.png)-->
+<!---->
+<!--```{toctree}-->
+<!--:maxdepth: 2-->
+<!--:caption: Contents:-->
+<!---->
+<!--background.md-->
+<!--command_line.md-->
+<!--config.md-->
+<!--```-->
