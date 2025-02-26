@@ -257,6 +257,7 @@ class BoxInternal:
             self.distribution_args,
             map=map,
         )
+        c1 = range1[0] + c1
         space = range2[1] - range2[0]
         c2 = random_coords(
             self.distribution,
@@ -266,12 +267,14 @@ class BoxInternal:
             self.distribution_args,
             map=map,
         )
+        c2 = range2[0] + c2
         logger.debug(f"Random coordinates picked: {c1} and {c2}")
         # If any of the coordinates are None, return None
         if c1 == -1 or c2 == -1:
             return None
         # Create boxes depending on the selected axes
         boxes = []
+
         subboxes = self.create_box(selected_axes[0], c1, self)
         for i, box in enumerate(subboxes):
             boxes.extend(self.create_box(selected_axes[1], c2, box))
