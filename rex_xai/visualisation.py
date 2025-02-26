@@ -377,28 +377,25 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
     app = Dash(__name__)
 
     # 3D rendering of the data
-    volume = go.Volume(
+    volume = go.Mesh3d(
         x=x.flatten(),
         y=y.flatten(),
         z=z.flatten(),
-        isomin=np.min(data_m),
-        isomax=np.max(data_m),
-        value=data_m.flatten(),
-        opacity=0.5,
-        caps=dict(x_show=True, y_show=True, z_show=True, x_fill=1),
+        cmin=np.min(data_m),
+        cmax=np.max(data_m),
+        intensity=data_m.flatten(),
+        opacity=0.6,
         colorscale="gray_r",
-        surface=dict(count=1, fill=0.5, show=True),
     )
     # Add the 3d volume of responsibility map with the data volume
-    fig = go.Figure(data=volume).add_volume(
+    fig = go.Figure(data=volume).add_mesh3d(
         x=x.flatten(),
         y=y.flatten(),
         z=z.flatten(),
-        value=resp_map.flatten(),
-        isomin=np.min(data_m),
-        isomax=np.max(data_m),
-        opacity=0.1,
-        surface=dict(count=1, fill=0.5, show=True),
+        intensity=resp_map.flatten(),
+        cmin=np.min(data_m),
+        cmax=np.max(data_m),
+        opacity=0.3,
         colorscale=args.heatmap_colours,
     )
 
@@ -447,7 +444,7 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
 
         x_slice = go.Figure()
         x_slice.add_trace(
-            go.Heatmap(z=data_m[int(hover_x), :, :], colorscale="gray_r", name="Data")
+            go.Heatmap(z=data_m[int(hover_x), :, :], colorscale="gray_r", name="Data", zmin=0, zmax=1)
         )
         x_slice.add_trace(
             go.Heatmap(
@@ -456,13 +453,14 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
                 opacity=0.5,
                 name="Resp Map",
                 showscale=False,
+                zmin=0, zmax=1
             )
         )
 
         # Y-Slice
         y_slice = go.Figure()
         y_slice.add_trace(
-            go.Heatmap(z=data_m[:, int(hover_y), :], colorscale="gray_r", name="Data")
+            go.Heatmap(z=data_m[:, int(hover_y), :], colorscale="gray_r", name="Data", zmin=0, zmax=1)
         )
         y_slice.add_trace(
             go.Heatmap(
@@ -471,13 +469,14 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
                 opacity=0.5,
                 name="Resp Map",
                 showscale=False,
+                zmin=0, zmax=1
             )
         )
 
         # Z-Slice
         z_slice = go.Figure()
         z_slice.add_trace(
-            go.Heatmap(z=data_m[:, :, int(hover_z)], colorscale="gray_r", name="Data")
+            go.Heatmap(z=data_m[:, :, int(hover_z)], colorscale="gray_r", name="Data", zmin=0, zmax=1)
         )
         z_slice.add_trace(
             go.Heatmap(
@@ -486,6 +485,7 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
                 opacity=0.5,
                 name="Resp Map",
                 showscale=False,
+                zmin=0, zmax=1
             )
         )
 
@@ -495,9 +495,9 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
         if path.endswith(".png"):
             fig.write_image(path)
         else:
-            app.run_server(debug=True)
+            app.run_server(debug=False)
     else:
-        app.run_server(debug=True)
+        app.run_server(debug=False)
 
 
 def __transpose_mask(explanation, mode, transposed):
