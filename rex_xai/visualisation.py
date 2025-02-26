@@ -308,7 +308,13 @@ def overlay_grid(img, step_count=10):
 
 def remove_background(data: Data, resp_map: np.ndarray) -> np.ndarray:
     """Remove the background from the responsibility map if set in the Data object"""
-    data_m: np.ndarray = data.data[0, :, :, :]
+    if data.mode == "voxel":
+        if len(data.data.shape) == 4:
+            data_m = data.data[0, :, :, :]
+        else:
+            data_m = data.data
+    else:
+        data_m = data.data # need to check for other modes
     # Set background to minimum value in the responsibility map if set in the Data object
     if data.background is not None and data.background is int or float:
         background = np.where(
@@ -347,10 +353,21 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
     if isinstance(resp_map, tt.Tensor):
         resp_map = resp_map.squeeze().detach().cpu().numpy()
 
-    maps: np.ndarray = resp_map
-    data_m = data_m[0, :, :, :]  # Remove batch dimension
+    if isinstance(data_m, tt.Tensor):
+        data_m = data_m.squeeze().detach().cpu().numpy()
+        tt.tensor(data_m, dtype=tt.float32)
 
+    maps: np.ndarray = resp_map
     resp_map = remove_background(data, maps)
+
+    # Normalize the data
+    data_m = (data_m - np.min(data_m)) / (np.max(data_m) - np.min(data_m))
+    resp_map = (resp_map - np.min(resp_map)) / (np.max(resp_map) - np.min(resp_map))
+
+    # Check if both data and responsibility map have the same range of values
+    assert np.min(data_m) == np.min(resp_map) and np.max(data_m) == np.max(resp_map), (
+        "Data and Responsibility map must have the same range of values!"
+    )
 
     assert data_m.shape == maps.shape, (
         "Data and Responsibility map must have the same shape!"
@@ -360,7 +377,7 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
     app = Dash(__name__)
 
     # 3D rendering of the data
-    volume = go.Isosurface(
+    volume = go.Volume(
         x=x.flatten(),
         y=y.flatten(),
         z=z.flatten(),
@@ -390,11 +407,17 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
             dcc.Graph(id="3d-plot", style={"height": "600px"}, figure=fig),
             html.Div(
                 [
-                    dcc.Graph(id="x-slice"),
-                    dcc.Graph(id="y-slice"),
-                    dcc.Graph(id="z-slice"),
+                    dcc.Graph(id="x-slice", style={"padding": "10px"}),
+                    dcc.Graph(id="y-slice", style={"padding": "10px"}),
+                    dcc.Graph(id="z-slice", style={"padding": "10px"}),
                 ],
-                style={"display": "flex", "justify-content": "space-around"},
+                style={
+                    "display": "flex",
+                    "justify-content": "center",
+                    "align-items": "center",
+                    "gap": "20px",
+                    "marginTop": "20px",
+                },
             ),
         ],
         style={"width": "80%", "margin": "auto"},
@@ -432,6 +455,7 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
                 colorscale=args.heatmap_colours,
                 opacity=0.5,
                 name="Resp Map",
+                showscale=False,
             )
         )
 
@@ -446,6 +470,7 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
                 colorscale=args.heatmap_colours,
                 opacity=0.5,
                 name="Resp Map",
+                showscale=False,
             )
         )
 
@@ -460,6 +485,7 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
                 colorscale=args.heatmap_colours,
                 opacity=0.5,
                 name="Resp Map",
+                showscale=False,
             )
         )
 
