@@ -163,59 +163,64 @@ def read_config_file(path):
     except Exception as e:
         raise ReXTomlError(e)
 
+
 def rex_ascii():
-    return ("                       @@@@@@@@@@@@@@@                                \n" +
-            "                       @@  @@@@@@@@@@@                                \n" +
-            "                     @@@@  @@@@@@@@@@@@@@@@@                          \n" +
-            "                     @@@@@@@@@@@@@@@@@@@@@@@                          \n" +
-            "                     @@@@@@@@@@@@@@@@@@@@@@@                          \n" +
-            "                     @@@@@@@@@@                                       \n" +
-            "                     @@@@@@@@@@@@@@@@         %%%                     \n" +
-            "   @@              @@@@@@@@@@@                %%%%                    \n" +
-            "   @@              @@@@@@@   %%@               %%%%             %%    \n" +
-            "   @@            @@@@@@@@ @%%%%%%%              %%%%           %%     \n" +
-            "   @@@@        @@@@@@@@@@ %%%%  %%%%%%           %%%%        %%       \n" +
-            "   @@@@@@    @@@@@@@@@@@@ %%%%     %%%%%%      %   %%%     %%         \n" +
-            "   @@@@@@@@@@@@@@@@@@@@@@ %%%%       %      %%      %%%   %           \n" +
-            "     @@@@@@@@@@@@@@@@@@@@ %%%%    %%      %          %%%%             \n" +
-            "       @@@@@@@@@@@@@@@@@@ %%%   %%     %%%%%%%%%%%    %%%             \n" +
-            "         @@@@@@@@@@@@@@@@ %%%  %%%%   %%%%           % %%%            \n" +
-            "         @@@@@@@@@@@@@@@  %%%   %%%%   %%%%        %@   %%%           \n" +
-            "           @@@@@@@@@@@@@  %%%    %%%%    %%%     %%      %%%          \n" +
-            "             @@@@@@  @@@  %%%     %%%%    %%%% %%         %%%%        \n" +
-            "             @@@@        %%%%      %%%%%   %%%%            %%%%  %    \n" +
-            "             @@          %%%%        %%%%   %%%%%@          %%%%%     \n" +
-            "             @@@@        %            %%      %              %%       \n\n\n" +
-            "   Explaining AI throught causal Responsibilty EXplanations\n")
-                                                                      
+    return (
+        "                       @@@@@@@@@@@@@@@                                  \n"
+        + "                       @@  @@@@@@@@@@@                                \n"
+        + "                     @@@@  @@@@@@@@@@@@@@@@@                          \n"
+        + "                     @@@@@@@@@@@@@@@@@@@@@@@                          \n"
+        + "                     @@@@@@@@@@@@@@@@@@@@@@@                          \n"
+        + "                     @@@@@@@@@@                                       \n"
+        + "                     @@@@@@@@@@@@@@@@         %%%                     \n"
+        + "   @@              @@@@@@@@@@@                %%%%                    \n"
+        + "   @@              @@@@@@@   %%@               %%%%             %%    \n"
+        + "   @@            @@@@@@@@ @%%%%%%%              %%%%           %%     \n"
+        + "   @@@@        @@@@@@@@@@ %%%%  %%%%%%           %%%%        %%       \n"
+        + "   @@@@@@    @@@@@@@@@@@@ %%%%     %%%%%%      %   %%%     %%         \n"
+        + "   @@@@@@@@@@@@@@@@@@@@@@ %%%%       %      %%      %%%   %           \n"
+        + "     @@@@@@@@@@@@@@@@@@@@ %%%%    %%      %          %%%%             \n"
+        + "       @@@@@@@@@@@@@@@@@@ %%%   %%     %%%%%%%%%%%    %%%             \n"
+        + "         @@@@@@@@@@@@@@@@ %%%  %%%%   %%%%           % %%%            \n"
+        + "         @@@@@@@@@@@@@@@  %%%   %%%%   %%%%        %@   %%%           \n"
+        + "           @@@@@@@@@@@@@  %%%    %%%%    %%%     %%      %%%          \n"
+        + "             @@@@@@  @@@  %%%     %%%%    %%%% %%         %%%%        \n"
+        + "             @@@@        %%%%      %%%%%   %%%%            %%%%  %    \n"
+        + "             @@          %%%%        %%%%   %%%%%@          %%%%%     \n"
+        + "             @@@@        %            %%      %              %%       \n\n\n"
+        + "   Explaining AI throught causal Responsibilty EXplanations\n"
+    )
+
 
 def cmdargs():
     """parses command line flags"""
     parser = argparse.ArgumentParser(
         prog="ReX",
         description=f"{rex_ascii()}",
-        formatter_class=argparse.RawTextHelpFormatter
+        formatter_class=argparse.RawTextHelpFormatter,
     )
     parser.add_argument(
         "filename",
-        help="file to be processed, assumes that file is 3 channel (RGB or BRG)",
+        help="file to be processed, either an image, a numpy array, a mat file, or a nifti file",
     )
     parser.add_argument(
         "--output",
         nargs="?",
         const="show",
-        help="show minimal explanation, optionally saved to <OUTPUT>. Requires a PIL compatible file extension",
+        help="show minimal, sufficient causal explanation, optionally saved to <OUTPUT>. Requires a PIL compatible file extension",
     )
-    parser.add_argument("-c", "--config", type=str, help="config file to use for rex")
+    parser.add_argument("-c", "--config", type=str, help="optional config file to use for ReX")
 
     parser.add_argument(
         "--processed",
         action="store_true",
-        help="don't perform any processing with rex itself",
+        help="prevent ReX from performing any preprocessing",
     )
 
     parser.add_argument(
-        "--script", type=str, help="custom loading and preprocessing script, mostly for use with pytorch models"
+        "--script",
+        type=str,
+        help="custom loading and preprocessing script, mostly for use with pytorch models",
     )
 
     parser.add_argument(
@@ -229,42 +234,42 @@ def cmdargs():
         "--surface",
         nargs="?",
         const="show",
-        help="surface plot, optionally saved to <SURFACE>",
+        help="surface plot of the responsibility map, optionally saved to <SURFACE>",
     )
     parser.add_argument(
         "--heatmap",
         nargs="?",
         const="show",
-        help="heatmap plot, optionally saved to <HEATMAP>",
+        help="heatmap plot of the responsibility map, optionally saved to <HEATMAP>",
     )
 
-    parser.add_argument("--model", type=str, help="model, must be onnx format")
+    parser.add_argument("--model", type=str, help="model in .onnx format")
 
     parser.add_argument(
         "--strategy",
         "-s",
         type=str,
-        help="explanation strategy, one of < multi | spatial | linear | spotlight >",
+        help="explanation strategy, one of < multi | spatial | global | spotlight >, defaults to global",
     )
     parser.add_argument(
         "--database",
         "-db",
         type=str,
-        help="store output in sqlite database <DATABASE>, creating db if necessary",
+        help="store output in sqlite database <DATABASE>, creating db if necessary. Please include the extension in the filename",
     )
 
     parser.add_argument(
         "--multi",
         nargs="?",
         const=10,
-        help="multiple explanations, with optional number <x> of floodlights, defaults to value in rex.toml, or 10 if undefined",
+        help="multiple explanations, with optional number <x> of spotlights, defaults to value in <rex.toml>, or 10 if undefined",
     )
 
     parser.add_argument(
         "--contrastive",
         nargs="?",
         const=10,
-        help="a contrastive explanation, both necessary and sufficient, needs optional number <x> of floodlights, defaults to value in rex.toml, or 10 if undefined",
+        help="a contrastive explanation, minimal, necessary and sufficient. Needs optional number <x> of floodlights, defaults to value in <rex.toml>, or 10 if undefined",
     )
     parser.add_argument(
         "--iters",
@@ -275,25 +280,25 @@ def cmdargs():
     parser.add_argument(
         "--analyze",
         action="store_true",
-        help="area, entropy different and insertion/deletion curves",
+        help="area, entropy and (possibly) insertion/deletion curves",
     )
     parser.add_argument(
         "--analyse",
         action="store_true",
-        help="area, entropy different and insertion/deletion curves",
+        help="area, entropy and (possibly) insertion/deletion curves",
     )
 
-    parser.add_argument(
-        "--show-all",
-        action="store_true",
-        help="produce a complete breakdown of the image",
-    )
+    # parser.add_argument(
+    #     "--show-all",
+    #     action="store_true",
+    #     help="produce a complete breakdown of the image",
+    # )
 
     parser.add_argument(
         "--mode",
         "-m",
         type=str,
-        help="assist ReX with your input type, one of <tabular>, <spectral>, <RGB>, <L>, <voxel>, <audio>",
+        help="assist ReX with your input type, one of <tabular>, <spectral>, <RGB>, <voxel>, <audio>",
     )
 
     parser.add_argument(
