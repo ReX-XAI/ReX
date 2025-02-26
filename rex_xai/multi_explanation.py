@@ -179,7 +179,7 @@ class MultiExplanation(Explanation):
                     )
                     self.final_mask = mask
                     return subset
-        logger.info("unable to find a counterfactual")
+        logger.warn("unable to find a counterfactual")
 
     def __random_step_from(self, origin, width, height, step=5):
         c, r = origin
