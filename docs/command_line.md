@@ -3,45 +3,9 @@
 <!--inclusion-marker-start-do-not-remove-->
 
 ```none
-usage: ReX [-h] [--output [OUTPUT]] [-c CONFIG] [--processed] [--script SCRIPT]
-           [-v] [--surface [SURFACE]] [--heatmap [HEATMAP]] [--model MODEL]
-           [--strategy STRATEGY] [--database DATABASE] [--multi [MULTI]]
-           [--contrastive [CONTRASTIVE]] [--iters ITERS] [--analyze] [--analyse]
-           [--show-all] [--mode MODE] [--spectral] filename
 
-Explaining AI through causal reasoning
 
-positional arguments:
-filename              file to be processed, assumes that file is 3 channel (RGB or BRG)
 
-options:
--h, --help            show this help message and exit
---output [OUTPUT]     show minimal explanation, optionally saved to <OUTPUT>.
-                      Requires a PIL compatible file extension
--c CONFIG, --config   CONFIG config file to use for rex
---processed           don't perform any processing with rex itself
---script SCRIPT       custom loading and preprocessing script
--v, --verbose         verbosity level, either -v or -vv, or -vvv
---surface [SURFACE]   surface plot, optionally saved to <SURFACE>
---heatmap [HEATMAP]   heatmap plot, optionally saved to <HEATMAP>
---model MODEL         model, must be onnx format
---strategy STRATEGY, -s STRATEGY 
-                      explanation strategy, one of < multi | spatial | linear | spotlight >
---database DATABASE, -db DATABASE
-                      store output in sqlite database <DATABASE>, creating db if necessary
---multi [MULTI]       multiple explanations, with optional number <x> of floodlights, 
-                      defaults to value in rex.toml, or 10 if undefined
---contrastive [CONTRASTIVE]
-                      a contrastive explanation, both necessary and sufficient, needs 
-                      optional number <x> of floodlights, defaults to value in rex.toml,
-                      or 10 if undefined
---iters ITERS         manually override the number of iterations set in the config file
---analyze             area, entropy different and insertion/deletion curves
---analyse             area, entropy different and insertion/deletion curves
---show-all            produce a complete breakdown of the image
---mode MODE,-m MODE   assist ReX with your input type, one of <tabular>, <spectral>, <RGB>,
-                      <L>, <voxel>, <audio>
---spectral            set ReX input type to <spectral>, shortcut for --mode spectral
 ```
 
 <!--inclusion-marker-end-do-not-remove-->
