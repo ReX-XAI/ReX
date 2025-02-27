@@ -33,7 +33,7 @@ jobs:
           ruff check --output-format=github .
 
       - name: Run pyright with reviewdog
-        uses: jordemort/action-pyright@e85f391
+        uses: jordemort/action-pyright@e85f3910971e8bd8cec27d8c7235d1f99825e570
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }} 
           reporter: github-pr-check
