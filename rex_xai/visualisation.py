@@ -372,9 +372,10 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
     assert data_m.shape == maps.shape, (
         "Data and Responsibility map must have the same shape!"
     )
-    x, y, z = np.indices(data_m.shape)
 
-    x_max, y_max, z_max = data.shape
+    x_max, y_max, z_max = data_m.shape
+
+    colourscales = list(mpl.colormaps.keys())
 
     app = Dash(__name__)
 
@@ -414,11 +415,13 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
             html.Label("Opacity"),
             dcc.Slider(0, 1, 0.1, value=0.5, id="opacity-slider",
                        tooltip={"always_visible": True}, marks={0: "0", 1: "1"},
-                       vertical=True)
-        ], style={"position": "absolute", "top": "10%", "right": "10%", "width": "100px"}),
+                       vertical=True),
+            html.Label("Heatmap Colours"),
+            dcc.Dropdown(id="heatmap-colours", options=colourscales, value=args.heatmap_colours)
+        ], style={"position": "absolute", "top": "10%", "right": "10%", "width": "100px", "outline": "1px solid grey"}),
 
     ], style={"width": "3000x", "height": "20px", "margin": "auto", "padding": "20px", "display": "flex",
-              "flex-direction": "column", "gap": "40px"})
+              "flex-direction": "column", "gap": "40px", "outline": "1px solid grey"})
 
     @app.callback(
         Output("x-slice", "figure"),
@@ -428,31 +431,32 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
         Input("y-slider", "value"),
         Input("z-slider", "value"),
         Input("opacity-slider", "value"),
+        Input("heatmap-colours", "value")
     )
-    def update_slices(x_idx, y_idx, z_idx, opacity):
+    def update_slices(x_idx, y_idx, z_idx, opacity, heatmap_colours=args.heatmap_colours):
         # X-Slice (YZ plane)
         x_slice = go.Figure()
         x_slice.add_trace(
-            go.Heatmap(z=data[x_idx, :, :], colorscale="gray_r", name="Data", zmin=0, zmax=1, showscale=False))
+            go.Heatmap(z=data_m[x_idx, :, :], colorscale="gray_r", name="Data", zmin=0, zmax=1, showscale=False))
         x_slice.add_trace(
-            go.Heatmap(z=resp_map[x_idx, :, :], colorscale=args.heatmap_colours, opacity=opacity, name="Resp Map", zmin=0, zmax=1))
+            go.Heatmap(z=resp_map[x_idx, :, :], colorscale=heatmap_colours, opacity=opacity, name="Resp Map", zmin=0, zmax=1))
         x_slice.update_layout(title=f"YZ Plane at {x_idx}")
 
         # Y-Slice (XZ plane)
         y_slice = go.Figure()
         y_slice.add_trace(
-            go.Heatmap(z=data[:, y_idx, :], colorscale="gray_r", name="Data", zmin=0, zmax=1, showscale=False))
+            go.Heatmap(z=data_m[:, y_idx, :], colorscale="gray_r", name="Data", zmin=0, zmax=1, showscale=False))
         y_slice.add_trace(
-            go.Heatmap(z=resp_map[:, y_idx, :], colorscale=args.heatmap_colours, opacity=opacity, name="Resp Map", zmin=0, zmax=1))
+            go.Heatmap(z=resp_map[:, y_idx, :], colorscale=heatmap_colours, opacity=opacity, name="Resp Map", zmin=0, zmax=1))
         y_slice.update_layout(title=f"XZ Plane at {y_idx}")
 
         # Z-Slice (XY plane)
         z_slice = go.Figure()
         z_slice.add_trace(
-            go.Heatmap(z=data[:, :, z_idx], colorscale="gray_r", name="Data", zmin=0, zmax=1, showscale=False))
+            go.Heatmap(z=data_m[:, :, z_idx], colorscale="gray_r", name="Data", zmin=0, zmax=1, showscale=False))
         z_slice.add_trace(
-            go.Heatmap(z=resp_map[:, :, z_idx], colorscale=args.heatmap_colours, opacity=opacity, name="Resp Map", zmin=0, zmax=1))
-        z_slice.update_layout(title=f"XY Planne at {z_idx}")
+            go.Heatmap(z=resp_map[:, :, z_idx], colorscale=heatmap_colours, opacity=opacity, name="Resp Map", zmin=0, zmax=1))
+        z_slice.update_layout(title=f"XY Plane at {z_idx}")
 
         return x_slice, y_slice, z_slice
 
