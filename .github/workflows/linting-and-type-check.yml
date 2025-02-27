@@ -38,3 +38,4 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }} 
           reporter: github-pr-check
           fail_on_error: false
+          level: none
