@@ -36,5 +36,5 @@ jobs:
         uses: jordemort/action-pyright@e85f3910971e8bd8cec27d8c7235d1f99825e570
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }} 
-          reporter: github-pr-check
+          reporter: github-pr-review
 
