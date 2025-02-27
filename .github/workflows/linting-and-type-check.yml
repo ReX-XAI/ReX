@@ -32,6 +32,9 @@ jobs:
         run: |
           ruff check --output-format=github .
 
-      - uses: jakebailey/pyright-action@v2
+      - name: Run pyright with reviewdog
+        uses: jordemort/action-pyright@v1.12.0
         with:
-          version: PATH
+          github_token: ${{ secrets.GITHUB_TOKEN }} 
+          reporter: github-pr-check
+          lib: true
