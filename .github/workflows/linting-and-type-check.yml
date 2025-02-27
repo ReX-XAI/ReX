@@ -32,8 +32,8 @@ jobs:
         run: |
           ruff check --output-format=github .
 
-      - name: Type checking with Pyright
-        uses: YajJackson/simple-pyright-action@v1.1.0
+      - name: Run pyright with reviewdog
+        uses: jordemort/action-pyright@v1.12.0
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          include-file-comments: false
+          github_token: ${{ secrets.GITHUB_TOKEN }} 
+          reporter: github-pr-check
