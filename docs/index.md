@@ -131,11 +131,11 @@ INFO:ReX:area 0.000399, entropy difference 6.751189, insertion curve 0.964960, d
 <!---->
 <!--![lizard_rm](../assets/lizard_subs.png)-->
 <!---->
-<!--```{toctree}-->
-<!--:maxdepth: 2-->
-<!--:caption: Contents:-->
-<!---->
-<!--background.md-->
-<!--command_line.md-->
-<!--config.md-->
-<!--```-->
+
+```{toctree}
+:maxdepth: 2
+:caption: Contents:
+background.md
+command_line.md
+config.md
+```
