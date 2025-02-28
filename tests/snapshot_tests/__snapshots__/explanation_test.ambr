@@ -60,7 +60,7 @@
       strategy=<Strategy.Spatial: 2>,
       surface=None,
       tree_depth=10,
-      verbosity=0,
+      verbosity=1,
       weighted=False,
     ),
     data=Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
@@ -135,7 +135,7 @@
       strategy=<Strategy.Spatial: 2>,
       surface=None,
       tree_depth=10,
-      verbosity=0,
+      verbosity=1,
       weighted=False,
     ),
     data=Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
@@ -210,7 +210,7 @@
       strategy=<Strategy.Spatial: 2>,
       surface=None,
       tree_depth=10,
-      verbosity=0,
+      verbosity=1,
       weighted=False,
     ),
     data=Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
@@ -285,7 +285,7 @@
       strategy=<Strategy.Spatial: 2>,
       surface=None,
       tree_depth=10,
-      verbosity=0,
+      verbosity=1,
       weighted=False,
     ),
     data=Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
@@ -357,7 +357,7 @@
       strategy=<Strategy.Spatial: 2>,
       surface=None,
       tree_depth=10,
-      verbosity=0,
+      verbosity=1,
       weighted=False,
     ),
     data=Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first

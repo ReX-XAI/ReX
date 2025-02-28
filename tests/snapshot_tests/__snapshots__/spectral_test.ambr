@@ -57,7 +57,7 @@
       strategy=<Strategy.Global: 1>,
       surface=None,
       tree_depth=10,
-      verbosity=0,
+      verbosity=1,
       weighted=False,
     ),
     data=Data: spectral, ['batch_size', 1, 1356], 1, 1356, 1, None
@@ -132,7 +132,7 @@
       strategy=<Strategy.Global: 1>,
       surface=None,
       tree_depth=10,
-      verbosity=0,
+      verbosity=1,
       weighted=False,
     ),
     data=Data: spectral, ['batch_size', 1, 1356], 1, 1356, 1, None
