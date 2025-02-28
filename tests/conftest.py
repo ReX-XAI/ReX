@@ -26,7 +26,6 @@ def snapshot_explanation(snapshot):
                 "target_map", # large array
                 "final_mask", # large array
                 "explanation", # large array
-                "maps", # large array
                 "explanations" # large arrays
             ), 
             matcher=path_type(
@@ -133,6 +132,14 @@ def data(args_custom, model_shape, cpu_device):
 def data_custom(args_custom, model_shape, cpu_device):
     data = load_and_preprocess_data(model_shape, cpu_device, args_custom)
     data.set_mask_value(args_custom.mask_value)
+    return data
+
+
+@pytest.fixture
+def data_multi(args_multi, model_shape, prediction_func, cpu_device):
+    data = load_and_preprocess_data(model_shape, cpu_device, args_multi)
+    data.set_mask_value(args_multi.mask_value)
+    data.target = predict_target(data, prediction_func)
     return data
 
 
