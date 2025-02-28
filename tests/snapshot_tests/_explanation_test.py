@@ -44,3 +44,14 @@ def test_extract_analyze(exp_custom, strategy, snapshot):
 
     assert hash(tuple(exp_custom.final_mask.reshape(-1).tolist())) == snapshot
     assert results_rounded == snapshot
+
+
+def test_multiexplanation_snapshot(
+    args_multi, model_shape, prediction_func, cpu_device, snapshot_explanation
+):
+    exp = _explanation(args_multi, model_shape, prediction_func, cpu_device, db=None)
+    clauses = exp.separate_by(0.0)
+
+    assert exp == snapshot_explanation
+    assert clauses == snapshot_explanation
+    assert hash(tuple(exp.explanation.reshape(-1).tolist())) == snapshot_explanation
