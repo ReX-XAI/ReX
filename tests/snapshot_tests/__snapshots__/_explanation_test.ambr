@@ -410,5 +410,17 @@
   ])
 # ---
 # name: test_multiexplanation_snapshot.2
-  -537288597449560471
+  7802689268791639071
+# ---
+# name: test_multiexplanation_snapshot.3
+  6035056368165721418
+# ---
+# name: test_multiexplanation_snapshot.4
+  -5651945023692276586
+# ---
+# name: test_multiexplanation_snapshot.5
+  2488684738058746373
+# ---
+# name: test_multiexplanation_snapshot.6
+  3892690372276336173
 # ---

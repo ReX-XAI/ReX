@@ -54,4 +54,5 @@ def test_multiexplanation_snapshot(
 
     assert exp == snapshot_explanation
     assert clauses == snapshot_explanation
-    assert hash(tuple(exp.explanation.reshape(-1).tolist())) == snapshot_explanation
+    for explanation in exp.explanations:
+        assert hash(tuple(explanation.reshape(-1).tolist())) == snapshot_explanation
