@@ -27,8 +27,8 @@ class MultiExplanation(Explanation):
             logger.info("saving explanations in multiple different files")
             for i, mask in enumerate(self.explanations):
                 name, ext = os.path.splitext(path)
-                path = f"{name}_{i}{ext}"
-                super().save(path, mask=mask)
+                exp_path = f"{name}_{i}{ext}"
+                super().save(exp_path, mask=mask)
         elif multi_style == "composite":
             logger.info("using composite style to save explanations")
             if clauses is None:
