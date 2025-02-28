@@ -25,7 +25,9 @@ def snapshot_explanation(snapshot):
                 "model",
                 "target_map", # large array
                 "final_mask", # large array
-                "explanation" # large array
+                "explanation", # large array
+                "maps", # large array
+                "explanations" # large arrays
             ), 
             matcher=path_type(
                 types=(CausalArgs,),
@@ -83,6 +85,15 @@ def args_onnx(args, resnet50):
 
     return args
 
+@pytest.fixture
+def args_multi(args_custom):
+    args = args_custom
+    args.path = "tests/test_data/peacock.jpg"
+    args.iters = 5
+    args.strategy = Strategy.MultiSpotlight
+    args.spotlights = 5
+
+    return args
 
 @pytest.fixture
 def model_shape(args_custom):
