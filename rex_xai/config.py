@@ -162,7 +162,7 @@ def read_config_file(path):
         raise ReXTomlError(e)
 
 
-def cmdargs():
+def cmdargs_parser():
     """parses command line flags"""
     parser = argparse.ArgumentParser(
         prog="ReX",
@@ -273,7 +273,11 @@ def cmdargs():
         action="store_true",
         help="set ReX input type to <spectral>, shortcut for --mode spectral",
     )
+    return parser
 
+
+def cmdargs():
+    parser = cmdargs_parser()
     args = parser.parse_args()
     return args
 
