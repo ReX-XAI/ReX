@@ -8,8 +8,14 @@ permissions:
   contents: read
 
 jobs:
+  test:
+    name: Install and test package
+    uses: ./.github/workflows/test-python-package.yml
+
   build:
     name: Build package
+    needs: 
+    - test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -21,13 +27,8 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-            cache: poetry
-
-      - name: Install dependencies
-        run: poetry install --with dev
-
-      - name: Update PATH
-        run: echo "$(poetry env info --path)/bin" >> $GITHUB_PATH
+          python-version: "3.13"
+          cache: poetry
 
       - name: Package project
         run: poetry build
@@ -37,6 +38,30 @@ jobs:
         with:
           name: python-package-distributions
           path: dist/
+  
+  install_and_check_version:
+    name: Install and check Version Number
+    needs:
+    - build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download all the dists
+      uses: actions/download-artifact@v4
+      with:
+        name: python-package-distributions
+        path: dist/
+    
+    - name: Install
+      run: pip install dist/*.tar.gz
+    
+    - name: Check version number
+      run: |
+        PYTHON_VERSION=`rex --version`
+        echo "PYTHON_VERSION=${PYTHON_VERSION}"
+        GIT_VERSION=${GITHUB_REF/refs\/tags\//}
+        echo "GIT_VERSION=${GIT_VERSION}"
+        if [ v$PYTHON_VERSION != $GIT_VERSION ]; then exit 1; fi
+        echo "VERSION=${GIT_VERSION}" >> $GITHUB_OUTPUT
 
   pypi-publish:
     name: Upload release to TestPyPI
