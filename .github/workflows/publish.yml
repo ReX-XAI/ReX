@@ -66,7 +66,7 @@ jobs:
   pypi-publish:
     name: Upload release to TestPyPI
     needs:
-    - build
+    - install_and_check_version
     runs-on: ubuntu-latest
     environment:
       name: testpypi
