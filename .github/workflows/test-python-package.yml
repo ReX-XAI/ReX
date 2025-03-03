@@ -3,7 +3,9 @@
 
 name: Install and run tests 
 
-on: pull_request
+on: 
+  workflow_call:
+  pull_request:
 
 jobs:
   test:
@@ -18,16 +20,23 @@ jobs:
       pull-requests: write
     
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
+
     - name: Install poetry
       run: pipx install poetry
-    - name: Set up Python, install and cache dependencies
+    
+    - name: Set up Python
       uses: actions/setup-python@v5
       with:
           python-version: ${{matrix.python-version}}
           cache: poetry
-    - run: poetry install --with dev
-    - run: echo "$(poetry env info --path)/bin" >> $GITHUB_PATH
+    
+    - name: Install project and dependencies 
+      run: poetry install --with dev
+    
+    - name: Update PATH
+      run: echo "$(poetry env info --path)/bin" >> $GITHUB_PATH
 
     - name: Cache model files for testing
       uses: actions/cache@v3
@@ -35,11 +44,12 @@ jobs:
         cache-name: cache-model-files
       with:
         path: ~/.cache/cached_path
-        key: ${{ runner.os }}-test-${{ env.cache-name }}-${{ hashFiles('tests/conftest.py') }}
+        key: ${{ runner.os }}-py${{matrix.python-version}}-test-${{ env.cache-name }}-${{ hashFiles('tests/conftest.py') }}
 
     - name: Test with pytest
       run: |
-        pytest --junitxml=pytest.xml --cov-report=xml:coverage.xml --cov=rex_xai tests/
+        pytest --junitxml=pytest.xml --cov-report=xml:coverage.xml --cov=rex_xai tests/unit_tests tests/snapshot_tests
+    
     - name: Pytest coverage comment
       uses: MishaKav/pytest-coverage-comment@v1.1.52
       if: ${{ !github.event.pull_request.head.repo.fork }}
