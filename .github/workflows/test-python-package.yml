@@ -1,23 +1,18 @@
-# This workflow will install ReX and run tests, using the highest and lowest Python versions we support
+# This workflow will install the project and run tests
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
 
 name: Install and run tests 
 
 on: 
   workflow_call:
-  pull_request:
+    inputs:
+      python-version:
+        required: true
+        type: string
 
 jobs:
   test:
-
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.10", "3.13"]
-
-    permissions:
-      pull-requests: write
     
     steps:
     - name: Checkout code
@@ -29,7 +24,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-          python-version: ${{matrix.python-version}}
+          python-version: ${{inputs.python-version}}
           cache: poetry
     
     - name: Install project and dependencies 
@@ -50,10 +45,10 @@ jobs:
       run: |
         pytest --junitxml=pytest.xml --cov-report=xml:coverage.xml --cov=rex_xai tests/unit_tests tests/snapshot_tests
     
-    - name: Pytest coverage comment
-      uses: MishaKav/pytest-coverage-comment@v1.1.52
-      if: ${{ !github.event.pull_request.head.repo.fork }}
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v4
       with:
-        pytest-xml-coverage-path: ./coverage.xml
+        name: coverage-report-py${{ inputs.python-version }}
+        path: ./coverage.xml
 
 

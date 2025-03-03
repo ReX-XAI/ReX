@@ -12,6 +12,8 @@ jobs:
   test:
     name: Install and test package
     uses: ./.github/workflows/test-python-package.yml
+    with: 
+      python-version: "3.13"
 
   build:
     name: Build package
