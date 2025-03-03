@@ -44,7 +44,7 @@ jobs:
         cache-name: cache-model-files
       with:
         path: ~/.cache/cached_path
-        key: ${{ runner.os }}-py${{matrix.python-version}}-test-${{ env.cache-name }}-${{ hashFiles('tests/conftest.py') }}
+        key: ${{ runner.os }}-test-${{ env.cache-name }}-${{ hashFiles('tests/conftest.py') }}
 
     - name: Test with pytest
       run: |
