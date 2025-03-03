@@ -1,0 +1,61 @@
+name: Publish
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install poetry
+        run: pipx install poetry
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+            cache: poetry
+
+      - name: Install dependencies
+        run: poetry install --with dev
+
+      - name: Update PATH
+        run: echo "$(poetry env info --path)/bin" >> $GITHUB_PATH
+
+      - name: Package project
+        run: poetry build
+    
+      - name: Store the distribution packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+  pypi-publish:
+    name: Upload release to TestPyPI
+    needs:
+    - build
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://testpypi.org/project/rex_xai
+    permissions:
+      id-token: write
+    steps:
+      - name: Download all the dists
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
