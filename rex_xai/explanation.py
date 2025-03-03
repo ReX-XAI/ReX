@@ -168,7 +168,7 @@ def calculate_responsibility(
         tuple containing
 
         - ResponsibilityMaps: ResponsibilityMaps for the given data, prediction function, and args.
-        - dict: 
+        - dict: statistics for the call of this function that generated the ResponsibilityMaps object
     """
 
     if data.target is None or data.target.classification is None:
