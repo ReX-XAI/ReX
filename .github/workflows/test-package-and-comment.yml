@@ -29,7 +29,6 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: coverage-report-py3.13
-        path: ./coverage.xml
 
     - name: Pytest coverage comment
       uses: MishaKav/pytest-coverage-comment@v1.1.52
