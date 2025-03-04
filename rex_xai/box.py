@@ -249,25 +249,31 @@ class BoxInternal:
         logger.debug(f"Selected axes: {selected_axes}, which have a range of values, {range1} and {range2}")
         # Get the random coordinates for the two axes
         space = range1[1] - range1[0]
-        c1 = random_coords(
-            self.distribution,
-            space,
-            range1[0],
-            range1[1],
-            self.distribution_args,
-            map=map,
-        )
-        c1 = range1[0] + c1
+        if space == 0 or space == 1:
+            c1 = np.random.choice([range1[0], range1[1]])
+        else:
+            c1 = random_coords(
+                self.distribution,
+                space,
+                range1[0],
+                range1[1],
+                self.distribution_args,
+                map=map,
+            )
+            c1 = range1[0] + c1
         space = range2[1] - range2[0]
-        c2 = random_coords(
-            self.distribution,
-            space,
-            range2[0],
-            range2[1],
-            self.distribution_args,
-            map=map,
-        )
-        c2 = range2[0] + c2
+        if space == 0 or space == 1:
+            c2 = np.random.choice([range2[0], range2[1]])
+        else:
+            c2 = random_coords(
+                self.distribution,
+                space,
+                range2[0],
+                range2[1],
+                self.distribution_args,
+                map=map,
+            )
+            c2 = range2[0] + c2
         logger.debug(f"Random coordinates picked: {c1} and {c2}")
         # If any of the coordinates are None, return None
         if c1 == -1 or c2 == -1:
