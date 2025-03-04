@@ -340,6 +340,7 @@ def _explanation(
 
         if args.strategy == Strategy.Contrastive:
             clauses = exp.contrastive(clauses)
+            args.multi_style = "contrastive"
     else:
         exp = Explanation(
             resp_object.maps, prediction_func, data, args, resp_object.run_stats
@@ -350,13 +351,13 @@ def _explanation(
         results = analyze(exp, data.mode)
         if data.mode == "spectral":
             print(
-                f"INFO:ReX:classification {exp.data.target.classification}, area {results['area']}, responsibility entropy {results['entropy']},",
+                f"INFO:ReX:classification {exp.data.target.classification}, area {results['area']}, responsibility entropy {results['entropy']},",  # type: ignore
                 f"max entropy {results['max_entropy']}",
                 f"insertion curve {results['insertion_curve']}, deletion curve {results['deletion_curve']}",
             )
         else:
             print(
-                f"INFO:ReX:classification {exp.data.target.classification}, area {results['area']}, entropy {results['entropy']},",
+                f"INFO:ReX:classification {exp.data.target.classification}, area {results['area']}, entropy {results['entropy']},",  # type: ignore
                 f"insertion curve {results['insertion_curve']}, deletion curve {results['deletion_curve']}",
             )
 

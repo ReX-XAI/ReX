@@ -209,7 +209,9 @@ def cmdargs():
         const="show",
         help="show minimal, sufficient causal explanation, optionally saved to <OUTPUT>. Requires a PIL compatible file extension",
     )
-    parser.add_argument("-c", "--config", type=str, help="optional config file to use for ReX")
+    parser.add_argument(
+        "-c", "--config", type=str, help="optional config file to use for ReX"
+    )
 
     parser.add_argument(
         "--processed",

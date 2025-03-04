@@ -24,6 +24,8 @@ class MultiExplanation(Explanation):
     def save(self, path, mask=None, multi=None, multi_style=None, clauses=None):
         if multi_style is None:
             multi_style = self.args.multi_style
+        if multi_style == "contrastive":
+            super().save(path, mask=self.final_mask)
         if multi_style == "separate":
             logger.info("saving explanations in multiple different files")
             for i, mask in enumerate(self.explanations):
@@ -55,14 +57,14 @@ class MultiExplanation(Explanation):
         outs = []
 
         for i, mask in enumerate(self.explanations):
-            out = save_image(mask,self.data, self.args, path=None)
+            out = save_image(mask, self.data, self.args, path=None)
             outs.append(out)
-        
+
         if multi_style == "separate":
             for i, mask in enumerate(self.explanations):
-                out = save_image(mask,self.data, self.args, path=None)
+                out = save_image(mask, self.data, self.args, path=None)
                 outs.append(out)
-    
+
         elif multi_style == "composite":
             if clauses is None:
                 clause = tuple([i for i in range(len(self.explanations))])
@@ -80,7 +82,7 @@ class MultiExplanation(Explanation):
                         path=None,
                     )
                     outs.append(out)
- 
+
         if len(outs) > 1:
             plot_image_grid(outs)
         else:
@@ -173,13 +175,17 @@ class MultiExplanation(Explanation):
                     and pn.classification != self.data.target.classification  # type: ignore
                 ):
                     logger.info(
-                        "found sufficient and necessary explanation of class %d with confidence %f",
+                        "found sufficient and necessary explanation of class %d, %d with confidence %f",
                         ps.classification,
+                        pn.classification,
                         pn.confidence,
                     )
                     self.final_mask = mask
                     return subset
-        logger.warn("unable to find a counterfactual")
+        logger.warn(
+            "ReX is unable to find a counterfactual, so not producing an output. Exiting here..."
+        )
+        exit()
 
     def __random_step_from(self, origin, width, height, step=5):
         c, r = origin
@@ -209,7 +215,7 @@ class MultiExplanation(Explanation):
             self.data.model_width * self.data.model_height,
         )
 
-        return np.unravel_index(origin, (self.data.model_height, self.data.model_width))
+        return np.unravel_index(origin, (self.data.model_height, self.data.model_width))  # type: ignore
 
     def spotlight_search(self, origin=None):
         if origin is None:
