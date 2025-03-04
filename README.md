@@ -1,4 +1,4 @@
-# ReX: Causal Responsibility Explanations for image classifiers
+# ReX: Causal *R*esponsibility *EX*planations for image classifiers
 
 <picture>
  <source media="(prefers-color-scheme: dark)" srcset="assets/rex_logo.png">
@@ -8,12 +8,25 @@
 
 <!--- BADGES: START --->
 
-[![CI Pipeline](https://github.com/ReX-XAI/ReX/actions/workflows/python-package.yml/badge.svg)](https://github.com/ReX-XAI/ReX/actions/workflows/python-package.yml)
+[![Docs](https://readthedocs.org/projects/rex-xai/badge/?version=latest)](https://rex-xai.readthedocs.io/en/latest/)
+[![Tests](https://github.com/ReX-XAI/ReX/actions/workflows/build-and-test-python-package.yml/badge.svg)](https://github.com/ReX-XAI/ReX/actions/workflows/build-and-test-python-package.yml)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/ReX-XAI/ReX.jl/blob/main/LICENSE)
 
 <!--- BADGES: END --->
 
-***
+---
+
+ReX is a causal explainability tool for image classifiers. It also works on tabular and 3D data.
+
+Given an input image and a classifier, ReX calculates a causal responsibility map across the data and identifies a minimal, sufficient, explanation.
+
+![ladybird](tests/test_data/ladybird.jpg "Original Image") ![responsibility map](assets/ladybird_rm.png "Responsibility Map") ![minimal explanation](assets/ladybird_301.png "Explanation")
+
+ReX is black-box, that is, agnostic to the internal structure of the classifier.
+ReX finds single explanations, non-contiguous explanations (for partially obscured images), multiple independent explanations, contrastive explanations and lots of other things!
+It has a host of options and parameters, allowing you to fine tune it to your data.
+
+For background information and detailed usage instructions, see our [documentation](https://rex-xai.readthedocs.io/en/latest/).
 
 <!--inclusion-marker-start-do-not-remove-->
 
@@ -44,167 +57,7 @@ This should install an executable `rex` in your path.
 > If you wish to use a GPU, you should uninstall `onnxruntime` and install `onnxruntime-gpu` instead.
 > You can alternatively edit the `pyproject.toml` to read "onnxruntime-gpu >= 1.17.0" rather than "onnxruntime >= 1.17.0".
 
-## Quickstart
-
-ReX requires as input an image and a model.
-ReX natively understands onnx files. Train or download a model (e.g. [Resnet50](https://github.com/onnx/models/blob/main/validated/vision/classification/resnet/model/resnet50-v1-7.onnx)) and, from this directory, run:
-
-```bash
-rex imgs/dog.jpg --model resnet50-v1-7.onnx -vv --output dog_exp.jpg
-```
-
-To view an interactive plot for the responsibility map, run::
-
-```bash
-rex imgs/dog.jpg --model resnet50-v1-7.onnx -vv --surface
-```
-
-For detailed usage instructions, see our [documentation](https://rex-xai.readthedocs.io/en/latest/).
-
-Other options:
-
-```bash
-# with spatial search (the default)
-rex <path_to_image> --model <path_to_model>
-
-# with linear search
-rex <path_to_image> --model <path_to_model> --strategy linear
-
-# to save the extracted explanation
-rex <path_to_image> --model <path_to_model> --output <path_and_extension>
-
-# to view an interactive responsibility landscape
-rex <path_to_image> --model <path_to_model>  --surface
-
-# to save a responsibility landscape
-rex <path_to_image> --model <path_to_model>  --surface <path_and_extension>
-
-# to run multiple explanations
-rex <path_to_image> --model <path_to_model> --strategy multi
-```
-
-ReX configuration is mainly handled via a config file; some options can also be set on the command line.
-ReX looks for the config file ``rex.toml`` in the current working directory and then ``$HOME/.config/rex.toml`` on unix-like systems.
-
-If you want to use a custom location, use::
-
-```bash
-rex <path_to_image> --model <path_to_model> --config <path_to_config>
-```
-
-An example config file is included in the repo as ``example.rex.toml``.
-Rename this to ``rex.toml`` if you wish to use it.
-
 <!--inclusion-marker-end-do-not-remove-->
-
-## Command line usage
-
-```bash
-usage: ReX [-h] [--output [OUTPUT]] [-c CONFIG] [--processed] [--script SCRIPT] [-v] [--surface [SURFACE]] [--heatmap [HEATMAP]] [--model MODEL] [--strategy STRATEGY] [--database DATABASE] [--multi [MULTI]]
-           [--contrastive [CONTRASTIVE]] [--iters ITERS] [--analyze] [--analyse] [--show-all] [--mode MODE] [--spectral]
-           filename
-
-                       @@@@@@@@@@@@@@@                                
-                       @@  @@@@@@@@@@@                                
-                     @@@@  @@@@@@@@@@@@@@@@@                          
-                     @@@@@@@@@@@@@@@@@@@@@@@                          
-                     @@@@@@@@@@@@@@@@@@@@@@@                          
-                     @@@@@@@@@@                                       
-                     @@@@@@@@@@@@@@@@         %%%                     
-   @@              @@@@@@@@@@@                %%%%                    
-   @@              @@@@@@@   %%@               %%%%             %%    
-   @@            @@@@@@@@ @%%%%%%%              %%%%           %%     
-   @@@@        @@@@@@@@@@ %%%%  %%%%%%           %%%%        %%       
-   @@@@@@    @@@@@@@@@@@@ %%%%     %%%%%%      %   %%%     %%         
-   @@@@@@@@@@@@@@@@@@@@@@ %%%%       %      %%      %%%   %           
-     @@@@@@@@@@@@@@@@@@@@ %%%%    %%      %          %%%%             
-       @@@@@@@@@@@@@@@@@@ %%%   %%     %%%%%%%%%%%    %%%             
-         @@@@@@@@@@@@@@@@ %%%  %%%%   %%%%           % %%%            
-         @@@@@@@@@@@@@@@  %%%   %%%%   %%%%        %@   %%%           
-           @@@@@@@@@@@@@  %%%    %%%%    %%%     %%      %%%          
-             @@@@@@  @@@  %%%     %%%%    %%%% %%         %%%%        
-             @@@@        %%%%      %%%%%   %%%%            %%%%  %    
-             @@          %%%%        %%%%   %%%%%@          %%%%%     
-             @@@@        %            %%      %              %%       
-
-   Explaining AI throught causal Responsibilty EXplanations
-
-positional arguments:
-  filename              file to be processed, assumes that file is 3 channel (RGB or BRG)
-
-options:
-  -h, --help            show this help message and exit
-  --output [OUTPUT]     show minimal explanation, optionally saved to <OUTPUT>. Requires a PIL compatible file extension
-  -c CONFIG, --config CONFIG
-                        config file to use for rex
-  --processed           do not perform any processing with rex itself
-  --script SCRIPT       custom loading and preprocessing script, mostly for use with pytorch models
-  -v, --verbose         verbosity level, either -v or -vv, or -vvv
-  --surface [SURFACE]   surface plot, optionally saved to <SURFACE>
-  --heatmap [HEATMAP]   heatmap plot, optionally saved to <HEATMAP>
-  --model MODEL         model, must be onnx format
-  --strategy STRATEGY, -s STRATEGY
-                        explanation strategy, one of < multi | spatial | linear | contrastive >
-  --database DATABASE, -db DATABASE
-                        store output in sqlite database <DATABASE>, creating db if necessary
-  --multi [MULTI]       multiple explanations, with optional number <x> of floodlights, defaults to value in rex.toml, or 10 if undefined
-  --contrastive [CONTRASTIVE]
-                        a contrastive explanation, both necessary and sufficient, needs optional number <x> of floodlights, defaults to value in rex.toml, or 10 if undefined
-  --iters ITERS         manually override the number of iterations set in the config file
-  --analyze             area, entropy different and insertion/deletion curves
-  --analyse             area, entropy different and insertion/deletion curves
-  --show-all            produce a complete breakdown of the image
-  --mode MODE, -m MODE  assist ReX with your input type, one of <tabular>, <spectral>, <RGB>, <L>, <voxel>, <audio>
-  --spectral            set ReX input type to <spectral>, shortcut for --mode spectral
-```
-
-## Examples
-
-### Explanation
-
-An explanation for a ladybird. This explanation was produced with 20 iterations, using the default masking colour (0). The minimal, sufficient explanation itself
-is pretty printed using the settings in `[rex.visual]` in `rex.toml`
-
-![ladybird](imgs/ladybird.jpg "Original Image") ![responsibility map](assets/ladybird_rm.png "Responsibility Map") ![minimal explanation](assets/ladybird_301.png "Explanation")
-
-Setting `raw = true` in `rex.toml` produces the image which was actually classified by the model.
-
-![ladybird raw](assets/ladybird_301_raw.png)
-
-### Multiple Explanations
-
-```bash
-rex imgs/peacock.jpg --model resnet50-v1-7.onnx --strategy multi --output peacock.png
-```
-
-The number of explanations found depends on the model and some of the settings in `rex.toml`
-<img src="imgs/peacock.jpg" alt="peacock" width="200"/> ![peacock 1](assets/peacock_84_00.png) ![peacock 2](assets/peacock_84_01.png) ![peacock 3](assets/peacock_84_02.png)
-
-### Occluded Images
-
-![occluded bus](imgs/occluded_bus.jpg)
-
-![occluded_bus_rm](assets/occluded_bus_rm.png)
-
-![bus_explanation](assets/bus_757.png)
-
-### Explanation Quality
-
-```bash
-rex imgs/ladybird.jpg --script scripts/pytorch.py --analyse
-
-INFO:ReX:area 0.000399, entropy difference 6.751189, insertion curve 0.964960, deletion curve 0.046096
-```
-
-### Submaps
-
-```bash
-rex imgs/lizard.jpg --model resnet50-v1-7.onnx --predictions 5 --surface lizard_subs.png
-```
-
-![lizard](imgs/lizard.jpg)
-
-![lizard_rm](assets/lizard_subs.png)
 
 ## How to Contribute
 

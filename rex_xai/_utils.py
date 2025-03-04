@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import importlib.metadata
 from itertools import chain, combinations
 from enum import Enum
 from typing import Tuple, Union, Dict
@@ -173,3 +174,6 @@ def ff(obj, fmt):
     See the help for format() to see acceptable values for fmt.
     """
     return "None" if obj is None else format(obj, fmt)
+
+def version():
+    return importlib.metadata.version("rex-xai")

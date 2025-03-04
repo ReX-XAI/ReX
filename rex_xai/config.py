@@ -12,7 +12,7 @@ from typing import List, Optional, Union
 import matplotlib as mpl
 import toml  # type: ignore
 
-from rex_xai._utils import Queue, ReXError, ReXPathError, ReXTomlError, Strategy
+from rex_xai._utils import Queue, ReXError, ReXPathError, ReXTomlError, Strategy, version
 from rex_xai.distributions import Distribution, str2distribution
 from rex_xai.logger import logger
 
@@ -308,6 +308,8 @@ def cmdargs():
         action="store_true",
         help="set ReX input type to <spectral>, shortcut for --mode spectral",
     )
+
+    parser.add_argument('--version', action='version', version=version())
 
     args = parser.parse_args()
     return args

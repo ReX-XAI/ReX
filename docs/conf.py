@@ -54,3 +54,9 @@ intersphinx_mapping = {
     'torch': ('https://pytorch.org/docs/stable/',None),
     'sqla': ('https://docs.sqlalchemy.org/en/latest/', None)
     }
+
+# -- MyST --------------------------------------------------------------
+# https://myst-parser.readthedocs.io/en/latest/
+myst_enable_extensions = [
+    "attrs_inline"
+]
