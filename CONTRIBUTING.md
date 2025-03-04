@@ -78,3 +78,7 @@ Upon a pull request, a check is run that identifies Pyright errors/warnings in t
 A review comment will be left for each change.
 Ideally, no new errors/warnings will be introduced in a PR, but this is not an enforced requirement to merge.
 
+## GitHub Actions
+
+We use GitHub Actions to automatically run certain checks upon pull requests, and to automate releasing a new ReX version to PyPI.
+
