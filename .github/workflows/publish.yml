@@ -59,7 +59,7 @@ jobs:
     
     - name: Check version number
       run: |
-        PYTHON_VERSION=`rex --version`
+        PYTHON_VERSION=`ReX --version`
         echo "PYTHON_VERSION=${PYTHON_VERSION}"
         GIT_VERSION=${GITHUB_REF/refs\/tags\//}
         echo "GIT_VERSION=${GIT_VERSION}"
