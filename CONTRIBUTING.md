@@ -74,5 +74,7 @@ Run `ruff format --diff` to get a preview of any changes that would be made.
 
 We use [Pyright](https://microsoft.github.io/pyright/#/) for type checking.
 You can [install](https://microsoft.github.io/pyright/#/installation) the command line tool and/or an extension for your favourite editor.
-Upon a pull request, a check is run that compares the number of errors and warnings from Pyright in the branches being compared in the PR.
-Ideally, the number of errors/warnings will not increase!
+Upon a pull request, a check is run that identifies Pyright errors/warnings in the lines that have been added in the PR.
+A review comment will be left for each change.
+Ideally, no new errors/warnings will be introduced in a PR, but this is not an enforced requirement to merge.
+
