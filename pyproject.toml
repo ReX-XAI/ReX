@@ -46,6 +46,7 @@ pytest-sugar = "^1.0.0"
 cached-path = "^1.6.3"
 sphinx-argparse = "^0.5.2"
 myst-nb = "^1.1.2"
+jupytext = "^1.16.7"
 
 [tool.pyright]
 include = ["rex_xai"]
