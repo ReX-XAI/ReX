@@ -188,12 +188,10 @@ def rex_ascii():
         + "             @@@@        %%%%      %%%%%   %%%%            %%%%  %    \n"
         + "             @@          %%%%        %%%%   %%%%%@          %%%%%     \n"
         + "             @@@@        %            %%      %              %%       \n\n\n"
-        + "   Explaining AI through causal Responsibilty EXplanations\n"
+        + "   Explaining AI through causal Responsibility EXplanations\n"
     )
 
 
-# def cmdargs():
-# =======
 def cmdargs_parser():
     """parses command line flags"""
     parser = argparse.ArgumentParser(
