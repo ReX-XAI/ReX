@@ -4,9 +4,9 @@
   	CausalArgs: <class 'rex_xai.config.CausalArgs'>
   	Data: Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
   	 Target:FOUND_CLASS: 207, FOUND_CONF: 0.20462, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
-  	prediction function: <function prediction_function at 0x1585f25c0>
+  	prediction function: <function prediction_function >
   	ResponsibilityMaps: {207: 1}
-  	run statistics: {'total_passing': 89, 'total_failing': 177, 'max_depth_reached': 6, 'avg_box_size': 128.16666666666669}
+  	run statistics: {'total_passing': 89, 'total_failing': 177, 'max_depth_reached': 6, 'avg_box_size': 128.16667} (5 dp)
   	explanation: None
   	final mask: None
   	explanation confidence: 0.0
@@ -16,9 +16,9 @@
   	CausalArgs: <class 'rex_xai.config.CausalArgs'>
   	Data: Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
   	 Target:FOUND_CLASS: 207, FOUND_CONF: 0.20462, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
-  	prediction function: <function prediction_function at 0x1585f09a0>
+  	prediction function: <function prediction_function >
   	ResponsibilityMaps: {207: 1}
-  	run statistics: {'total_passing': 83, 'total_failing': 141, 'max_depth_reached': 5, 'avg_box_size': 86.0}
+  	run statistics: {'total_passing': 83, 'total_failing': 141, 'max_depth_reached': 5, 'avg_box_size': 86.0} (5 dp)
   	explanation: None
   	final mask: None
   	explanation confidence: 0.0
@@ -28,9 +28,9 @@
   	CausalArgs: <class 'rex_xai.config.CausalArgs'>
   	Data: Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
   	 Target:FOUND_CLASS: 207, FOUND_CONF: 0.20462, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
-  	prediction function: <function prediction_function at 0x16f1899e0>
+  	prediction function: <function prediction_function >
   	ResponsibilityMaps: {207: 1}
-  	run statistics: {'total_passing': 66, 'total_failing': 102, 'max_depth_reached': 6, 'avg_box_size': 215.25}
+  	run statistics: {'total_passing': 66, 'total_failing': 102, 'max_depth_reached': 6, 'avg_box_size': 215.25} (5 dp)
   	explanation: None
   	final mask: None
   	explanation confidence: 0.0
@@ -40,9 +40,9 @@
   	CausalArgs: <class 'rex_xai.config.CausalArgs'>
   	Data: Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
   	 Target:FOUND_CLASS: 207, FOUND_CONF: 0.20462, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
-  	prediction function: <function prediction_function at 0x16f1899e0>
+  	prediction function: <function prediction_function >
   	ResponsibilityMaps: {207: 1}
-  	run statistics: {'total_passing': 81, 'total_failing': 157, 'max_depth_reached': 7, 'avg_box_size': 850.3333333333334}
+  	run statistics: {'total_passing': 81, 'total_failing': 157, 'max_depth_reached': 7, 'avg_box_size': 850.33333} (5 dp)
   	explanation: None
   	final mask: None
   	explanation confidence: 0.0
@@ -52,9 +52,9 @@
   	CausalArgs: <class 'rex_xai.config.CausalArgs'>
   	Data: Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
   	 Target:FOUND_CLASS: 207, FOUND_CONF: 0.20462, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
-  	prediction function: <function prediction_function at 0x1585f2ac0>
+  	prediction function: <function prediction_function >
   	ResponsibilityMaps: {207: 1}
-  	run statistics: {'total_passing': 84, 'total_failing': 126, 'max_depth_reached': 5, 'avg_box_size': 183.5625}
+  	run statistics: {'total_passing': 84, 'total_failing': 126, 'max_depth_reached': 5, 'avg_box_size': 183.5625} (5 dp)
   	explanation: None
   	final mask: None
   	explanation confidence: 0.0

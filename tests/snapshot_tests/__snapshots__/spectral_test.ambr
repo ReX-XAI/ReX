@@ -4,12 +4,12 @@
   	CausalArgs: <class 'rex_xai.config.CausalArgs'>
   	Data: Data: spectral, ['batch_size', 1, 1356], 1, 1356, 1, None
   	 Target:FOUND_CLASS: 1, FOUND_CONF: 0.99817, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
-  	prediction function: <function OnnxRunner.gen_prediction_function.<locals>.<lambda> at 0x1585d7c40>
+  	prediction function: <function OnnxRunner.gen_prediction_function.<locals>.<lambda> >
   	ResponsibilityMaps: {1: 1}
-  	run statistics: {'total_passing': 56, 'total_failing': 0, 'max_depth_reached': 2, 'avg_box_size': 22.875}
+  	run statistics: {'total_passing': 56, 'total_failing': 0, 'max_depth_reached': 2, 'avg_box_size': 22.875} (5 dp)
   	explanation: <class 'torch.Tensor'> of shape torch.Size([1, 1356])
   	final mask: <class 'numpy.ndarray'> of shape (1, 1356)
-  	explanation confidence: 0.99817
+  	explanation confidence: 0.99817 (5 dp)
 # ---
 # name: test__explanation_snapshot[1].1
   3711909154719731854
@@ -19,12 +19,12 @@
   	CausalArgs: <class 'rex_xai.config.CausalArgs'>
   	Data: Data: spectral, ['batch_size', 1, 1356], 1, 1356, 1, None
   	 Target:FOUND_CLASS: 1, FOUND_CONF: 0.99817, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
-  	prediction function: <function OnnxRunner.gen_prediction_function.<locals>.<lambda> at 0x1585d7600>
+  	prediction function: <function OnnxRunner.gen_prediction_function.<locals>.<lambda> >
   	ResponsibilityMaps: {1: 1}
-  	run statistics: {'total_passing': 56, 'total_failing': 0, 'max_depth_reached': 2, 'avg_box_size': 22.875}
+  	run statistics: {'total_passing': 56, 'total_failing': 0, 'max_depth_reached': 2, 'avg_box_size': 22.875} (5 dp)
   	explanation: <class 'torch.Tensor'> of shape torch.Size([1, 1356])
   	final mask: <class 'numpy.ndarray'> of shape (1, 1356)
-  	explanation confidence: 0.99817
+  	explanation confidence: 0.99817 (5 dp)
 # ---
 # name: test__explanation_snapshot[64].1
   3711909154719731854

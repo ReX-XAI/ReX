@@ -4,12 +4,12 @@
   	CausalArgs: <class 'rex_xai.config.CausalArgs'>
   	Data: Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
   	 Target:FOUND_CLASS: 207, FOUND_CONF: 0.20462, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
-  	prediction function: <function prediction_function at 0x35d813880>
+  	prediction function: <function prediction_function >
   	ResponsibilityMaps: {207: 1}
-  	run statistics: {'total_passing': 84, 'total_failing': 126, 'max_depth_reached': 5, 'avg_box_size': 183.5625}
+  	run statistics: {'total_passing': 84, 'total_failing': 126, 'max_depth_reached': 5, 'avg_box_size': 183.5625} (5 dp)
   	explanation: <class 'torch.Tensor'> of shape torch.Size([3, 224, 224])
   	final mask: <class 'numpy.ndarray'> of shape (3, 224, 224)
-  	explanation confidence: 0.01513
+  	explanation confidence: 0.01513 (5 dp)
 # ---
 # name: test__explanation_snapshot[1].1
   2537636458340732753
@@ -19,12 +19,12 @@
   	CausalArgs: <class 'rex_xai.config.CausalArgs'>
   	Data: Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
   	 Target:FOUND_CLASS: 207, FOUND_CONF: 0.20462, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
-  	prediction function: <function prediction_function at 0x35d831f80>
+  	prediction function: <function prediction_function >
   	ResponsibilityMaps: {207: 1}
-  	run statistics: {'total_passing': 84, 'total_failing': 126, 'max_depth_reached': 5, 'avg_box_size': 183.5625}
+  	run statistics: {'total_passing': 84, 'total_failing': 126, 'max_depth_reached': 5, 'avg_box_size': 183.5625} (5 dp)
   	explanation: <class 'torch.Tensor'> of shape torch.Size([3, 224, 224])
   	final mask: <class 'numpy.ndarray'> of shape (3, 224, 224)
-  	explanation confidence: 0.01513
+  	explanation confidence: 0.01513 (5 dp)
 # ---
 # name: test__explanation_snapshot[64].1
   2537636458340732753
@@ -34,12 +34,12 @@
   	CausalArgs: <class 'rex_xai.config.CausalArgs'>
   	Data: Data: RGB, ['N', 3, 256, 256], 256, 256, 3, first
   	 Target:FOUND_CLASS: 215, FOUND_CONF: 0.48740, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
-  	prediction function: <function prediction_function at 0x35d832480>
+  	prediction function: <function prediction_function >
   	ResponsibilityMaps: {215: 1}
-  	run statistics: {'total_passing': 60, 'total_failing': 136, 'max_depth_reached': 5, 'avg_box_size': 262.0}
+  	run statistics: {'total_passing': 60, 'total_failing': 136, 'max_depth_reached': 5, 'avg_box_size': 262.0} (5 dp)
   	explanation: <class 'torch.Tensor'> of shape torch.Size([3, 256, 256])
   	final mask: <class 'numpy.ndarray'> of shape (3, 256, 256)
-  	explanation confidence: 0.03730
+  	explanation confidence: 0.03730 (5 dp)
 # ---
 # name: test__explanation_snapshot_diff_model_shape[1].1
   -5471936325618413956
@@ -49,12 +49,12 @@
   	CausalArgs: <class 'rex_xai.config.CausalArgs'>
   	Data: Data: RGB, ['N', 3, 256, 256], 256, 256, 3, first
   	 Target:FOUND_CLASS: 215, FOUND_CONF: 0.48740, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
-  	prediction function: <function prediction_function at 0x35d832980>
+  	prediction function: <function prediction_function >
   	ResponsibilityMaps: {215: 1}
-  	run statistics: {'total_passing': 60, 'total_failing': 136, 'max_depth_reached': 5, 'avg_box_size': 262.0}
+  	run statistics: {'total_passing': 60, 'total_failing': 136, 'max_depth_reached': 5, 'avg_box_size': 262.0} (5 dp)
   	explanation: <class 'torch.Tensor'> of shape torch.Size([3, 256, 256])
   	final mask: <class 'numpy.ndarray'> of shape (3, 256, 256)
-  	explanation confidence: 0.03730
+  	explanation confidence: 0.03730 (5 dp)
 # ---
 # name: test__explanation_snapshot_diff_model_shape[64].1
   -5471936325618413956

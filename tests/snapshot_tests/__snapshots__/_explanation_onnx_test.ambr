@@ -4,12 +4,12 @@
   	CausalArgs: <class 'rex_xai.config.CausalArgs'>
   	Data: Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
   	 Target:FOUND_CLASS: 209, FOUND_CONF: 0.39424, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
-  	prediction function: <function OnnxRunner.gen_prediction_function.<locals>.<lambda> at 0x317698680>
+  	prediction function: <function OnnxRunner.gen_prediction_function.<locals>.<lambda> >
   	ResponsibilityMaps: {209: 1}
-  	run statistics: {'total_passing': 41, 'total_failing': 169, 'max_depth_reached': 4, 'avg_box_size': 2747.4166666666665}
+  	run statistics: {'total_passing': 41, 'total_failing': 169, 'max_depth_reached': 4, 'avg_box_size': 2747.41667} (5 dp)
   	explanation: <class 'torch.Tensor'> of shape torch.Size([3, 224, 224])
   	final mask: <class 'numpy.ndarray'> of shape (3, 224, 224)
-  	explanation confidence: 0.12158
+  	explanation confidence: 0.12158 (5 dp)
 # ---
 # name: test__explanation_snapshot.1
   7409862900317702363
