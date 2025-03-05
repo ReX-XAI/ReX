@@ -122,8 +122,6 @@ class OnnxRunner:
         output_shape = [batch_size] + list(self.output_shape[1:])
 
         z_tensor = tt.empty(output_shape, dtype=tt.float32, device=device).contiguous()
-        if raw:
-            print(z_tensor.shape)
 
         binding.bind_output(
             name=self.output_name,

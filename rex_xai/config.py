@@ -188,7 +188,7 @@ def rex_ascii():
         + "             @@@@        %%%%      %%%%%   %%%%            %%%%  %    \n"
         + "             @@          %%%%        %%%%   %%%%%@          %%%%%     \n"
         + "             @@@@        %            %%      %              %%       \n\n\n"
-        + "   Explaining AI throught causal Responsibilty EXplanations\n"
+        + "   Explaining AI through causal Responsibilty EXplanations\n"
     )
 
 
@@ -289,12 +289,6 @@ def cmdargs():
         action="store_true",
         help="area, entropy and (possibly) insertion/deletion curves",
     )
-
-    # parser.add_argument(
-    #     "--show-all",
-    #     action="store_true",
-    #     help="produce a complete breakdown of the image",
-    # )
 
     parser.add_argument(
         "--mode",
