@@ -20,8 +20,8 @@ def snapshot_explanation(snapshot):
         exclude=props(
                 "obj_function", # pointer to function that will differ between runs
                 "spotlight_objective_function", # pointer to function that will differ between runs
-                "custom", # path that differs between systems
-                "custom_location", # path that differs between systems
+                "script", # path that differs between systems
+                "script_location", # path that differs between systems
                 "model",
                 "target_map", # large array
                 "final_mask", # large array
