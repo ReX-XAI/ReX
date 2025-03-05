@@ -1,61 +1,16 @@
 # serializer version: 1
 # name: test_calculate_responsibility[Distribution.BetaBinomial-dist_args1]
-  Explanation:
-  	CausalArgs: <class 'rex_xai.config.CausalArgs'>
-  	Data: Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
-  	 Target:FOUND_CLASS: 207, FOUND_CONF: 0.20462, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
-  	prediction function: <function prediction_function >
-  	ResponsibilityMaps: {207: 1}
-  	run statistics: {'total_passing': 89, 'total_failing': 177, 'max_depth_reached': 6, 'avg_box_size': 128.16667} (5 dp)
-  	explanation: None
-  	final mask: None
-  	explanation confidence: 0.0
+  3477467290869834009
 # ---
 # name: test_calculate_responsibility[Distribution.BetaBinomial-dist_args2]
-  Explanation:
-  	CausalArgs: <class 'rex_xai.config.CausalArgs'>
-  	Data: Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
-  	 Target:FOUND_CLASS: 207, FOUND_CONF: 0.20462, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
-  	prediction function: <function prediction_function >
-  	ResponsibilityMaps: {207: 1}
-  	run statistics: {'total_passing': 83, 'total_failing': 141, 'max_depth_reached': 5, 'avg_box_size': 86.0} (5 dp)
-  	explanation: None
-  	final mask: None
-  	explanation confidence: 0.0
+  -8754720476463405946
 # ---
 # name: test_calculate_responsibility[Distribution.BetaBinomial-dist_args3]
-  Explanation:
-  	CausalArgs: <class 'rex_xai.config.CausalArgs'>
-  	Data: Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
-  	 Target:FOUND_CLASS: 207, FOUND_CONF: 0.20462, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
-  	prediction function: <function prediction_function >
-  	ResponsibilityMaps: {207: 1}
-  	run statistics: {'total_passing': 66, 'total_failing': 102, 'max_depth_reached': 6, 'avg_box_size': 215.25} (5 dp)
-  	explanation: None
-  	final mask: None
-  	explanation confidence: 0.0
+  -200837265459686415
 # ---
 # name: test_calculate_responsibility[Distribution.BetaBinomial-dist_args4]
-  Explanation:
-  	CausalArgs: <class 'rex_xai.config.CausalArgs'>
-  	Data: Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
-  	 Target:FOUND_CLASS: 207, FOUND_CONF: 0.20462, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
-  	prediction function: <function prediction_function >
-  	ResponsibilityMaps: {207: 1}
-  	run statistics: {'total_passing': 81, 'total_failing': 157, 'max_depth_reached': 7, 'avg_box_size': 850.33333} (5 dp)
-  	explanation: None
-  	final mask: None
-  	explanation confidence: 0.0
+  -6449526703691359130
 # ---
 # name: test_calculate_responsibility[Distribution.Uniform-dist_args0]
-  Explanation:
-  	CausalArgs: <class 'rex_xai.config.CausalArgs'>
-  	Data: Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
-  	 Target:FOUND_CLASS: 207, FOUND_CONF: 0.20462, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
-  	prediction function: <function prediction_function >
-  	ResponsibilityMaps: {207: 1}
-  	run statistics: {'total_passing': 84, 'total_failing': 126, 'max_depth_reached': 5, 'avg_box_size': 183.5625} (5 dp)
-  	explanation: None
-  	final mask: None
-  	explanation confidence: 0.0
+  -1720903338186101365
 # ---
