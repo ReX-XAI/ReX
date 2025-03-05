@@ -148,15 +148,14 @@ def predict_target(data: Data, prediction_func) -> Prediction:
 
 def calculate_responsibility(
     data: Data, args: CausalArgs, prediction_func, keep_all_maps=False
-) -> Explanation:
-    """Calculates an Explanation for input data using given args.
+) -> tuple[ResponsibilityMaps, dict]:
+    """Calculates ResponsibilityMaps for input data using given args.
 
     Runs :py:func:`~rex_xai.responsibility.causal_explanation` for ``args.iters`` iterations,
-    and returns an Explanation object.
-    The resulting Explanation object by default only includes the responsibility map that matches
+    and returns a ResponsibilityMaps object and a dictionary containing some statistics about
+    the calculation process.
+    The ResponsibilityMaps object by default only includes the responsibility map that matches
     the classification of the input data. Set ``keep_all_maps`` to ``True`` to retain all maps.
-    The  Explanation object also includes some statistics about the calculation process, in the
-    ``run_stats`` field.
 
     Args:
         data: processed input data object
@@ -166,7 +165,10 @@ def calculate_responsibility(
             or just the one that matches the target classification.
 
     Returns:
-        Explanation: Explanation for the given data, prediction function, and args.
+        tuple containing
+
+        - ResponsibilityMaps: ResponsibilityMaps for the given data, prediction function, and args.
+        - dict: statistics for the call of this function that generated the ResponsibilityMaps object
     """
 
     if data.target is None or data.target.classification is None:
@@ -225,11 +227,7 @@ def calculate_responsibility(
         "avg_box_size": avg_box_size,
     }
 
-    exp = Explanation(
-        maps, prediction_func, data, args, run_stats, keep_all_maps=keep_all_maps
-    )
-
-    return exp
+    return maps, run_stats
 
 
 def analyze(exp: Explanation, data_mode: str | None):
@@ -312,13 +310,13 @@ def _explanation(
 
     start = time.time()
 
-    resp_object = calculate_responsibility(data, args, prediction_func)
+    resp_object, run_stats = calculate_responsibility(data, args, prediction_func)
 
     clauses = None
 
     if args.strategy in (Strategy.MultiSpotlight, Strategy.Contrastive):
         exp = MultiExplanation(
-            resp_object.maps, prediction_func, data, args, resp_object.run_stats
+            resp_object, prediction_func, data, args, run_stats
         )
         exp.extract()
 
@@ -331,7 +329,7 @@ def _explanation(
             # TODO
     else:
         exp = Explanation(
-            resp_object.maps, prediction_func, data, args, resp_object.run_stats
+            resp_object, prediction_func, data, args, run_stats
         )
         exp.extract(args.strategy)
 
