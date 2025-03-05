@@ -61,3 +61,5 @@ intersphinx_mapping = {
 myst_enable_extensions = [
     "attrs_inline"
 ]
+
+nb_execution_timeout = 300
