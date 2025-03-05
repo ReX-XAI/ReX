@@ -52,6 +52,31 @@ class Explanation:
         self.args = args
         self.run_stats = run_stats
 
+    def __repr__(self) -> str:
+        exp_text = (
+            "Explanation:"
+            + f"\n\tCausalArgs: {type(self.args)}"
+            + f"\n\tData: {self.data}"
+            + f"\n\tprediction function: {self.prediction_func}"
+            + f"\n\tResponsibilityMaps: {self.maps}"
+            + f"\n\trun statistics: {self.run_stats}"
+        )
+
+        if self.explanation is None or self.final_mask is None:
+            return (
+                exp_text
+                + f"\n\texplanation: {self.explanation}"
+                + f"\n\tfinal mask: {self.final_mask}"
+                + f"\n\texplanation confidence: {self.explanation_confidence}"
+            )
+        else:
+            return (
+                exp_text
+                + f"\n\texplanation: {type(self.explanation)} of shape {self.explanation.shape}"
+                + f"\n\tfinal mask: {type(self.final_mask)} of shape {self.final_mask.shape}"
+                + f"\n\texplanation confidence: {self.explanation_confidence:.5f}"
+            )
+
     def extract(self, method: Strategy):
         self.blank()
         if method == Strategy.Global:
