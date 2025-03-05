@@ -35,7 +35,7 @@ For the purpose of this tutorial we will set `gpu = False` and use 10 iterations
 ```{code-cell} ipython3
 args.gpu = False
 args.iters = 10
-args.seed = 42
+args.seed = 1234
 print(args)
 ```
 
@@ -63,7 +63,8 @@ We need to define a `model_shape` object which is a list with the expected shape
 model_shape = ["N", 3, 224, 224]
 ```
 
-We also need to define a `preprocess` function which will be applied to our input data file, and return a ReX `Data` object that has been appropriately transformed. For this model, we use the following transformations:
+We also need to define a `preprocess` function which will be applied to our input data file, and return a ReX `Data` object that has been appropriately transformed.
+The transformations (e.g. resizing, normalisation) should be the same as were used for the model's training. For this model, we use the following transformations:
 
 ```{code-cell} ipython3
 from torchvision import transforms as T
@@ -117,7 +118,7 @@ from rex_xai._utils import get_device
 
 device = get_device(gpu=False)
 
-args.path = '../../tests/test_data/ladybird.jpg'
+args.path = '../../tests/test_data/peacock.jpg'
 data = load_and_preprocess_data(model_shape, device, args)
 ```
 
@@ -144,15 +145,18 @@ We are now ready to run ReX and identify a causal explanation for this classific
 
 The main function in ReX is `calculate_responsibility`, which returns a `ResponsibilityMaps` object and some statistics about the function execution.
 We can then create an `Explanation` object containing the calculated responsibility landscape and `extract` an explanation from this object.
-Here we will use the default `Spatial` strategy, which is stored in the `args` object. Additional strategies are available in the `rex_xai._utils.Strategy` Enum.
+Here we will use the `Global` strategy. Additional strategies are available in the `rex_xai._utils.Strategy` Enum.
 
 ```{code-cell} ipython3
+:tags: [hide-output]
+
 from rex_xai.explanation import calculate_responsibility
 from rex_xai.extraction import Explanation
+from rex_xai._utils import Strategy
 
 resp_maps, stats = calculate_responsibility(data, args, prediction_function)
 exp = Explanation(resp_maps, prediction_function, data, args, stats)
-exp.extract(args.strategy)
+exp.extract(Strategy.Global)
 ```
 
 ## Examining the results
@@ -193,6 +197,36 @@ from rex_xai.explanation import analyze
 analyze(exp, data.mode)
 ```
 
-```{code-cell} ipython3
+## Multiple Explanations
 
+There may be multiple regions of an image that are sufficient to explain its classification.
+ReX provides a way to identify multiple explanations by using the `MultiExplanation` class and `MultiSpotlight` strategy.
+
+```{code-cell} ipython3
+from rex_xai.multi_explanation import MultiExplanation
+
+multi_exp = MultiExplanation(resp_maps, prediction_function, data, args, stats)
+multi_exp.extract(Strategy.MultiSpotlight)
+```
+
+Here we have used the default settings, which generate (up to) ten explanations.
+The first explanation is always the explanation identified with `Strategy.Global`, as we did above.
+
+```{code-cell} ipython3
+multi_exp.show(multi_style="separate")
+```
+
+We can use the `separate_by` method to identify sets of explanations that do not overlap with each other (or that have an overlap less than some maximum threshold).
+Here we will use an overlap of zero to find explanations that have no overlap with each other. 
+
+```{code-cell} ipython3
+clauses = multi_exp.separate_by(0)
+print(clauses)
+```
+
+We have identified one group of 6 explanations that have no overlap with each other.
+The "composite" plotting style can be used to plot these explanations in a single plot.
+
+```{code-cell} ipython3
+multi_exp.show(multi_style="composite", clauses=clauses)
 ```
