@@ -1,25 +1,31 @@
 ---
-file_format: mystnb
-mystnb:
-  execution_timeout: 300
+jupytext:
+  text_representation:
+    extension: .md
+    format_name: myst
+    format_version: 0.13
+    jupytext_version: 1.16.7
+kernelspec:
+  display_name: .venv
+  language: python
+  name: python3
 ---
 
 # Using ReX interactively
 
 +++
 
-There are three key components that need to be set up in order to use ReX: the input parameters, the model, and the input data. In this tutorial we will walk through how to set up each of these for a simple ReX analysis using an image classification model.
+There are three key components that need to be set up in order to use ReX: the input parameters, the model, and the input data. In this tutorial we will walk through how to set up each of these for a simple ReX analysis using an image classification model. We will use ReX to calculate a responsibility landscape and identify a minimal explanation for the classification of an image by the [ResNet50 model](https://pytorch.org/vision/stable/models/generated/torchvision.models.resnet50.html#torchvision.models.resnet50). We will also plot this explanation and the responsibility landscape on the original image. 
 
 ## Set up
 
 First, we will set up the input parameters as a `CausalArgs` object.
 
-You can create a `CausalArgs` object with default parameters and then modify it, or use `load_config` to read your desired set of input parameters from a `rex.toml` file. 
+You can create a `CausalArgs` object with default parameters and then modify it, or use [`load_config`](https://rex-xai.readthedocs.io/en/latest/autoapi/rex_xai/config/index.html#rex_xai.config.load_config) to read your desired set of input parameters from a `rex.toml` file.
 
 ```{code-cell} ipython3
-from rex_xai.config import CausalArgs, load_config
+from rex_xai.config import CausalArgs
 
-# args = load_config("rex.toml") # not run
 args = CausalArgs()
 print(args)
 ```
@@ -42,9 +48,8 @@ Next, we will set up the model details. We need to provide ReX with three things
 For this tutorial we will use the [ResNet50 model](https://pytorch.org/vision/stable/models/generated/torchvision.models.resnet50.html#torchvision.models.resnet50) as provided by the `torchvision` library.
 
 ```{code-cell} ipython3
----
-tags: [hide-output]
----
+:tags: [hide-output]
+
 from torchvision.models import resnet50
 
 model = resnet50(weights="ResNet50_Weights.DEFAULT")
@@ -52,7 +57,7 @@ model.eval()
 model.to("cpu")
 ```
 
-We need to define a `model_shape` object which is a list with the expected shape of the input data for the model. In this case the order is `[batch, channels, height, width]`.
+We need to define a `model_shape` object which is a list with the expected shape of the input data for the model. In this case the order is `[batch, channels, height, width]`. We use "N" for the batch size in this case as this model accepts dynamic batch sizes. The actual batch size used can be set in the `CausalArgs` object. 
 
 ```{code-cell} ipython3
 model_shape = ["N", 3, 224, 224]
@@ -112,7 +117,7 @@ from rex_xai._utils import get_device
 
 device = get_device(gpu=False)
 
-args.path = '../../imgs/ladybird.jpg'
+args.path = '../../tests/test_data/ladybird.jpg'
 data = load_and_preprocess_data(model_shape, device, args)
 ```
 
@@ -124,10 +129,10 @@ Image.open(args.path)
 
 We will now set the mask value to be used to mask the data when creating mutants, and predict the class of the original input image (the 'target' for the mutants).
 
-ReX allows functions to be used to set the mask value (e.g. the 'min' or 'mean' of the normalised image), but the default mask value of 0 generally performs well enough for images. 
+ReX allows functions to be used to set the mask value (e.g. the 'min' or 'mean' of the normalised image), but the default mask value of 0 generally performs well enough for images.
 
 ```{code-cell} ipython3
-data.set_mask_value(0, device=device)
+data.set_mask_value(0)
 data.target = predict_target(data, prediction_function)
 
 print(data.target)
@@ -137,12 +142,16 @@ print(data.target)
 
 We are now ready to run ReX and identify a causal explanation for this classification.
 
-The main function in ReX is `calculate_responsibility`, which returns an `Explanation` object. We can then `extract` an explanation from this object. Here we will use the default `Spatial` strategy, which is stored in the `args` object. Additional strategies are available in the `rex_xai._utils.Strategy` Enum.
+The main function in ReX is `calculate_responsibility`, which returns a `ResponsibilityMaps` object and some statistics about the function execution.
+We can then create an `Explanation` object containing the calculated responsibility landscape and `extract` an explanation from this object.
+Here we will use the default `Spatial` strategy, which is stored in the `args` object. Additional strategies are available in the `rex_xai._utils.Strategy` Enum.
 
 ```{code-cell} ipython3
 from rex_xai.explanation import calculate_responsibility
+from rex_xai.extraction import Explanation
 
-exp = calculate_responsibility(data, args, prediction_function)
+resp_maps, stats = calculate_responsibility(data, args, prediction_function)
+exp = Explanation(resp_maps, prediction_function, data, args, stats)
 exp.extract(args.strategy)
 ```
 
@@ -154,7 +163,7 @@ The mask corresponding to the final explanation is stored in the `Explanation` o
 print(exp.final_mask)
 ```
 
-ReX also provides some plotting methods for easier visualisation of the explanation and the responsibility landscape. 
+ReX also provides some plotting methods for easier visualisation of the explanation and the responsibility landscape.
 
 ```{code-cell} ipython3
 display(exp.show())
@@ -167,10 +176,11 @@ exp.heatmap_plot()
 exp.surface_plot()
 ```
 
-The `Explanation` object contains some statistics about the `calculate_responsibility` run that generated it. If you are not satisfied with the quality of the explanation output, a good place to start is to check the tree depth and numbers of mutants examined, as low tree depth or low numbers of mutants examined can lead to strange results. The easiest way to increase both of these and refine an explanation is to increase the number of iterations you use. 
+If you are not satisfied with the quality of the explanation output, a good place to start is to check the run statistics output by `calculate_responsibility`. 
+In particular, check the tree depth and numbers of mutants examined, as low tree depth or low numbers of mutants examined can lead to strange results. The easiest way to increase both of these and refine an explanation is to increase the number of iterations you use.
 
 ```{code-cell} ipython3
-print(exp.run_stats)
+print(stats)
 ```
 
 In this case, the tree depth is 9, almost 1000 mutants have been assessed, and the returned explanation matches well with what we would expect, so we are happy with the quality of the explanation and don't need to increase the iterations.
@@ -181,4 +191,8 @@ Another way to check explanation quality would be to analyze the `Explanation` o
 from rex_xai.explanation import analyze
 
 analyze(exp, data.mode)
+```
+
+```{code-cell} ipython3
+
 ```
