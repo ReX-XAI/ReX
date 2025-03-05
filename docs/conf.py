@@ -18,7 +18,8 @@ extensions = [
     "sphinx.ext.autodoc.typehints",
     "myst_parser",
     "sphinx.ext.napoleon",
-    "sphinx.ext.intersphinx"
+    "sphinx.ext.intersphinx",
+    'sphinxarg.ext',
 ]
 
 templates_path = ["_templates"]
