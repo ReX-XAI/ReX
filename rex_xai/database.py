@@ -49,7 +49,7 @@ def db_to_pandas(db, dtype=np.float32, table="rex"):
 def update_database(
     db,
     explanation: Explanation,
-    time_taken,
+    time_taken=None,
     multi=False,
 ):
     target_map = explanation.target_map
