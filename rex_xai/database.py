@@ -13,7 +13,6 @@ import numpy as np
 
 from rex_xai.logger import logger
 from rex_xai.config import CausalArgs, Strategy
-from rex_xai.prediction import Prediction
 from rex_xai.extraction import Explanation
 from rex_xai.multi_explanation import MultiExplanation
 
