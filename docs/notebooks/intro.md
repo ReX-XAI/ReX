@@ -35,7 +35,7 @@ For the purpose of this tutorial we will set `gpu = False` and use 10 iterations
 ```{code-cell} ipython3
 args.gpu = False
 args.iters = 10
-args.seed = 1234
+args.seed = 123
 print(args)
 ```
 
@@ -118,7 +118,7 @@ from rex_xai._utils import get_device
 
 device = get_device(gpu=False)
 
-args.path = '../../tests/test_data/peacock.jpg'
+args.path = '../../tests/test_data/ladybird.jpg'
 data = load_and_preprocess_data(model_shape, device, args)
 ```
 
@@ -187,7 +187,7 @@ In particular, check the tree depth and numbers of mutants examined, as low tree
 print(stats)
 ```
 
-In this case, the tree depth is 9, almost 1000 mutants have been assessed, and the returned explanation matches well with what we would expect, so we are happy with the quality of the explanation and don't need to increase the iterations.
+In this case, the tree depth is 9, almost 1000 mutants have been assessed, and the returned explanation matches well with what we would expect, so we are happy with the quality of the explanation and don’t need to increase the iterations.
 
 Another way to check explanation quality would be to analyze the `Explanation` object and calculate some common metrics.
 
@@ -202,15 +202,36 @@ analyze(exp, data.mode)
 There may be multiple regions of an image that are sufficient to explain its classification.
 ReX provides a way to identify multiple explanations by using the `MultiExplanation` class and `MultiSpotlight` strategy.
 
+We will use a different image to illustrate this approach, so we need to set up the Data object for this new image.
+
+```{code-cell} ipython3
+args.path = "../../tests/test_data/peacock.jpg"
+data = load_and_preprocess_data(model_shape, device, args)
+Image.open(args.path)
+```
+
+We set the mask value to zero again and predict the class of the new image. 
+
+```{code-cell} ipython3
+data.set_mask_value(0)
+data.target = predict_target(data, prediction_function)
+
+print(data.target)
+```
+
+Next, we will run `calculate_responsibility` on the new image, create a `MultiExplanation` object, and extract explanations.
+
 ```{code-cell} ipython3
 from rex_xai.multi_explanation import MultiExplanation
+
+resp_maps, stats = calculate_responsibility(data, args, prediction_function)
 
 multi_exp = MultiExplanation(resp_maps, prediction_function, data, args, stats)
 multi_exp.extract(Strategy.MultiSpotlight)
 ```
 
 Here we have used the default settings, which generate (up to) ten explanations.
-The first explanation is always the explanation identified with `Strategy.Global`, as we did above.
+The first explanation is always the explanation identified with `Strategy.Global`.
 
 ```{code-cell} ipython3
 multi_exp.show(multi_style="separate")
@@ -224,9 +245,14 @@ clauses = multi_exp.separate_by(0)
 print(clauses)
 ```
 
-We have identified one group of 6 explanations that have no overlap with each other.
+We have identified three groups of 6 explanations that have no overlap with each other.
 The "composite" plotting style can be used to plot these explanations in a single plot.
+Here we will just plot the first group. 
 
 ```{code-cell} ipython3
-multi_exp.show(multi_style="composite", clauses=clauses)
+multi_exp.show(multi_style="composite", clauses=[clauses[0]])
+```
+
+```{code-cell} ipython3
+
 ```
