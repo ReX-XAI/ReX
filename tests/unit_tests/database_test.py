@@ -39,3 +39,10 @@ def test_read_db(exp_extracted, tmp_path):
     update_database(db, exp_extracted)
     df = db_to_pandas(p)
     assert df.shape == (1, 29)
+
+
+def test_no_multi(exp_extracted, caplog):
+    update_database(db, exp_extracted, multi=True)
+    assert (
+        caplog.records[0].message == "unable to update database, multi=True is only valid for MultiExplanation objects"
+    )
