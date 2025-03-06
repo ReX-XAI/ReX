@@ -59,6 +59,21 @@ This will automatically generate documentation based on the code and docstrings 
 
 We prefer [Google-style](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html) docstrings, and use `sphinx.ext.napoleon` to parse them.
 
+### Working with notebooks
+
+The [introduction to working with ReX interactively](https://rex-xai.readthedocs.io/en/latest/notebooks/intro.html) is written as a Jupyter notebook in markdown format.
+We use [MyST-NB](https://myst-nb.readthedocs.io/en/latest/index.html) to compile the notebook into html as part of the documentation.
+To more easily work with the notebook locally, you can use [Jupytext](https://jupytext.readthedocs.io/en/latest/) to generate an .ipynb notebook from the markdown file, edit the tutorial, and then convert the edited notebook back into md.
+
+```sh
+# convert to .ipynb
+jupytext docs/notebooks/intro.md --to ipynb
+# convert back to markdown
+jupytext docs/notebooks/intro.ipynb --to myst
+```
+
+Markdown format allows much clearer diffs when tracking the notebook with version control, so please don't add the .ipynb files to version control.
+
 ## Code linting and formatting
 
 This project uses [ruff](https://docs.astral.sh/ruff/) for code linting and formatting, to ensure a consistent code style and identify issues like unused imports.
