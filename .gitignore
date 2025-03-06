@@ -45,3 +45,6 @@ rex_ai.egg-info/*
 .coverage
 
 docs/_build/
+.jupyter
+.ipynb_checkpoints/
+*.ipynb
