@@ -203,11 +203,14 @@ There may be multiple regions of an image that are sufficient to explain its cla
 ReX provides a way to identify multiple explanations by using the `MultiExplanation` class and `MultiSpotlight` strategy.
 
 We will use a different image to illustrate this approach, so we need to set up the Data object for this new image.
+We will copy the `args` object and change the path to point to the new data.
 
 ```{code-cell} ipython3
-args.path = "../../tests/test_data/peacock.jpg"
-data = load_and_preprocess_data(model_shape, device, args)
-Image.open(args.path)
+import copy
+peacock_args = copy.copy(args)
+peacock_args.path = "../../tests/test_data/peacock.jpg"
+data = load_and_preprocess_data(model_shape, device, peacock_args)
+Image.open(peacock_args.path)
 ```
 
 We set the mask value to zero again and predict the class of the new image. 
@@ -224,9 +227,9 @@ Next, we will run `calculate_responsibility` on the new image, create a `MultiEx
 ```{code-cell} ipython3
 from rex_xai.multi_explanation import MultiExplanation
 
-resp_maps, stats = calculate_responsibility(data, args, prediction_function)
+resp_maps, stats = calculate_responsibility(data, peacock_args, prediction_function)
 
-multi_exp = MultiExplanation(resp_maps, prediction_function, data, args, stats)
+multi_exp = MultiExplanation(resp_maps, prediction_function, data, peacock_args, stats)
 multi_exp.extract(Strategy.MultiSpotlight)
 ```
 
@@ -253,6 +256,60 @@ Here we will just plot the first group.
 multi_exp.show(multi_style="composite", clauses=[clauses[0]])
 ```
 
-```{code-cell} ipython3
+## Saving results
 
+We may want to run ReX on multiple input datasets and save the results for further analysis later.
+We can save results from an `Explanation` or `MultiExplanation` object in a sqlite database.
+We first initialise the database and then save the ladybird explanation and the multiple explanations of the peacock image.
+
+We did not measure the time taken to calculate the responsibility landscape and extract explanations in this tutorial, so here we use zero in place of the time.
+If you wish to calculate this you can use the `time.time()` function to calculate timestamps before and after the steps you wish to time. 
+
+Before saving the results, we should update the `strategy` saved in the `Explanation` or `MultiExplanation` object to ensure it matches the strategy we used, as this will be saved in the database. 
+
+```{code-cell} ipython3
+from rex_xai.database import initialise_rex_db, update_database
+
+db = initialise_rex_db("rex.db")
+
+exp.args.strategy = Strategy.Global
+update_database(
+    db,
+    exp.data.target,
+    exp,
+    0,
+    exp.run_stats["total_passing"],
+    exp.run_stats["total_failing"],
+    exp.run_stats["max_depth_reached"],
+    exp.run_stats["avg_box_size"],
+    )
+
+multi_exp.args.strategy = Strategy.MultiSpotlight
+update_database(
+    db,
+    multi_exp.data.target,
+    multi_exp,
+    0,
+    multi_exp.run_stats["total_passing"],
+    multi_exp.run_stats["total_failing"],
+    multi_exp.run_stats["max_depth_reached"],
+    multi_exp.run_stats["avg_box_size"],
+    multi=True,
+)
+```
+
+ReX provides a helper function to read the results from the database into a [Pandas](https://pandas.pydata.org/) dataframe for further analysis.
+
+```{code-cell} ipython3
+from rex_xai.database import db_to_pandas
+
+df = db_to_pandas("rex.db")
+print(df)
+```
+
+```{code-cell} ipython3
+:tags: [hide-cell]
+
+import os
+os.remove("rex.db")
 ```
