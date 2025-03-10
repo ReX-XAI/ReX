@@ -2,61 +2,10 @@
 
 <!--inclusion-marker-start-do-not-remove-->
 
-```none
-usage: ReX [-h] [--output [OUTPUT]] [-c CONFIG] [--processed] [--script SCRIPT] [-v] [--surface [SURFACE]] [--heatmap [HEATMAP]] [--model MODEL] [--strategy STRATEGY]
-       [--database DATABASE] [--multi [MULTI]] [--contrastive [CONTRASTIVE]] [--iters ITERS] [--analyze] [--analyse] [--mode MODE] [--spectral] filename
-
-                       @@@@@@@@@@@@@@@
-                       @@  @@@@@@@@@@@
-                     @@@@  @@@@@@@@@@@@@@@@@
-                     @@@@@@@@@@@@@@@@@@@@@@@
-                     @@@@@@@@@@@@@@@@@@@@@@@
-                     @@@@@@@@@@
-                     @@@@@@@@@@@@@@@@         %%%
-   @@              @@@@@@@@@@@                %%%%
-   @@              @@@@@@@   %%@               %%%%             %%
-   @@            @@@@@@@@ @%%%%%%%              %%%%           %%
-   @@@@        @@@@@@@@@@ %%%%  %%%%%%           %%%%        %%
-   @@@@@@    @@@@@@@@@@@@ %%%%     %%%%%%      %   %%%     %%
-   @@@@@@@@@@@@@@@@@@@@@@ %%%%       %      %%      %%%   %
-     @@@@@@@@@@@@@@@@@@@@ %%%%    %%      %          %%%%
-       @@@@@@@@@@@@@@@@@@ %%%   %%     %%%%%%%%%%%    %%%
-         @@@@@@@@@@@@@@@@ %%%  %%%%   %%%%           % %%%
-         @@@@@@@@@@@@@@@  %%%   %%%%   %%%%        %@   %%%
-           @@@@@@@@@@@@@  %%%    %%%%    %%%     %%      %%%
-             @@@@@@  @@@  %%%     %%%%    %%%% %%         %%%%
-             @@@@        %%%%      %%%%%   %%%%            %%%%  %
-             @@          %%%%        %%%%   %%%%%@          %%%%%
-             @@@@        %            %%      %              %%
-
-   Explaining AI throught causal Responsibilty EXplanations
-
-positional arguments:
-  filename              file to be processed, either an image, a numpy array, a mat file, or a nifti file
-
-options:
-  -h, --help            show this help message and exit
-  --output [OUTPUT]     show minimal, sufficient causal explanation, optionally saved to <OUTPUT>. Requires a PIL compatible file extension
-  -c CONFIG, --config CONFIG
-                        optional config file to use for ReX
-  --processed           prevent ReX from performing any preprocessing
-  --script SCRIPT       custom loading and preprocessing script, mostly for use with pytorch models
-  -v, --verbose         verbosity level, either -v or -vv, or -vvv
-  --surface [SURFACE]   surface plot of the responsibility map, optionally saved to <SURFACE>
-  --heatmap [HEATMAP]   heatmap plot of the responsibility map, optionally saved to <HEATMAP>
-  --model MODEL         model in .onnx format
-  --strategy STRATEGY, -s STRATEGY
-                        explanation strategy, one of < multi | spatial | global | spotlight >, defaults to global
-  --database DATABASE, -db DATABASE
-                        store output in sqlite database <DATABASE>, creating db if necessary. Please include the extension in the filename
-  --multi [MULTI]       multiple explanations, with optional number <x> of spotlights, defaults to value in <rex.toml>, or 10 if undefined
-  --contrastive [CONTRASTIVE]
-                        a contrastive explanation, minimal, necessary and sufficient. Needs optional number <x> of floodlights, defaults to value in <rex.toml>, or 10 if undefined
-  --iters ITERS         manually override the number of iterations set in the config file
-  --analyze             area, entropy and (possibly) insertion/deletion curves
-  --analyse             area, entropy and (possibly) insertion/deletion curves
-  --mode MODE, -m MODE  assist ReX with your input type, one of <tabular>, <spectral>, <RGB>, <voxel>, <audio>
-  --spectral            set ReX input type to <spectral>, shortcut for --mode spectral
+```{argparse}
+:module: rex_xai.config
+:func: cmdargs_parser
+:prog: ReX
 ```
 
 <!--inclusion-marker-end-do-not-remove-->

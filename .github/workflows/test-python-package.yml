@@ -1,0 +1,54 @@
+# This workflow will install the project and run tests
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: Install and run tests 
+
+on: 
+  workflow_call:
+    inputs:
+      python-version:
+        required: true
+        type: string
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Install poetry
+      run: pipx install poetry
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+          python-version: ${{inputs.python-version}}
+          cache: poetry
+    
+    - name: Install project and dependencies 
+      run: poetry install --with dev
+    
+    - name: Update PATH
+      run: echo "$(poetry env info --path)/bin" >> $GITHUB_PATH
+
+    - name: Cache model files for testing
+      uses: actions/cache@v3
+      env:
+        cache-name: cache-model-files
+      with:
+        path: ~/.cache/cached_path
+        key: ${{ runner.os }}-test-${{ env.cache-name }}-${{ hashFiles('tests/conftest.py') }}
+
+    - name: Test with pytest
+      run: |
+        pytest --junitxml=pytest.xml --cov-report=xml:coverage.xml --cov=rex_xai tests/unit_tests tests/snapshot_tests
+    
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report-py${{ inputs.python-version }}
+        path: ./coverage.xml
+
+
