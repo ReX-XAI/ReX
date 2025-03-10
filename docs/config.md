@@ -152,7 +152,7 @@ This section is for options relevant to the causal responsibility calculations.
 `iters = 20`
 
 Number of times to run the algorithm.
-More iterations will generally lead to smaller explanations.
+More iterations will generally lead to smaller explanations. This can also be changed at the command line.
 Default: 20.
 
 `weighted = false`
@@ -299,6 +299,7 @@ Check what happens if model batch size is dynamic and batch size is not set.
 Could calculate % of image that would be covered? -->
 
 ### [explanation.multi] section
+(explanation_multi=)
 
 <!-- 
 - place spotlight at random location
@@ -320,7 +321,7 @@ Multi-explanation method (only spotlight is currently implemented).
 
 `spotlights = 10`
 
-Number of spotlights to launch.
+Number of spotlights to launch. This can also be changed at the command line.
 Default: 10.
 
 `spotlight_size = 24`

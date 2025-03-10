@@ -40,3 +40,7 @@ we get
 
 ReX has found 4 distinct, non-overlapping explanations. The original global explanation is still there, but we also have 3 other explanations.
 Two of these explanations (highlighted in white and red respectively) are [*disjoint* explanations](https://arxiv.org/pdf/2411.08875).
+
+## Notes
+Multi-ReX has many options and parameters, see [config](explanation_multi) for the complete list.
+
