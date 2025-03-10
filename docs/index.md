@@ -138,4 +138,6 @@ INFO:ReX:area 0.000399, entropy difference 6.751189, insertion curve 0.964960, d
 background.md
 command_line.md
 config.md
+multiple.md
+contrastive.md
 ```
