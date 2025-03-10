@@ -67,7 +67,7 @@ def update_database(
     if not multi:
         final_mask = explanation.final_mask
         if explanation.final_mask is None:
-            logger.warn("unable to update database as explanation is empty")
+            logger.warning("unable to update database as explanation is empty")
             return
         if isinstance(final_mask, tt.Tensor):
             final_mask = final_mask.detach().cpu().numpy()

@@ -151,7 +151,7 @@ class MultiExplanation(Explanation):
         return clauses
 
     def contrastive(self, clauses):
-        logger.warn("not yet implemented")
+        logger.warning("not yet implemented")
         return
         # for clause in clauses:
         #     logger.info(f"looking at {clause}")

@@ -44,7 +44,7 @@ class Args:
         self.norm: Optional[float] = 255.0
         self.binary_threshold = None
         # verbosity
-        self.verbosity = 0
+        self.verbosity = 1
         # whether to show progress bar or not
         self.progress_bar = True
         # save explanation to output
@@ -194,9 +194,17 @@ def cmdargs_parser():
         "-v",
         "--verbose",
         action="count",
-        default=0,
-        help="verbosity level, either -v or -vv, or -vvv",
+        default=1,
+        help="increase verbosity level, either -v or -vv",
     )
+
+    parser.add_argument(
+        "-q",
+        "--quiet",
+        action="store_true",
+        help="set verbosity level to 0 (errors only), overrides --verbose"
+    )
+
     parser.add_argument(
         "--surface",
         nargs="?",
@@ -326,7 +334,9 @@ def shared_args(cmd_args, args: CausalArgs):
         args.heatmap = cmd_args.heatmap
     if cmd_args.output is not None:
         args.output = cmd_args.output
-    if cmd_args.verbose > 0:
+    if cmd_args.quiet:
+        args.verbosity = 0
+    else:
         args.verbosity = cmd_args.verbose
     if cmd_args.database is not None:
         args.db = cmd_args.database
@@ -520,7 +530,7 @@ def load_config(config_path=None):
             process_config_dict(config_file_args, default_args)
             return default_args
         except Exception as e:
-            logger.warn(
+            logger.warning(
                 "exception of type %s: %s, so reverting to default args", type(e), e
             )
             return default_args

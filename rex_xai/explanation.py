@@ -310,10 +310,11 @@ def _explanation(
 
     start = time.time()
 
+    logger.info("Calculating responsibility map")
     resp_object, run_stats = calculate_responsibility(data, args, prediction_func)
 
+    logger.info("Extracting explanation from responsibility map")
     clauses = None
-
     if args.strategy in (Strategy.MultiSpotlight, Strategy.Contrastive):
         exp = MultiExplanation(
             resp_object, prediction_func, data, args, run_stats
@@ -334,6 +335,7 @@ def _explanation(
         exp.extract(args.strategy)
 
     if args.analyze:
+        logger.info("Analysing explanation")
         results = analyze(exp, data.mode)
         print(
             f"INFO:ReX:area {results['area']}, entropy {results['entropy_diff']},",
@@ -342,7 +344,7 @@ def _explanation(
 
     end = time.time()
     time_taken = end - start
-    logger.info(time_taken)
+    logger.info(f"Time taken: {time_taken:.2f}s")
 
     if args.surface is not None:
         if args.surface == "show":
