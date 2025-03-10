@@ -147,9 +147,9 @@ See the [Matplotlib documentation](https://matplotlib.org/stable/users/explain/c
 
 ## [causal] section
 
-This sections is for options relevant to the causal responsibility calculations.
+This section is for options relevant to the causal responsibility calculations.
 
-`iters = 30`
+`iters = 20`
 
 Number of times to run the algorithm.
 More iterations will generally lead to smaller explanations.
@@ -160,11 +160,12 @@ Default: 20.
 Whether to weight responsibility by prediction confidence.
 Default: false.
 
-`tree_depth = 20`
+`tree_depth = 10`
 
 Maximum depth of tree.
 Default: 10.
 Note that search can actually go beyond this number on occasion, as the check only occurs at the end of an iteration.
+The tree is constructed lazily, so setting a relatively high number will not penalise performance (unless your model really gets down to the level of individual pixels).
 
 <!-- TODO: add a diagram?
 30 is very large (getting to individual pixels), 10 is easily reachable. 
@@ -260,6 +261,13 @@ If your model is slow to classify, you may want to increase this value.
 Defaults to `causal.min_box_size`.
 <!-- Adds this number of pixels at a time - faster.
 User may want to adjust this - if model is slow need bigger values. -->
+
+`minimum_confidence_threshold = 0.0`
+
+Explanations can be very small, and often have very low confidence. This can cause problems, especially when using `batch_size` > 1. A collection of pixels which is an explanation for `batch_size = 64` can sometimes fail to be an explanation for `batch_size = 1`. Setting `minimum_confidence_threshold` allows ReX to keep 
+looking for an explanation of confidence *greater than or equal to* the model confidence on <original image * minimum_confidence_threshold>. 
+This is especially useful to reduce errors due to floating point imprecision when batching calls to the model.
+Default 0.0, with maximum value 1.0. 
 
 ### [explanation.spatial] section
 
