@@ -1,15 +1,15 @@
 #!/usr/bin/env python
+import re
 from typing import Optional
 
 import torch as tt
 
 from rex_xai import visualisation
+from rex_xai._utils import SpatialSearch, get_map_locations, set_boolean_mask_value
+from rex_xai.config import CausalArgs, Strategy
 from rex_xai.input_data import Data
-from rex_xai.config import CausalArgs
-from rex_xai.config import Strategy
 from rex_xai.logger import logger
 from rex_xai.mutant import _apply_to_data
-from rex_xai._utils import get_map_locations, set_boolean_mask_value, SpatialSearch
 from rex_xai.resp_maps import ResponsibilityMaps
 
 
@@ -51,6 +51,38 @@ class Explanation:
         self.data = data
         self.args = args
         self.run_stats = run_stats
+
+    def __repr__(self) -> str:
+        pred_func = repr(self.prediction_func)
+        match_func_name = re.search(r'(<function .+) at', pred_func)
+        if match_func_name:
+            pred_func = match_func_name.group(1) + " >"
+
+        run_stats = {k: round(v, 5) for k,v in self.run_stats.items()}
+
+        exp_text = (
+            "Explanation:"
+            + f"\n\tCausalArgs: {type(self.args)}"
+            + f"\n\tData: {self.data}"
+            + f"\n\tprediction function: {pred_func}"
+            + f"\n\tResponsibilityMaps: {self.maps}"
+            + f"\n\trun statistics: {run_stats} (5 dp)"
+        )
+
+        if self.explanation is None or self.final_mask is None:
+            return (
+                exp_text
+                + f"\n\texplanation: {self.explanation}"
+                + f"\n\tfinal mask: {self.final_mask}"
+                + f"\n\texplanation confidence: {self.explanation_confidence}"
+            )
+        else:
+            return (
+                exp_text
+                + f"\n\texplanation: {type(self.explanation)} of shape {self.explanation.shape}"
+                + f"\n\tfinal mask: {type(self.final_mask)} of shape {self.final_mask.shape}"
+                + f"\n\texplanation confidence: {self.explanation_confidence:.5f} (5 dp)"
+            )
 
     def extract(self, method: Strategy):
         self.blank()

@@ -1,154 +1,30 @@
 # serializer version: 1
 # name: test__explanation_snapshot[1]
-  Explanation(
-    args=CausalArgs(
-      all=False,
-      alpha=0.2,
-      analyze=False,
-      batch_size=1,
-      binary_threshold=None,
-      blend=0.0,
-      chunk_size=10,
-      colour=200,
-      concentrate=False,
-      confidence_filter=0.0,
-      config_location=None,
-      data_location=None,
-      db=None,
-      distribution=<Distribution.Uniform: 2>,
-      distribution_args=None,
-      gpu=False,
-      grid=False,
-      heatmap=None,
-      heatmap_colours='magma',
-      info=True,
-      insertion_step=100,
-      iters=2,
-      mark_segments=False,
-      mask_value='spectral',
-      max_spotlight_budget=40,
-      means=None,
-      min_box_size=10,
-      minimum_confidence_threshold=0.0,
-      mode='spectral',
-      multi_style='composite',
-      no_expansions=4,
-      norm=255.0,
-      normalise_curves=True,
-      output=None,
-      path='tests/test_data/spectrum_class_DNA.npy',
-      permitted_overlap=0.0,
-      processed=False,
-      progress_bar=True,
-      queue_len=1,
-      queue_style=<Queue.Area: 1>,
-      raw=False,
-      resize=False,
-      search_limit=1000,
-      seed=15,
-      segmentation=False,
-      shape=None,
-      spatial_initial_radius=25,
-      spatial_radius_eta=0.2,
-      spotlight_eta=0.2,
-      spotlight_size=20,
-      spotlight_step=5,
-      spotlights=10,
-      stds=None,
-      strategy=<Strategy.Global: 1>,
-      surface=None,
-      tree_depth=10,
-      verbosity=0,
-      weighted=False,
-    ),
-    data=Data: spectral, ['batch_size', 1, 1356], 1, 1356, 1, None
-  	 Target:FOUND_CLASS: 1, FOUND_CONF: 0.99817, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a,
-    explanation_confidence=0.998168,
-    maps={1: 1},
-    run_stats=dict({
-      'avg_box_size': 22.875,
-      'max_depth_reached': 2,
-      'total_failing': 0,
-      'total_passing': 56,
-    }),
-  )
+  Explanation:
+  	CausalArgs: <class 'rex_xai.config.CausalArgs'>
+  	Data: Data: spectral, ['batch_size', 1, 1356], 1, 1356, 1, None
+  	 Target:FOUND_CLASS: 1, FOUND_CONF: 0.99817, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
+  	prediction function: <function OnnxRunner.gen_prediction_function.<locals>.<lambda> >
+  	ResponsibilityMaps: {1: 1}
+  	run statistics: {'total_passing': 56, 'total_failing': 0, 'max_depth_reached': 2, 'avg_box_size': 22.875} (5 dp)
+  	explanation: <class 'torch.Tensor'> of shape torch.Size([1, 1356])
+  	final mask: <class 'numpy.ndarray'> of shape (1, 1356)
+  	explanation confidence: 0.99817 (5 dp)
 # ---
 # name: test__explanation_snapshot[1].1
   3711909154719731854
 # ---
 # name: test__explanation_snapshot[64]
-  Explanation(
-    args=CausalArgs(
-      all=False,
-      alpha=0.2,
-      analyze=False,
-      batch_size=64,
-      binary_threshold=None,
-      blend=0.0,
-      chunk_size=10,
-      colour=200,
-      concentrate=False,
-      confidence_filter=0.0,
-      config_location=None,
-      data_location=None,
-      db=None,
-      distribution=<Distribution.Uniform: 2>,
-      distribution_args=None,
-      gpu=False,
-      grid=False,
-      heatmap=None,
-      heatmap_colours='magma',
-      info=True,
-      insertion_step=100,
-      iters=2,
-      mark_segments=False,
-      mask_value='spectral',
-      max_spotlight_budget=40,
-      means=None,
-      min_box_size=10,
-      minimum_confidence_threshold=0.0,
-      mode='spectral',
-      multi_style='composite',
-      no_expansions=4,
-      norm=255.0,
-      normalise_curves=True,
-      output=None,
-      path='tests/test_data/spectrum_class_DNA.npy',
-      permitted_overlap=0.0,
-      processed=False,
-      progress_bar=True,
-      queue_len=1,
-      queue_style=<Queue.Area: 1>,
-      raw=False,
-      resize=False,
-      search_limit=1000,
-      seed=15,
-      segmentation=False,
-      shape=None,
-      spatial_initial_radius=25,
-      spatial_radius_eta=0.2,
-      spotlight_eta=0.2,
-      spotlight_size=20,
-      spotlight_step=5,
-      spotlights=10,
-      stds=None,
-      strategy=<Strategy.Global: 1>,
-      surface=None,
-      tree_depth=10,
-      verbosity=0,
-      weighted=False,
-    ),
-    data=Data: spectral, ['batch_size', 1, 1356], 1, 1356, 1, None
-  	 Target:FOUND_CLASS: 1, FOUND_CONF: 0.99817, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a,
-    explanation_confidence=0.998168,
-    maps={1: 1},
-    run_stats=dict({
-      'avg_box_size': 22.875,
-      'max_depth_reached': 2,
-      'total_failing': 0,
-      'total_passing': 56,
-    }),
-  )
+  Explanation:
+  	CausalArgs: <class 'rex_xai.config.CausalArgs'>
+  	Data: Data: spectral, ['batch_size', 1, 1356], 1, 1356, 1, None
+  	 Target:FOUND_CLASS: 1, FOUND_CONF: 0.99817, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
+  	prediction function: <function OnnxRunner.gen_prediction_function.<locals>.<lambda> >
+  	ResponsibilityMaps: {1: 1}
+  	run statistics: {'total_passing': 56, 'total_failing': 0, 'max_depth_reached': 2, 'avg_box_size': 22.875} (5 dp)
+  	explanation: <class 'torch.Tensor'> of shape torch.Size([1, 1356])
+  	final mask: <class 'numpy.ndarray'> of shape (1, 1356)
+  	explanation confidence: 0.99817 (5 dp)
 # ---
 # name: test__explanation_snapshot[64].1
   3711909154719731854

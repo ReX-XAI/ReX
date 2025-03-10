@@ -9,6 +9,7 @@ from rex_xai.explanation import (
     predict_target,
     try_preprocess,
 )
+from rex_xai.extraction import Explanation
 from syrupy.extensions.amber.serializer import AmberDataSerializer
 from syrupy.filters import props
 from syrupy.matchers import path_type
@@ -135,7 +136,8 @@ def cpu_device():
 @pytest.fixture
 def exp_custom(data_custom, args_custom, prediction_func):
     data_custom.target = predict_target(data_custom, prediction_func)
-    exp = calculate_responsibility(data_custom, args_custom, prediction_func)
+    maps, run_stats = calculate_responsibility(data_custom, args_custom, prediction_func)
+    exp = Explanation(maps, prediction_func, data_custom, args_custom, run_stats)
 
     return exp
 
@@ -146,8 +148,9 @@ def exp_onnx(args_onnx, cpu_device):
     data = load_and_preprocess_data(model_shape, cpu_device, args_onnx)
     data.set_mask_value(args_onnx.mask_value)
     data.target = predict_target(data, prediction_func)
-    exp = calculate_responsibility(data, args_onnx, prediction_func)
-
+    maps, run_stats = calculate_responsibility(data, args_onnx, prediction_func)
+    exp = Explanation(maps, prediction_func, data, args_onnx, run_stats)
+    
     return exp
 
 @pytest.fixture
