@@ -250,7 +250,7 @@ def causal_explanation(
                 # something passed...
                 else:
                     # update responsibilities
-                    local_maps.update_maps(mutants, args, data, search_tree)
+                    local_maps.update_maps(mutants, args, data, search_tree) #type: ignore
 
                     # reduce the elements to add to the search queue
                     passing = prune(
