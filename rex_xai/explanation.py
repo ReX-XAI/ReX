@@ -335,6 +335,10 @@ def _explanation(
         )
         exp.extract()
 
+        if args.strategy == Strategy.Contrastive and args.permitted_overlap != 1.0:
+            logger.warning("contrastive explanations require a permitted overlap of 1.0, so setting this now")
+            args.permitted_overlap = 1.0
+
         clauses = exp.separate_by(args.permitted_overlap)
         logger.info(f"found the following sets of explanations {clauses}")
 
