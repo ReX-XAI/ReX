@@ -13,9 +13,8 @@ import numpy as np
 
 from rex_xai.logger import logger
 from rex_xai.config import CausalArgs, Strategy
-from rex_xai.prediction import Prediction
 from rex_xai.extraction import Explanation
-
+from rex_xai.multi_explanation import MultiExplanation
 
 def _dataframe(db, table):
     return pd.read_sql_table(table, f"sqlite:///{db}")
@@ -48,13 +47,8 @@ def db_to_pandas(db, dtype=np.float32, table="rex"):
 
 def update_database(
     db,
-    target: Prediction,
     explanation: Explanation,
-    time_taken,
-    total_passing,
-    total_failing,
-    max_depth_reached,
-    avg_box_size,
+    time_taken=None,
     multi=False,
 ):
     target_map = explanation.target_map
@@ -62,6 +56,10 @@ def update_database(
     if isinstance(target_map, tt.Tensor):
         target_map = target_map.detach().cpu().numpy()
 
+    target = explanation.data.target
+    if target is None:
+        logger.warning("unable to update database as target is None")
+        return
     classification = int(target.classification)  # type: ignore
 
     if not multi:
@@ -80,13 +78,16 @@ def update_database(
             target_map,
             final_mask,
             time_taken,
-            total_passing,
-            total_failing,
-            max_depth_reached,
-            avg_box_size,
+            explanation.run_stats["total_passing"],
+            explanation.run_stats["total_failing"],
+            explanation.run_stats["max_depth_reached"],
+            explanation.run_stats["avg_box_size"],
         )
 
     else:
+        if explanation is not MultiExplanation:
+            logger.warning("unable to update database, multi=True is only valid for MultiExplanation objects")
+            return
         for c, final_mask in enumerate(explanation.explanations):
             if isinstance(final_mask, tt.Tensor):
                 final_mask = final_mask.detach().cpu().numpy()
@@ -98,10 +99,10 @@ def update_database(
                 target_map,
                 final_mask,
                 time_taken,
-                total_passing,
-                total_failing,
-                max_depth_reached,
-                avg_box_size,
+                explanation.run_stats["total_passing"],
+                explanation.run_stats["total_failing"],
+                explanation.run_stats["max_depth_reached"],
+                explanation.run_stats["avg_box_size"],
                 multi=multi,
                 multi_no=c,
             )

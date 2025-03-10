@@ -372,26 +372,16 @@ def _explanation(
             logger.info("writing multiple explanations to database")
             update_database(
                 db,
-                data.target,
                 exp,
                 time_taken,
-                exp.run_stats["total_passing"],
-                exp.run_stats["total_failing"],
-                exp.run_stats["max_depth_reached"],
-                exp.run_stats["avg_box_size"],
                 multi=True,
             )
         else:
             logger.info("writing to database")
             update_database(
                 db,
-                data.target,  # type: ignore
                 exp,
                 time_taken,
-                exp.run_stats["total_passing"],
-                exp.run_stats["total_failing"],
-                exp.run_stats["max_depth_reached"],
-                exp.run_stats["avg_box_size"],
             )
 
     return exp
