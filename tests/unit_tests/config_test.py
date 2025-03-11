@@ -181,4 +181,8 @@ def test_process_config_dict_strategy_invalid(caplog):
     config_dict = {"explanation": {"multi": {"strategy": "an-invalid-strategy"}}}
 
     process_config_dict(config_dict, args)
+    assert (
+            caplog.records[0].message
+            == "Invalid strategy 'an-invalid-strategy', reverting to default value Strategy.Global"
+        )
     assert args.strategy == Strategy.Global
