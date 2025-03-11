@@ -117,7 +117,7 @@
 # increment to change radius
 # radius_eta = 0.2
 
-# number of times to expand before quitting, defaults to 10
+# number of times to expand before quitting, defaults to 4
 # no_expansions = 4
 
 [explanation.multi]
