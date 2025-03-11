@@ -447,7 +447,7 @@ def get_prediction_func_from_args(args: CausalArgs):
         prediction_func = args.script.prediction_function  # type: ignore
         model_shape = args.script.model_shape()  # type: ignore
     else:
-        ps = get_prediction_function(args.model, args.gpu, logger_level=args.verbosity)
+        ps = get_prediction_function(args)
         if ps is None:
             raise RuntimeError("Unable to create an onnx inference instance")
         else:
