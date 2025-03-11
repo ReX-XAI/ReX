@@ -22,7 +22,10 @@
 # binary_threshold = 0.5
 
 # norm = 255.0
-norm = 1.0
+
+# intra_op_num_threads = 8
+
+# inter_op_num_threads = 9
 
 [rex.visual]
 # whether to show progress bar in the terminal, defaults to true
