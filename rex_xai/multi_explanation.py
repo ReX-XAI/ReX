@@ -16,8 +16,8 @@ from rex_xai.visualisation import save_multi_explanation, save_image, plot_image
 
 
 class MultiExplanation(Explanation):
-    def __init__(self, map, prediction_func, data, args, run_stats):
-        super().__init__(map, prediction_func, data, args, run_stats)
+    def __init__(self, maps, prediction_func, data, args, run_stats):
+        super().__init__(maps, prediction_func, data, args, run_stats)
         self.explanations = []
 
     def save(self, path, mask=None, multi=None, multi_style=None, clauses=None):
@@ -27,8 +27,8 @@ class MultiExplanation(Explanation):
             logger.info("saving explanations in multiple different files")
             for i, mask in enumerate(self.explanations):
                 name, ext = os.path.splitext(path)
-                path = f"{name}_{i}{ext}"
-                super().save(path, mask=mask)
+                exp_path = f"{name}_{i}{ext}"
+                super().save(exp_path, mask=mask)
         elif multi_style == "composite":
             logger.info("using composite style to save explanations")
             if clauses is None:
@@ -81,27 +81,24 @@ class MultiExplanation(Explanation):
             return outs[0]
 
     def extract(self, method=None):
-        target_map = self.maps.get(self.data.target.classification)  # type: ignore
-        if target_map is not None:
-            self.maps = tt.from_numpy(target_map).to(self.data.device)
-            self.blank()
-            # we start with the global max explanation
-            self._Explanation__global()
+        self.blank()
+        # we start with the global max explanation
+        self._Explanation__global()
+        if self.final_mask is not None:
+            self.explanations.append(self.final_mask)
+
+        self.blank()
+
+        for i in range(0, self.args.spotlights - 1):
+            logger.info("spotlight number %d", i + 1)
+            self.spotlight_search()
             if self.final_mask is not None:
                 self.explanations.append(self.final_mask)
-
             self.blank()
-
-            for i in range(0, self.args.spotlights - 1):
-                logger.info("spotlight number %d", i + 1)
-                self.spotlight_search()
-                if self.final_mask is not None:
-                    self.explanations.append(self.final_mask)
-                self.blank()
-            logger.info(
-                "ReX has found a total of %d explanations via spotlight search",
-                len(self.explanations),
-            )
+        logger.info(
+            "ReX has found a total of %d explanations via spotlight search",
+            len(self.explanations),
+        )
 
     def __dice(self, d1, d2):
         """calculates dice coefficient between two numpy arrays of the same dimensions"""
@@ -151,7 +148,7 @@ class MultiExplanation(Explanation):
         return clauses
 
     def contrastive(self, clauses):
-        logger.warn("not yet implemented")
+        logger.warning("not yet implemented")
         return
         # for clause in clauses:
         #     logger.info(f"looking at {clause}")
