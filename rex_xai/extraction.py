@@ -206,7 +206,7 @@ class Explanation:
         if self.args.spotlight_objective_function == "max":
             return tt.max(masked_responsibility).item()
 
-        logger.warn(
+        logger.warning(
             "unable to understand %s, so using mean for search",
             self.args.spotlight_objective_function,
         )

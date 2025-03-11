@@ -123,7 +123,7 @@ class ResponsibilityMaps:
                             box.col_start : box.col_stop,
                         ]
                     else:
-                        logger.warn("not yet implemented")
+                        logger.warning("not yet implemented")
                         raise NotImplementedError
 
                     section += local_r
