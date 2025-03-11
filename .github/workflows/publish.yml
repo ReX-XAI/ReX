@@ -66,13 +66,13 @@ jobs:
         echo "VERSION=${GIT_VERSION}" >> $GITHUB_OUTPUT
 
   pypi-publish:
-    name: Upload release to TestPyPI
+    name: Upload release to PyPI
     needs:
     - install_and_check_version
     runs-on: ubuntu-latest
     environment:
-      name: testpypi
-      url: https://test.pypi.org/project/rex_xai
+      name: pypi
+      url: https://pypi.org/project/rex_xai
     permissions:
       id-token: write
     steps:
@@ -84,5 +84,3 @@ jobs:
 
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          repository-url: https://test.pypi.org/legacy/
