@@ -73,9 +73,9 @@ def update_database(
         if isinstance(final_mask, tt.Tensor):
             final_mask = final_mask.detach().cpu().numpy()
 
-        try:
+        if hasattr(explanation, 'explanation_confidence'):
             explanation_confidence = explanation.explanation_confidence
-        except AttributeError:
+        else:
             explanation_confidence = explanation.explanation_confidences[0]
 
         add_to_database(
