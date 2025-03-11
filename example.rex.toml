@@ -25,7 +25,9 @@
 
 # intra_op_num_threads = 8
 
-# inter_op_num_threads = 9
+# inter_op_num_threads = 8
+
+# ort_logger = 3
 
 [rex.visual]
 # whether to show progress bar in the terminal, defaults to true

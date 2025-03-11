@@ -95,7 +95,7 @@ class Args:
             + f"output_file: {self.output}, surface_plot: {self.surface}, "
             + f"heatmap_plot: {self.heatmap}, "
             + f"onnx_means: {self.means}, onnx_stds: {self.stds}, onnx_norm: {self.norm} "
-            + f"onnx_inter_op_threads: {self.inter_op_num_threads}, onnx_intra_op_threads: {self.intra_op_num_threads} "
+                + f"onnx_inter_op_threads: {self.inter_op_num_threads}, onnx_intra_op_threads: {self.intra_op_num_threads}, onnx_logger: {self.ort_logger}"
             + f"explanation_strategy: {self.strategy}, "
             + f"min_confidence_scalar: {self.minimum_confidence_threshold}, "
             + f"chunk size: {self.chunk_size}, "
@@ -423,7 +423,7 @@ def validate_numeric_arg_more_than(n, lower):
 def process_config_dict(config_file_args, args):
     expected_values = {
         "rex": ["mask_value", "seed", "gpu", "batch_size"],
-        "onnx": ["means", "stds", "binary_threshold", "norm", "intra_op_num_threads", "inter_op_num_threads"],
+        "onnx": ["means", "stds", "binary_threshold", "norm", "intra_op_num_threads", "inter_op_num_threads", "ort_logger"],
         "visual": [
             "info",
             "colour",
