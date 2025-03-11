@@ -345,8 +345,8 @@ Default: none.
 
 `spotlight_step = 5`
 
-If no explanation is found, the spotlight is moved this distance in pixels towards a location defined by the `spotlight_objective_function`,
-or in a random direction if the `spotlight_objective_function` is "none".
+If no explanation is found, the spotlight is moved this distance in pixels towards a location defined by the `spotlight_objective_function`.
+If the `spotlight_objective_function` is "none", this is ignored.
 Default: 5.
 <!-- How far spotlight is moved. -->
 
