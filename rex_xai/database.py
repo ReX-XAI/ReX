@@ -85,7 +85,7 @@ def update_database(
         )
 
     else:
-        if explanation is not MultiExplanation:
+        if type(explanation) is not MultiExplanation:
             logger.warning("unable to update database, multi=True is only valid for MultiExplanation objects")
             return
         for c, final_mask in enumerate(explanation.explanations):
