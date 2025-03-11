@@ -57,7 +57,7 @@ model.eval()
 model.to("cpu")
 ```
 
-We need to define a `model_shape` object which is a list with the expected shape of the input data for the model. In this case the order is `[batch, channels, height, width]`. We use "N" for the batch size in this case as this model accepts dynamic batch sizes. The actual batch size used can be set in the `CausalArgs` object. 
+We need to define a `model_shape` object which is a list with the expected shape of the input data for the model. In this case the order is `[batch, channels, height, width]`. We use "N" for the batch size in this case as this model accepts dynamic batch sizes. The actual batch size used can be set in the `CausalArgs` object.
 
 ```{code-cell} ipython3
 model_shape = ["N", 3, 224, 224]
@@ -213,7 +213,7 @@ data = load_and_preprocess_data(model_shape, device, peacock_args)
 Image.open(peacock_args.path)
 ```
 
-We set the mask value to zero again and predict the class of the new image. 
+We set the mask value to zero again and predict the class of the new image.
 
 ```{code-cell} ipython3
 data.set_mask_value(0)
@@ -241,7 +241,7 @@ multi_exp.show(multi_style="separate")
 ```
 
 We can use the `separate_by` method to identify sets of explanations that do not overlap with each other (or that have an overlap less than some maximum threshold).
-Here we will use an overlap of zero to find explanations that have no overlap with each other. 
+Here we will use an overlap of zero to find explanations that have no overlap with each other.
 
 ```{code-cell} ipython3
 clauses = multi_exp.separate_by(0)
@@ -250,7 +250,7 @@ print(clauses)
 
 We have identified three groups of 6 explanations that have no overlap with each other.
 The "composite" plotting style can be used to plot these explanations in a single plot.
-Here we will just plot the first group. 
+Here we will just plot the first group.
 
 ```{code-cell} ipython3
 multi_exp.show(multi_style="composite", clauses=[clauses[0]])
@@ -265,7 +265,7 @@ We first initialise the database and then save the ladybird explanation and the 
 We did not measure the time taken to calculate the responsibility landscape and extract explanations in this tutorial, so here we use zero in place of the time.
 If you wish to calculate this you can use the `time.time()` function to calculate timestamps before and after the steps you wish to time. 
 
-Before saving the results, we should update the `strategy` saved in the `Explanation` or `MultiExplanation` object to ensure it matches the strategy we used, as this will be saved in the database. 
+Before saving the results, we should update the `strategy` saved in the `Explanation` or `MultiExplanation` object to ensure it matches the strategy we used, as this will be saved in the database.
 
 ```{code-cell} ipython3
 from rex_xai.database import initialise_rex_db, update_database
@@ -273,29 +273,10 @@ from rex_xai.database import initialise_rex_db, update_database
 db = initialise_rex_db("rex.db")
 
 exp.args.strategy = Strategy.Global
-update_database(
-    db,
-    exp.data.target,
-    exp,
-    0,
-    exp.run_stats["total_passing"],
-    exp.run_stats["total_failing"],
-    exp.run_stats["max_depth_reached"],
-    exp.run_stats["avg_box_size"],
-    )
+update_database(db, exp, time_taken = None)
 
 multi_exp.args.strategy = Strategy.MultiSpotlight
-update_database(
-    db,
-    multi_exp.data.target,
-    multi_exp,
-    0,
-    multi_exp.run_stats["total_passing"],
-    multi_exp.run_stats["total_failing"],
-    multi_exp.run_stats["max_depth_reached"],
-    multi_exp.run_stats["avg_box_size"],
-    multi=True,
-)
+update_database(db, multi_exp, time_taken = None, multi=True)
 ```
 
 ReX provides a helper function to read the results from the database into a [Pandas](https://pandas.pydata.org/) dataframe for further analysis.
@@ -312,4 +293,8 @@ print(df)
 
 import os
 os.remove("rex.db")
+```
+
+```{code-cell} ipython3
+
 ```
