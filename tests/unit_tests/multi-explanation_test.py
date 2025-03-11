@@ -6,17 +6,20 @@ import pytest
 from rex_xai._utils import Strategy
 from rex_xai.explanation import calculate_responsibility, _explanation
 from rex_xai.multi_explanation import MultiExplanation
+from rex_xai.extraction import Explanation
 
 
 @pytest.mark.parametrize("spotlights", [5, 10])
 def test_multiexplanation(data_multi, args_multi, prediction_func, spotlights, caplog):
     args_multi.spotlights = spotlights
 
-    exp = calculate_responsibility(data_multi, args_multi, prediction_func)
+    maps, run_stats = calculate_responsibility(data_multi, args_multi, prediction_func)
+    
+    exp = Explanation(maps, prediction_func, data_multi, args_multi, run_stats)
     exp.extract(method=Strategy.Global)
 
     multi_exp = MultiExplanation(
-        exp.maps, prediction_func, data_multi, args_multi, exp.run_stats
+        maps, prediction_func, data_multi, args_multi, run_stats
     )
     caplog.set_level(logging.INFO)
     multi_exp.extract(Strategy.MultiSpotlight)
