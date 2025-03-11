@@ -1,7 +1,7 @@
 import pytest
 from cached_path import cached_path
 from rex_xai._utils import get_device
-from rex_xai.config import CausalArgs, process_custom_script, Strategy
+from rex_xai.config import CausalArgs, Strategy, process_custom_script
 from rex_xai.explanation import (
     calculate_responsibility,
     get_prediction_func_from_args,
@@ -10,6 +10,7 @@ from rex_xai.explanation import (
     try_preprocess,
 )
 from rex_xai.extraction import Explanation
+from rex_xai.multi_explanation import MultiExplanation
 from syrupy.extensions.amber.serializer import AmberDataSerializer
 from syrupy.filters import props
 from syrupy.matchers import path_type
@@ -19,22 +20,22 @@ from syrupy.matchers import path_type
 def snapshot_explanation(snapshot):
     return snapshot.with_defaults(
         exclude=props(
-                "obj_function", # pointer to function that will differ between runs
-                "spotlight_objective_function", # pointer to function that will differ between runs
-                "custom", # path that differs between systems
-                "custom_location", # path that differs between systems
-                "model",
-                "target_map", # large array
-                "final_mask", # large array
-                "explanation", # large array
-                "explanations" # large arrays
-            ), 
-            matcher=path_type(
-                types=(CausalArgs,),
-                replacer=lambda data, _: AmberDataSerializer.object_as_named_tuple(
-                    data
-                ),  # needed to allow exclude to work for custom classes
-            )
+            "obj_function",  # pointer to function that will differ between runs
+            "spotlight_objective_function",  # pointer to function that will differ between runs
+            "custom",  # path that differs between systems
+            "custom_location",  # path that differs between systems
+            "model",
+            "target_map",  # large array
+            "final_mask",  # large array
+            "explanation",  # large array
+            "explanations",  # large arrays
+        ),
+        matcher=path_type(
+            types=(CausalArgs,),
+            replacer=lambda data, _: AmberDataSerializer.object_as_named_tuple(
+                data
+            ),  # needed to allow exclude to work for custom classes
+        ),
     )
 
 
@@ -45,12 +46,14 @@ def resnet50():
     )
     return resnet50_path
 
+
 @pytest.fixture(scope="session")
 def DNA_model():
     DNA_model_path = cached_path(
         "https://github.com/ReX-XAI/models/raw/6f66a5c0e1480411436be828ee8312e72f0035e1/spectral/simple_DNA_model.onnx"
     )
     return DNA_model_path
+
 
 @pytest.fixture
 def args():
@@ -70,6 +73,7 @@ def args_custom(args):
 
     return args
 
+
 @pytest.fixture
 def args_torch_swin_v2_t(args):
     process_custom_script("tests/scripts/pytorch_swin_v2_t.py", args)
@@ -85,6 +89,7 @@ def args_onnx(args, resnet50):
 
     return args
 
+
 @pytest.fixture
 def args_multi(args_custom):
     args = args_custom
@@ -94,6 +99,7 @@ def args_multi(args_custom):
     args.spotlights = 5
 
     return args
+
 
 @pytest.fixture
 def model_shape(args_custom):
@@ -154,7 +160,9 @@ def cpu_device():
 @pytest.fixture
 def exp_custom(data_custom, args_custom, prediction_func):
     data_custom.target = predict_target(data_custom, prediction_func)
-    maps, run_stats = calculate_responsibility(data_custom, args_custom, prediction_func)
+    maps, run_stats = calculate_responsibility(
+        data_custom, args_custom, prediction_func
+    )
     exp = Explanation(maps, prediction_func, data_custom, args_custom, run_stats)
 
     return exp
@@ -168,11 +176,22 @@ def exp_onnx(args_onnx, cpu_device):
     data.target = predict_target(data, prediction_func)
     maps, run_stats = calculate_responsibility(data, args_onnx, prediction_func)
     exp = Explanation(maps, prediction_func, data, args_onnx, run_stats)
-    
+
     return exp
+
 
 @pytest.fixture
 def exp_extracted(exp_custom):
     exp_custom.extract(Strategy.Global)
 
     return exp_custom
+
+
+@pytest.fixture
+def exp_multi(args_multi, data_multi, prediction_func):
+    maps, run_stats = calculate_responsibility(data_multi, args_multi, prediction_func)
+    multi_exp = MultiExplanation(
+        maps, prediction_func, data_multi, args_multi, run_stats
+    )
+    multi_exp.extract(args_multi.strategy)
+    return multi_exp
