@@ -166,21 +166,22 @@ class OnnxRunner:
             )
 
 
-def get_prediction_function(model_path, gpu: bool, logger_level=3):
+def get_prediction_function(args):
+# def get_prediction_function(model_path, gpu: bool, logger_level=3):
     sess_options = ort.SessionOptions()
 
-    ort.set_default_logger_severity(3)
+    ort.set_default_logger_severity(args.ort_logger)
 
     # are we (trying to) run on the gpu?
-    if gpu:
+    if args.gpu:
         logger.info("using gpu for onnx inference session")
         if platform.uname().system == "Darwin":
             # note this is only true for M+ chips
             providers = ["CoreMLExecutionProvider", "CPUExecutionProvider"]
-            sess_options.intra_op_num_threads = 8
-            sess_options.inter_op_num_threads = 8
+            sess_options.intra_op_num_threads = args.intra_op_num_threads
+            sess_options.inter_op_num_threads = args.inter_op_num_threads
             device = "mps"
-            _, ext = os.path.splitext(os.path.basename(model_path))
+            _, ext = os.path.splitext(os.path.basename(args.model))
             # for the moment, onnx does not seem to support data copying on mps, so we fall back to
             # copying data to the cpu for inference
             setup = Setup.ONNXMPS
@@ -191,14 +192,14 @@ def get_prediction_function(model_path, gpu: bool, logger_level=3):
 
         # set up sesson with gpu providers
         sess = ort.InferenceSession(
-            model_path, sess_options=sess_options, providers=providers
+            args.model, sess_options=sess_options, providers=providers
         )  # type: ignore
     # are we running on cpu?
     else:
         logger.info("using cpu for onnx inference session")
         providers = ["CPUExecutionProvider"]
         sess = ort.InferenceSession(
-            model_path, sess_options=sess_options, providers=providers
+            args.model, sess_options=sess_options, providers=providers
         )
         device = "cpu"
         setup = Setup.PYTORCH
