@@ -48,7 +48,7 @@ def db_to_pandas(db, dtype=np.float32, table="rex", process=True):
 
 def update_database(
     db,
-    explanation: Explanation,
+    explanation: Explanation | MultiExplanation, #type: ignore
     time_taken=None,
     multi=False,
 ):
@@ -71,10 +71,7 @@ def update_database(
         if isinstance(final_mask, tt.Tensor):
             final_mask = final_mask.detach().cpu().numpy()
 
-        if hasattr(explanation, 'explanation_confidence'):
-            explanation_confidence = explanation.explanation_confidence
-        else:
-            explanation_confidence = explanation.explanation_confidences[0]
+        explanation_confidence = explanation.explanation_confidence
 
         add_to_database(
             db,
@@ -95,25 +92,26 @@ def update_database(
         if explanation is not MultiExplanation:
             logger.warning("unable to update database, multi=True is only valid for MultiExplanation objects")
             return
-        for c, final_mask in enumerate(explanation.explanations):
-            if isinstance(final_mask, tt.Tensor):
-                final_mask = final_mask.detach().cpu().numpy()
-            add_to_database(
-                db,
-                explanation.args,
-                classification,
-                target.confidence,
-                target_map,
-                final_mask,
-                explanation.explanation_confidences[c],
-                time_taken,
-                explanation.run_stats["total_passing"],
-                explanation.run_stats["total_failing"],
-                explanation.run_stats["max_depth_reached"],
-                explanation.run_stats["avg_box_size"],
-                multi=multi,
-                multi_no=c,
-            )
+        else:
+            for c, final_mask in enumerate(explanation.explanations):
+                if isinstance(final_mask, tt.Tensor):
+                    final_mask = final_mask.detach().cpu().numpy()
+                add_to_database(
+                    db,
+                    explanation.args,
+                    classification,
+                    target.confidence,
+                    target_map,
+                    final_mask,
+                    explanation.explanation_confidences[c],
+                    time_taken,
+                    explanation.run_stats["total_passing"],
+                    explanation.run_stats["total_failing"],
+                    explanation.run_stats["max_depth_reached"],
+                    explanation.run_stats["avg_box_size"],
+                    multi=multi,
+                    multi_no=c,
+                )
 
 
 def add_to_database(
