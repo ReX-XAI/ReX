@@ -1,73 +1,55 @@
-[project]
-name = "ReX-AI"
+[tool.poetry]
+name = "rex-xai"
 version = "0.1.2"
 description = "causal Responsibility-based eXplanations of black-box-classifiers"
-authors = [{name = "David Kelly", email = "dkellino@gmail.com"}]
+authors = ["David Kelly, <dkellino@gmail.com>"]
 readme = "README.md"
-dependencies = [
-    "numba >= 0.57",
-    "numpy == 1.26.4",
-    "scipy >= 1.10",
-    "imutils >= 0.5.4",
-    "toml >= 0.10",
-    "anytree >= 2.8.0",
-    "fastcache >= 1.1.0",
-    "tqdm >= 4.65.0",
-    "sqlalchemy >= 2.0.16",
-    "matplotlib >= 3.7.1",
-    "onnxruntime >= 1.18.0",
-    "scikit-image >= 0.21.0",
-    "pandas >= 2.2.0",
-    "pillow >= 10.3.0",
-    "torch >= 2.4.0"
-]
-requires-python = ">= 3.10"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+numpy = "1.26.4"
+scipy = ">= 1.10"
+imutils = ">= 0.5.4"
+toml = ">= 0.10"
+anytree = ">= 2.8.0"
+fastcache = ">= 1.1.0"
+tqdm = ">= 4.65.0"
+sqlalchemy = ">= 2.0.16"
+matplotlib = ">= 3.7.1"
+onnxruntime = ">= 1.18.0"
+scikit-image = ">= 0.21.0"
+pandas = ">= 2.2.0"
+pillow = ">= 10.3.0"
+torch = ">= 2.6.0"
+
+[tool.poetry.scripts]
+ReX = "rex_xai.rex:main"
 
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
 
-[tool.setuptools.packages.find]
-where = ["."]
-exclude = []
-namespaces = false
+[tool.poetry.group.dev]
+optional = true
 
-[project.scripts]
-rex = "rex_ai.rex:main"
-
-[tool.black]
-line-length = 88
-include = '\.pyi?$'
-
-[tool.pytest.ini_options]
-minversion = "6.0"
-addopts = "-ra -q"
-testpaths = [
-    "tests",
-]
-
-[tool.mypy]
-ignore_missing_imports = true
-
-
-[tool.ruff]
-line-length = 80
-
-[tool.coverage.report]
-include= [
-    "rex_ai/*.py",
-]
-
-[tool.coverage.run]
-relative_files = true
-
-[tool.pylyzer.python]
-path = "~/.miniconda3/envs/rex/bin/python"
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.6.8"
+pytest = "^8.3.3"
+sphinx = "^8.0.2"
+myst-parser = "^4.0.0"
+sphinx-autoapi = "^3.3.2"
+pyright = "^1.1.383"
+pytest-cov = "^5.0.0"
+syrupy = "^4.7.2"
+torchvision = "^0.21.0"
+pytest-sugar = "^1.0.0"
+cached-path = "^1.6.3"
+sphinx-argparse = "^0.5.2"
+myst-nb = "^1.1.2"
+jupytext = "^1.16.7"
 
 [tool.pyright]
-include = ["rex_ai"]
-exclude = ["**/__pycache__"]
-
-reportMissingImports = "error"
+include = ["rex_xai"]
+exclude = ["scripts"]
 reportMissingTypeStubs = false
-pythonVersion = "3.11"
+

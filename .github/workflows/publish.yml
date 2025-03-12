@@ -1,0 +1,86 @@
+name: Publish
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Install and test package
+    uses: ./.github/workflows/test-python-package.yml
+    with: 
+      python-version: "3.13"
+
+  build:
+    name: Build package
+    needs: 
+    - test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install poetry
+        run: pipx install poetry
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: poetry
+
+      - name: Package project
+        run: poetry build
+    
+      - name: Store the distribution packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+  
+  install_and_check_version:
+    name: Install and check Version Number
+    needs:
+    - build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download all the dists
+      uses: actions/download-artifact@v4
+      with:
+        name: python-package-distributions
+        path: dist/
+    
+    - name: Install
+      run: pip install dist/*.tar.gz
+    
+    - name: Check version number
+      run: |
+        PYTHON_VERSION=`ReX --version`
+        echo "PYTHON_VERSION=${PYTHON_VERSION}"
+        echo "GIT_VERSION=$GITHUB_REF_NAME" # NB that Github version should have a 'v' prefix
+        if [ v$PYTHON_VERSION != $GIT_VERSION ]; then exit 1; fi
+        echo "VERSION=${GIT_VERSION}" >> $GITHUB_OUTPUT
+
+  pypi-publish:
+    name: Upload release to PyPI
+    needs:
+    - install_and_check_version
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/rex_xai
+    permissions:
+      id-token: write
+    steps:
+      - name: Download all the dists
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package-distributions
+          path: dist/
+
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

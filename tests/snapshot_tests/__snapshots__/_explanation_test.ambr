@@ -1,0 +1,125 @@
+# serializer version: 1
+# name: test__explanation_snapshot[1]
+  Explanation:
+  	CausalArgs: <class 'rex_xai.config.CausalArgs'>
+  	Data: Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
+  	 Target:FOUND_CLASS: 207, FOUND_CONF: 0.20462, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
+  	prediction function: <function prediction_function >
+  	ResponsibilityMaps: {207: 1}
+  	run statistics: {'total_passing': 84, 'total_failing': 126, 'max_depth_reached': 5, 'avg_box_size': 183.5625} (5 dp)
+  	explanation: <class 'torch.Tensor'> of shape torch.Size([3, 224, 224])
+  	final mask: <class 'numpy.ndarray'> of shape (3, 224, 224)
+  	explanation confidence: 0.01513 (5 dp)
+# ---
+# name: test__explanation_snapshot[1].1
+  2537636458340732753
+# ---
+# name: test__explanation_snapshot[64]
+  Explanation:
+  	CausalArgs: <class 'rex_xai.config.CausalArgs'>
+  	Data: Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
+  	 Target:FOUND_CLASS: 207, FOUND_CONF: 0.20462, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
+  	prediction function: <function prediction_function >
+  	ResponsibilityMaps: {207: 1}
+  	run statistics: {'total_passing': 84, 'total_failing': 126, 'max_depth_reached': 5, 'avg_box_size': 183.5625} (5 dp)
+  	explanation: <class 'torch.Tensor'> of shape torch.Size([3, 224, 224])
+  	final mask: <class 'numpy.ndarray'> of shape (3, 224, 224)
+  	explanation confidence: 0.01513 (5 dp)
+# ---
+# name: test__explanation_snapshot[64].1
+  2537636458340732753
+# ---
+# name: test__explanation_snapshot_diff_model_shape[1]
+  Explanation:
+  	CausalArgs: <class 'rex_xai.config.CausalArgs'>
+  	Data: Data: RGB, ['N', 3, 256, 256], 256, 256, 3, first
+  	 Target:FOUND_CLASS: 215, FOUND_CONF: 0.48740, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
+  	prediction function: <function prediction_function >
+  	ResponsibilityMaps: {215: 1}
+  	run statistics: {'total_passing': 60, 'total_failing': 136, 'max_depth_reached': 5, 'avg_box_size': 262.0} (5 dp)
+  	explanation: <class 'torch.Tensor'> of shape torch.Size([3, 256, 256])
+  	final mask: <class 'numpy.ndarray'> of shape (3, 256, 256)
+  	explanation confidence: 0.03730 (5 dp)
+# ---
+# name: test__explanation_snapshot_diff_model_shape[1].1
+  -5471936325618413956
+# ---
+# name: test__explanation_snapshot_diff_model_shape[64]
+  Explanation:
+  	CausalArgs: <class 'rex_xai.config.CausalArgs'>
+  	Data: Data: RGB, ['N', 3, 256, 256], 256, 256, 3, first
+  	 Target:FOUND_CLASS: 215, FOUND_CONF: 0.48740, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
+  	prediction function: <function prediction_function >
+  	ResponsibilityMaps: {215: 1}
+  	run statistics: {'total_passing': 60, 'total_failing': 136, 'max_depth_reached': 5, 'avg_box_size': 262.0} (5 dp)
+  	explanation: <class 'torch.Tensor'> of shape torch.Size([3, 256, 256])
+  	final mask: <class 'numpy.ndarray'> of shape (3, 256, 256)
+  	explanation confidence: 0.03730 (5 dp)
+# ---
+# name: test__explanation_snapshot_diff_model_shape[64].1
+  -5471936325618413956
+# ---
+# name: test_extract_analyze[Strategy.Global]
+  -2185390445883109608
+# ---
+# name: test_extract_analyze[Strategy.Global].1
+  dict({
+    'area': 0.0037,
+    'deletion_curve': 1.0199,
+    'entropy': 7.1353,
+    'insertion_curve': 1.2399,
+  })
+# ---
+# name: test_extract_analyze[Strategy.Spatial]
+  -2185390445883109608
+# ---
+# name: test_extract_analyze[Strategy.Spatial].1
+  dict({
+    'area': 0.0037,
+    'deletion_curve': 1.0199,
+    'entropy': 7.1353,
+    'insertion_curve': 1.2399,
+  })
+# ---
+# name: test_multiexplanation_snapshot
+  MultiExplanation:
+  	CausalArgs: <class 'rex_xai.config.CausalArgs'>
+  	Data: Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
+  	 Target:FOUND_CLASS: 84, FOUND_CONF: 0.51611, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
+  	prediction function: <function prediction_function >
+  	ResponsibilityMaps: {84: 1}
+  	run statistics: {'total_passing': 217, 'total_failing': 329, 'max_depth_reached': 6, 'avg_box_size': 87.1} (5 dp)
+  	explanations: 5 explanations of <class 'torch.Tensor'> and shape torch.Size([3, 224, 224])
+  	explanation confidences: [0.00628, 0.04587, 0.00387, 0.00446, 0.07882] (5 dp)
+# ---
+# name: test_multiexplanation_snapshot.1
+  list([
+    tuple(
+      1,
+      2,
+      3,
+      4,
+    ),
+    tuple(
+      0,
+      1,
+      3,
+      4,
+    ),
+  ])
+# ---
+# name: test_multiexplanation_snapshot.2
+  7802689268791639071
+# ---
+# name: test_multiexplanation_snapshot.3
+  6035056368165721418
+# ---
+# name: test_multiexplanation_snapshot.4
+  -5651945023692276586
+# ---
+# name: test_multiexplanation_snapshot.5
+  2488684738058746373
+# ---
+# name: test_multiexplanation_snapshot.6
+  3892690372276336173
+# ---

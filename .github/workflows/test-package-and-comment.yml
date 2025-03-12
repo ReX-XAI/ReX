@@ -1,0 +1,37 @@
+# This workflow will install ReX and run tests, using the highest and lowest Python versions we support
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+name: Install, run tests, and report test coverage
+
+on: 
+  pull_request:
+
+
+jobs:
+  run-tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.13"]
+    uses: ./.github/workflows/test-python-package.yml
+    with:
+        python-version: ${{ matrix.python-version }}
+
+  coverage_report:
+    needs:
+    - run-tests
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    
+    steps:
+    - name: Download coverage report
+      uses: actions/download-artifact@v4
+      with:
+        name: coverage-report-py3.13
+
+    - name: Pytest coverage comment
+      uses: MishaKav/pytest-coverage-comment@v1.1.52
+      if: ${{ !github.event.pull_request.head.repo.fork }}
+      with:
+        pytest-xml-coverage-path: ./coverage.xml

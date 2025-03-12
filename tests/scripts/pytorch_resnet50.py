@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import platform
 from torchvision.models import resnet50
 from torchvision import transforms as T
 import torch as tt
@@ -12,12 +11,6 @@ from rex_xai.prediction import from_pytorch_tensor
 
 model = resnet50(weights="ResNet50_Weights.DEFAULT")
 model.eval()
-
-if platform.uname().system == "Darwin":
-    model.to("mps")
-else:
-    model.to("cuda")
-
 
 def preprocess(path, shape, device, mode) -> Data:
     transform = T.Compose(

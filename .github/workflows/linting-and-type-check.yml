@@ -1,0 +1,40 @@
+# This workflow will install ReX and carry out linting and type checking
+
+name: Linting and type checking
+
+on: pull_request
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.13"]
+
+    permissions:
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install poetry
+        run: pipx install poetry
+
+      - name: Set up Python, install and cache dependencies
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{matrix.python-version}}
+          cache: poetry
+      - run: poetry install --with dev
+      - run: echo "$(poetry env info --path)/bin" >> $GITHUB_PATH
+
+      - name: Lint with Ruff
+        run: |
+          ruff check --output-format=github .
+
+      - name: Run pyright with reviewdog
+        uses: jordemort/action-pyright@e85f3910971e8bd8cec27d8c7235d1f99825e570
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }} 
+          reporter: github-pr-review
+

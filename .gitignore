@@ -5,6 +5,7 @@ tmp/
 yolo/
 typings/
 results/
+scripts/
 dist/
 ReX.egg-info/
 local/
@@ -13,7 +14,10 @@ local/
 runs/
 benchmarks/
 rex.toml
+rgb_rex.toml
+l_rex.toml
 *.org
+*.onnx
 
 test_*.jpg
 ReX_*.jpg
@@ -40,3 +44,8 @@ rex_ai.egg-info/*
 *.pt
 *.json
 .coverage
+
+docs/_build/
+.jupyter
+.ipynb_checkpoints/
+*.ipynb
