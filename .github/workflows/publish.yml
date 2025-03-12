@@ -61,19 +61,18 @@ jobs:
       run: |
         PYTHON_VERSION=`ReX --version`
         echo "PYTHON_VERSION=${PYTHON_VERSION}"
-        GIT_VERSION=${GITHUB_REF/refs\/tags\//}
-        echo "GIT_VERSION=${GIT_VERSION}"
+        echo "GIT_VERSION=$GITHUB_REF_NAME" # NB that Github version should have a 'v' prefix
         if [ v$PYTHON_VERSION != $GIT_VERSION ]; then exit 1; fi
         echo "VERSION=${GIT_VERSION}" >> $GITHUB_OUTPUT
 
   pypi-publish:
-    name: Upload release to TestPyPI
+    name: Upload release to PyPI
     needs:
     - install_and_check_version
     runs-on: ubuntu-latest
     environment:
-      name: testpypi
-      url: https://testpypi.org/project/rex_xai
+      name: pypi
+      url: https://pypi.org/project/rex_xai
     permissions:
       id-token: write
     steps:
@@ -85,5 +84,3 @@ jobs:
 
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          repository-url: https://test.pypi.org/legacy/
