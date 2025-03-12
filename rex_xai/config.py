@@ -12,7 +12,14 @@ from typing import List, Optional, Union
 import matplotlib as mpl
 import toml  # type: ignore
 
-from rex_xai._utils import Queue, ReXError, ReXPathError, ReXTomlError, Strategy, version
+from rex_xai._utils import (
+    Queue,
+    ReXError,
+    ReXPathError,
+    ReXTomlError,
+    Strategy,
+    version,
+)
 from rex_xai.distributions import Distribution, str2distribution
 from rex_xai.logger import logger
 
@@ -95,7 +102,7 @@ class Args:
             + f"output_file: {self.output}, surface_plot: {self.surface}, "
             + f"heatmap_plot: {self.heatmap}, "
             + f"onnx_means: {self.means}, onnx_stds: {self.stds}, onnx_norm: {self.norm} "
-                + f"onnx_inter_op_threads: {self.inter_op_num_threads}, onnx_intra_op_threads: {self.intra_op_num_threads}, onnx_logger: {self.ort_logger}"
+            + f"onnx_inter_op_threads: {self.inter_op_num_threads}, onnx_intra_op_threads: {self.intra_op_num_threads}, onnx_logger: {self.ort_logger}"
             + f"explanation_strategy: {self.strategy}, "
             + f"min_confidence_scalar: {self.minimum_confidence_threshold}, "
             + f"chunk size: {self.chunk_size}, "
@@ -241,7 +248,7 @@ def cmdargs_parser():
         "-q",
         "--quiet",
         action="store_true",
-        help="set verbosity level to 0 (errors only), overrides --verbose"
+        help="set verbosity level to 0 (errors only), overrides --verbose",
     )
 
     parser.add_argument(
@@ -314,9 +321,9 @@ def cmdargs_parser():
         action="store_true",
         help="set ReX input type to <spectral>, shortcut for --mode spectral",
     )
-    
-    parser.add_argument('--version', action='version', version=version())
-    
+
+    parser.add_argument("--version", action="version", version=version())
+
     return parser
 
 
@@ -433,7 +440,15 @@ def validate_numeric_arg_more_than(n, lower):
 def process_config_dict(config_file_args, args):
     expected_values = {
         "rex": ["mask_value", "seed", "gpu", "batch_size"],
-        "onnx": ["means", "stds", "binary_threshold", "norm", "intra_op_num_threads", "inter_op_num_threads", "ort_logger"],
+        "onnx": [
+            "means",
+            "stds",
+            "binary_threshold",
+            "norm",
+            "intra_op_num_threads",
+            "inter_op_num_threads",
+            "ort_logger",
+        ],
         "visual": [
             "info",
             "colour",

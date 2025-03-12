@@ -167,7 +167,7 @@ class OnnxRunner:
 
 
 def get_prediction_function(args):
-# def get_prediction_function(model_path, gpu: bool, logger_level=3):
+    # def get_prediction_function(model_path, gpu: bool, logger_level=3):
     sess_options = ort.SessionOptions()
 
     ort.set_default_logger_severity(args.ort_logger)

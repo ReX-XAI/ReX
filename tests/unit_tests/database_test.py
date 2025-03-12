@@ -63,4 +63,4 @@ def test_read_database_multiexp(exp_multi, tmp_path):
     update_database(db, exp_multi, multi=True)
 
     df = db_to_pandas(p)
-    assert df.shape == (len(exp_multi.explanations), 29)
+    assert df.shape == (len(exp_multi.explanations), 30)

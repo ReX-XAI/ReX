@@ -16,6 +16,7 @@ from rex_xai.config import CausalArgs, Strategy
 from rex_xai.extraction import Explanation
 from rex_xai.multi_explanation import MultiExplanation
 
+
 def _dataframe(db, table):
     return pd.read_sql_table(table, f"sqlite:///{db}")
 
@@ -48,7 +49,7 @@ def db_to_pandas(db, dtype=np.float32, table="rex", process=True):
 
 def update_database(
     db,
-    explanation: Explanation | MultiExplanation, #type: ignore
+    explanation: Explanation | MultiExplanation,  # type: ignore
     time_taken=None,
     multi=False,
 ):
@@ -90,7 +91,9 @@ def update_database(
 
     else:
         if type(explanation) is not MultiExplanation:
-            logger.warning("unable to update database, multi=True is only valid for MultiExplanation objects")
+            logger.warning(
+                "unable to update database, multi=True is only valid for MultiExplanation objects"
+            )
             return
         else:
             for c, final_mask in enumerate(explanation.explanations):

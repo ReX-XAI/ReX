@@ -54,11 +54,11 @@ class Explanation:
 
     def __repr__(self) -> str:
         pred_func = repr(self.prediction_func)
-        match_func_name = re.search(r'(<function .+) at', pred_func)
+        match_func_name = re.search(r"(<function .+) at", pred_func)
         if match_func_name:
             pred_func = match_func_name.group(1) + " >"
 
-        run_stats = {k: round(v, 5) for k,v in self.run_stats.items()}
+        run_stats = {k: round(v, 5) for k, v in self.run_stats.items()}
 
         exp_text = (
             "Explanation:"

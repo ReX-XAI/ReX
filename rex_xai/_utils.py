@@ -175,5 +175,6 @@ def ff(obj, fmt):
     """
     return "None" if obj is None else format(obj, fmt)
 
+
 def version():
     return importlib.metadata.version("rex-xai")
