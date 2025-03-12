@@ -61,7 +61,8 @@ jobs:
       run: |
         PYTHON_VERSION=`ReX --version`
         echo "PYTHON_VERSION=${PYTHON_VERSION}"
-        echo "GIT_VERSION=$GITHUB_REF_NAME" # NB that Github version should have a 'v' prefix
+        GIT_VERSION=$GITHUB_REF_NAME
+        echo "GIT_VERSION=${GIT_VERSION}" # NB that Github version should have a 'v' prefix
         if [ v$PYTHON_VERSION != $GIT_VERSION ]; then exit 1; fi
         echo "VERSION=${GIT_VERSION}" >> $GITHUB_OUTPUT
 
