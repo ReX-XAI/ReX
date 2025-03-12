@@ -59,6 +59,10 @@ This should install an executable `rex` in your path.
 
 <!--inclusion-marker-end-do-not-remove-->
 
+## Feedback
+
+Bug reports, questions, and suggestions for enhancements are welcome - please [check the GitHub Issues](https://github.com/ReX-XAI/ReX/issues) to see if there is already a relevant issue, or open a new one!
+
 ## How to Contribute
 
 Your contributions are highly valued and welcomed. To get started, please review the guidelines outlined in the [CONTRIBUTING.md](/CONTRIBUTING.md) file. We look forward to your participation!
