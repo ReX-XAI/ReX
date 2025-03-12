@@ -1,87 +1,27 @@
 # serializer version: 1
 # name: test__explanation_snapshot
-  Explanation(
-    args=CausalArgs(
-      all=False,
-      alpha=0.2,
-      analyze=False,
-      batch_size=1,
-      binary_threshold=None,
-      blend=0.0,
-      chunk_size=10,
-      colour=200,
-      concentrate=False,
-      confidence_filter=0.0,
-      config_location=None,
-      data_location=None,
-      db=None,
-      distribution=<Distribution.Uniform: 2>,
-      distribution_args=None,
-      gpu=False,
-      grid=False,
-      heatmap=None,
-      heatmap_colours='magma',
-      info=True,
-      insertion_step=100,
-      iters=2,
-      mark_segments=False,
-      mask_value=0,
-      max_spotlight_budget=40,
-      means=None,
-      min_box_size=10,
-      mode=None,
-      multi_style='composite',
-      no_expansions=4,
-      norm=255.0,
-      normalise_curves=True,
-      output=None,
-      path='tests/test_data/dog.jpg',
-      permitted_overlap=0.0,
-      processed=False,
-      progress_bar=True,
-      queue_len=1,
-      queue_style=<Queue.Area: 1>,
-      raw=False,
-      resize=False,
-      search_limit=1000,
-      seed=100,
-      segmentation=False,
-      shape=None,
-      spatial_initial_radius=25,
-      spatial_radius_eta=0.2,
-      spotlight_eta=0.2,
-      spotlight_size=20,
-      spotlight_step=5,
-      spotlights=10,
-      stds=None,
-      strategy=<Strategy.Spatial: 2>,
-      surface=None,
-      tree_depth=10,
-      verbosity=1,
-      weighted=False,
-    ),
-    data=Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
-  	 Target:FOUND_CLASS: 209, FOUND_CONF: 0.39424, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a,
-    maps={209: 1},
-    run_stats=dict({
-      'avg_box_size': 2747.4166666666665,
-      'max_depth_reached': 4,
-      'total_failing': 169,
-      'total_passing': 41,
-    }),
-  )
+  Explanation:
+  	CausalArgs: <class 'rex_xai.config.CausalArgs'>
+  	Data: Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
+  	 Target:FOUND_CLASS: 209, FOUND_CONF: 0.39424, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
+  	prediction function: <function OnnxRunner.gen_prediction_function.<locals>.<lambda> >
+  	ResponsibilityMaps: {209: 1}
+  	run statistics: {'total_passing': 41, 'total_failing': 169, 'max_depth_reached': 4, 'avg_box_size': 2747.41667} (5 dp)
+  	explanation: <class 'torch.Tensor'> of shape torch.Size([3, 224, 224])
+  	final mask: <class 'numpy.ndarray'> of shape (3, 224, 224)
+  	explanation confidence: 0.12158 (5 dp)
 # ---
 # name: test__explanation_snapshot.1
-  5309067273286887403
+  7409862900317702363
 # ---
 # name: test_extract_analyze[Strategy.Global]
   976237796511694519
 # ---
 # name: test_extract_analyze[Strategy.Global].1
   dict({
-    'area': 0.1654,
+    'area': 0.0551,
     'deletion_curve': 0.0141,
-    'entropy_diff': 5.3764,
+    'entropy': 5.3764,
     'insertion_curve': 0.621,
   })
 # ---
@@ -90,9 +30,9 @@
 # ---
 # name: test_extract_analyze[Strategy.Spatial].1
   dict({
-    'area': 0.3278,
+    'area': 0.1093,
     'deletion_curve': 0.0141,
-    'entropy_diff': 3.8607,
+    'entropy': 3.8607,
     'insertion_curve': 0.621,
   })
 # ---

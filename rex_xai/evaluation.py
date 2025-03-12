@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from typing import Tuple
 import numpy as np
 import torch as tt
 from scipy.integrate import simpson
@@ -25,21 +26,25 @@ class Evaluation:
         ):
             raise ValueError("Invalid Explanation object")
 
-        map = self.explanation.target_map
+        try:
+            final_mask = self.explanation.final_mask.squeeze().item()  # type: ignore
+        except Exception:
+            final_mask = self.explanation.final_mask
+
         try:
             return (
-                tt.count_nonzero(self.explanation.explanation.squeeze()).item()
-                / map.size
+                tt.count_nonzero(final_mask)  # type: ignore
+                / final_mask.size  # type: ignore
                 / self.explanation.data.model_channels
-            )
+            ).item()
         except TypeError:
             return (
-                np.count_nonzero(self.explanation.explanation)
-                / map.size
+                np.count_nonzero(final_mask)  # type: ignore
+                / final_mask.size  # type: ignore
                 / self.explanation.data.model_channels
             )
 
-    def spectral_entropy(self):
+    def spectral_entropy(self) -> Tuple[float, float]:
         """
         This code is a simplified version of
         https://github.com/raphaelvallat/antropy/blob/master/src/antropy/entropy.py
@@ -47,7 +52,11 @@ class Evaluation:
         _, psd = periodogram(self.explanation.target_map)
         psd_norm = psd / psd.sum()
         ent = -np.sum(xlogx(psd_norm))
-        return ent
+        if len(psd_norm.shape) == 2:
+            max_ent = np.log2(len(psd_norm[0]))
+        else:
+            max_ent = np.log2(len(psd_norm))
+        return ent, max_ent
 
     def entropy_loss(self):
         img = np.array(self.explanation.data.input)

@@ -84,7 +84,7 @@ class BoxInternal:
         b0 = Box(
             0,
             0,
-            0,
+            self.col_start,
             ordered[0],
             distribution=self.distribution,
             distribution_args=self.distribution_args,
@@ -138,8 +138,8 @@ class BoxInternal:
                 self.distribution, space, h, w, self.distribution_args, map=map
             )
 
-        if pos == -1:
-            return None
+        if pos is None:
+            return
         coords = np.unravel_index(
             pos,
             (self.row_stop - self.row_start, self.col_stop - self.col_start),

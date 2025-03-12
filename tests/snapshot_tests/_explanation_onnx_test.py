@@ -15,7 +15,7 @@ def test__explanation_snapshot(args_onnx, cpu_device, snapshot_explanation):
 def test_extract_analyze(exp_onnx, strategy, snapshot):
     exp_onnx.extract(strategy)
     results = analyze(exp_onnx, "RGB")
-    results_rounded = {k: round(v, 4) for k, v in results.items()}
+    results_rounded = {k: round(v, 4) for k, v in results.items() if v is not None}
 
     assert hash(tuple(exp_onnx.final_mask.reshape(-1).tolist())) == snapshot
     assert results_rounded == snapshot

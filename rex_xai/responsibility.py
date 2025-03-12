@@ -146,7 +146,6 @@ def causal_explanation(
             todo = len(sub_jobs) - 1
             for ai, active in enumerate(sub_jobs):
                 static = [sj for x, sj in enumerate(sub_jobs) if x != ai]
-                # reset = False
 
                 child_boxes = subbox(
                     search_tree,
@@ -161,7 +160,7 @@ def causal_explanation(
                     logger.debug("no children, breaking")
                     break
 
-                mutants = []
+                mutants = np.empty(14, dtype=np.object_)
                 if child_boxes is not None:
                     for j, combination in enumerate(get_combinations()):
                         nps = [child_boxes[i] for i in combination]
@@ -175,7 +174,7 @@ def causal_explanation(
                         )
                         m.set_active_mask_regions(nps)
                         m.set_static_mask_regions(static, search_tree)
-                        mutants.append(m)
+                        mutants[j] = m
 
                 work_done = len(mutants)
 
@@ -251,7 +250,7 @@ def causal_explanation(
                 # something passed...
                 else:
                     # update responsibilities
-                    local_maps.update_maps(mutants, args, data, search_tree)
+                    local_maps.update_maps(mutants, args, data, search_tree)  # type: ignore
 
                     # reduce the elements to add to the search queue
                     passing = prune(
@@ -282,9 +281,11 @@ def causal_explanation(
 
     # clear up unneeded mutants and boxes
     if data.device == "mps":
-        tt.mps.empty_cache()
+        with tt.no_grad():
+            tt.mps.empty_cache()
     elif data.device == "cuda":
-        tt.cuda.empty_cache()
+        with tt.no_grad():
+            tt.cuda.empty_cache()
 
     logger.info(
         "total work %d with %d passing and %d failing, max depth explored %d",

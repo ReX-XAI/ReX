@@ -8,6 +8,7 @@ from rex_xai.explanation import explanation
 from rex_xai.logger import logger, set_log_level
 from rex_xai.config import validate_args
 
+
 def main():
     """main entry point to ReX cmdline tool"""
     args = get_all_args()
@@ -22,4 +23,4 @@ def main():
     if args.db is not None:
         db = initialise_rex_db(args.db)
 
-    _ = explanation(args, device, db)
+    explanation(args, device, db)

@@ -139,4 +139,6 @@ background.md
 command_line.md
 notebooks/intro
 config.md
+multiple.md
+contrastive.md
 ```

@@ -391,15 +391,18 @@ def save_multi_explanation(
         rgb_colours = generate_colours(args.spotlights, args.heatmap_colours)
 
         if clause is not None:
-            # subset explanations and transpose if necessary
-            explanations_subset = [explanations[c] for c in clause]
+            if isinstance(clause, int):
+                explanations_subset = [explanations[clause]]
+                colours_subset = [rgb_colours[clause]]
+            else:
+                explanations_subset = [explanations[c] for c in clause]
+                colours_subset = [rgb_colours[c] for c in clause]
             explanations_subset = [
                 __transpose_mask(explanation, data.mode, data.transposed)
                 for explanation in explanations_subset
             ]
             composite_mask = make_composite_mask(explanations_subset)
 
-            colours_subset = [rgb_colours[c] for c in clause]
             img = apply_boundaries_to_image(img, explanations_subset, colours_subset)
 
             if composite_mask is not None:

@@ -12,7 +12,14 @@ from typing import List, Optional, Union
 import matplotlib as mpl
 import toml  # type: ignore
 
-from rex_xai._utils import Queue, ReXError, ReXPathError, ReXTomlError, Strategy, version
+from rex_xai._utils import (
+    Queue,
+    ReXError,
+    ReXPathError,
+    ReXTomlError,
+    Strategy,
+    version,
+)
 from rex_xai.distributions import Distribution, str2distribution
 from rex_xai.logger import logger
 
@@ -35,14 +42,17 @@ class Args:
         # for reproducability
         self.seed: Union[int, float, None] = None
         # for custom scripts (when used as cmdline tool)
-        self.custom: Optional[ModuleType] = None
-        self.custom_location = None
+        self.script: Optional[ModuleType] = None
+        self.script_location = None
         self.processed = False
         # onnx processing
         self.means = None
         self.stds = None
         self.norm: Optional[float] = 255.0
         self.binary_threshold = None
+        self.intra_op_num_threads = 8
+        self.inter_op_num_threads = 8
+        self.ort_logger = 3
         # verbosity
         self.verbosity = 1
         # whether to show progress bar or not
@@ -62,8 +72,9 @@ class Args:
         self.heatmap_colours = "magma"
         self.multi_style = "composite"
         # explanation production strategy
-        self.strategy: Strategy = Strategy.Spatial
+        self.strategy: Strategy = Strategy.Global
         self.chunk_size = 25
+        self.minimum_confidence_threshold = 0.0
         self.batch_size: int = 1
         # args for spatial strategy
         self.spatial_initial_radius: int = 25
@@ -90,13 +101,15 @@ class Args:
             + f"progress_bar: {self.progress_bar}, "
             + f"output_file: {self.output}, surface_plot: {self.surface}, "
             + f"heatmap_plot: {self.heatmap}, "
-            + f"means: {self.means}, stds: {self.stds}, norm: {self.norm} "
+            + f"onnx_means: {self.means}, onnx_stds: {self.stds}, onnx_norm: {self.norm} "
+            + f"onnx_inter_op_threads: {self.inter_op_num_threads}, onnx_intra_op_threads: {self.intra_op_num_threads}, onnx_logger: {self.ort_logger}"
             + f"explanation_strategy: {self.strategy}, "
+            + f"min_confidence_scalar: {self.minimum_confidence_threshold}, "
             + f"chunk size: {self.chunk_size}, "
             + f"spatial_radius: {self.spatial_initial_radius}, "
             + f"spatial_eta: {self.spatial_radius_eta}, seed: {self.seed}, "
             + f"db: {self.db}, "
-            + f"custom: {self.custom}, verbosity: {self.verbosity}, "
+            + f"script: {self.script_location}, verbosity: {self.verbosity}, "
             + f"spotlights: {self.spotlights}, spotlight_size: {self.spotlight_size}, "
             + f"spotlight_eta: {self.spotlight_eta}, "
             + f"no_expansions: {self.no_expansions}, "
@@ -162,11 +175,40 @@ def read_config_file(path):
         raise ReXTomlError(e)
 
 
+def rex_ascii():
+    return (
+        "                       @@@@@@@@@@@@@@@                                  \n"
+        + "                       @@  @@@@@@@@@@@                                \n"
+        + "                     @@@@  @@@@@@@@@@@@@@@@@                          \n"
+        + "                     @@@@@@@@@@@@@@@@@@@@@@@                          \n"
+        + "                     @@@@@@@@@@@@@@@@@@@@@@@                          \n"
+        + "                     @@@@@@@@@@                                       \n"
+        + "                     @@@@@@@@@@@@@@@@         %%%                     \n"
+        + "   @@              @@@@@@@@@@@                %%%%                    \n"
+        + "   @@              @@@@@@@   %%@               %%%%             %%    \n"
+        + "   @@            @@@@@@@@ @%%%%%%%              %%%%           %%     \n"
+        + "   @@@@        @@@@@@@@@@ %%%%  %%%%%%           %%%%        %%       \n"
+        + "   @@@@@@    @@@@@@@@@@@@ %%%%     %%%%%%      %   %%%     %%         \n"
+        + "   @@@@@@@@@@@@@@@@@@@@@@ %%%%       %      %%      %%%   %           \n"
+        + "     @@@@@@@@@@@@@@@@@@@@ %%%%    %%      %          %%%%             \n"
+        + "       @@@@@@@@@@@@@@@@@@ %%%   %%     %%%%%%%%%%%    %%%             \n"
+        + "         @@@@@@@@@@@@@@@@ %%%  %%%%   %%%%           % %%%            \n"
+        + "         @@@@@@@@@@@@@@@  %%%   %%%%   %%%%        %@   %%%           \n"
+        + "           @@@@@@@@@@@@@  %%%    %%%%    %%%     %%      %%%          \n"
+        + "             @@@@@@  @@@  %%%     %%%%    %%%% %%         %%%%        \n"
+        + "             @@@@        %%%%      %%%%%   %%%%            %%%%  %    \n"
+        + "             @@          %%%%        %%%%   %%%%%@          %%%%%     \n"
+        + "             @@@@        %            %%      %              %%       \n\n\n"
+        + "   Explaining AI through causal Responsibility EXplanations\n"
+    )
+
+
 def cmdargs_parser():
     """parses command line flags"""
     parser = argparse.ArgumentParser(
         prog="ReX",
-        description="Explaining AI throught causal Responsibilty EXplanations",
+        description=f"{rex_ascii()}",
+        formatter_class=argparse.RawTextHelpFormatter,
     )
     parser.add_argument(
         "filename",
@@ -176,9 +218,11 @@ def cmdargs_parser():
         "--output",
         nargs="?",
         const="show",
-        help="show minimal explanation, optionally saved to <OUTPUT>. Requires a PIL compatible file extension",
+        help="show minimal, sufficient causal explanation, optionally saved to <OUTPUT>. Requires a PIL compatible file extension",
     )
-    parser.add_argument("-c", "--config", type=str, help="config file to use for rex")
+    parser.add_argument(
+        "-c", "--config", type=str, help="optional config file to use for ReX"
+    )
 
     parser.add_argument(
         "--processed",
@@ -187,7 +231,9 @@ def cmdargs_parser():
     )
 
     parser.add_argument(
-        "--script", type=str, help="custom loading and preprocessing script, mostly for use with pytorch models"
+        "--script",
+        type=str,
+        help="custom loading and preprocessing script, mostly for use with pytorch models",
     )
 
     parser.add_argument(
@@ -202,20 +248,20 @@ def cmdargs_parser():
         "-q",
         "--quiet",
         action="store_true",
-        help="set verbosity level to 0 (errors only), overrides --verbose"
+        help="set verbosity level to 0 (errors only), overrides --verbose",
     )
 
     parser.add_argument(
         "--surface",
         nargs="?",
         const="show",
-        help="surface plot, optionally saved to <SURFACE>",
+        help="surface plot of the responsibility map, optionally saved to <SURFACE>",
     )
     parser.add_argument(
         "--heatmap",
         nargs="?",
         const="show",
-        help="heatmap plot, optionally saved to <HEATMAP>",
+        help="heatmap plot of the responsibility map, optionally saved to <HEATMAP>",
     )
 
     parser.add_argument("--model", type=str, help="model in .onnx format")
@@ -224,7 +270,7 @@ def cmdargs_parser():
         "--strategy",
         "-s",
         type=str,
-        help="explanation strategy, one of < multi | spatial | global | spotlight >",
+        help="explanation strategy, one of < multi | spatial | global | spotlight >, defaults to global",
     )
     parser.add_argument(
         "--database",
@@ -237,14 +283,14 @@ def cmdargs_parser():
         "--multi",
         nargs="?",
         const=10,
-        help="multiple explanations, with optional number <x> of spotlights, defaults to value in rex.toml, or 10 if undefined",
+        help="multiple explanations, with optional number <x> of spotlights, defaults to value in <rex.toml>, or 10 if undefined",
     )
 
     parser.add_argument(
         "--contrastive",
         nargs="?",
         const=10,
-        help="a contrastive explanation, both necessary and sufficient, needs optional number <x> of spotlights, defaults to value in rex.toml, or 10 if undefined",
+        help="a contrastive explanation, minimal, necessary and sufficient. Needs optional number <x> of floodlights, defaults to value in <rex.toml>, or 10 if undefined",
     )
     parser.add_argument(
         "--iters",
@@ -275,9 +321,9 @@ def cmdargs_parser():
         action="store_true",
         help="set ReX input type to <spectral>, shortcut for --mode spectral",
     )
-    
-    parser.add_argument('--version', action='version', version=version())
-    
+
+    parser.add_argument("--version", action="version", version=version())
+
     return parser
 
 
@@ -289,6 +335,8 @@ def cmdargs():
 
 def match_strategy(strategy_string):
     """gets explanation extraction strategy"""
+    if strategy_string is None:
+        return Strategy.Global
     if strategy_string == "multi" or strategy_string == "spotlight":
         return Strategy.MultiSpotlight
     elif strategy_string == "linear" or strategy_string == "global":
@@ -299,10 +347,10 @@ def match_strategy(strategy_string):
         return Strategy.Contrastive
     else:
         logger.warning(
-            "Invalid strategy '%s', reverting to default value Strategy.Spatial",
+            "Invalid strategy '%s', reverting to default value Strategy.Global",
             strategy_string,
         )
-    return Strategy.Spatial
+    return Strategy.Global
 
 
 def match_queue_style(qs: str) -> Queue:
@@ -342,7 +390,7 @@ def shared_args(cmd_args, args: CausalArgs):
         args.db = cmd_args.database
     if cmd_args.mode is not None:
         args.mode = cmd_args.mode
-    if cmd_args.spectral is not None:
+    if cmd_args.spectral:
         args.mode = "spectral"
 
     args.processed = cmd_args.processed
@@ -390,11 +438,17 @@ def validate_numeric_arg_more_than(n, lower):
 
 
 def process_config_dict(config_file_args, args):
-    # when adding a new config argument, you should also modify validate_args()
-    # to add a validation check for that argument
     expected_values = {
         "rex": ["mask_value", "seed", "gpu", "batch_size"],
-        "onnx": ["means", "stds", "binary_threshold", "norm"],
+        "onnx": [
+            "means",
+            "stds",
+            "binary_threshold",
+            "norm",
+            "intra_op_num_threads",
+            "inter_op_num_threads",
+            "ort_logger",
+        ],
         "visual": [
             "info",
             "colour",
@@ -419,7 +473,7 @@ def process_config_dict(config_file_args, args):
             "concentrate",
         ],
         "distribution": ["distribution", "blend", "distribution_args"],
-        "explanation": ["chunk_size"],
+        "explanation": ["chunk_size", "minimum_confidence_threshold"],
         "spatial": ["spatial_initial_radius", "spatial_radius_eta", "no_expansions"],
         "multi": [
             "strategy",
@@ -481,8 +535,8 @@ def process_custom_script(script, args):
     except Exception as e:
         logger.error("failed to load %s because of %s, exiting...", script, e)
         raise e
-    args.custom = script
-    args.custom_location = script
+    args.script = script
+    args.script_location = script
 
 
 def process_cmd_args(cmd_args, args):
@@ -554,7 +608,7 @@ def get_all_args():
 
     shared_args(cmd_args, args)
 
-    if args.model is None and args.custom_location is None:
+    if args.model is None and args.script_location is None:
         raise RuntimeError("either a <model>.onnx or a python file must be provided")
 
     return args

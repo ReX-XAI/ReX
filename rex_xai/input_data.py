@@ -8,6 +8,7 @@ from enum import Enum
 from rex_xai.occlusions import spectral_occlusion
 from rex_xai.prediction import Prediction
 from rex_xai.logger import logger
+from rex_xai._utils import ReXDataError
 
 Setup = Enum("Setup", ["ONNXMPS", "ONNX", "PYTORCH"])
 
@@ -27,11 +28,9 @@ class Data:
         self.device = device
         self.setup: Optional[Setup] = None
 
-        if process:
-            if mode is None:
-                self.mode = _guess_mode(input)
-            else:
-                self.mode = mode
+        self.mode = mode
+        if mode is None:
+            self.mode = _guess_mode(input)
 
         self.model_shape = model_shape
         height, width, channels, order = self.__get_shape()
@@ -39,19 +38,29 @@ class Data:
         self.model_width: Optional[int] = width
         self.model_channels: Optional[int] = channels
         self.model_order = order
-        self.mask_value = None
+        # self.mask_value = None
 
         if process:
-            # RGB model but greyscale input so we convery greyscale to pseudo-RGB
+            # RGB model but greyscale input so we convert greyscale to pseudo-RGB
             if self.model_channels == 3 and self.mode == "L":
                 self.input = self.input.convert("RGB")
                 self.mode = "RGB"
-            if self.mode in ("tabular", "spectral"):
+            elif self.mode == "RGB" and self.model_order == "first":
+                self.transposed = True
+            elif self.mode in ("tabular", "spectral"):
                 self.data = self.input
                 self.match_data_to_model_shape()
             else:
-                self.data = None
-            self.transposed = False
+                raise NotImplementedError
+
+    def set_height(self, h: int):
+        self.model_height = h
+
+    def set_width(self, w: int):
+        self.model_width = w
+
+    def set_channels(self, c=None):
+        self.model_channels = c
 
     def __repr__(self) -> str:
         data_info = f"Data: {self.mode}, {self.model_shape}, {self.model_height}, {self.model_width}, {self.model_channels}, {self.model_order}"
@@ -73,24 +82,26 @@ class Data:
         assert self.data is not None
         if self.mode == "RGB" and self.model_order == "first":
             self.data = self.data.transpose(2, 0, 1)  # type: ignore
-            self.data = self.unsqueeze()
             self.transposed = True
         if self.mode == "L" and self.model_order == "first":
             self.data = self.data.transpose(1, 0)
-            self.data = self.unsqueeze()
             self.transposed = True
         if self.mode == "L" and self.model_order == "last":
             self.data = self.data.transpose(1, 0)
-            self.data = self.unsqueeze()
         if self.mode == "tabular" or self.mode == "spectral":
-            self.generic_tab_preprocess()
+            self.data = self.generic_tab_preprocess()
         if self.mode == "voxel":
             pass
+        self.data = self.try_unsqueeze()
 
     def generic_tab_preprocess(self):
-        arr = self.input.astype("float32")
+        if isinstance(self.input, np.ndarray):
+            self.data = self.input.astype("float32")
+            arr = tt.from_numpy(self.data).to(self.device)
+        else:
+            arr = self.input
         for _ in range(len(self.model_shape) - len(arr.shape)):
-            arr = np.expand_dims(arr, axis=0)
+            arr = arr.unsqueeze(0)
         return arr
 
     def load_data(self, astype="float32"):
@@ -134,7 +145,7 @@ class Data:
 
         return normed_data
 
-    def unsqueeze(self):
+    def try_unsqueeze(self):
         out = self.data
         if self.model_order == "first":
             dim = 0
@@ -161,26 +172,43 @@ class Data:
 
         if self.mode == "RGB" and self.data is not None:
             self.data = self._normalise(means, stds, astype, norm)
-            self.unsqueeze()
+            self.try_unsqueeze()
         if self.mode == "L":
             self.data = self._normalise(means, stds, astype, norm)
 
     def __get_shape(self):
-        if (self.mode == "tabular" or self.mode == "spectral") and len(
-            self.model_shape
-        ) == 3:
-            return 1, self.model_shape[2], 1, None
-        elif self.mode in ("RGB", "RGBA", "L") and len(self.model_shape) == 4:
-            _, a, b, c = self.model_shape
-            if a == 1 or a == 3 or a == 4:
-                return b, c, a, "first"
-            else:
-                return a, b, c, "last"
-        elif self.mode == "voxel":
+        if self.mode == "spectral":
+            # an array of the form (h, w), so no channel info or order
+            if len(self.model_shape) == 2:
+                return self.model_shape[0], self.model_shape[1], 1, None
+            # an array of the form (batch, h, w), so no channel info or order
+            if len(self.model_shape) == 3:
+                return self.model_shape[1], self.model_shape[2], 1, None
+        if self.mode in ("RGB", "RGBA"):
+            if len(self.model_shape) == 4:
+                _, a, b, c = self.model_shape
+                if a in (1, 3, 4):
+                    return b, c, a, "first"
+                else:
+                    return a, b, c, "last"
+        if self.mode == "voxel":
             pass
-        else:
-            logger.warning("Incompatible 'mode' and 'model_shape', cannot get valid shape of Data object so returning None")
-            return None, None, None, None
+
+        raise ReXDataError(
+            f"Incompatible 'mode' {self.mode}  and 'model_shape' ({self.model_shape}), cannot get valid shape of Data object so returning None"
+        )
+
+        # elif self.mode in ("RGB", "RGBA", "L") and len(self.model_shape) == 4:
+        #     _, a, b, c = self.model_shape
+        #     if a == 1 or a == 3 or a == 4:
+        #         return b, c, a, "first"
+        #     else:
+        #         return a, b, c, "last"
+        # elif self.mode == "voxel":
+        #     pass
+        # else:
+        #     logger.warning("Incompatible 'mode' and 'model_shape', cannot get valid shape of Data object so returning None")
+        #     return None, None, None, None
 
     def set_mask_value(self, m):
         assert self.data is not None
@@ -200,7 +228,9 @@ class Data:
             case "mean":
                 self.mask_value = tt.mean(self.data).item()  # type: ignore
             case "spectral":
-                self.mask_value = lambda m, d: spectral_occlusion(m, d, device=self.device)
+                self.mask_value = lambda m, d: spectral_occlusion(
+                    m, d, device=self.device
+                )
             case _:
                 raise ValueError(
                     f"Invalid mask value {m}. Should be an integer, float, or one of 'min', 'mean', 'spectral'"

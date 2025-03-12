@@ -147,12 +147,12 @@ See the [Matplotlib documentation](https://matplotlib.org/stable/users/explain/c
 
 ## [causal] section
 
-This sections is for options relevant to the causal responsibility calculations.
+This section is for options relevant to the causal responsibility calculations.
 
-`iters = 30`
+`iters = 20`
 
 Number of times to run the algorithm.
-More iterations will generally lead to smaller explanations.
+More iterations will generally lead to smaller explanations. This can also be changed at the command line.
 Default: 20.
 
 `weighted = false`
@@ -160,11 +160,12 @@ Default: 20.
 Whether to weight responsibility by prediction confidence.
 Default: false.
 
-`tree_depth = 20`
+`tree_depth = 10`
 
 Maximum depth of tree.
 Default: 10.
 Note that search can actually go beyond this number on occasion, as the check only occurs at the end of an iteration.
+The tree is constructed lazily, so setting a relatively high number will not penalise performance (unless your model really gets down to the level of individual pixels).
 
 <!-- TODO: add a diagram?
 30 is very large (getting to individual pixels), 10 is easily reachable. 
@@ -261,6 +262,13 @@ Defaults to `causal.min_box_size`.
 <!-- Adds this number of pixels at a time - faster.
 User may want to adjust this - if model is slow need bigger values. -->
 
+`minimum_confidence_threshold = 0.0`
+
+Explanations can be very small, and often have very low confidence. This can cause problems, especially when using `batch_size` > 1. A collection of pixels which is an explanation for `batch_size = 64` can sometimes fail to be an explanation for `batch_size = 1`. Setting `minimum_confidence_threshold` allows ReX to keep 
+looking for an explanation of confidence *greater than or equal to* the model confidence on <original image * minimum_confidence_threshold>. 
+This is especially useful to reduce errors due to floating point imprecision when batching calls to the model.
+Default 0.0, with maximum value 1.0. 
+
 ### [explanation.spatial] section
 
 This section is for options used for spatial search for explanations.
@@ -291,6 +299,7 @@ Check what happens if model batch size is dynamic and batch size is not set.
 Could calculate % of image that would be covered? -->
 
 ### [explanation.multi] section
+(explanation_multi=)
 
 <!-- 
 - place spotlight at random location
@@ -312,7 +321,7 @@ Multi-explanation method (only spotlight is currently implemented).
 
 `spotlights = 10`
 
-Number of spotlights to launch.
+Number of spotlights to launch. This can also be changed at the command line.
 Default: 10.
 
 `spotlight_size = 24`
@@ -336,8 +345,8 @@ Default: none.
 
 `spotlight_step = 5`
 
-If no explanation is found, the spotlight is moved this distance in pixels towards a location defined by the `spotlight_objective_function`,
-or in a random direction if the `spotlight_objective_function` is "none".
+If no explanation is found, the spotlight is moved this distance in pixels towards a location defined by the `spotlight_objective_function`.
+If the `spotlight_objective_function` is "none", this is ignored.
 Default: 5.
 <!-- How far spotlight is moved. -->
 

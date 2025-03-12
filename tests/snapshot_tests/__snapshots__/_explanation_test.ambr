@@ -1,312 +1,72 @@
 # serializer version: 1
 # name: test__explanation_snapshot[1]
-  Explanation(
-    args=CausalArgs(
-      all=False,
-      alpha=0.2,
-      analyze=False,
-      batch_size=1,
-      binary_threshold=None,
-      blend=0.0,
-      chunk_size=10,
-      colour=200,
-      concentrate=False,
-      confidence_filter=0.0,
-      config_location=None,
-      data_location=None,
-      db=None,
-      distribution=<Distribution.Uniform: 2>,
-      distribution_args=None,
-      gpu=False,
-      grid=False,
-      heatmap=None,
-      heatmap_colours='magma',
-      info=True,
-      insertion_step=100,
-      iters=2,
-      mark_segments=False,
-      mask_value=0,
-      max_spotlight_budget=40,
-      means=None,
-      min_box_size=10,
-      mode=None,
-      multi_style='composite',
-      no_expansions=4,
-      norm=255.0,
-      normalise_curves=True,
-      output=None,
-      path='tests/test_data/dog.jpg',
-      permitted_overlap=0.0,
-      processed=False,
-      progress_bar=True,
-      queue_len=1,
-      queue_style=<Queue.Area: 1>,
-      raw=False,
-      resize=False,
-      search_limit=1000,
-      seed=42,
-      segmentation=False,
-      shape=None,
-      spatial_initial_radius=25,
-      spatial_radius_eta=0.2,
-      spotlight_eta=0.2,
-      spotlight_size=20,
-      spotlight_step=5,
-      spotlights=10,
-      stds=None,
-      strategy=<Strategy.Spatial: 2>,
-      surface=None,
-      tree_depth=10,
-      verbosity=1,
-      weighted=False,
-    ),
-    data=Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
-  	 Target:FOUND_CLASS: 207, FOUND_CONF: 0.20462, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a,
-    maps={207: 1},
-    run_stats=dict({
-      'avg_box_size': 183.5625,
-      'max_depth_reached': 5,
-      'total_failing': 126,
-      'total_passing': 84,
-    }),
-  )
+  Explanation:
+  	CausalArgs: <class 'rex_xai.config.CausalArgs'>
+  	Data: Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
+  	 Target:FOUND_CLASS: 207, FOUND_CONF: 0.20462, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
+  	prediction function: <function prediction_function >
+  	ResponsibilityMaps: {207: 1}
+  	run statistics: {'total_passing': 84, 'total_failing': 126, 'max_depth_reached': 5, 'avg_box_size': 183.5625} (5 dp)
+  	explanation: <class 'torch.Tensor'> of shape torch.Size([3, 224, 224])
+  	final mask: <class 'numpy.ndarray'> of shape (3, 224, 224)
+  	explanation confidence: 0.01513 (5 dp)
 # ---
 # name: test__explanation_snapshot[1].1
   2537636458340732753
 # ---
 # name: test__explanation_snapshot[64]
-  Explanation(
-    args=CausalArgs(
-      all=False,
-      alpha=0.2,
-      analyze=False,
-      batch_size=64,
-      binary_threshold=None,
-      blend=0.0,
-      chunk_size=10,
-      colour=200,
-      concentrate=False,
-      confidence_filter=0.0,
-      config_location=None,
-      data_location=None,
-      db=None,
-      distribution=<Distribution.Uniform: 2>,
-      distribution_args=None,
-      gpu=False,
-      grid=False,
-      heatmap=None,
-      heatmap_colours='magma',
-      info=True,
-      insertion_step=100,
-      iters=2,
-      mark_segments=False,
-      mask_value=0,
-      max_spotlight_budget=40,
-      means=None,
-      min_box_size=10,
-      mode=None,
-      multi_style='composite',
-      no_expansions=4,
-      norm=255.0,
-      normalise_curves=True,
-      output=None,
-      path='tests/test_data/dog.jpg',
-      permitted_overlap=0.0,
-      processed=False,
-      progress_bar=True,
-      queue_len=1,
-      queue_style=<Queue.Area: 1>,
-      raw=False,
-      resize=False,
-      search_limit=1000,
-      seed=42,
-      segmentation=False,
-      shape=None,
-      spatial_initial_radius=25,
-      spatial_radius_eta=0.2,
-      spotlight_eta=0.2,
-      spotlight_size=20,
-      spotlight_step=5,
-      spotlights=10,
-      stds=None,
-      strategy=<Strategy.Spatial: 2>,
-      surface=None,
-      tree_depth=10,
-      verbosity=1,
-      weighted=False,
-    ),
-    data=Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
-  	 Target:FOUND_CLASS: 207, FOUND_CONF: 0.20462, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a,
-    maps={207: 1},
-    run_stats=dict({
-      'avg_box_size': 183.5625,
-      'max_depth_reached': 5,
-      'total_failing': 126,
-      'total_passing': 84,
-    }),
-  )
+  Explanation:
+  	CausalArgs: <class 'rex_xai.config.CausalArgs'>
+  	Data: Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
+  	 Target:FOUND_CLASS: 207, FOUND_CONF: 0.20462, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
+  	prediction function: <function prediction_function >
+  	ResponsibilityMaps: {207: 1}
+  	run statistics: {'total_passing': 84, 'total_failing': 126, 'max_depth_reached': 5, 'avg_box_size': 183.5625} (5 dp)
+  	explanation: <class 'torch.Tensor'> of shape torch.Size([3, 224, 224])
+  	final mask: <class 'numpy.ndarray'> of shape (3, 224, 224)
+  	explanation confidence: 0.01513 (5 dp)
 # ---
 # name: test__explanation_snapshot[64].1
   2537636458340732753
 # ---
 # name: test__explanation_snapshot_diff_model_shape[1]
-  Explanation(
-    args=CausalArgs(
-      all=False,
-      alpha=0.2,
-      analyze=False,
-      batch_size=1,
-      binary_threshold=None,
-      blend=0.0,
-      chunk_size=10,
-      colour=200,
-      concentrate=False,
-      confidence_filter=0.0,
-      config_location=None,
-      data_location=None,
-      db=None,
-      distribution=<Distribution.Uniform: 2>,
-      distribution_args=None,
-      gpu=False,
-      grid=False,
-      heatmap=None,
-      heatmap_colours='magma',
-      info=True,
-      insertion_step=100,
-      iters=2,
-      mark_segments=False,
-      mask_value=0,
-      max_spotlight_budget=40,
-      means=None,
-      min_box_size=10,
-      mode=None,
-      multi_style='composite',
-      no_expansions=4,
-      norm=255.0,
-      normalise_curves=True,
-      output=None,
-      path='tests/test_data/dog.jpg',
-      permitted_overlap=0.0,
-      processed=False,
-      progress_bar=True,
-      queue_len=1,
-      queue_style=<Queue.Area: 1>,
-      raw=False,
-      resize=False,
-      search_limit=1000,
-      seed=42,
-      segmentation=False,
-      shape=None,
-      spatial_initial_radius=25,
-      spatial_radius_eta=0.2,
-      spotlight_eta=0.2,
-      spotlight_size=20,
-      spotlight_step=5,
-      spotlights=10,
-      stds=None,
-      strategy=<Strategy.Spatial: 2>,
-      surface=None,
-      tree_depth=10,
-      verbosity=1,
-      weighted=False,
-    ),
-    data=Data: RGB, ['N', 3, 256, 256], 256, 256, 3, first
-  	 Target:FOUND_CLASS: 215, FOUND_CONF: 0.48740, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a,
-    maps={215: 1},
-    run_stats=dict({
-      'avg_box_size': 262.0,
-      'max_depth_reached': 5,
-      'total_failing': 136,
-      'total_passing': 60,
-    }),
-  )
+  Explanation:
+  	CausalArgs: <class 'rex_xai.config.CausalArgs'>
+  	Data: Data: RGB, ['N', 3, 256, 256], 256, 256, 3, first
+  	 Target:FOUND_CLASS: 215, FOUND_CONF: 0.48740, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
+  	prediction function: <function prediction_function >
+  	ResponsibilityMaps: {215: 1}
+  	run statistics: {'total_passing': 60, 'total_failing': 136, 'max_depth_reached': 5, 'avg_box_size': 262.0} (5 dp)
+  	explanation: <class 'torch.Tensor'> of shape torch.Size([3, 256, 256])
+  	final mask: <class 'numpy.ndarray'> of shape (3, 256, 256)
+  	explanation confidence: 0.03730 (5 dp)
 # ---
 # name: test__explanation_snapshot_diff_model_shape[1].1
-  1569716348101885070
+  -5471936325618413956
 # ---
 # name: test__explanation_snapshot_diff_model_shape[64]
-  Explanation(
-    args=CausalArgs(
-      all=False,
-      alpha=0.2,
-      analyze=False,
-      batch_size=64,
-      binary_threshold=None,
-      blend=0.0,
-      chunk_size=10,
-      colour=200,
-      concentrate=False,
-      confidence_filter=0.0,
-      config_location=None,
-      data_location=None,
-      db=None,
-      distribution=<Distribution.Uniform: 2>,
-      distribution_args=None,
-      gpu=False,
-      grid=False,
-      heatmap=None,
-      heatmap_colours='magma',
-      info=True,
-      insertion_step=100,
-      iters=2,
-      mark_segments=False,
-      mask_value=0,
-      max_spotlight_budget=40,
-      means=None,
-      min_box_size=10,
-      mode=None,
-      multi_style='composite',
-      no_expansions=4,
-      norm=255.0,
-      normalise_curves=True,
-      output=None,
-      path='tests/test_data/dog.jpg',
-      permitted_overlap=0.0,
-      processed=False,
-      progress_bar=True,
-      queue_len=1,
-      queue_style=<Queue.Area: 1>,
-      raw=False,
-      resize=False,
-      search_limit=1000,
-      seed=42,
-      segmentation=False,
-      shape=None,
-      spatial_initial_radius=25,
-      spatial_radius_eta=0.2,
-      spotlight_eta=0.2,
-      spotlight_size=20,
-      spotlight_step=5,
-      spotlights=10,
-      stds=None,
-      strategy=<Strategy.Spatial: 2>,
-      surface=None,
-      tree_depth=10,
-      verbosity=1,
-      weighted=False,
-    ),
-    data=Data: RGB, ['N', 3, 256, 256], 256, 256, 3, first
-  	 Target:FOUND_CLASS: 215, FOUND_CONF: 0.48740, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a,
-    maps={215: 1},
-    run_stats=dict({
-      'avg_box_size': 262.0,
-      'max_depth_reached': 5,
-      'total_failing': 136,
-      'total_passing': 60,
-    }),
-  )
+  Explanation:
+  	CausalArgs: <class 'rex_xai.config.CausalArgs'>
+  	Data: Data: RGB, ['N', 3, 256, 256], 256, 256, 3, first
+  	 Target:FOUND_CLASS: 215, FOUND_CONF: 0.48740, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
+  	prediction function: <function prediction_function >
+  	ResponsibilityMaps: {215: 1}
+  	run statistics: {'total_passing': 60, 'total_failing': 136, 'max_depth_reached': 5, 'avg_box_size': 262.0} (5 dp)
+  	explanation: <class 'torch.Tensor'> of shape torch.Size([3, 256, 256])
+  	final mask: <class 'numpy.ndarray'> of shape (3, 256, 256)
+  	explanation confidence: 0.03730 (5 dp)
 # ---
 # name: test__explanation_snapshot_diff_model_shape[64].1
-  1569716348101885070
+  -5471936325618413956
 # ---
 # name: test_extract_analyze[Strategy.Global]
   -2185390445883109608
 # ---
 # name: test_extract_analyze[Strategy.Global].1
   dict({
-    'area': 0.0112,
+    'area': 0.0037,
     'deletion_curve': 1.0199,
-    'entropy_diff': 7.1353,
+    'entropy': 7.1353,
     'insertion_curve': 1.2399,
   })
 # ---
@@ -315,83 +75,22 @@
 # ---
 # name: test_extract_analyze[Strategy.Spatial].1
   dict({
-    'area': 0.0112,
+    'area': 0.0037,
     'deletion_curve': 1.0199,
-    'entropy_diff': 7.1353,
+    'entropy': 7.1353,
     'insertion_curve': 1.2399,
   })
 # ---
 # name: test_multiexplanation_snapshot
-  MultiExplanation(
-    args=CausalArgs(
-      all=False,
-      alpha=0.2,
-      analyze=False,
-      batch_size=1,
-      binary_threshold=None,
-      blend=0.0,
-      chunk_size=10,
-      colour=200,
-      concentrate=False,
-      confidence_filter=0.0,
-      config_location=None,
-      data_location=None,
-      db=None,
-      distribution=<Distribution.Uniform: 2>,
-      distribution_args=None,
-      gpu=False,
-      grid=False,
-      heatmap=None,
-      heatmap_colours='magma',
-      info=True,
-      insertion_step=100,
-      iters=5,
-      mark_segments=False,
-      mask_value=0,
-      max_spotlight_budget=40,
-      means=None,
-      min_box_size=10,
-      mode=None,
-      multi_style='composite',
-      no_expansions=4,
-      norm=255.0,
-      normalise_curves=True,
-      output=None,
-      path='tests/test_data/peacock.jpg',
-      permitted_overlap=0.0,
-      processed=False,
-      progress_bar=True,
-      queue_len=1,
-      queue_style=<Queue.Area: 1>,
-      raw=False,
-      resize=False,
-      search_limit=1000,
-      seed=42,
-      segmentation=False,
-      shape=None,
-      spatial_initial_radius=25,
-      spatial_radius_eta=0.2,
-      spotlight_eta=0.2,
-      spotlight_size=20,
-      spotlight_step=5,
-      spotlights=5,
-      stds=None,
-      strategy=<Strategy.MultiSpotlight: 3>,
-      surface=None,
-      tree_depth=10,
-      verbosity=1,
-      weighted=False,
-    ),
-    data=Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
-  	 Target:FOUND_CLASS: 84, FOUND_CONF: 0.51611, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a,
-    maps={84: 1},
-    run_stats=dict({
-      'avg_box_size': 87.1,
-      'max_depth_reached': 6,
-      'total_failing': 329,
-      'total_passing': 217,
-    }),
-  )
+  MultiExplanation:
+  	CausalArgs: <class 'rex_xai.config.CausalArgs'>
+  	Data: Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
+  	 Target:FOUND_CLASS: 84, FOUND_CONF: 0.51611, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
+  	prediction function: <function prediction_function >
+  	ResponsibilityMaps: {84: 1}
+  	run statistics: {'total_passing': 217, 'total_failing': 329, 'max_depth_reached': 6, 'avg_box_size': 87.1} (5 dp)
+  	explanations: 5 explanations of <class 'torch.Tensor'> and shape torch.Size([3, 224, 224])
+  	explanation confidences: [0.00628, 0.04587, 0.00387, 0.00446, 0.07882] (5 dp)
 # ---
 # name: test_multiexplanation_snapshot.1
   list([

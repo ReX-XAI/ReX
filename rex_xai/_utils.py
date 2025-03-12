@@ -55,6 +55,24 @@ class ReXPathError(ReXError):
         return f"ReXPathError: no such file exists at {self.message}"
 
 
+class ReXScriptError(ReXError):
+    def __init__(self, message) -> None:
+        self.message = message
+        super().__init__(self.message)
+
+    def __str__(self) -> str:
+        return f"ReXScriptError: {self.message}"
+
+
+class ReXDataError(ReXError):
+    def __init__(self, message) -> None:
+        self.message = message
+        super().__init__(self.message)
+
+    def __str__(self) -> str:
+        return f"ReXDataError: {self.message}"
+
+
 class ReXMapError(ReXError):
     def __init__(self, message) -> None:
         self.message = message
@@ -140,7 +158,12 @@ def set_boolean_mask_value(
         else:
             tensor[h, w, :] = val
     elif mode in ("spectral", "tabular"):
-        tensor[0, h:w] = val
+        if len(tensor.shape) == 1:
+            tensor[h:w] = val
+        else:
+            tensor[0, h:w] = val
+    # elif mode == "tabular":
+
     elif mode == "voxel":
         logger.warning("not yet implemented")
 
@@ -151,6 +174,7 @@ def ff(obj, fmt):
     See the help for format() to see acceptable values for fmt.
     """
     return "None" if obj is None else format(obj, fmt)
+
 
 def version():
     return importlib.metadata.version("rex-xai")

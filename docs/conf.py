@@ -8,7 +8,7 @@
 
 project = "ReX"
 copyright = "2024, David Kelly"
-author = "David Kelly"
+author = "David Kelly, Liz Ing-Simmons and other contributors"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

@@ -6,8 +6,9 @@ import copy
 import os
 import sys
 import time
-from typing import List, Tuple, Union
+from typing import Tuple, List, Union
 
+from scipy.io import loadmat
 import numpy as np
 import torch as tt
 from PIL import Image
@@ -25,7 +26,7 @@ from rex_xai.onnx import get_prediction_function
 from rex_xai.resp_maps import ResponsibilityMaps
 from rex_xai.responsibility import causal_explanation
 from rex_xai.prediction import Prediction
-from rex_xai._utils import Strategy
+from rex_xai._utils import Strategy, ReXScriptError
 
 
 def try_preprocess(args: CausalArgs, model_shape: Tuple[int], device: tt.device):
@@ -33,7 +34,7 @@ def try_preprocess(args: CausalArgs, model_shape: Tuple[int], device: tt.device)
 
     Data preprocessing is based on file extension and (possibly) user-defined mode.
     File extensions in ``[".jpg", ".jpeg", ".png", ".tif", ".tiff"]`` are treated
-    as images, ".npy" are treated as Numpy arrays, and ".nii" are treated as nifti files.
+    as images, ".npy" and ".mat" are treated as Numpy arrays, and ".nii" are treated as nifti files.
     For any other file extension, we create a ``Data`` object without pre-processing.
 
     Args:
@@ -63,16 +64,19 @@ def try_preprocess(args: CausalArgs, model_shape: Tuple[int], device: tt.device)
         if img.mode == "RGBA":
             logger.warning("RGBA input image provided, converting to RGB")
             img = img.convert("RGB")
-        
+
         data = Data(img, model_shape, device)
-        # data = Data(Image.open(args.path).convert("RGB"), model_shape, device)
         data.generic_image_preprocess(means=args.means, stds=args.stds, norm=args.norm)
 
-    # a compressed numpy array file
-    elif ext in ".npy":
+    # a numpy "npy" array or matlab "mat" file
+    elif ext in (".npy", ".mat"):
         if args.mode in ("tabular", "spectral"):
-            data = Data(np.load(args.path), model_shape, mode=args.mode, device=device)
-            data.data = tt.from_numpy(data.generic_tab_preprocess()).to(device)
+            if ext == ".mat":
+                raw_data = np.load(loadmat(args.path)["val"])
+            else:
+                raw_data = np.load(args.path)
+            data = Data(raw_data, model_shape, mode=args.mode, device=device)
+            data.data = data.generic_tab_preprocess()
         else:
             logger.fatal("we do not generically handle this datatype")
             return NotImplemented
@@ -92,7 +96,7 @@ def load_and_preprocess_data(
 ):
     """Loads input data from filepath and does preprocessing.
 
-    Uses a custom preprocesssing function if this is defined in ``args.custom.preprocess``,
+    Uses a custom preprocesssing function if this is defined in ``args.script.preprocess``,
     otherwise :py:func:`~rex_xai.explanation.try_preprocess()`.
 
     Args:
@@ -105,8 +109,15 @@ def load_and_preprocess_data(
         Data: the processed input data
 
     """
-    if args.custom is not None and hasattr(args.custom, "preprocess"):
-        data = args.custom.preprocess(args.path, model_shape, device, mode=args.mode)
+    if args.script is not None:
+        if hasattr(args.script, "preprocess"):
+            data = args.script.preprocess(
+                args.path, model_shape, device, mode=args.mode
+            )
+        else:
+            raise ReXScriptError(
+                f"{args.script_location} is missing a preprocess() function"
+            )
     else:
         # no custom preprocessing, so we make our best guess as to what to do
         data = try_preprocess(args, model_shape, device)
@@ -252,13 +263,13 @@ def analyze(exp: Explanation, data_mode: str | None):
     """
     eval = Evaluation(exp)
     rat = eval.ratio()
-    if data_mode in ("RGB", "L"):
+    ent = None
+    max_ent = None
+    if data_mode in ("RGB", "RGBA", "L"):
         be, ae = eval.entropy_loss()  # type: ignore
         ent = be - ae
     elif data_mode in ("spectral", "tabular"):
-        ent = eval.spectral_entropy()
-    else:
-        ent = None
+        ent, max_ent = eval.spectral_entropy()
 
     iauc, dauc = eval.insertion_deletion_curve(
         exp.prediction_func, normalise=exp.args.normalise_curves
@@ -266,7 +277,8 @@ def analyze(exp: Explanation, data_mode: str | None):
 
     analysis_results = {
         "area": rat,
-        "entropy_diff": ent,
+        "entropy": ent,
+        "max_entropy": max_ent,
         "insertion_curve": iauc,
         "deletion_curve": dauc,
     }
@@ -280,6 +292,7 @@ def _explanation(
     prediction_func,
     device: tt.device,
     db: Session | None = None,
+    path=None,
 ):
     """Takes a CausalArgs object and model information and returns a Explanation.
 
@@ -316,38 +329,48 @@ def _explanation(
     logger.info("Extracting explanation from responsibility map")
     clauses = None
     if args.strategy in (Strategy.MultiSpotlight, Strategy.Contrastive):
-        exp = MultiExplanation(
-            resp_object, prediction_func, data, args, run_stats
-        )
+        exp = MultiExplanation(resp_object, prediction_func, data, args, run_stats)
         exp.extract()
 
+        if args.strategy == Strategy.Contrastive and args.permitted_overlap != 1.0:
+            logger.warning(
+                "contrastive explanations require a permitted overlap of 1.0, so setting this now"
+            )
+            args.permitted_overlap = 1.0
+
+        clauses = exp.separate_by(args.permitted_overlap)
+        logger.info(f"found the following sets of explanations {clauses}")
+
         if args.strategy == Strategy.Contrastive:
-            clauses = exp.separate_by(0.0)
-            exp.contrastive(clauses)
-        else:
-            clauses = exp.separate_by(args.permitted_overlap)
-            logger.info(f"found the following sets of explanations {clauses}")
-            # TODO
+            clauses = exp.contrastive(clauses)
+            args.multi_style = "contrastive"
     else:
-        exp = Explanation(
-            resp_object, prediction_func, data, args, run_stats
-        )
+        exp = Explanation(resp_object, prediction_func, data, args, run_stats)
         exp.extract(args.strategy)
 
     if args.analyze:
         logger.info("Analysing explanation")
         results = analyze(exp, data.mode)
-        print(
-            f"INFO:ReX:area {results['area']}, entropy {results['entropy_diff']},",
-            f"insertion curve {results['insertion_curve']}, deletion curve {results['deletion_curve']}",
-        )
+        if data.mode == "spectral":
+            print(
+                f"INFO:ReX:classification {exp.data.target.classification}, area {results['area']}, responsibility entropy {results['entropy']},",  # type: ignore
+                f"max entropy {results['max_entropy']}",
+                f"insertion curve {results['insertion_curve']}, deletion curve {results['deletion_curve']}",
+            )
+        else:
+            print(
+                f"INFO:ReX:classification {exp.data.target.classification}, area {results['area']}, entropy {results['entropy']},",  # type: ignore
+                f"insertion curve {results['insertion_curve']}, deletion curve {results['deletion_curve']}",
+            )
 
     end = time.time()
     time_taken = end - start
     logger.info(f"Time taken: {time_taken:.2f}s")
 
     if args.surface is not None:
-        if args.surface == "show":
+        if path is not None:
+            pass
+        elif args.surface == "show":
             path = None
         else:
             path = args.surface
@@ -361,10 +384,11 @@ def _explanation(
         exp.heatmap_plot(path)
 
     if args.output is not None:
-        if args.output == "show":
-            path = None
-        else:
-            path = args.output
+        if path is None:
+            if args.output == "show":
+                path = None
+            else:
+                path = args.output
         exp.save(path, clauses=clauses)
 
     if db is not None:
@@ -390,7 +414,7 @@ def _explanation(
 def get_prediction_func_from_args(args: CausalArgs):
     """Takes a CausalArgs object and gets the prediction function and model shape.
 
-    If ``args.custom`` specifies a prediction function and model shape, returns these.
+    If ``args.script`` specifies a prediction function and model shape, returns these.
     Otherwise gets the prediction function and model shape from the provided model
     file.
 
@@ -407,13 +431,13 @@ def get_prediction_func_from_args(args: CausalArgs):
         RuntimeError: if an onnx inference instance cannot be created from the provided model file.
 
     """
-    if hasattr(args.custom, "prediction_function") and hasattr(
-        args.custom, "model_shape"
+    if hasattr(args.script, "prediction_function") and hasattr(
+        args.script, "model_shape"
     ):
-        prediction_func = args.custom.prediction_function  # type: ignore
-        model_shape = args.custom.model_shape()  # type: ignore
+        prediction_func = args.script.prediction_function  # type: ignore
+        model_shape = args.script.model_shape()  # type: ignore
     else:
-        ps = get_prediction_function(args.model, args.gpu)
+        ps = get_prediction_function(args)
         if ps is None:
             raise RuntimeError("Unable to create an onnx inference instance")
         else:
@@ -452,17 +476,29 @@ def explanation(
 
     # directory of data to process
     if os.path.isdir(args.path):
-        dir = args.path
         explanations = []
+        dir = args.path
+        path = None
         for dir, _, files in os.walk(args.path):
             for f in files:
                 to_process = os.path.join(dir, f)
                 logger.info("processing %s", to_process)
                 current_args = copy.copy(args)
                 current_args.path = to_process
-                explanations.append(
-                    _explanation(current_args, model_shape, prediction_func, device, db)
+                if args.output is not None and args.output != "show":
+                    out_dir = os.path.dirname(args.output)
+                    name, ext = os.path.splitext(args.output)
+                    fname, _ = os.path.splitext(f)
+                    path = f"{out_dir}_{fname}_{name}{ext}"
+                exp = _explanation(
+                    current_args,
+                    model_shape,
+                    prediction_func,
+                    device,
+                    db,
+                    path=path,
                 )
+                explanations.append(exp)
         return explanations
 
     else:

@@ -9,7 +9,7 @@ def __split_groups(neg_mask):
     return np.split(neg_mask, np.where(np.diff(neg_mask) > 1)[0] + 1)
 
 
-def spectral_occlusion(mask: tt.Tensor, data: tt.Tensor, noise=0.03, device="cpu"):
+def spectral_occlusion(mask: tt.Tensor, data: tt.Tensor, noise=0.02, device="cpu"):
     """Linear interpolated occlusion for spectral data, with optional added noise.
 
     @param mask: boolean valued NDArray
@@ -19,9 +19,7 @@ def spectral_occlusion(mask: tt.Tensor, data: tt.Tensor, noise=0.03, device="cpu
 
     @return torch.Tensor
     """
-    # we want all groups of False in the mask, as tt.where(neg_mask == 0)[0] is
-    # all 0s (as we only have one row), we ignore it
-    neg_mask = tt.where(mask == 0)[1]
+    neg_mask = tt.where(mask == 0)[0]
     split = __split_groups(neg_mask.detach().cpu().numpy())
 
     # strangely, this all seems to run faster if we do it on the cpu.
