@@ -82,76 +82,44 @@
   })
 # ---
 # name: test_multiexplanation_snapshot
-  MultiExplanation(
-    args=CausalArgs(
-      all=False,
-      alpha=0.2,
-      analyze=False,
-      batch_size=1,
-      binary_threshold=None,
-      blend=0.0,
-      chunk_size=10,
-      colour=200,
-      concentrate=False,
-      confidence_filter=0.0,
-      config_location=None,
-      data_location=None,
-      db=None,
-      distribution=<Distribution.Uniform: 2>,
-      distribution_args=None,
-      gpu=False,
-      grid=False,
-      heatmap=None,
-      heatmap_colours='magma',
-      info=True,
-      insertion_step=100,
-      iters=5,
-      mark_segments=False,
-      mask_value=0,
-      max_spotlight_budget=40,
-      means=None,
-      min_box_size=10,
-      mode=None,
-      multi_style='composite',
-      no_expansions=4,
-      norm=255.0,
-      normalise_curves=True,
-      output=None,
-      path='tests/test_data/peacock.jpg',
-      permitted_overlap=0.0,
-      processed=False,
-      progress_bar=True,
-      queue_len=1,
-      queue_style=<Queue.Area: 1>,
-      raw=False,
-      resize=False,
-      search_limit=1000,
-      seed=42,
-      segmentation=False,
-      shape=None,
-      spatial_initial_radius=25,
-      spatial_radius_eta=0.2,
-      spotlight_eta=0.2,
-      spotlight_size=20,
-      spotlight_step=5,
-      spotlights=5,
-      stds=None,
-      strategy=<Strategy.MultiSpotlight: 3>,
-      surface=None,
-      tree_depth=10,
-      verbosity=1,
-      weighted=False,
-    ),
-    data=Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
-  	 Target:FOUND_CLASS: 84, FOUND_CONF: 0.51611, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a,
-    maps={84: 1},
-    run_stats=dict({
-      'avg_box_size': 87.1,
-      'max_depth_reached': 6,
-      'total_failing': 329,
-      'total_passing': 217,
-    }),
-  )
+  Explanation:
+  	CausalArgs: <class 'rex_xai.config.CausalArgs'>
+  	Data: Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
+  	 Target:FOUND_CLASS: 84, FOUND_CONF: 0.51611, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
+  	prediction function: <function prediction_function >
+  	ResponsibilityMaps: tensor([[15.1667, 15.1667, 15.1667,  ..., 14.5000, 14.5000, 14.5000],
+          [15.1667, 15.1667, 15.1667,  ..., 14.5000, 14.5000, 14.5000],
+          [15.1667, 15.1667, 15.1667,  ..., 14.5000, 14.5000, 14.5000],
+          ...,
+          [31.5000, 31.5000, 31.5000,  ..., 14.5000, 14.5000, 14.5000],
+          [31.5000, 31.5000, 31.5000,  ..., 14.5000, 14.5000, 14.5000],
+          [31.5000, 31.5000, 31.5000,  ..., 14.5000, 14.5000, 14.5000]])
+  	run statistics: {'total_passing': 217, 'total_failing': 329, 'max_depth_reached': 6, 'avg_box_size': 87.1} (5 dp)
+  	explanation: tensor([[[[False, False, False,  ..., False, False, False],
+            [False, False, False,  ..., False, False, False],
+            [False, False, False,  ..., False, False, False],
+            ...,
+            [False, False, False,  ..., False, False, False],
+            [False, False, False,  ..., False, False, False],
+            [False, False, False,  ..., False, False, False]],
+  
+           [[False, False, False,  ..., False, False, False],
+            [False, False, False,  ..., False, False, False],
+            [False, False, False,  ..., False, False, False],
+            ...,
+            [False, False, False,  ..., False, False, False],
+            [False, False, False,  ..., False, False, False],
+            [False, False, False,  ..., False, False, False]],
+  
+           [[False, False, False,  ..., False, False, False],
+            [False, False, False,  ..., False, False, False],
+            [False, False, False,  ..., False, False, False],
+            ...,
+            [False, False, False,  ..., False, False, False],
+            [False, False, False,  ..., False, False, False],
+            [False, False, False,  ..., False, False, False]]]])
+  	final mask: None
+  	explanation confidence: 0.07881813496351242
 # ---
 # name: test_multiexplanation_snapshot.1
   list([
