@@ -3,6 +3,7 @@
 """generate multiple explanations from a responsibility landscape <pixel_ranking>"""
 
 import os
+import re
 import numpy as np
 
 import torch as tt
@@ -20,6 +21,36 @@ class MultiExplanation(Explanation):
         super().__init__(maps, prediction_func, data, args, run_stats)
         self.explanations = []
         self.explanation_confidences = []
+
+    def __repr__(self) -> str:
+        pred_func = repr(self.prediction_func)
+        match_func_name = re.search(r"(<function .+) at", pred_func)
+        if match_func_name:
+            pred_func = match_func_name.group(1) + " >"
+
+        run_stats = {k: round(v, 5) for k, v in self.run_stats.items()}
+
+        exp_text = (
+            "MultiExplanation:"
+            + f"\n\tCausalArgs: {type(self.args)}"
+            + f"\n\tData: {self.data}"
+            + f"\n\tprediction function: {pred_func}"
+            + f"\n\tResponsibilityMaps: {self.maps}"
+            + f"\n\trun statistics: {run_stats} (5 dp)"
+        )
+
+        if len(self.explanations) == 0:
+            return (
+                exp_text
+                + f"\n\texplanations: {self.explanations}"
+                + f"\n\texplanation confidences: {self.explanation_confidences}"
+            )
+        else:
+            return (
+                exp_text
+                + f"\n\texplanations: {len(self.explanations)} explanations of {type(self.explanations[0])} and shape {self.explanations[0].shape}"
+                + f"\n\texplanation confidences: {[round(x, ndigits=5) for x in self.explanation_confidences]} (5 dp)"
+            )
 
     def save(self, path, mask=None, multi=None, multi_style=None, clauses=None):
         if multi_style is None:
