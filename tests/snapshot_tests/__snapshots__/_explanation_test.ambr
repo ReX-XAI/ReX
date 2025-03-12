@@ -82,44 +82,15 @@
   })
 # ---
 # name: test_multiexplanation_snapshot
-  Explanation:
+  MultiExplanation:
   	CausalArgs: <class 'rex_xai.config.CausalArgs'>
   	Data: Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
   	 Target:FOUND_CLASS: 84, FOUND_CONF: 0.51611, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
   	prediction function: <function prediction_function >
-  	ResponsibilityMaps: tensor([[15.1667, 15.1667, 15.1667,  ..., 14.5000, 14.5000, 14.5000],
-          [15.1667, 15.1667, 15.1667,  ..., 14.5000, 14.5000, 14.5000],
-          [15.1667, 15.1667, 15.1667,  ..., 14.5000, 14.5000, 14.5000],
-          ...,
-          [31.5000, 31.5000, 31.5000,  ..., 14.5000, 14.5000, 14.5000],
-          [31.5000, 31.5000, 31.5000,  ..., 14.5000, 14.5000, 14.5000],
-          [31.5000, 31.5000, 31.5000,  ..., 14.5000, 14.5000, 14.5000]])
+  	ResponsibilityMaps: {84: 1}
   	run statistics: {'total_passing': 217, 'total_failing': 329, 'max_depth_reached': 6, 'avg_box_size': 87.1} (5 dp)
-  	explanation: tensor([[[[False, False, False,  ..., False, False, False],
-            [False, False, False,  ..., False, False, False],
-            [False, False, False,  ..., False, False, False],
-            ...,
-            [False, False, False,  ..., False, False, False],
-            [False, False, False,  ..., False, False, False],
-            [False, False, False,  ..., False, False, False]],
-  
-           [[False, False, False,  ..., False, False, False],
-            [False, False, False,  ..., False, False, False],
-            [False, False, False,  ..., False, False, False],
-            ...,
-            [False, False, False,  ..., False, False, False],
-            [False, False, False,  ..., False, False, False],
-            [False, False, False,  ..., False, False, False]],
-  
-           [[False, False, False,  ..., False, False, False],
-            [False, False, False,  ..., False, False, False],
-            [False, False, False,  ..., False, False, False],
-            ...,
-            [False, False, False,  ..., False, False, False],
-            [False, False, False,  ..., False, False, False],
-            [False, False, False,  ..., False, False, False]]]])
-  	final mask: None
-  	explanation confidence: 0.07881813496351242
+  	explanations: 5 explanations of <class 'torch.Tensor'> and shape torch.Size([3, 224, 224])
+  	explanation confidences: [0.00628, 0.04587, 0.00387, 0.00446, 0.07882] (5 dp)
 # ---
 # name: test_multiexplanation_snapshot.1
   list([
