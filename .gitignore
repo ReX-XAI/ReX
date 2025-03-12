@@ -5,6 +5,7 @@ tmp/
 yolo/
 typings/
 results/
+scripts/
 dist/
 ReX.egg-info/
 local/
@@ -45,3 +46,6 @@ rex_ai.egg-info/*
 .coverage
 
 docs/_build/
+.jupyter
+.ipynb_checkpoints/
+*.ipynb

@@ -16,8 +16,8 @@ from rex_xai.visualisation import save_multi_explanation, save_image, plot_image
 
 
 class MultiExplanation(Explanation):
-    def __init__(self, map, prediction_func, data, args, run_stats):
-        super().__init__(map, prediction_func, data, args, run_stats)
+    def __init__(self, maps, prediction_func, data, args, run_stats):
+        super().__init__(maps, prediction_func, data, args, run_stats)
         self.explanations = []
         self.explanation_confidences = []
 
@@ -30,8 +30,8 @@ class MultiExplanation(Explanation):
             logger.info("saving explanations in multiple different files")
             for i, mask in enumerate(self.explanations):
                 name, ext = os.path.splitext(path)
-                path = f"{name}_{i}{ext}"
-                super().save(path, mask=mask)
+                exp_path = f"{name}_{i}{ext}"
+                super().save(exp_path, mask=mask)
         elif multi_style == "composite":
             logger.info("using composite style to save explanations")
             if clauses is None:
