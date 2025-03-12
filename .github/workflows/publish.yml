@@ -63,7 +63,7 @@ jobs:
         echo "PYTHON_VERSION=${PYTHON_VERSION}"
         GIT_VERSION=$GITHUB_REF_NAME
         echo "GIT_VERSION=${GIT_VERSION}" # NB that Github version should have a 'v' prefix
-        if [ v$PYTHON_VERSION != $GIT_VERSION ]; then exit 1; fi
+        if [ "v$PYTHON_VERSION" != "$GIT_VERSION" ]; then exit 1; fi
         echo "VERSION=${GIT_VERSION}" >> $GITHUB_OUTPUT
 
   pypi-publish:
