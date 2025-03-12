@@ -120,29 +120,26 @@ class MultiExplanation(Explanation):
             return outs[0]
 
     def extract(self, method=None):
-        target_map = self.maps.get(self.data.target.classification)  # type: ignore
-        if target_map is not None:
-            self.maps = tt.from_numpy(target_map).to(self.data.device)
-            self.blank()
-            # we start with the global max explanation
-            logger.info("spotlight number 1 (global max)")
-            conf = self._Explanation__global()  # type: ignore
+        self.blank()
+        # we start with the global max explanation
+        logger.info("spotlight number 1 (global max)")
+        conf = self._Explanation__global()  # type: ignore
+        if self.final_mask is not None:
+            self.explanations.append(self.final_mask)
+            self.explanation_confidences.append(conf)
+        self.blank()
+
+        for i in range(0, self.args.spotlights - 1):
+            logger.info("spotlight number %d", i + 2)
+            conf = self.spotlight_search()
             if self.final_mask is not None:
                 self.explanations.append(self.final_mask)
                 self.explanation_confidences.append(conf)
             self.blank()
-
-            for i in range(0, self.args.spotlights - 1):
-                logger.info("spotlight number %d", i + 2)
-                conf = self.spotlight_search()
-                if self.final_mask is not None:
-                    self.explanations.append(self.final_mask)
-                    self.explanation_confidences.append(conf)
-                self.blank()
-            logger.info(
-                "ReX has found a total of %d explanations via spotlight search",
-                len(self.explanations),
-            )
+        logger.info(
+            "ReX has found a total of %d explanations via spotlight search",
+            len(self.explanations),
+        )
 
     def __dice(self, d1, d2):
         """calculates dice coefficient between two numpy arrays of the same dimensions"""
