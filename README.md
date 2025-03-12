@@ -61,7 +61,7 @@ This should install an executable `rex` in your path.
 
 ## Feedback
 
-Bug reports, questions, and suggestions for enhancements are welcome - please [check the GitHub Issues](https://github.com/ReX-XAI/ReX/issues) to see if there is already a relevant issue, or open a new one!
+Bug reports, questions, and suggestions for enhancements are welcome - please [check the GitHub Issues](https://github.com/ReX-XAI/ReX/issues) to see if there is already a relevant issue, or [open a new one](https://github.com/ReX-XAI/ReX/issues/new)!
 
 ## How to Contribute
 

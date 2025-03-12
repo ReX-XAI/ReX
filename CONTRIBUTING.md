@@ -101,7 +101,7 @@ When a new [release](https://docs.github.com/en/repositories/releasing-projects-
 To publish a new ReX version to PyPI, create a [release](https://docs.github.com/en/repositories/releasing-projects-on-github/about-releases).
 This will trigger a set of GitHub Actions workflows, which will run tests, check for version number consistency, and then publish the package to PyPI.
 
-When creating the release, typically the target branch should be main.
+When creating the release, typically the target branch should be `main`.
 The target branch should contain all the commits you want to be included in the new release.
 
 The release should be associated with a tag that has the form "vX.Y.Z" - note the "v" prefix!
@@ -111,7 +111,7 @@ Give the release a title - this can just be the version number.
 
 Write some release notes explaining the changes incorporated in this release.
 Github offers the option to [automatically generate release notes](https://docs.github.com/en/repositories/releasing-projects-on-github/automatically-generated-release-notes) based on PRs merged in since the last release, which can be a good starting point.
-Here is [one possible example](https://gist.github.com/andreasonny83/24c733ae50cadf00fcf83bc8beaa8e6a) of how release notes can be structuredm, to give some ideas of what to include.
+Here is [one possible example](https://gist.github.com/andreasonny83/24c733ae50cadf00fcf83bc8beaa8e6a) of how release notes can be structured, to give some ideas of what to include.
 
 The release can be saved as a draft.
 When you are ready, use the "Publish release" button to publish the release and trigger the Github Actions workflow that will publish it to PyPI.
