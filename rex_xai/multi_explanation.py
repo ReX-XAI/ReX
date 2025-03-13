@@ -251,7 +251,7 @@ class MultiExplanation(Explanation):
         else:
             centre = origin
 
-        ret, resp, conf = self._spatial(
+        ret, resp, conf = self._spatial(  # type: ignore
             centre=centre, expansion_limit=self.args.no_expansions
         )
 
@@ -259,7 +259,7 @@ class MultiExplanation(Explanation):
         while ret == SpatialSearch.NotFound and steps < self.args.max_spotlight_budget:
             if self.args.spotlight_objective_function == "none":
                 centre = self.__random_location()
-                ret, resp, conf = self._spatial( 
+                ret, resp, conf = self._spatial(  # type: ignore
                     centre=centre, expansion_limit=self.args.no_expansions
                 )
             else:
