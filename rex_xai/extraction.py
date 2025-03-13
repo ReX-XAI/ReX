@@ -155,7 +155,7 @@ class Explanation:
                         return p.confidence
                 masks = []
 
-    def __generate_circle_coordinates(self, centre, radius: int):
+    def _generate_circle_coordinates(self, centre, radius: int):
         assert self.data.model_height is not None
         assert self.data.model_width is not None
         Y, X = tt.meshgrid(
@@ -174,13 +174,13 @@ class Explanation:
 
         return circle_mask
 
-    def __draw_circle(self, centre, start_radius=None):
+    def _draw_circle(self, centre, start_radius=None):
         if start_radius is None:
             start_radius = self.args.spatial_initial_radius
         mask = tt.zeros(
             self.data.model_shape[1:], dtype=tt.bool, device=self.data.device
         )
-        circle_mask = self.__generate_circle_coordinates(centre, start_radius)
+        circle_mask = self._generate_circle_coordinates(centre, start_radius)
         if self.data.model_order == "first":
             mask[:, circle_mask] = True
         else:
@@ -218,7 +218,7 @@ class Explanation:
         if centre is None:
             centre = tt.unravel_index(tt.argmax(map), map.shape)  # type: ignore
 
-        start_radius, circle, mask = self.__draw_circle(centre)
+        start_radius, circle, mask = self._draw_circle(centre)
 
         if self.args.spotlight_objective_function == "none":
             masked_responsibility = None
@@ -246,7 +246,7 @@ class Explanation:
                 conf = self._global(map=tt.where(circle, map, 0))  # type: ignore
                 return SpatialSearch.Found, masked_responsibility, conf
             start_radius = int(start_radius * (1 + self.args.spatial_radius_eta))
-            _, circle, _ = self.__draw_circle(centre, start_radius)
+            _, circle, _ = self._draw_circle(centre, start_radius)
             if self.data.model_order == "first":
                 mask[:, circle] = True
             else:
