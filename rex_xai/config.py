@@ -2,18 +2,25 @@
 
 """config management"""
 
-from typing import List, Optional, Union
-from types import ModuleType
 import argparse
+import importlib.util
 import os
 from os.path import exists, expanduser
-import importlib.util
+from types import ModuleType
+from typing import List, Optional, Union
+
+import matplotlib as mpl
 import toml  # type: ignore
 
-
-from rex_xai.distributions import str2distribution
-from rex_xai.distributions import Distribution
-from rex_xai._utils import Strategy, Queue, ReXPathError, ReXTomlError, ReXError
+from rex_xai._utils import (
+    Queue,
+    ReXError,
+    ReXPathError,
+    ReXTomlError,
+    Strategy,
+    version,
+)
+from rex_xai.distributions import Distribution, str2distribution
 from rex_xai.logger import logger
 
 
@@ -35,16 +42,19 @@ class Args:
         # for reproducability
         self.seed: Union[int, float, None] = None
         # for custom scripts (when used as cmdline tool)
-        self.custom: Optional[ModuleType] = None
-        self.custom_location = None
+        self.script: Optional[ModuleType] = None
+        self.script_location = None
         self.processed = False
         # onnx processing
         self.means = None
         self.stds = None
         self.norm: Optional[float] = 255.0
         self.binary_threshold = None
+        self.intra_op_num_threads = 8
+        self.inter_op_num_threads = 8
+        self.ort_logger = 3
         # verbosity
-        self.verbosity = 0
+        self.verbosity = 1
         # whether to show progress bar or not
         self.progress_bar = True
         # save explanation to output
@@ -62,8 +72,9 @@ class Args:
         self.heatmap_colours = "magma"
         self.multi_style = "composite"
         # explanation production strategy
-        self.strategy: Strategy = Strategy.Spatial
+        self.strategy: Strategy = Strategy.Global
         self.chunk_size = 25
+        self.minimum_confidence_threshold = 0.0
         self.batch_size: int = 1
         # args for spatial strategy
         self.spatial_initial_radius: int = 25
@@ -90,13 +101,15 @@ class Args:
             + f"progress_bar: {self.progress_bar}, "
             + f"output_file: {self.output}, surface_plot: {self.surface}, "
             + f"heatmap_plot: {self.heatmap}, "
-            + f"means: {self.means}, stds: {self.stds}, norm: {self.norm} "
+            + f"onnx_means: {self.means}, onnx_stds: {self.stds}, onnx_norm: {self.norm} "
+            + f"onnx_inter_op_threads: {self.inter_op_num_threads}, onnx_intra_op_threads: {self.intra_op_num_threads}, onnx_logger: {self.ort_logger}"
             + f"explanation_strategy: {self.strategy}, "
+            + f"min_confidence_scalar: {self.minimum_confidence_threshold}, "
             + f"chunk size: {self.chunk_size}, "
             + f"spatial_radius: {self.spatial_initial_radius}, "
             + f"spatial_eta: {self.spatial_radius_eta}, seed: {self.seed}, "
             + f"db: {self.db}, "
-            + f"custom: {self.custom}, verbosity: {self.verbosity}, "
+            + f"script: {self.script_location}, verbosity: {self.verbosity}, "
             + f"spotlights: {self.spotlights}, spotlight_size: {self.spotlight_size}, "
             + f"spotlight_eta: {self.spotlight_eta}, "
             + f"no_expansions: {self.no_expansions}, "
@@ -162,81 +175,122 @@ def read_config_file(path):
         raise ReXTomlError(e)
 
 
-def cmdargs():
+def rex_ascii():
+    return (
+        "                       @@@@@@@@@@@@@@@                                  \n"
+        + "                       @@  @@@@@@@@@@@                                \n"
+        + "                     @@@@  @@@@@@@@@@@@@@@@@                          \n"
+        + "                     @@@@@@@@@@@@@@@@@@@@@@@                          \n"
+        + "                     @@@@@@@@@@@@@@@@@@@@@@@                          \n"
+        + "                     @@@@@@@@@@                                       \n"
+        + "                     @@@@@@@@@@@@@@@@         %%%                     \n"
+        + "   @@              @@@@@@@@@@@                %%%%                    \n"
+        + "   @@              @@@@@@@   %%@               %%%%             %%    \n"
+        + "   @@            @@@@@@@@ @%%%%%%%              %%%%           %%     \n"
+        + "   @@@@        @@@@@@@@@@ %%%%  %%%%%%           %%%%        %%       \n"
+        + "   @@@@@@    @@@@@@@@@@@@ %%%%     %%%%%%      %   %%%     %%         \n"
+        + "   @@@@@@@@@@@@@@@@@@@@@@ %%%%       %      %%      %%%   %           \n"
+        + "     @@@@@@@@@@@@@@@@@@@@ %%%%    %%      %          %%%%             \n"
+        + "       @@@@@@@@@@@@@@@@@@ %%%   %%     %%%%%%%%%%%    %%%             \n"
+        + "         @@@@@@@@@@@@@@@@ %%%  %%%%   %%%%           % %%%            \n"
+        + "         @@@@@@@@@@@@@@@  %%%   %%%%   %%%%        %@   %%%           \n"
+        + "           @@@@@@@@@@@@@  %%%    %%%%    %%%     %%      %%%          \n"
+        + "             @@@@@@  @@@  %%%     %%%%    %%%% %%         %%%%        \n"
+        + "             @@@@        %%%%      %%%%%   %%%%            %%%%  %    \n"
+        + "             @@          %%%%        %%%%   %%%%%@          %%%%%     \n"
+        + "             @@@@        %            %%      %              %%       \n\n\n"
+        + "   Explaining AI through causal Responsibility EXplanations\n"
+    )
+
+
+def cmdargs_parser():
     """parses command line flags"""
     parser = argparse.ArgumentParser(
         prog="ReX",
-        description="Explaining AI through causal reasoning",
+        description=f"{rex_ascii()}",
+        formatter_class=argparse.RawTextHelpFormatter,
     )
     parser.add_argument(
         "filename",
-        help="file to be processed, assumes that file is 3 channel (RGB or BRG)",
+        help="file to be processed, either an image, a numpy array, a mat file, or a nifti file",
     )
     parser.add_argument(
         "--output",
         nargs="?",
         const="show",
-        help="show minimal explanation, optionally saved to <OUTPUT>. Requires a PIL compatible file extension",
+        help="show minimal, sufficient causal explanation, optionally saved to <OUTPUT>. Requires a PIL compatible file extension",
     )
-    parser.add_argument("-c", "--config", type=str, help="config file to use for rex")
+    parser.add_argument(
+        "-c", "--config", type=str, help="optional config file to use for ReX"
+    )
 
     parser.add_argument(
         "--processed",
         action="store_true",
-        help="don't perform any processing with rex itself",
+        help="prevent ReX from performing any preprocessing",
     )
 
     parser.add_argument(
-        "--script", type=str, help="custom loading and preprocessing script"
+        "--script",
+        type=str,
+        help="custom loading and preprocessing script, mostly for use with pytorch models",
     )
 
     parser.add_argument(
         "-v",
         "--verbose",
         action="count",
-        default=0,
-        help="verbosity level, either -v or -vv, or -vvv",
+        default=1,
+        help="increase verbosity level, either -v or -vv",
     )
+
+    parser.add_argument(
+        "-q",
+        "--quiet",
+        action="store_true",
+        help="set verbosity level to 0 (errors only), overrides --verbose",
+    )
+
     parser.add_argument(
         "--surface",
         nargs="?",
         const="show",
-        help="surface plot, optionally saved to <SURFACE>",
+        help="surface plot of the responsibility map, optionally saved to <SURFACE>",
     )
     parser.add_argument(
         "--heatmap",
         nargs="?",
         const="show",
-        help="heatmap plot, optionally saved to <HEATMAP>",
+        help="heatmap plot of the responsibility map, optionally saved to <HEATMAP>",
     )
 
-    parser.add_argument("--model", type=str, help="model, must be onnx format")
+    parser.add_argument("--model", type=str, help="model in .onnx format")
 
     parser.add_argument(
         "--strategy",
         "-s",
         type=str,
-        help="explanation strategy, one of < multi | spatial | linear | spotlight >",
+        help="explanation strategy, one of < multi | spatial | global | spotlight >, defaults to global",
     )
     parser.add_argument(
         "--database",
         "-db",
         type=str,
-        help="store output in sqlite database <DATABASE>, creating db if necessary",
+        help="store output in sqlite database <DATABASE>, creating db if necessary. Please include the extension in the filename",
     )
 
     parser.add_argument(
         "--multi",
         nargs="?",
         const=10,
-        help="multiple explanations, with optional number <x> of floodlights, defaults to value in rex.toml, or 10 if undefined",
+        help="multiple explanations, with optional number <x> of spotlights, defaults to value in <rex.toml>, or 10 if undefined",
     )
 
     parser.add_argument(
         "--contrastive",
         nargs="?",
         const=10,
-        help="a contrastive explanation, both necessary and sufficient, needs optional number <x> of floodlights, defaults to value in rex.toml, or 10 if undefined",
+        help="a contrastive explanation, minimal, necessary and sufficient. Needs optional number <x> of floodlights, defaults to value in <rex.toml>, or 10 if undefined",
     )
     parser.add_argument(
         "--iters",
@@ -247,25 +301,19 @@ def cmdargs():
     parser.add_argument(
         "--analyze",
         action="store_true",
-        help="area, entropy different and insertion/deletion curves",
+        help="area, entropy and (possibly) insertion/deletion curves",
     )
     parser.add_argument(
         "--analyse",
         action="store_true",
-        help="area, entropy different and insertion/deletion curves",
-    )
-
-    parser.add_argument(
-        "--show-all",
-        action="store_true",
-        help="produce a complete breakdown of the image",
+        help="area, entropy and (possibly) insertion/deletion curves",
     )
 
     parser.add_argument(
         "--mode",
         "-m",
         type=str,
-        help="assist ReX with your input type, one of <tabular>, <spectral>, <RGB>, <L>, <voxel>, <audio>",
+        help="assist ReX with your input type, one of <tabular>, <spectral>, <RGB>, <voxel>, <audio>",
     )
 
     parser.add_argument(
@@ -274,12 +322,21 @@ def cmdargs():
         help="set ReX input type to <spectral>, shortcut for --mode spectral",
     )
 
+    parser.add_argument("--version", action="version", version=version())
+
+    return parser
+
+
+def cmdargs():
+    parser = cmdargs_parser()
     args = parser.parse_args()
     return args
 
 
 def match_strategy(strategy_string):
     """gets explanation extraction strategy"""
+    if strategy_string is None:
+        return Strategy.Global
     if strategy_string == "multi" or strategy_string == "spotlight":
         return Strategy.MultiSpotlight
     elif strategy_string == "linear" or strategy_string == "global":
@@ -289,8 +346,11 @@ def match_strategy(strategy_string):
     elif strategy_string == "contrastive":
         return Strategy.Contrastive
     else:
-         logger.warning("Invalid strategy '%s', reverting to default value Strategy.Spatial", strategy_string)
-    return Strategy.Spatial
+        logger.warning(
+            "Invalid strategy '%s', reverting to default value Strategy.Global",
+            strategy_string,
+        )
+    return Strategy.Global
 
 
 def match_queue_style(qs: str) -> Queue:
@@ -304,7 +364,9 @@ def match_queue_style(qs: str) -> Queue:
     elif qs == "intersection":
         return Queue.Intersection
     else:
-         logger.warning("Invalid queue style '%s', reverting to default value Queue.Area", qs)
+        logger.warning(
+            "Invalid queue style '%s', reverting to default value Queue.Area", qs
+        )
     return Queue.Area
 
 
@@ -320,19 +382,18 @@ def shared_args(cmd_args, args: CausalArgs):
         args.heatmap = cmd_args.heatmap
     if cmd_args.output is not None:
         args.output = cmd_args.output
-    if cmd_args.verbose > 0:
+    if cmd_args.quiet:
+        args.verbosity = 0
+    else:
         args.verbosity = cmd_args.verbose
     if cmd_args.database is not None:
         args.db = cmd_args.database
     if cmd_args.mode is not None:
         args.mode = cmd_args.mode
-    if (
-        cmd_args.spectral
-    ):  # TODO: Check this cmd_args.spectral has default value of false
+    if cmd_args.spectral:
         args.mode = "spectral"
 
     args.processed = cmd_args.processed
-    return args
 
 
 def find_config_path():
@@ -361,67 +422,108 @@ def apply_dict_to_args(source, args, allowed_values=None):
             if hasattr(args, k):
                 setattr(args, k, v)
             else:
-                logger.warning("Parameter '%s' not in CausalArgs attributes, skipping!", k)
+                logger.warning(
+                    "Parameter '%s' not in CausalArgs attributes, skipping!", k
+                )
 
 
-def validate_float_arg(float_arg, lower, upper):
-    if float_arg < lower or float_arg > upper:
-        raise ReXTomlError(f"Invalid value for '{float_arg}': must be between {lower} and {upper}")
-    
+def validate_numeric_arg_within_bounds(n, lower, upper):
+    if n < lower or n > upper:
+        raise ReXTomlError(f"Invalid value '{n}': must be between {lower} and {upper}")
+
+
+def validate_numeric_arg_more_than(n, lower):
+    if not n > lower:
+        raise ReXTomlError(f"Invalid value '{n}': must be more than {lower}")
+
 
 def process_config_dict(config_file_args, args):
-
     expected_values = {
         "rex": ["mask_value", "seed", "gpu", "batch_size"],
-        "onnx": ["means", "stds", "binary_threshold", "norm"],
-        "visual": ["info", "colour", "alpha", "raw", "resize", "progress_bar", 
-                   "grid", "mark_segments", "heatmap_colours", "multi_style"],
-        "causal": ["tree_depth", "search_limit", "iters", "min_box_size", 
-                   "confidence_filter", "weighted", "queue_style", "queue_len", 
-                   "concentrate"],
+        "onnx": [
+            "means",
+            "stds",
+            "binary_threshold",
+            "norm",
+            "intra_op_num_threads",
+            "inter_op_num_threads",
+            "ort_logger",
+        ],
+        "visual": [
+            "info",
+            "colour",
+            "alpha",
+            "raw",
+            "resize",
+            "progress_bar",
+            "grid",
+            "mark_segments",
+            "heatmap_colours",
+            "multi_style",
+        ],
+        "causal": [
+            "tree_depth",
+            "search_limit",
+            "iters",
+            "min_box_size",
+            "confidence_filter",
+            "weighted",
+            "queue_style",
+            "queue_len",
+            "concentrate",
+        ],
         "distribution": ["distribution", "blend", "distribution_args"],
-        "explanation": ["chunk_size"],
+        "explanation": ["chunk_size", "minimum_confidence_threshold"],
         "spatial": ["spatial_initial_radius", "spatial_radius_eta", "no_expansions"],
-        "multi": ["strategy", "spotlights", "spotlight_size", "spotlight_eta", 
-                  "spotlight_step", "max_spotlight_budget", 
-                  "spotlight_objective_function", "permitted_overlap"],
-        "evaluation": ["insertion_step", "normalise_curves"]
+        "multi": [
+            "strategy",
+            "spotlights",
+            "spotlight_size",
+            "spotlight_eta",
+            "spotlight_step",
+            "max_spotlight_budget",
+            "spotlight_objective_function",
+            "permitted_overlap",
+        ],
+        "evaluation": ["insertion_step", "normalise_curves"],
     }
 
     if "causal" in config_file_args.keys():
         causal_dict = config_file_args["causal"]
         apply_dict_to_args(causal_dict, args, expected_values["causal"])
         if "distribution" in causal_dict.keys():
-            apply_dict_to_args(causal_dict["distribution"], args, expected_values["distribution"])
+            apply_dict_to_args(
+                causal_dict["distribution"], args, expected_values["distribution"]
+            )
 
     if "rex" in config_file_args.keys():
         rex_dict = config_file_args["rex"]
         apply_dict_to_args(rex_dict, args, expected_values["rex"])
         for subdict_name in ["visual", "onnx"]:
             if subdict_name in rex_dict.keys():
-                apply_dict_to_args(rex_dict[subdict_name], args, expected_values[subdict_name])
-                
+                apply_dict_to_args(
+                    rex_dict[subdict_name], args, expected_values[subdict_name]
+                )
 
     if "explanation" in config_file_args.keys():
         explain_dict = config_file_args["explanation"]
         apply_dict_to_args(explain_dict, args, expected_values["explanation"])
         for subdict_name in ["spatial", "multi", "evaluation"]:
             if subdict_name in explain_dict.keys():
-                apply_dict_to_args(explain_dict[subdict_name], args, expected_values[subdict_name])
+                apply_dict_to_args(
+                    explain_dict[subdict_name], args, expected_values[subdict_name]
+                )
 
     if type(args.distribution) is str:
         args.distribution = str2distribution(args.distribution)
         if args.distribution == Distribution.Uniform:
             args.distribution_args = None
-    
+
     if type(args.queue_style) is str:
         args.queue_style = match_queue_style(args.queue_style)
-    
+
     if type(args.strategy) is str:
         args.strategy = match_strategy(args.strategy)
-
-    validate_float_arg(args.blend, 0.0, 1.0)
-    validate_float_arg(args.permitted_overlap, 0.0, 1.0)
 
 
 def process_custom_script(script, args):
@@ -433,8 +535,8 @@ def process_custom_script(script, args):
     except Exception as e:
         logger.error("failed to load %s because of %s, exiting...", script, e)
         raise e
-    args.custom = script
-    args.custom_location = script
+    args.script = script
+    args.script_location = script
 
 
 def process_cmd_args(cmd_args, args):
@@ -463,8 +565,6 @@ def process_cmd_args(cmd_args, args):
         args.strategy = Strategy.Contrastive
         args.spotlights = int(cmd_args.contrastive)
 
-    return args
-
 
 def load_config(config_path=None):
     if config_path is None:
@@ -484,7 +584,7 @@ def load_config(config_path=None):
             process_config_dict(config_file_args, default_args)
             return default_args
         except Exception as e:
-            logger.warn(
+            logger.warning(
                 "exception of type %s: %s, so reverting to default args", type(e), e
             )
             return default_args
@@ -504,11 +604,106 @@ def get_all_args():
 
     args = load_config(config_path)
 
-    args = process_cmd_args(cmd_args, args)  # TODO: Check that assignment makes sense
+    process_cmd_args(cmd_args, args)
 
-    args = shared_args(cmd_args, args)
+    shared_args(cmd_args, args)
 
-    if args.model is None and args.custom_location is None:
+    if args.model is None and args.script_location is None:
         raise RuntimeError("either a <model>.onnx or a python file must be provided")
 
     return args
+
+
+def validate_args(args: CausalArgs):
+    """Validates a CausalArgs object.
+
+    Checks that ``args.path`` is not None, that boolean args are boolean, and that numeric args fall within correct bounds.
+
+    Args:
+        args: configuration values for ReX
+    """
+
+    if args.path is None:
+        raise FileNotFoundError("Input file path cannot be None")
+
+    # values that must be between 0 and 1
+    for arg in [
+        "blend",
+        "permitted_overlap",
+        "alpha",
+        "confidence_filter",
+        "spatial_radius_eta",
+        "spotlight_eta",
+        "binary_threshold",
+    ]:
+        val = getattr(args, arg)
+        if val is not None:
+            validate_numeric_arg_within_bounds(val, lower=0.0, upper=1.0)
+
+    # values that must be more than 0
+    for arg in [
+        "iters",
+        "min_box_size",
+        "chunk_size",
+        "spatial_initial_radius",
+        "no_expansions",
+        "spotlights",
+        "spotlight_size",
+        "spotlight_step",
+        "max_spotlight_budget",
+        "insertion_step",
+    ]:
+        val = getattr(args, arg)
+        if val is not None:
+            validate_numeric_arg_more_than(val, lower=0.0)
+
+    # values that must be boolean
+    for arg in [
+        "gpu",
+        "info",
+        "progress_bar",
+        "raw",
+        "resize",
+        "grid",
+        "mark_segments",
+        "weighted",
+        "concentrate",
+        "normalise_curves",
+    ]:
+        val = getattr(args, arg)
+        if val is not None:
+            if not isinstance(val, bool):
+                raise ReXTomlError(f"Invalid value '{val}' for {arg}, must be boolean")
+
+    # custom treatment of specific values
+    validate_numeric_arg_within_bounds(args.colour, lower=0.0, upper=255.0)
+
+    if args.multi_style is not None:
+        if args.multi_style not in ["composite", "separate"]:
+            raise ReXTomlError(
+                f"Invalid value '{args.multi_style}' for multi_style, must be 'composite' or 'separate'"
+            )
+
+    validate_numeric_arg_more_than(args.queue_len, lower=0.0)
+    if not isinstance(args.queue_len, int):
+        if args.queue_len != "all":
+            raise ReXTomlError(
+                f"Invalid value '{args.queue_len}' for queue_len, must be 'all' or an integer"
+            )
+
+    if args.distribution_args is not None:
+        if not isinstance(args.distribution_args, list):
+            raise ReXTomlError(
+                f"distribution args must be a list, not '{type(args.distribution_args)}'"
+            )
+        elif len(args.distribution_args) != 2:
+            raise ReXTomlError(
+                f"distribution args must be length 2, not {len(args.distribution_args)}"
+            )
+        if not all([x > 0 for x in args.distribution_args]):
+            raise ReXTomlError("All values in distribution args must be more than zero")
+
+    if args.heatmap_colours not in list(mpl.colormaps):
+        raise ReXTomlError(
+            f"Invalid colourmap '{args.heatmap_colours}', must be a valid matplotlib colourmap"
+        )

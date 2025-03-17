@@ -1,3 +1,5 @@
+import pytest
+from rex_xai._utils import ReXDataError
 from rex_xai.explanation import (
     load_and_preprocess_data,
     try_preprocess,
@@ -39,14 +41,13 @@ def test_preprocess_npy(args, DNA_model, cpu_device, snapshot, caplog):
     assert caplog.records[0].msg == "we do not generically handle this datatype"
 
     args.mode = "tabular"
-    data = try_preprocess(args, model_shape, device=cpu_device)
-    assert data == snapshot
-
+    with pytest.raises(ReXDataError):
+        try_preprocess(args, model_shape, device=cpu_device)
 
 def test_preprocess_incompatible_shapes(args, model_shape, cpu_device, caplog):
     args.path = "tests/test_data/DoublePeakClass 0 Mean.npy"
     args.mode = "tabular"
 
-    try_preprocess(args, model_shape, device=cpu_device)
+    with pytest.raises(ReXDataError):
+        try_preprocess(args, model_shape, device=cpu_device)
 
-    assert caplog.records[0].msg == "Incompatible 'mode' and 'model_shape', cannot get valid shape of Data object so returning None"

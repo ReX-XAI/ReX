@@ -1,6 +1,6 @@
 import pytest
-from rex_xai.config import Strategy
 from rex_xai.explanation import _explanation, analyze
+from rex_xai._utils import Strategy
 
 @pytest.mark.parametrize("batch_size", [1, 64])
 def test__explanation_snapshot(
@@ -40,7 +40,19 @@ def test__explanation_snapshot_diff_model_shape(
 def test_extract_analyze(exp_custom, strategy, snapshot):
     exp_custom.extract(strategy)
     results = analyze(exp_custom, "RGB")
-    results_rounded = {k: round(v, 4) for k, v in results.items()}
+    results_rounded = {k: round(v, 4) for k, v in results.items() if v is not None}
 
     assert hash(tuple(exp_custom.final_mask.reshape(-1).tolist())) == snapshot
     assert results_rounded == snapshot
+
+
+def test_multiexplanation_snapshot(
+    args_multi, model_shape, prediction_func, cpu_device, snapshot_explanation
+):
+    exp = _explanation(args_multi, model_shape, prediction_func, cpu_device, db=None)
+    clauses = exp.separate_by(0.0)
+
+    assert exp == snapshot_explanation
+    assert clauses == snapshot_explanation
+    for explanation in exp.explanations:
+        assert hash(tuple(explanation.reshape(-1).tolist())) == snapshot_explanation

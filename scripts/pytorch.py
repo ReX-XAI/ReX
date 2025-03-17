@@ -27,16 +27,12 @@ def preprocess(path, shape, device, mode) -> Data:
             T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         ]
     )
+    # open the image with mode "RGB"
     img = Image.open(path).convert("RGB")
-    data = Data(img, shape, device, mode=mode, process=False)
+    # create a Data object
+    data = Data(img, shape, device, mode='RGB')
+    # manually set the data to the transformed image for model consumption
     data.data = transform(img).unsqueeze(0).to(device)  # type: ignore
-    data.mode = "RGB"
-    data.model_shape = shape
-    data.model_height = 224
-    data.model_width = 224
-    data.model_channels = 3
-    data.transposed = True
-    data.model_order = "first"
 
     return data
 
@@ -46,6 +42,8 @@ def prediction_function(mutants, target=None, raw=False, binary_threshold=None):
         tensor = model(mutants)
         if raw:
             return F.softmax(tensor, dim=1)
+        # from_pytorch_tensor consumes a tensor and converts it to a Prediction object
+        # you can  alternatively use your own function here
         return from_pytorch_tensor(tensor, target=target)
 
 

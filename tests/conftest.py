@@ -13,6 +13,8 @@ from rex_xai.explanation import (
     predict_target,
     try_preprocess,
 )
+from rex_xai.extraction import Explanation
+from rex_xai.multi_explanation import MultiExplanation
 from syrupy.extensions.amber.serializer import AmberDataSerializer
 from syrupy.filters import props
 from syrupy.matchers import path_type
@@ -24,21 +26,21 @@ from rex_xai.input_data import Data
 def snapshot_explanation(snapshot):
     return snapshot.with_defaults(
         exclude=props(
-            "obj_function",  # pointer to function that will differ between runs
-            "spotlight_objective_function",  # pointer to function that will differ between runs
-            "custom",  # path that differs between systems
-            "custom_location",  # path that differs between systems
-            "model",
-            "target_map",  # large array
-            "final_mask",  # large array
-            "explanation",  # large array
-        ),
-        matcher=path_type(
-            types=(CausalArgs,),
-            replacer=lambda data, _: AmberDataSerializer.object_as_named_tuple(
-                data
-            ),  # needed to allow exclude to work for custom classes
-        ),
+                "obj_function", # pointer to function that will differ between runs
+                "spotlight_objective_function", # pointer to function that will differ between runs
+                "script", # path that differs between systems
+                "script_location", # path that differs between systems
+                "model",
+                "target_map", # large array
+                "final_mask", # large array
+                "explanation" # large array
+            ),
+            matcher=path_type(
+                types=(CausalArgs,),
+                replacer=lambda data, _: AmberDataSerializer.object_as_named_tuple( #type: ignore
+                    data
+                ),  # needed to allow exclude to work for custom classes
+            )
     )
 
 
@@ -49,12 +51,14 @@ def resnet50():
     )
     return resnet50_path
 
+
 @pytest.fixture(scope="session")
 def DNA_model():
     DNA_model_path = cached_path(
         "https://github.com/ReX-XAI/models/raw/6f66a5c0e1480411436be828ee8312e72f0035e1/spectral/simple_DNA_model.onnx"
     )
     return DNA_model_path
+
 
 @pytest.fixture
 def args():
@@ -87,6 +91,17 @@ def args_torch_swin_v2_t(args):
 def args_onnx(args, resnet50):
     args.model = resnet50
     args.seed = 100
+
+    return args
+
+
+@pytest.fixture
+def args_multi(args_custom):
+    args = args_custom
+    args.path = "tests/test_data/peacock.jpg"
+    args.iters = 5
+    args.strategy = Strategy.MultiSpotlight
+    args.spotlights = 5
 
     return args
 
@@ -132,6 +147,14 @@ def data_custom(args_custom, model_shape, cpu_device):
     return data
 
 
+@pytest.fixture
+def data_multi(args_multi, model_shape, prediction_func, cpu_device):
+    data = load_and_preprocess_data(model_shape, cpu_device, args_multi)
+    data.set_mask_value(args_multi.mask_value)
+    data.target = predict_target(data, prediction_func)
+    return data
+
+
 @pytest.fixture(scope="session")
 def cpu_device():
     device = get_device(gpu=False)
@@ -142,7 +165,10 @@ def cpu_device():
 @pytest.fixture
 def exp_custom(data_custom, args_custom, prediction_func):
     data_custom.target = predict_target(data_custom, prediction_func)
-    exp = calculate_responsibility(data_custom, args_custom, prediction_func)
+    maps, run_stats = calculate_responsibility(
+        data_custom, args_custom, prediction_func
+    )
+    exp = Explanation(maps, prediction_func, data_custom, args_custom, run_stats)
 
     return exp
 
@@ -153,7 +179,8 @@ def exp_onnx(args_onnx, cpu_device):
     data = load_and_preprocess_data(model_shape, cpu_device, args_onnx)
     data.set_mask_value(args_onnx.mask_value)
     data.target = predict_target(data, prediction_func)
-    exp = calculate_responsibility(data, args_onnx, prediction_func)
+    maps, run_stats = calculate_responsibility(data, args_onnx, prediction_func)
+    exp = Explanation(maps, prediction_func, data, args_onnx, run_stats)
 
     return exp
 
@@ -163,6 +190,17 @@ def exp_extracted(exp_custom):
     exp_custom.extract(Strategy.Global)
 
     return exp_custom
+
+
+@pytest.fixture
+def exp_multi(args_multi, data_multi, prediction_func):
+    maps, run_stats = calculate_responsibility(data_multi, args_multi, prediction_func)
+    multi_exp = MultiExplanation(
+        maps, prediction_func, data_multi, args_multi, run_stats
+    )
+    multi_exp.extract(args_multi.strategy)
+    return multi_exp
+
 
 @pytest.fixture
 def data_3d():

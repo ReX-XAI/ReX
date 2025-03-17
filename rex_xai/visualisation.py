@@ -480,11 +480,52 @@ def __transpose_mask(explanation, mode, transposed):
     return mask
 
 
-def save_multi_explanation(
-    explanations, data, args: CausalArgs, clauses=None, path=None
-):
+def generate_colours(n, colourmap):
+    """
+    Generate n evenly spaced RGB colours from a matplotlib colourmap.
+    """
+    space = np.linspace(0, 1, n)
+    colour_space = mpl.colormaps[colourmap].resampled(n)
+    # colour space returns colours in RGBA space, so we drop the A at the end
+    rgb_colours = [colour_space(i)[:-1] for i in space]
+    return rgb_colours
+
+
+def make_composite_mask(explanations):
+    """
+    Creates a composite mask from a list of masks.
+    """
     composite_mask = None
-    img = None
+    for explanation in explanations:
+        if composite_mask is None:
+            composite_mask = explanation
+        else:
+            composite_mask = np.where(explanation, 1, composite_mask)
+
+    return composite_mask
+
+
+def apply_boundaries_to_image(image, explanations, colours):
+    """
+    Draws the boundaries of the explanations on the image, using the provided colours.
+    """
+    for i in range(len(explanations)):
+        explanation = explanations[i]
+
+        if explanation.shape[0] == 3:
+            explanation = explanation[0, :, :]
+        else:
+            explanation = explanation[:, :, 0]  # type: ignore
+
+        image = add_boundaries(image, explanation, colour=colours[i])
+
+    return image
+
+
+def get_img_as_array(data):
+    """
+    Return original input image as a numpy array, resized to match model size and converted to RGB if necessary.
+    """
     if data.mode == "RGB" or data.mode == "L":
         if data.mode == "L":
             img = data.input.convert("RGB").resize(
@@ -493,41 +534,48 @@ def save_multi_explanation(
         else:
             img = data.input.resize((data.model_height, data.model_width))
     else:
-        logger.warn("we do not yet handle multiple explanations for non-images")
+        raise NotImplementedError
+
+    return np.array(img)
+
+
+def save_multi_explanation(
+    explanations, data, args: CausalArgs, clause=None, path=None
+):
+    if data.mode == "RGB" or data.mode == "L":
+        img = get_img_as_array(data)
+    else:
+        logger.warning("we do not yet handle multiple explanations for non-images")
         raise NotImplementedError
 
     if img is not None:
-        img = np.array(img)
+        rgb_colours = generate_colours(args.spotlights, args.heatmap_colours)
 
-        space = np.linspace(0, 1, args.spotlights)
-        colour_space = mpl.colormaps[args.heatmap_colours].resampled(args.spotlights)
-        # colour space returns colours in RGBA space, so we drop the A at the end
-        rgb_colours = [colour_space(i)[:-1] for i in space]
+        if clause is not None:
+            if isinstance(clause, int):
+                explanations_subset = [explanations[clause]]
+                colours_subset = [rgb_colours[clause]]
+            else:
+                explanations_subset = [explanations[c] for c in clause]
+                colours_subset = [rgb_colours[c] for c in clause]
+            explanations_subset = [
+                __transpose_mask(explanation, data.mode, data.transposed)
+                for explanation in explanations_subset
+            ]
+            composite_mask = make_composite_mask(explanations_subset)
 
-        if clauses is not None:
-            for c in clauses:
-                explanation = explanations[c]
-                explanation = __transpose_mask(explanation, data.mode, data.transposed)
-                if explanation is not None:
-                    if composite_mask is None:
-                        composite_mask = explanation
-                    else:
-                        composite_mask = np.where(explanation, 1, composite_mask)
+            img = apply_boundaries_to_image(img, explanations_subset, colours_subset)
 
-                assert explanation is not None
-                if explanation.shape[0] == 3:
-                    explanation = explanation[0, :, :]
-                else:
-                    explanation = explanation[:, :, 0]  # type: ignore
-
-                img = add_boundaries(img, explanation, colour=rgb_colours[c])
-
-            if composite_mask is not None and path is not None:
+            if composite_mask is not None:
                 cover = np.where(composite_mask, img, args.colour)
                 cover = Image.fromarray(cover, data.mode)
                 img = Image.fromarray(img, data.mode)
                 out = Image.blend(cover, img, args.alpha)
-                out.save(path)
+
+                if path is None:
+                    return out
+                else:
+                    out.save(path)
 
 
 def save_image(explanation, data: Data, args: CausalArgs, path=None):

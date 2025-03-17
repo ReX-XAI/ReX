@@ -1,15 +1,15 @@
 #!/usr/bin/env python
-from typing import Optional, Tuple
+import re
+from typing import Optional
 
 import torch as tt
 
 from rex_xai import visualisation
+from rex_xai._utils import SpatialSearch, get_map_locations, set_boolean_mask_value
+from rex_xai.config import CausalArgs, Strategy
 from rex_xai.input_data import Data
-from rex_xai.config import CausalArgs
-from rex_xai.config import Strategy
 from rex_xai.logger import logger
 from rex_xai.mutant import _apply_to_data
-from rex_xai._utils import get_map_locations, set_boolean_mask_value, SpatialSearch
 from rex_xai.resp_maps import ResponsibilityMaps
 
 
@@ -46,10 +46,43 @@ class Explanation:
 
         self.explanation: Optional[tt.Tensor] = None
         self.final_mask = None
+        self.explanation_confidence = 0.0
         self.prediction_func = prediction_func
         self.data = data
         self.args = args
         self.run_stats = run_stats
+
+    def __repr__(self) -> str:
+        pred_func = repr(self.prediction_func)
+        match_func_name = re.search(r"(<function .+) at", pred_func)
+        if match_func_name:
+            pred_func = match_func_name.group(1) + " >"
+
+        run_stats = {k: round(v, 5) for k, v in self.run_stats.items()}
+
+        exp_text = (
+            "Explanation:"
+            + f"\n\tCausalArgs: {type(self.args)}"
+            + f"\n\tData: {self.data}"
+            + f"\n\tprediction function: {pred_func}"
+            + f"\n\tResponsibilityMaps: {self.maps}"
+            + f"\n\trun statistics: {run_stats} (5 dp)"
+        )
+
+        if self.explanation is None or self.final_mask is None:
+            return (
+                exp_text
+                + f"\n\texplanation: {self.explanation}"
+                + f"\n\tfinal mask: {self.final_mask}"
+                + f"\n\texplanation confidence: {self.explanation_confidence}"
+            )
+        else:
+            return (
+                exp_text
+                + f"\n\texplanation: {type(self.explanation)} of shape {self.explanation.shape}"
+                + f"\n\tfinal mask: {type(self.final_mask)} of shape {self.final_mask.shape}"
+                + f"\n\texplanation confidence: {self.explanation_confidence:.5f} (5 dp)"
+            )
 
     def extract(self, method: Strategy):
         self.blank()
@@ -103,21 +136,28 @@ class Explanation:
             if len(masks) == self.args.batch_size:
                 preds = self.prediction_func(tt.stack(masks).to(self.data.device))
                 for j, p in enumerate(preds):
-                    if p.classification == self.data.target.classification:  #  type: ignore
+                    if (
+                        p.classification == self.data.target.classification
+                        and p.confidence
+                        >= self.data.target.confidence
+                        * self.args.minimum_confidence_threshold
+                    ):  #  type: ignore
                         logger.info(
                             "found an explanation of %d with %f confidence",
                             p.classification,
                             p.confidence,
                         )
                         self.explanation = masks[j]
+                        self.explanation_confidence = p.confidence
                         self.final_mask = mutant.zero_()
                         for _, loc in ranking[:limit]:
                             self.set_to_true(loc, self.final_mask)
-                        logger.debug("final mask found: %s", self.final_mask)
-                        return
+                        return p.confidence
                 masks = []
 
     def __generate_circle_coordinates(self, centre, radius: int):
+        assert self.data.model_height is not None
+        assert self.data.model_width is not None
         Y, X = tt.meshgrid(
             tt.arange(0, self.data.model_height),
             tt.arange(0, self.data.model_width),
@@ -148,26 +188,35 @@ class Explanation:
         return start_radius, circle_mask, mask
 
     def compute_masked_responsibility(self, mask):
-        masked_responsibility = tt.where(mask, self.target_map, 0)  # type: ignore
+        try:
+            masked_responsibility = tt.where(
+                mask, self.target_map, self.data.mask_value
+            )  # type: ignore
+        except RuntimeError:
+            masked_responsibility = tt.where(
+                mask.permute((2, 0, 1)), self.target_map, self.data.mask_value
+            )  # type: ignore
+        except Exception as e:
+            logger.fatal(e)
+            exit()
+
         logger.debug("using %s", self.args.spotlight_objective_function)
         if self.args.spotlight_objective_function == "mean":
             return tt.mean(masked_responsibility).item()
         if self.args.spotlight_objective_function == "max":
             return tt.max(masked_responsibility).item()
 
-        logger.warn(
+        logger.warning(
             "unable to understand %s, so using mean for search",
             self.args.spotlight_objective_function,
         )
         return tt.mean(masked_responsibility).item()
 
-    def __spatial(
-        self, centre=None, expansion_limit=None
-    ) -> Optional[Tuple[SpatialSearch, float]]:
+    def __spatial(self, centre=None, expansion_limit=None):
         # we don't have a search location to start from, so we try to isolate one
         map = self.target_map
         if centre is None:
-            centre = tt.unravel_index(tt.argmax(map), map.shape)
+            centre = tt.unravel_index(tt.argmax(map), map.shape)  # type: ignore
 
         start_radius, circle, mask = self.__draw_circle(centre)
 
@@ -186,12 +235,16 @@ class Explanation:
                     logger.debug(
                         f"no explanation found after {expansion_limit} expansions"
                     )
-                    return SpatialSearch.NotFound, masked_responsibility
+                    return SpatialSearch.NotFound, masked_responsibility, None
             d = _apply_to_data(mask, self.data, self.data.mask_value)
             p = self.prediction_func(d)[0]
-            if p.classification == self.data.target.classification:  #  type: ignore
-                self.__global(map=tt.where(circle, map, 0))
-                return SpatialSearch.Found, masked_responsibility
+            if (
+                p.classification == self.data.target.classification  # type: ignore
+                and p.confidence
+                >= self.data.target.confidence * self.args.minimum_confidence_threshold  # type: ignore
+            ):
+                conf = self.__global(map=tt.where(circle, map, 0))  # type: ignore
+                return SpatialSearch.Found, masked_responsibility, conf
             start_radius = int(start_radius * (1 + self.args.spatial_radius_eta))
             _, circle, _ = self.__draw_circle(centre, start_radius)
             if self.data.model_order == "first":
@@ -245,8 +298,8 @@ class Explanation:
         if self.data.mode in ("RGB", "L"):
             visualisation.surface_plot(
                 self.args,
-                self.target_map,
-                self.data.target,
+                self.target_map,  # type: ignore
+                self.data.target,  #  type: ignore
                 path=path,
             )
         elif self.data.mode == "voxel":

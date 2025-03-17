@@ -3,6 +3,7 @@
 """generate multiple explanations from a responsibility landscape <pixel_ranking>"""
 
 import os
+import re
 import numpy as np
 
 import torch as tt
@@ -16,25 +17,58 @@ from rex_xai.visualisation import save_multi_explanation, save_image, plot_image
 
 
 class MultiExplanation(Explanation):
-    def __init__(self, map, prediction_func, data, args, run_stats):
-        super().__init__(map, prediction_func, data, args, run_stats)
+    def __init__(self, maps, prediction_func, data, args, run_stats):
+        super().__init__(maps, prediction_func, data, args, run_stats)
         self.explanations = []
+        self.explanation_confidences = []
+
+    def __repr__(self) -> str:
+        pred_func = repr(self.prediction_func)
+        match_func_name = re.search(r"(<function .+) at", pred_func)
+        if match_func_name:
+            pred_func = match_func_name.group(1) + " >"
+
+        run_stats = {k: round(v, 5) for k, v in self.run_stats.items()}
+
+        exp_text = (
+            "MultiExplanation:"
+            + f"\n\tCausalArgs: {type(self.args)}"
+            + f"\n\tData: {self.data}"
+            + f"\n\tprediction function: {pred_func}"
+            + f"\n\tResponsibilityMaps: {self.maps}"
+            + f"\n\trun statistics: {run_stats} (5 dp)"
+        )
+
+        if len(self.explanations) == 0:
+            return (
+                exp_text
+                + f"\n\texplanations: {self.explanations}"
+                + f"\n\texplanation confidences: {self.explanation_confidences}"
+            )
+        else:
+            return (
+                exp_text
+                + f"\n\texplanations: {len(self.explanations)} explanations of {type(self.explanations[0])} and shape {self.explanations[0].shape}"
+                + f"\n\texplanation confidences: {[round(x, ndigits=5) for x in self.explanation_confidences]} (5 dp)"
+            )
 
     def save(self, path, mask=None, multi=None, multi_style=None, clauses=None):
         if multi_style is None:
             multi_style = self.args.multi_style
+        if multi_style == "contrastive":
+            super().save(path, mask=self.final_mask)
         if multi_style == "separate":
             logger.info("saving explanations in multiple different files")
             for i, mask in enumerate(self.explanations):
                 name, ext = os.path.splitext(path)
-                path = f"{name}_{i}{ext}"
-                super().save(path, mask=mask)
+                exp_path = f"{name}_{i}{ext}"
+                super().save(exp_path, mask=mask)
         elif multi_style == "composite":
             logger.info("using composite style to save explanations")
             if clauses is None:
-                clauses = range(0, len(self.explanations))
+                clause = range(0, len(self.explanations))
                 save_multi_explanation(
-                    self.explanations, self.data, self.args, clauses=clauses, path=path
+                    self.explanations, self.data, self.args, clause=clause, path=path
                 )
             else:
                 for clause in clauses:
@@ -44,40 +78,68 @@ class MultiExplanation(Explanation):
                         self.explanations,
                         self.data,
                         self.args,
-                        clauses=clause,
+                        clause=clause,
                         path=new_name,
                     )
 
-    def show(self, path=None):
+    def show(self, path=None, multi_style=None, clauses=None):
+        if multi_style is None:
+            multi_style = self.args.multi_style
         outs = []
+
         for i, mask in enumerate(self.explanations):
             out = save_image(mask, self.data, self.args, path=None)
             outs.append(out)
 
-        plot_image_grid(outs)
+        if multi_style == "separate":
+            for i, mask in enumerate(self.explanations):
+                out = save_image(mask, self.data, self.args, path=None)
+                outs.append(out)
+
+        elif multi_style == "composite":
+            if clauses is None:
+                clause = tuple([i for i in range(len(self.explanations))])
+                out = save_multi_explanation(
+                    self.explanations, self.data, self.args, clause=clause, path=None
+                )
+                outs.append(out)
+            else:
+                for clause in clauses:
+                    out = save_multi_explanation(
+                        self.explanations,
+                        self.data,
+                        self.args,
+                        clause=clause,
+                        path=None,
+                    )
+                    outs.append(out)
+
+        if len(outs) > 1:
+            plot_image_grid(outs)
+        else:
+            return outs[0]
 
     def extract(self, method=None):
-        target_map = self.maps.get(self.data.target.classification)  # type: ignore
-        if target_map is not None:
-            self.maps = tt.from_numpy(target_map).to(self.data.device)
-            self.blank()
-            # we start with the global max explanation
-            self._Explanation__global()
+        self.blank()
+        # we start with the global max explanation
+        logger.info("spotlight number 1 (global max)")
+        conf = self._Explanation__global()  # type: ignore
+        if self.final_mask is not None:
+            self.explanations.append(self.final_mask)
+            self.explanation_confidences.append(conf)
+        self.blank()
+
+        for i in range(0, self.args.spotlights - 1):
+            logger.info("spotlight number %d", i + 2)
+            conf = self.spotlight_search()
             if self.final_mask is not None:
                 self.explanations.append(self.final_mask)
-
+                self.explanation_confidences.append(conf)
             self.blank()
-
-            for i in range(0, self.args.spotlights - 1):
-                logger.info("spotlight number %d", i + 1)
-                self.spotlight_search()
-                if self.final_mask is not None:
-                    self.explanations.append(self.final_mask)
-                self.blank()
-            logger.info(
-                "ReX has found a total of %d explanations via spotlight search",
-                len(self.explanations),
-            )
+        logger.info(
+            "ReX has found a total of %d explanations via spotlight search",
+            len(self.explanations),
+        )
 
     def __dice(self, d1, d2):
         """calculates dice coefficient between two numpy arrays of the same dimensions"""
@@ -127,28 +189,31 @@ class MultiExplanation(Explanation):
         return clauses
 
     def contrastive(self, clauses):
-        logger.warn("not yet implemented")
-        return
-        # for clause in clauses:
-        #     logger.info(f"looking at {clause}")
-        #     for part in powerset(clause, reverse=False):
-        #         logger.debug(f"   examining {part}")
-        #         mask = sum([self.explanations[x] for x in part])
-        #         mask = mask.to(tt.bool)  # type: ignore
-        #         d = tt.where(mask, 0, self.data.data)  # type: ignore
-        #         p = self.prediction_func(d)[0]
-        #         if p.classification != self.data.target.classification:  # type: ignore
-        #             logger.fatal("not yet finished")
-        #             exit()
-        # original = np.array(self.data.input.resize((224, 224)))
-        # mask = mask.detach().cpu().numpy().transpose((1, 2, 0))
-        # img = np.where(mask, 0, original)
-        # img = Image.fromarray(img, "RGB")
-        # img.save(
-        #     f"{self.data.target.classification}_to_{p.classification}.png"
-        # )
-        # return
-        # logger.debug(f"    {p}")
+        for clause in clauses:
+            for subset in powerset(clause, reverse=False):
+                mask = sum([self.explanations[x] for x in subset])
+                mask = mask.to(tt.bool)  # type: ignore
+                sufficient = tt.where(mask, self.data.data, self.data.mask_value)  # type: ignore
+                counterfactual = tt.where(mask, self.data.mask_value, self.data.data)  # type: ignore
+                ps = self.prediction_func(sufficient)[0]
+                pn = self.prediction_func(counterfactual)[0]
+
+                if (
+                    ps.classification == self.data.target.classification  # type: ignore
+                    and pn.classification != self.data.target.classification  # type: ignore
+                ):
+                    logger.info(
+                        "found sufficient and necessary explanation of class %d, %d with confidence %f",
+                        ps.classification,
+                        pn.classification,
+                        pn.confidence,
+                    )
+                    self.final_mask = mask
+                    return subset
+        logger.warn(
+            "ReX is unable to find a counterfactual, so not producing an output. Exiting here..."
+        )
+        exit()
 
     def __random_step_from(self, origin, width, height, step=5):
         c, r = origin
@@ -178,7 +243,7 @@ class MultiExplanation(Explanation):
             self.data.model_width * self.data.model_height,
         )
 
-        return np.unravel_index(origin, (self.data.model_height, self.data.model_width))
+        return np.unravel_index(origin, (self.data.model_height, self.data.model_width))  # type: ignore
 
     def spotlight_search(self, origin=None):
         if origin is None:
@@ -186,16 +251,15 @@ class MultiExplanation(Explanation):
         else:
             centre = origin
 
-        ret, resp = self._Explanation__spatial(  # type: ignore
+        ret, resp, conf = self._Explanation__spatial(  # type: ignore
             centre=centre, expansion_limit=self.args.no_expansions
         )
 
         steps = 0
         while ret == SpatialSearch.NotFound and steps < self.args.max_spotlight_budget:
-            steps += 1
             if self.args.spotlight_objective_function == "none":
                 centre = self.__random_location()
-                ret, resp = self._Explanation__spatial(  # type: ignore
+                ret, resp, conf = self._Explanation__spatial(  # type: ignore
                     centre=centre, expansion_limit=self.args.no_expansions
                 )
             else:
@@ -207,11 +271,13 @@ class MultiExplanation(Explanation):
                         self.data.model_width,
                         step=self.args.spotlight_step,
                     )
-                    ret, new_resp = self._Explanation__spatial(  # type: ignore
+                    ret, new_resp, conf = self._Explanation__spatial(  # type: ignore
                         centre=centre, expansion_limit=self.args.no_expansions
                     )
                     if ret == SpatialSearch.Found:
-                        return
-                ret, resp = self._Explanation__spatial(  # type: ignore
+                        return conf
+                ret, resp, conf = self._Explanation__spatial(  # type: ignore
                     centre=centre, expansion_limit=self.args.no_expansions
                 )
+            steps += 1
+        return conf

@@ -1,7 +1,7 @@
 import copy
 
 import pytest
-from rex_xai._utils import Queue, ReXTomlError, Strategy
+from rex_xai._utils import Queue, Strategy
 from rex_xai.config import CausalArgs, process_config_dict, read_config_file
 from rex_xai.distributions import Distribution
 
@@ -86,10 +86,12 @@ def test_process_config_dict_empty():
 
 def test_process_config_dict_invalid_arg(caplog):
     args = CausalArgs()
-    config_dict = {'explanation': {'chunk': 10 } }
+    config_dict = {"explanation": {"chunk": 10}}
 
     process_config_dict(config_dict, args)
-    assert caplog.records[0].message == "Invalid or misplaced parameter 'chunk', skipping!"
+    assert (
+        caplog.records[0].message == "Invalid or misplaced parameter 'chunk', skipping!"
+    )
 
 
 def test_process_config_dict_invalid_distribution(caplog):
@@ -101,7 +103,10 @@ def test_process_config_dict_invalid_distribution(caplog):
     process_config_dict(config_dict, args)
 
     assert args.distribution == Distribution.Uniform
-    assert caplog.records[0].message == "Invalid distribution 'an-invalid-distribution', reverting to default value Distribution.Uniform"
+    assert (
+        caplog.records[0].message
+        == "Invalid distribution 'an-invalid-distribution', reverting to default value Distribution.Uniform"
+    )
 
 
 def test_process_config_dict_uniform_distribution():
@@ -157,7 +162,10 @@ def test_process_config_dict_queue_style_invalid(caplog):
 
     process_config_dict(config_dict, args)
     assert args.queue_style == Queue.Area
-    assert caplog.records[0].message == "Invalid queue style 'an-invalid-queue-style', reverting to default value Queue.Area"
+    assert (
+        caplog.records[0].message
+        == "Invalid queue style 'an-invalid-queue-style', reverting to default value Queue.Area"
+    )
 
 
 def test_process_config_dict_strategy():
@@ -173,21 +181,8 @@ def test_process_config_dict_strategy_invalid(caplog):
     config_dict = {"explanation": {"multi": {"strategy": "an-invalid-strategy"}}}
 
     process_config_dict(config_dict, args)
-    assert args.strategy == Strategy.Spatial
-    assert caplog.records[0].message == "Invalid strategy 'an-invalid-strategy', reverting to default value Strategy.Spatial"
-
-
-def test_process_config_dict_blend_invalid():
-    args = CausalArgs()
-    config_dict = {"causal": {"distribution": {"blend": 20}}}
-
-    with pytest.raises(ReXTomlError):
-        process_config_dict(config_dict, args)
-
-
-def test_process_config_dict_permitted_overlap_invalid():
-    args = CausalArgs()
-    config_dict = {"explanation": {"multi": {"permitted_overlap": -5}}}
-
-    with pytest.raises(ReXTomlError):
-        process_config_dict(config_dict, args)
+    assert (
+            caplog.records[0].message
+            == "Invalid strategy 'an-invalid-strategy', reverting to default value Strategy.Global"
+        )
+    assert args.strategy == Strategy.Global

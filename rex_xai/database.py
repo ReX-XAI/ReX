@@ -13,8 +13,8 @@ import numpy as np
 
 from rex_xai.logger import logger
 from rex_xai.config import CausalArgs, Strategy
-from rex_xai.prediction import Prediction
 from rex_xai.extraction import Explanation
+from rex_xai.multi_explanation import MultiExplanation
 
 
 def _dataframe(db, table):
@@ -25,36 +25,32 @@ def _to_numpy(buffer, shape, dtype):
     return np.frombuffer(zlib.decompress(buffer), dtype=dtype).reshape(shape)
 
 
-def db_to_pandas(db, dtype=np.float32, table="rex"):
+def db_to_pandas(db, dtype=np.float32, table="rex", process=True):
     """for interactive use"""
     df = _dataframe(db, table=table)
 
-    df["responsibility"] = df.apply(
-        lambda row: _to_numpy(
-            row["responsibility"], literal_eval(row["responsibility_shape"]), dtype
-        ),
-        axis=1,
-    )
-    #
-    df["explanation"] = df.apply(
-        lambda row: _to_numpy(
-            row["explanation"], literal_eval(row["explanation_shape"]), np.bool_
-        ),
-        axis=1,
-    )
+    if process:
+        df["responsibility"] = df.apply(
+            lambda row: _to_numpy(
+                row["responsibility"], literal_eval(row["responsibility_shape"]), dtype
+            ),
+            axis=1,
+        )
+        #
+        df["explanation"] = df.apply(
+            lambda row: _to_numpy(
+                row["explanation"], literal_eval(row["explanation_shape"]), np.bool_
+            ),
+            axis=1,
+        )
 
     return df
 
 
 def update_database(
     db,
-    target: Prediction,
-    explanation: Explanation,
-    time_taken,
-    total_passing,
-    total_failing,
-    max_depth_reached,
-    avg_box_size,
+    explanation: Explanation | MultiExplanation,  # type: ignore
+    time_taken=None,
     multi=False,
 ):
     target_map = explanation.target_map
@@ -62,15 +58,21 @@ def update_database(
     if isinstance(target_map, tt.Tensor):
         target_map = target_map.detach().cpu().numpy()
 
+    target = explanation.data.target
+    if target is None:
+        logger.warning("unable to update database as target is None")
+        return
     classification = int(target.classification)  # type: ignore
 
     if not multi:
         final_mask = explanation.final_mask
         if explanation.final_mask is None:
-            logger.warn("unable to update database as explanation is empty")
+            logger.warning("unable to update database as explanation is empty")
             return
         if isinstance(final_mask, tt.Tensor):
             final_mask = final_mask.detach().cpu().numpy()
+
+        explanation_confidence = explanation.explanation_confidence
 
         add_to_database(
             db,
@@ -79,32 +81,40 @@ def update_database(
             target.confidence,
             target_map,
             final_mask,
+            explanation_confidence,
             time_taken,
-            total_passing,
-            total_failing,
-            max_depth_reached,
-            avg_box_size,
+            explanation.run_stats["total_passing"],
+            explanation.run_stats["total_failing"],
+            explanation.run_stats["max_depth_reached"],
+            explanation.run_stats["avg_box_size"],
         )
 
     else:
-        for c, final_mask in enumerate(explanation.explanations):
-            if isinstance(final_mask, tt.Tensor):
-                final_mask = final_mask.detach().cpu().numpy()
-            add_to_database(
-                db,
-                explanation.args,
-                classification,
-                target.confidence,
-                target_map,
-                final_mask,
-                time_taken,
-                total_passing,
-                total_failing,
-                max_depth_reached,
-                avg_box_size,
-                multi=multi,
-                multi_no=c,
+        if type(explanation) is not MultiExplanation:
+            logger.warning(
+                "unable to update database, multi=True is only valid for MultiExplanation objects"
             )
+            return
+        else:
+            for c, final_mask in enumerate(explanation.explanations):
+                if isinstance(final_mask, tt.Tensor):
+                    final_mask = final_mask.detach().cpu().numpy()
+                add_to_database(
+                    db,
+                    explanation.args,
+                    classification,
+                    target.confidence,
+                    target_map,
+                    final_mask,
+                    explanation.explanation_confidences[c],
+                    time_taken,
+                    explanation.run_stats["total_passing"],
+                    explanation.run_stats["total_failing"],
+                    explanation.run_stats["max_depth_reached"],
+                    explanation.run_stats["avg_box_size"],
+                    multi=multi,
+                    multi_no=c,
+                )
 
 
 def add_to_database(
@@ -114,6 +124,7 @@ def add_to_database(
     confidence,
     responsibility,
     explanation,
+    explanation_confidence,
     time_taken,
     passing,
     failing,
@@ -139,6 +150,7 @@ def add_to_database(
         responsibility_shape,
         explanation,
         explanation_shape,
+        explanation_confidence,
         time_taken,
         depth_reached=depth_reached,
         avg_box_size=avg_box_size,
@@ -200,6 +212,7 @@ class DataBaseEntry(Base):
     failing = Column(Integer)
     explanation = Column(NumpyType)
     explanation_shape = Column(Unicode)
+    explanation_confidence = Column(Float)
     multi = Column(Boolean)
     multi_no = Column(Integer)
 
@@ -234,6 +247,7 @@ class DataBaseEntry(Base):
         responsibility_shape,
         explanation,
         explanation_shape,
+        explanation_confidence,
         time_taken,
         passing=None,
         failing=None,
@@ -264,6 +278,7 @@ class DataBaseEntry(Base):
         self.responsibility_shape = str(responsibility_shape)
         self.explanation = explanation
         self.explanation_shape = str(explanation_shape)
+        self.explanation_confidence = explanation_confidence
         self.time = time_taken
         self.total_work = total_work
         self.passing = passing
