@@ -48,6 +48,7 @@ def test_voxel_plot(data_3d, resp_map_3d):
     print(data_3d)
     # Create a cube in data
     voxel_plot(args, resp_map_3d, data_3d, path="test.png")
-    assert os.path.exists("test.png")
-    assert os.path.getsize("test.png") > 0
-    os.remove("test.png")
+    for i in ["x", "y", "z"]:
+        assert os.path.exists(f"test_{i}_slice.png")
+        assert os.path.getsize(f"test_{i}_slice.png") > 0
+        os.remove(f"test_{i}_slice.png")

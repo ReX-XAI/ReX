@@ -381,6 +381,9 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
     colourscales = list(mpl.colormaps.keys())
 
     app = Dash(__name__)
+    x_slice = go.Figure()
+    y_slice = go.Figure()
+    z_slice = go.Figure()
 
     app.layout = html.Div([
         html.Div([
@@ -438,7 +441,6 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
     )
     def update_slices(x_idx, y_idx, z_idx, opacity, heatmap_colours=args.heatmap_colours):
         # X-Slice (YZ plane)
-        x_slice = go.Figure()
         x_slice.add_trace(
             go.Heatmap(z=data_m[x_idx, :, :], colorscale="gray_r", name="Data", zmin=0, zmax=1, showscale=False))
         x_slice.add_trace(
@@ -446,7 +448,6 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
         x_slice.update_layout(title=f"YZ Plane at {x_idx}")
 
         # Y-Slice (XZ plane)
-        y_slice = go.Figure()
         y_slice.add_trace(
             go.Heatmap(z=data_m[:, y_idx, :], colorscale="gray_r", name="Data", zmin=0, zmax=1, showscale=False))
         y_slice.add_trace(
@@ -454,7 +455,6 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
         y_slice.update_layout(title=f"XZ Plane at {y_idx}")
 
         # Z-Slice (XY plane)
-        z_slice = go.Figure()
         z_slice.add_trace(
             go.Heatmap(z=data_m[:, :, z_idx], colorscale="gray_r", name="Data", zmin=0, zmax=1, showscale=False))
         z_slice.add_trace(
@@ -466,7 +466,12 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
     if path is None:
         app.run_server(debug=False, use_reloader=False)
     else:
-        logger.error("Saving 3D voxel plot is not supported yet as it is interactive.")
+        # Create a sub figure for each slice and save it for now
+        path = path.split(".")[0]
+        x_slice.write_image(f"{path}_x_slice.png")
+        y_slice.write_image(f"{path}_y_slice.png")
+        z_slice.write_image(f"{path}_z_slice.png")
+
 
 
 def __transpose_mask(explanation, mode, transposed):
