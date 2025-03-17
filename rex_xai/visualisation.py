@@ -349,7 +349,10 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
         logger.error(f"Plotly failed to import caused by {e}.")
         return
 
-    data_m: np.ndarray = data.data
+    if len(data.data.shape) == 4:
+        data_m = data.data[0, :, :, :]
+    else:
+        data_m = data.data
     if isinstance(resp_map, tt.Tensor):
         resp_map = resp_map.squeeze().detach().cpu().numpy()
 
