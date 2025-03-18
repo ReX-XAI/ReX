@@ -461,7 +461,7 @@ def initialise_tree(
     d_lim=None,
 ) -> Box:
     """initialise box tree with root node, the whole image"""
-    if d_lim is not None:
+    if d_lim is not None and d_start is None:
         d_start = 0
     return Box(
         r_start,
