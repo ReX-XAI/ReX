@@ -116,21 +116,13 @@ def causal_explanation(
         np.random.seed(args.seed + process)
         tt.manual_seed(args.seed + process)
 
-    if args.mode == "voxel":
-        search_tree = initialise_tree(
-            data.model_height,
-            data.model_width,
-            args.distribution,
-            args.distribution_args,
-            d_lim=data.model_depth,
-        )
-    else:
-        search_tree = initialise_tree(
-            data.model_height,
-            data.model_width,
-            args.distribution,
-            args.distribution_args,
-        )
+    search_tree = initialise_tree(
+        data.model_height,
+        data.model_width,
+        args.distribution,
+        args.distribution_args,
+        d_lim=data.model_depth,
+    )
 
     total_work = 0
     total_passing = 0
