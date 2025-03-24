@@ -137,12 +137,22 @@ def set_boolean_mask_value(
         if mode in ("spectral", "tabular"):
             h = coords.col_start
             w = coords.col_stop
+        elif mode == "voxel":
+            h = slice(coords.row_start, coords.row_stop)
+            w = slice(coords.col_start, coords.col_stop)
+            d = slice(coords.depth_start, coords.depth_stop)
         else:
             h = slice(coords.row_start, coords.row_stop)
             w = slice(coords.col_start, coords.col_stop)
     else:
-        h = coords[0]
-        w = coords[1]
+        if mode == "voxel":
+            h = coords[0]
+            w = coords[1]
+            d = coords[2]
+        else:
+            h = coords[0]
+            w = coords[1]
+
     # three channels
     if mode == "RGB":
         # (C, H, W)
@@ -165,7 +175,9 @@ def set_boolean_mask_value(
     # elif mode == "tabular":
 
     elif mode == "voxel":
-        logger.warning("not yet implemented")
+        tensor[h, w, d] = val
+    else:
+        raise ReXError("mode not recognised")
 
 
 def ff(obj, fmt):

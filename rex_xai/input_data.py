@@ -5,7 +5,7 @@ import torch as tt
 
 from enum import Enum
 
-from rex_xai.occlusions import spectral_occlusion
+from rex_xai.occlusions import spectral_occlusion, context_occlusion
 from rex_xai.prediction import Prediction
 from rex_xai.logger import logger
 from rex_xai._utils import ReXDataError
@@ -14,10 +14,13 @@ Setup = Enum("Setup", ["ONNXMPS", "ONNX", "PYTORCH"])
 
 
 def _guess_mode(input):
-    try:
+    if hasattr(input, "mode"):
         return input.mode
-    except Exception:
-        return "spectral"
+    if hasattr(input, "shape"):
+        if len(input.shape) == 4:
+            return "voxel"
+        else:
+            return "spectral"
 
 
 class Data:
@@ -33,12 +36,15 @@ class Data:
             self.mode = _guess_mode(input)
 
         self.model_shape = model_shape
-        height, width, channels, order = self.__get_shape()
+        height, width, channels, order, depth = self.__get_shape()
         self.model_height: Optional[int] = height
         self.model_width: Optional[int] = width
-        self.model_channels: Optional[int] = channels
+        self.model_depth: Optional[int] = depth
+        self.model_channels: Optional[int] = channels if channels is not None else 1
         self.model_order = order
-        # self.mask_value = None
+        self.mask_value = None
+        self.background = None
+        self.context = None
 
         if process:
             # RGB model but greyscale input so we convert greyscale to pseudo-RGB
@@ -50,6 +56,8 @@ class Data:
             elif self.mode in ("tabular", "spectral"):
                 self.data = self.input
                 self.match_data_to_model_shape()
+            elif self.mode == "voxel":
+                self.data = self.input
             else:
                 raise NotImplementedError
 
@@ -177,22 +185,28 @@ class Data:
             self.data = self._normalise(means, stds, astype, norm)
 
     def __get_shape(self):
+        """returns height, width, channels, order, depth for the model"""
         if self.mode == "spectral":
-            # an array of the form (h, w), so no channel info or order
+            # an array of the form (h, w), so no channel info or order or depth
             if len(self.model_shape) == 2:
-                return self.model_shape[0], self.model_shape[1], 1, None
-            # an array of the form (batch, h, w), so no channel info or order
+                return self.model_shape[0], self.model_shape[1], 1, None, None
+            # an array of the form (batch, h, w), so no channel info or order or depth
             if len(self.model_shape) == 3:
-                return self.model_shape[1], self.model_shape[2], 1, None
+                return self.model_shape[1], self.model_shape[2], 1, None, None
         if self.mode in ("RGB", "RGBA"):
             if len(self.model_shape) == 4:
                 _, a, b, c = self.model_shape
                 if a in (1, 3, 4):
-                    return b, c, a, "first"
+                    return b, c, a, "first", None
                 else:
-                    return a, b, c, "last"
+                    return a, b, c, "last", None
         if self.mode == "voxel":
-            pass
+            if len(self.model_shape) == 4:
+                batch, w, h, d = self.model_shape  # If batch is present
+                return w, h, None, None, d
+            else:
+                w, h, d = self.model_shape
+                return w, h, None, None, d
 
         raise ReXDataError(
             f"Incompatible 'mode' {self.mode}  and 'model_shape' ({self.model_shape}), cannot get valid shape of Data object so returning None"
@@ -231,6 +245,9 @@ class Data:
                 self.mask_value = lambda m, d: spectral_occlusion(
                     m, d, device=self.device
                 )
+            case "context":
+                self.mask_value = lambda m, d: context_occlusion(m, d, self.context)
+                # TODO: Add args for noise and setting the context as currently only available through custom script
             case _:
                 raise ValueError(
                     f"Invalid mask value {m}. Should be an integer, float, or one of 'min', 'mean', 'spectral'"

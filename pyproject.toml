@@ -47,6 +47,18 @@ cached-path = "^1.6.3"
 sphinx-argparse = "^0.5.2"
 myst-nb = "^1.1.2"
 jupytext = "^1.16.7"
+plotly = "^5.4.0"
+dash = "^2.1.0"
+kaleido = "0.2.1"
+
+[tool.poetry.group.3D]
+optional = true
+
+[tool.poetry.group.3D.dependencies]
+nibabel = "^5.2.1"
+kaleido = "0.2.1"
+plotly = "^5.4.0"
+dash = "^2.1.0"
 
 [tool.pyright]
 include = ["rex_xai"]
