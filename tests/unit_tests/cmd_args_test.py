@@ -1,4 +1,6 @@
 import pytest
+from types import ModuleType
+
 from rex_xai._utils import Strategy
 from rex_xai.config import CausalArgs, shared_args, cmdargs_parser, process_cmd_args
 
@@ -24,7 +26,7 @@ from rex_xai.config import CausalArgs, shared_args, cmdargs_parser, process_cmd_
 
 @pytest.fixture
 def non_default_cmd_args():
-    return ['filename.jpg',
+    args_list = ['filename.jpg',
         '--output', 'output_path.jpg',
         '--config', 'path/to/rex.toml',
         '--processed',
@@ -40,36 +42,35 @@ def non_default_cmd_args():
         '--analyze',
         '--mode', 'RGB',
     ]
+    parser = cmdargs_parser()
+    cmd_args = parser.parse_args(args_list)
+
+    return cmd_args
 
 
 def test_process_cmd_args(non_default_cmd_args):
     args = CausalArgs()
-    parser = cmdargs_parser()
-    cmd_args = parser.parse_args(non_default_cmd_args)
-    process_cmd_args(cmd_args, args)
+    process_cmd_args(non_default_cmd_args, args)
 
-    #assert args.script == cmd_args.script
-    assert args.path == cmd_args.filename
+    assert isinstance(args.script, ModuleType)
+    assert args.path == non_default_cmd_args.filename
     assert args.strategy == Strategy.MultiSpotlight
-    assert args.iters == int(cmd_args.iters)
+    assert args.iters == int(non_default_cmd_args.iters)
     assert args.analyze 
-    assert args.spotlights == int(cmd_args.multi)
+    assert args.spotlights == int(non_default_cmd_args.multi)
 
     
 def test_process_shared_args(non_default_cmd_args):
     args = CausalArgs()
-    parser = cmdargs_parser()
-    cmd_args = parser.parse_args(non_default_cmd_args)
-    shared_args(cmd_args, args)
+    shared_args(non_default_cmd_args, args)
 
-    
-    assert args.config_location == cmd_args.config
-    assert args.model == cmd_args.model
-    assert args.surface == cmd_args.surface
-    assert args.heatmap == cmd_args.heatmap
-    assert args.output == cmd_args.output
-    assert args.verbosity == cmd_args.verbose
-    assert args.db == cmd_args.database
-    assert args.mode == cmd_args.mode
-    assert args.processed == cmd_args.processed
+    assert args.config_location == non_default_cmd_args.config
+    assert args.model == non_default_cmd_args.model
+    assert args.surface == non_default_cmd_args.surface
+    assert args.heatmap == non_default_cmd_args.heatmap
+    assert args.output == non_default_cmd_args.output
+    assert args.verbosity == non_default_cmd_args.verbose
+    assert args.db == non_default_cmd_args.database
+    assert args.mode == non_default_cmd_args.mode
+    assert args.processed == non_default_cmd_args.processed
 
