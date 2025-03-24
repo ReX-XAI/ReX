@@ -121,6 +121,7 @@ def causal_explanation(
         data.model_width,
         args.distribution,
         args.distribution_args,
+        d_lim=data.model_depth,
     )
 
     total_work = 0
@@ -178,6 +179,11 @@ def causal_explanation(
 
                 work_done = len(mutants)
 
+                def apply_mask(m):
+                    if args.mask_value == "context":
+                        return _apply_to_data(m.mask, data, data.mask_value)
+                    return tt.where(m.mask, data.data, data.mask_value)
+
                 if data.mode in ("spectral", "tabular"):
                     preds: List[Prediction] = [
                         prediction_func(_apply_to_data(m.mask, data, data.mask_value))[
@@ -190,7 +196,7 @@ def causal_explanation(
                     if args.batch_size == 1:
                         preds = [
                             prediction_func(
-                                tt.where(m.mask, data.data, data.mask_value),  #  type: ignore
+                                apply_mask(m),  #  type: ignore
                                 data.target,
                                 binary_threshold=args.binary_threshold,
                             )[0]
@@ -199,7 +205,7 @@ def causal_explanation(
                     else:
                         tensors = tt.stack(
                             [
-                                tt.where(m.mask, data.data, data.mask_value)  #  type: ignore
+                                apply_mask(m)  #  type: ignore
                                 for m in mutants
                             ]
                         )  # type: ignore

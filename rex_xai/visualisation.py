@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from scipy.ndimage import center_of_mass
 from skimage.segmentation import slic
+from torch import Tensor
 
 from rex_xai.prediction import Prediction
 from rex_xai.config import CausalArgs
@@ -305,6 +306,174 @@ def overlay_grid(img, step_count=10):
     return img
 
 
+def remove_background(data: Data, resp_map: np.ndarray) -> np.ndarray:
+    """Remove the background from the responsibility map if set in the Data object"""
+    if data.mode == "voxel":
+        if len(data.data.shape) == 4:
+            data_m = data.data[0, :, :, :]
+        else:
+            data_m = data.data
+    else:
+        data_m = data.data # need to check for other modes
+    # Set background to minimum value in the responsibility map if set in the Data object
+    if data.background is not None and data.background is int or float:
+        background = np.where(
+            data_m == data.background
+        )  # Threshold for background voxels
+        resp_map[background] = np.min(resp_map)
+    elif data.background is not None and data.background is tuple:
+        # Background is a range of values so (x , y) where x is the lower bound and y is the upper bound
+        background = np.where(
+            (data_m >= data.background[0]) & (data_m <= data.background[1])
+        )
+        resp_map[background] = np.min(resp_map)
+    elif data.background is not None:
+        logger.warn(
+            "Background is not set correctly, please check the value. "
+            "Background value must be an int, float or tuple defining the range of values for the background."
+        )
+
+    return resp_map
+
+
+def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
+    """
+    Plot a 3D voxel plot of the responsibility map using plotly.
+    - Assumes the data is greyscale
+    Produces an interactive 3D plot of the data and the responsibility map.
+    """
+    try:
+        import plotly.graph_objs as go
+        from dash import Dash, dcc, html, Input, Output
+    except ImportError as e:
+        logger.error(f"Plotly failed to import caused by {e}.")
+        return
+
+    if len(data.data.shape) == 4:
+        data_m = data.data[0, :, :, :]
+    else:
+        data_m = data.data
+    if isinstance(resp_map, tt.Tensor):
+        resp_map = resp_map.squeeze().detach().cpu().numpy()
+
+    if isinstance(data_m, tt.Tensor):
+        data_m = data_m.squeeze().detach().cpu().numpy()
+        tt.tensor(data_m, dtype=tt.float32)
+
+    maps: np.ndarray = resp_map
+    resp_map = remove_background(data, maps)
+
+    # Normalize the data
+    data_m = (data_m - np.min(data_m)) / (np.max(data_m) - np.min(data_m))
+    resp_map = (resp_map - np.min(resp_map)) / (np.max(resp_map) - np.min(resp_map))
+
+    # Check if both data and responsibility map have the same range of values
+    assert np.min(data_m) == np.min(resp_map) and np.max(data_m) == np.max(resp_map), (
+        "Data and Responsibility map must have the same range of values!"
+    )
+
+    assert data_m.shape == maps.shape, (
+        "Data and Responsibility map must have the same shape!"
+    )
+
+    x_max, y_max, z_max = data_m.shape
+
+    colourscales = list(mpl.colormaps.keys())
+
+    app = Dash(__name__)
+    x_slice = go.Figure()
+    y_slice = go.Figure()
+    z_slice = go.Figure()
+
+    app.layout = html.Div([
+        html.Div([
+            # X Slice
+            html.Div([
+                html.Label("X Slice", style={"font-weight": "bold", "margin-bottom": "10px"}),
+                dcc.Graph(id="x-slice", style={"width": "100%", "height": "auto", "max-width": "400px"}),
+                dcc.Slider(0, x_max - 1, 1, value=x_max // 2, id="x-slider",
+                           marks={0: "0", x_max - 1: str(x_max - 1)},
+                           vertical=True, tooltip={"always_visible": True}),
+            ], style={"display": "flex", "align-items": "center", "gap": "20px", "flex": "1"}),
+
+            # Y Slice
+            html.Div([
+                html.Label("Y Slice", style={"font-weight": "bold", "margin-bottom": "10px"}),
+                dcc.Graph(id="y-slice", style={"width": "100%", "height": "auto", "max-width": "400px"}),
+                dcc.Slider(0, y_max - 1, 1, value=y_max // 2, id="y-slider",
+                           marks={0: "0", y_max - 1: str(y_max - 1)},
+                           vertical=True, tooltip={"always_visible": True}),
+            ], style={"display": "flex", "align-items": "center", "gap": "20px", "flex": "1"}),
+
+        ], style={"display": "flex", "justify-content": "center", "gap": "40px"}),
+
+        # Z Slice
+        html.Div([
+            html.Label("Z Slice", style={"font-weight": "bold", "margin-bottom": "10px"}),
+            dcc.Graph(id="z-slice", style={"width": "100%", "height": "auto", "max-width": "400px"}),
+            dcc.Slider(0, z_max - 1, 1, value=z_max // 2, id="z-slider",
+                       marks={0: "0", z_max - 1: str(z_max - 1)},
+                       vertical=True, tooltip={"always_visible": True}),
+        ], style={"display": "flex", "align-items": "center", "gap": "20px", "margin-top": "40px"}),
+
+        # Opacity Slider
+        html.Div([
+            html.Label("Opacity"),
+            dcc.Slider(0, 1, 0.1, value=0.5, id="opacity-slider",
+                       tooltip={"always_visible": True}, marks={0: "0", 1: "1"},
+                       vertical=True),
+            html.Label("Heatmap Colours"),
+            dcc.Dropdown(id="heatmap-colours", options=colourscales, value=args.heatmap_colours)
+        ], style={"position": "absolute", "top": "10%", "right": "10%", "width": "100px", "outline": "1px solid grey"}),
+
+    ], style={"width": "3000x", "height": "20px", "margin": "auto", "padding": "20px", "display": "flex",
+              "flex-direction": "column", "gap": "40px", "outline": "1px solid grey"})
+
+    @app.callback(
+        Output("x-slice", "figure"),
+        Output("y-slice", "figure"),
+        Output("z-slice", "figure"),
+        Input("x-slider", "value"),
+        Input("y-slider", "value"),
+        Input("z-slider", "value"),
+        Input("opacity-slider", "value"),
+        Input("heatmap-colours", "value")
+    )
+    def update_slices(x_idx, y_idx, z_idx, opacity, heatmap_colours=args.heatmap_colours):
+        # X-Slice (YZ plane)
+        x_slice.add_trace(
+            go.Heatmap(z=data_m[x_idx, :, :], colorscale="gray_r", name="Data", zmin=0, zmax=1, showscale=False))
+        x_slice.add_trace(
+            go.Heatmap(z=resp_map[x_idx, :, :], colorscale=heatmap_colours, opacity=opacity, name="Resp Map", zmin=0, zmax=1))
+        x_slice.update_layout(title=f"YZ Plane at {x_idx}")
+
+        # Y-Slice (XZ plane)
+        y_slice.add_trace(
+            go.Heatmap(z=data_m[:, y_idx, :], colorscale="gray_r", name="Data", zmin=0, zmax=1, showscale=False))
+        y_slice.add_trace(
+            go.Heatmap(z=resp_map[:, y_idx, :], colorscale=heatmap_colours, opacity=opacity, name="Resp Map", zmin=0, zmax=1))
+        y_slice.update_layout(title=f"XZ Plane at {y_idx}")
+
+        # Z-Slice (XY plane)
+        z_slice.add_trace(
+            go.Heatmap(z=data_m[:, :, z_idx], colorscale="gray_r", name="Data", zmin=0, zmax=1, showscale=False))
+        z_slice.add_trace(
+            go.Heatmap(z=resp_map[:, :, z_idx], colorscale=heatmap_colours, opacity=opacity, name="Resp Map", zmin=0, zmax=1))
+        z_slice.update_layout(title=f"XY Plane at {z_idx}")
+
+        return x_slice, y_slice, z_slice
+
+    if path is None:
+        app.run_server(debug=False, use_reloader=False)
+    else:
+        # Create a sub figure for each slice and save it for now
+        path = path.split(".")[0]
+        x_slice.write_image(f"{path}_x_slice.png")
+        y_slice.write_image(f"{path}_y_slice.png")
+        z_slice.write_image(f"{path}_z_slice.png")
+
+
+
 def __transpose_mask(explanation, mode, transposed):
     mask = None
     if transposed:
@@ -457,6 +626,35 @@ def save_image(explanation, data: Data, args: CausalArgs, path=None):
                 out.save(path)
 
             return out
+    elif data.mode == "voxel":
+        data_m: np.ndarray = data.data
+        if isinstance(explanation, tt.Tensor):
+            explanation = explanation.squeeze().detach().cpu().numpy()
+        else:
+            explanation = explanation.squeeze()
+        data_m = data_m[0, :, :, :]  # Remove batch dimension
+
+        explanation = remove_background(data, explanation)
+
+        num_slices = 10
+        fig, axes = plt.subplots(3, num_slices, figsize=(15, 6))
+
+        for axis, index in enumerate(explanation.shape):
+            slice_indices = np.linspace(0, axis - 1, num_slices, dtype=int)
+            for i, slice_index in enumerate(slice_indices):
+                ax = axes[axis, i]
+                data_slice = np.take(data_m, slice_index, axis=axis)
+                resp_slice = np.take(explanation, slice_index, axis=axis)
+                ax.imshow(data_slice, cmap="gray")
+                ax.imshow(resp_slice, cmap=args.heatmap_colours, alpha=0.4)
+                ax.axis("off")
+
+        plt.tight_layout()
+
+        if args.output is not None:
+            plt.savefig(args.output)
+        else:
+            plt.show()
 
 
 def plot_image_grid(images, ncols=None):
