@@ -79,3 +79,14 @@ def test_quiet_overrides_verbose():
     shared_args(cmd_args, args)
 
     assert args.verbosity == 0
+
+
+def test_contrastive():
+    cmd_args_list = ["filename.jpg", "--contrastive", "5"]
+    parser = cmdargs_parser()
+    cmd_args = parser.parse_args(cmd_args_list)
+    args = CausalArgs()
+    process_cmd_args(cmd_args, args)
+    
+    assert args.strategy == Strategy.Contrastive
+    assert args.spotlights == int(cmd_args.contrastive)
