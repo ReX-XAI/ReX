@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "rex-xai"
-version = "0.2.0"
+version = "0.3.0"
 description = "causal Responsibility-based eXplanations of black-box-classifiers"
 authors = ["David Kelly, <dkellino@gmail.com>"]
 readme = "README.md"
