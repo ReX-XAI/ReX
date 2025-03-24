@@ -4,9 +4,6 @@ import pytest
 from rex_xai._utils import Strategy
 from rex_xai.config import CausalArgs, cmdargs_parser, process_cmd_args, shared_args
 
-# contrastive (int)
-# spectral (bool)
-
 
 @pytest.fixture
 def non_default_cmd_args():
@@ -87,6 +84,16 @@ def test_contrastive():
     cmd_args = parser.parse_args(cmd_args_list)
     args = CausalArgs()
     process_cmd_args(cmd_args, args)
-    
+
     assert args.strategy == Strategy.Contrastive
     assert args.spotlights == int(cmd_args.contrastive)
+
+
+def test_spectral():
+    cmd_args_list = ["filename.jpg", "--spectral"]
+    parser = cmdargs_parser()
+    cmd_args = parser.parse_args(cmd_args_list)
+    args = CausalArgs()
+    shared_args(cmd_args, args)
+
+    assert args.mode == "spectral"
