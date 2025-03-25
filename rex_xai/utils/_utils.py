@@ -8,7 +8,7 @@ from numpy.typing import NDArray
 import torch as tt
 import numpy as np
 from skimage.segmentation import mark_boundaries
-from rex_xai.logger import logger
+from rex_xai.utils.logger import logger
 from rex_xai.box import Box
 
 Strategy = Enum("Strategy", ["Global", "Spatial", "MultiSpotlight", "Contrastive"])

@@ -1,5 +1,5 @@
 import pytest
-from rex_xai._utils import ReXDataError
+from rex_xai.utils._utils import ReXDataError
 from rex_xai.rex import (
     load_and_preprocess_data,
     try_preprocess,

@@ -1,5 +1,5 @@
 import pytest
-from rex_xai._utils import ReXTomlError
+from rex_xai.utils._utils import ReXTomlError
 from rex_xai.config import CausalArgs, validate_args
 
 

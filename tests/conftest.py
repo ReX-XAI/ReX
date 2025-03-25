@@ -2,7 +2,7 @@ import numpy as np
 import torch as tt
 import pytest
 from cached_path import cached_path
-from rex_xai._utils import get_device
+from rex_xai.utils._utils import get_device
 from rex_xai.box import initialise_tree
 from rex_xai.config import CausalArgs, process_custom_script, Strategy
 from rex_xai.distributions import Distribution

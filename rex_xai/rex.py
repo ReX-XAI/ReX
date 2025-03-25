@@ -21,12 +21,12 @@ from rex_xai.evaluation import Evaluation
 from rex_xai.multi_explanation import MultiExplanation
 from rex_xai.explanation import Explanation
 from rex_xai.input_data import Data
-from rex_xai.logger import logger
+from rex_xai.utils.logger import logger
 from rex_xai.onnx import get_prediction_function
 from rex_xai.resp_maps import ResponsibilityMaps
 from rex_xai.responsibility import causal_explanation
 from rex_xai.prediction import Prediction
-from rex_xai._utils import Strategy, ReXScriptError
+from rex_xai.utils._utils import Strategy, ReXScriptError
 
 
 def try_preprocess(args: CausalArgs, model_shape: Tuple[int], device: tt.device):

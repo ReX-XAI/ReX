@@ -1,6 +1,6 @@
 import pytest
 from rex_xai.rex import _explanation, analyze
-from rex_xai._utils import Strategy
+from rex_xai.utils._utils import Strategy
 
 @pytest.mark.parametrize("batch_size", [1, 64])
 def test__explanation_snapshot(

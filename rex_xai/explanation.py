@@ -5,10 +5,10 @@ from typing import Optional
 import torch as tt
 
 from rex_xai import visualisation
-from rex_xai._utils import SpatialSearch, get_map_locations, set_boolean_mask_value
+from rex_xai.utils._utils import SpatialSearch, get_map_locations, set_boolean_mask_value
 from rex_xai.config import CausalArgs, Strategy
 from rex_xai.input_data import Data
-from rex_xai.logger import logger
+from rex_xai.utils.logger import logger
 from rex_xai.mutant import _apply_to_data
 from rex_xai.resp_maps import ResponsibilityMaps
 
