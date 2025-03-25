@@ -1,26 +1,44 @@
-[tool.poetry]
+[project]
 name = "rex-xai"
 version = "0.3.0"
 description = "causal Responsibility-based eXplanations of black-box-classifiers"
-authors = ["David Kelly, <dkellino@gmail.com>"]
+authors = [
+    { name = "David Kelly", email = "dkellino@gmail.com" }
+    ]
 readme = "README.md"
+requires-python = ">=3.10"
 
-[tool.poetry.dependencies]
-python = "^3.10"
-numpy = "1.26.4"
-scipy = ">= 1.10"
-imutils = ">= 0.5.4"
-toml = ">= 0.10"
-anytree = ">= 2.8.0"
-fastcache = ">= 1.1.0"
-tqdm = ">= 4.65.0"
-sqlalchemy = ">= 2.0.16"
-matplotlib = ">= 3.7.1"
-onnxruntime = ">= 1.18.0"
-scikit-image = ">= 0.21.0"
-pandas = ">= 2.2.0"
-pillow = ">= 10.3.0"
-torch = ">= 2.6.0"
+dependencies = [
+    "numpy==1.26.4",
+    "scipy>=1.10",
+    "imutils>=0.5.4",
+    "toml>=0.10",
+    "anytree>=2.8.0",
+    "fastcache>=1.1.0",
+    "tqdm>=4.65.0",
+    "sqlalchemy>=2.0.16",
+    "matplotlib>=3.7.1",
+    "onnxruntime>=1.18.0",
+    "scikit-image>=0.21.0",
+    "pandas>=2.2.0",
+    "pillow>=10.3.0",
+    "torch>=2.6.0"
+    ]
+
+[project.optional-dependencies]
+
+3D = [
+    "nibabel>=5.2.1",
+    "kaleido==0.2.1",
+    "plotly>=5.4.0",
+    "dash>=2.1.0"
+    ]
+
+[project.urls]
+homepage = "https://rex-xai.readthedocs.io//"
+repository = "https://github.com/ReX-XAI/ReX"
+documentation = "https://rex-xai.readthedocs.io/"
+"Bug Tracker" = "https://github.com/ReX-XAI/ReX/issues"
 
 [tool.poetry.scripts]
 ReX = "rex_xai.rex:main"
@@ -51,17 +69,7 @@ plotly = "^5.4.0"
 dash = "^2.1.0"
 kaleido = "0.2.1"
 
-[tool.poetry.group.3D]
-optional = true
-
-[tool.poetry.group.3D.dependencies]
-nibabel = "^5.2.1"
-kaleido = "0.2.1"
-plotly = "^5.4.0"
-dash = "^2.1.0"
-
 [tool.pyright]
 include = ["rex_xai"]
 exclude = ["scripts"]
 reportMissingTypeStubs = false
-
