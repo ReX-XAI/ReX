@@ -1,7 +1,7 @@
 import os
 
 import torch as tt
-from rex_xai.visualisation import save_image, voxel_plot
+from rex_xai.output.visualisation import save_image, voxel_plot
 
 from rex_xai.input.config import CausalArgs
 

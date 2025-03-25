@@ -13,7 +13,7 @@ from rex_xai.explanation import Explanation
 from rex_xai.distributions import random_coords, Distribution
 from rex_xai.utils.logger import logger
 from rex_xai.utils._utils import powerset, clause_area, SpatialSearch
-from rex_xai.visualisation import save_multi_explanation, save_image, plot_image_grid
+from rex_xai.output.visualisation import save_multi_explanation, save_image, plot_image_grid
 
 
 class MultiExplanation(Explanation):

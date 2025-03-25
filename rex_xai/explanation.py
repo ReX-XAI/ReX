@@ -4,7 +4,7 @@ from typing import Optional
 
 import torch as tt
 
-from rex_xai import visualisation
+from rex_xai.output import visualisation
 from rex_xai.utils._utils import SpatialSearch, get_map_locations, set_boolean_mask_value
 from rex_xai.input.config import CausalArgs, Strategy
 from rex_xai.input.input_data import Data
