@@ -20,7 +20,7 @@ from rex_xai.utils._utils import (
     Strategy,
     version,
 )
-from rex_xai.distributions import Distribution, str2distribution
+from rex_xai.mutants.distributions import Distribution, str2distribution
 from rex_xai.utils.logger import logger
 
 

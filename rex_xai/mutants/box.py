@@ -9,7 +9,7 @@ from typing import List, Tuple, Dict
 from anytree import LevelOrderGroupIter, NodeMixin, RenderTree
 import numpy as np
 
-from rex_xai.distributions import Distribution, random_coords
+from rex_xai.mutants.distributions import Distribution, random_coords
 from rex_xai.utils.logger import logger
 
 # Enums for different axes

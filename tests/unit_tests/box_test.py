@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import numpy as np
 
-from rex_xai.box import box_dimensions
+from rex_xai.mutants.box import box_dimensions
 
 
 def test_data(data_3d, data_2d):

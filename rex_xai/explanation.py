@@ -9,7 +9,7 @@ from rex_xai.utils._utils import SpatialSearch, get_map_locations, set_boolean_m
 from rex_xai.input.config import CausalArgs, Strategy
 from rex_xai.input.input_data import Data
 from rex_xai.utils.logger import logger
-from rex_xai.mutant import _apply_to_data
+from rex_xai.mutants.mutant import _apply_to_data
 from rex_xai.resp_maps import ResponsibilityMaps
 
 

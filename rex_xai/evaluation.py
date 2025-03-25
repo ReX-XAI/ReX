@@ -8,7 +8,7 @@ from skimage.measure import shannon_entropy
 
 from rex_xai.explanation import Explanation
 from rex_xai.utils._utils import get_map_locations
-from rex_xai.mutant import _apply_to_data
+from rex_xai.mutants.mutant import _apply_to_data
 from rex_xai.utils._utils import set_boolean_mask_value, xlogx
 
 

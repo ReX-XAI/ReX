@@ -1,5 +1,5 @@
 import pytest
-from rex_xai.distributions import Distribution
+from rex_xai.mutants.distributions import Distribution
 from rex_xai.rex import calculate_responsibility, predict_target
 
 
