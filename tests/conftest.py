@@ -6,7 +6,7 @@ from rex_xai._utils import get_device
 from rex_xai.box import initialise_tree
 from rex_xai.config import CausalArgs, process_custom_script, Strategy
 from rex_xai.distributions import Distribution
-from rex_xai.explanation import (
+from rex_xai.rex import (
     calculate_responsibility,
     get_prediction_func_from_args,
     load_and_preprocess_data,

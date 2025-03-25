@@ -23,7 +23,7 @@ pillow = ">= 10.3.0"
 torch = ">= 2.6.0"
 
 [tool.poetry.scripts]
-ReX = "rex_xai.rex:main"
+ReX = "rex_xai.rex_wrapper:main"
 
 [build-system]
 requires = ["poetry-core"]
