@@ -12,6 +12,9 @@ This ensures that the development environment is consistent for different people
 
 The development dependencies (for generating documentation, linting, and running tests) are marked as optional, so to install these you will need to run instead `poetry install --with dev`.
 
+There are also some additional optional dependencies that are only required for working with 3D data.
+You can install these using `poetry install --extras 3D`.
+
 N.B. that poetry by default creates its own virtual environment for the project.
 However if you run `poetry install` in an activated virtual environment, it will detect and respect this.
 See the [poetry docs](https://python-poetry.org/docs/basic-usage/#using-your-virtual-environment) for more information.
