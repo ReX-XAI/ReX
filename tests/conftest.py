@@ -13,7 +13,7 @@ from rex_xai.rex import (
     predict_target,
     try_preprocess,
 )
-from rex_xai.extraction import Explanation
+from rex_xai.explanation import Explanation
 from rex_xai.multi_explanation import MultiExplanation
 from syrupy.extensions.amber.serializer import AmberDataSerializer
 from syrupy.filters import props

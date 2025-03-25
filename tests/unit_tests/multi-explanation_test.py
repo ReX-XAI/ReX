@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 from rex_xai._utils import Strategy
 from rex_xai.rex import calculate_responsibility
-from rex_xai.extraction import Explanation
+from rex_xai.explanation import Explanation
 from rex_xai.multi_explanation import MultiExplanation
 
 

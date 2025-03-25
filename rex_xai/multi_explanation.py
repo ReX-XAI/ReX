@@ -9,7 +9,7 @@ import numpy as np
 import torch as tt
 from itertools import combinations
 
-from rex_xai.extraction import Explanation
+from rex_xai.explanation import Explanation
 from rex_xai.distributions import random_coords, Distribution
 from rex_xai.logger import logger
 from rex_xai._utils import powerset, clause_area, SpatialSearch
