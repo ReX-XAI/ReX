@@ -1,6 +1,6 @@
 import pytest
 from cached_path import cached_path
-from rex_xai.config import Strategy
+from rex_xai.input.config import Strategy
 from rex_xai.rex import _explanation, get_prediction_func_from_args
 
 

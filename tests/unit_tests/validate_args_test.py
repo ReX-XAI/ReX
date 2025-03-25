@@ -1,6 +1,6 @@
 import pytest
 from rex_xai.utils._utils import ReXTomlError
-from rex_xai.config import CausalArgs, validate_args
+from rex_xai.input.config import CausalArgs, validate_args
 
 
 def test_no_path(args):

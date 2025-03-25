@@ -1,5 +1,5 @@
 import pytest
-from rex_xai.config import validate_args
+from rex_xai.input.config import validate_args
 from rex_xai.rex import (
     predict_target,
     try_preprocess,

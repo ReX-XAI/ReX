@@ -4,7 +4,7 @@ import pytest
 from cached_path import cached_path
 from rex_xai.utils._utils import get_device
 from rex_xai.box import initialise_tree
-from rex_xai.config import CausalArgs, process_custom_script, Strategy
+from rex_xai.input.config import CausalArgs, process_custom_script, Strategy
 from rex_xai.distributions import Distribution
 from rex_xai.rex import (
     calculate_responsibility,
@@ -19,7 +19,7 @@ from syrupy.extensions.amber.serializer import AmberDataSerializer
 from syrupy.filters import props
 from syrupy.matchers import path_type
 
-from rex_xai.input_data import Data
+from rex_xai.input.input_data import Data
 
 
 @pytest.fixture

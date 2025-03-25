@@ -4,7 +4,7 @@ import timm
 from PIL import Image
 import torch as tt
 import torch.nn.functional as F
-from rex_xai.input_data import Data
+from rex_xai.input.input_data import Data
 from rex_xai.prediction import from_pytorch_tensor
 
 

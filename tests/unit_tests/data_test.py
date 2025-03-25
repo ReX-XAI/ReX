@@ -2,7 +2,7 @@
 
 import numpy as np
 from rex_xai.rex import load_and_preprocess_data
-from rex_xai.input_data import Data
+from rex_xai.input.input_data import Data
 
 tab = np.arange(0, 1, 999)
 voxel = np.random.rand(1, 64, 64, 64)

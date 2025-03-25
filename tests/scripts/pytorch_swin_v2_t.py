@@ -5,7 +5,7 @@ from torchvision import transforms as T
 import torch as tt
 import torch.nn.functional as F
 from PIL import Image  # type: ignore
-from rex_xai.input_data import Data
+from rex_xai.input.input_data import Data
 from rex_xai.prediction import from_pytorch_tensor
 
 

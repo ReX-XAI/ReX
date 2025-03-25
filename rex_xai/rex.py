@@ -15,14 +15,14 @@ from PIL import Image
 from sqlalchemy.orm import Session
 from tqdm import trange  # type: ignore
 
-from rex_xai.config import CausalArgs
+from rex_xai.input.config import CausalArgs
 from rex_xai.database import update_database
 from rex_xai.evaluation import Evaluation
 from rex_xai.multi_explanation import MultiExplanation
 from rex_xai.explanation import Explanation
-from rex_xai.input_data import Data
+from rex_xai.input.input_data import Data
 from rex_xai.utils.logger import logger
-from rex_xai.onnx import get_prediction_function
+from rex_xai.input.onnx import get_prediction_function
 from rex_xai.resp_maps import ResponsibilityMaps
 from rex_xai.responsibility import causal_explanation
 from rex_xai.prediction import Prediction

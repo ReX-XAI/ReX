@@ -10,9 +10,9 @@ except ImportError:
     from anytree import find
 
 from rex_xai.box import Box
-from rex_xai.config import CausalArgs
+from rex_xai.input.config import CausalArgs
 from rex_xai.mutant import Mutant
-from rex_xai.input_data import Data
+from rex_xai.input.input_data import Data
 from rex_xai.utils.logger import logger
 from rex_xai.utils._utils import ReXMapError
 

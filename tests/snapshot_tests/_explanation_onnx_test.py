@@ -1,5 +1,5 @@
 import pytest
-from rex_xai.config import Strategy
+from rex_xai.input.config import Strategy
 from rex_xai.rex import _explanation, analyze, get_prediction_func_from_args
 
 
