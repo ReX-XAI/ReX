@@ -1,6 +1,6 @@
 [project]
 name = "rex-xai"
-version = "0.3.0"
+version = "0.3.1"
 description = "causal Responsibility-based eXplanations of black-box-classifiers"
 authors = [
     { name = "David Kelly", email = "dkellino@gmail.com" }
