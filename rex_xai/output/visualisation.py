@@ -13,12 +13,12 @@ from scipy.ndimage import center_of_mass
 from skimage.segmentation import slic
 from torch import Tensor
 
-from rex_xai.prediction import Prediction
-from rex_xai.config import CausalArgs
-from rex_xai.resp_maps import ResponsibilityMaps
-from rex_xai.input_data import Data
-from rex_xai._utils import add_boundaries
-from rex_xai.logger import logger
+from rex_xai.responsibility.prediction import Prediction
+from rex_xai.input.config import CausalArgs
+from rex_xai.responsibility.resp_maps import ResponsibilityMaps
+from rex_xai.input.input_data import Data
+from rex_xai.utils._utils import add_boundaries
+from rex_xai.utils.logger import logger
 
 
 def plot_curve(curve, chunk_size, style="insertion", destination=None):

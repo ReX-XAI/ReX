@@ -11,10 +11,10 @@ from ast import literal_eval
 import pandas as pd
 import numpy as np
 
-from rex_xai.logger import logger
-from rex_xai.config import CausalArgs, Strategy
-from rex_xai.extraction import Explanation
-from rex_xai.multi_explanation import MultiExplanation
+from rex_xai.utils.logger import logger
+from rex_xai.input.config import CausalArgs, Strategy
+from rex_xai.explanation.explanation import Explanation
+from rex_xai.explanation.multi_explanation import MultiExplanation
 
 
 def _dataframe(db, table):

@@ -1,9 +1,9 @@
 import copy
 
 import pytest
-from rex_xai._utils import Queue, Strategy
-from rex_xai.config import CausalArgs, process_config_dict, read_config_file
-from rex_xai.distributions import Distribution
+from rex_xai.utils._utils import Queue, Strategy
+from rex_xai.input.config import CausalArgs, process_config_dict, read_config_file
+from rex_xai.mutants.distributions import Distribution
 
 
 @pytest.fixture

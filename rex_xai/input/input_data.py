@@ -5,10 +5,10 @@ import torch as tt
 
 from enum import Enum
 
-from rex_xai.occlusions import spectral_occlusion, context_occlusion
-from rex_xai.prediction import Prediction
-from rex_xai.logger import logger
-from rex_xai._utils import ReXDataError
+from rex_xai.mutants.occlusions import spectral_occlusion, context_occlusion
+from rex_xai.responsibility.prediction import Prediction
+from rex_xai.utils.logger import logger
+from rex_xai.utils._utils import ReXDataError
 
 Setup = Enum("Setup", ["ONNXMPS", "ONNX", "PYTORCH"])
 

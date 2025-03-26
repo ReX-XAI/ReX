@@ -12,10 +12,10 @@ import numpy as np
 
 import onnxruntime as ort
 from onnxruntime import InferenceSession
-from rex_xai.prediction import Prediction, from_pytorch_tensor
-from rex_xai.input_data import Setup
+from rex_xai.responsibility.prediction import Prediction, from_pytorch_tensor
+from rex_xai.input.input_data import Setup
 
-from rex_xai.logger import logger
+from rex_xai.utils.logger import logger
 
 
 class OnnxRunner:

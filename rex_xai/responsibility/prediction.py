@@ -5,7 +5,7 @@ import torch as tt
 import torch.nn.functional as F
 from numpy.typing import NDArray
 from typing import List
-from rex_xai._utils import ff
+from rex_xai.utils._utils import ff
 
 
 class Prediction:

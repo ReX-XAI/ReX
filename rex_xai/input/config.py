@@ -12,7 +12,7 @@ from typing import List, Optional, Union
 import matplotlib as mpl
 import toml  # type: ignore
 
-from rex_xai._utils import (
+from rex_xai.utils._utils import (
     Queue,
     ReXError,
     ReXPathError,
@@ -20,8 +20,8 @@ from rex_xai._utils import (
     Strategy,
     version,
 )
-from rex_xai.distributions import Distribution, str2distribution
-from rex_xai.logger import logger
+from rex_xai.mutants.distributions import Distribution, str2distribution
+from rex_xai.utils.logger import logger
 
 
 class Args:

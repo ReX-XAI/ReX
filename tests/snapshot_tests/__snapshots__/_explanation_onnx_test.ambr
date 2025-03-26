@@ -1,7 +1,7 @@
 # serializer version: 1
 # name: test__explanation_snapshot
   Explanation:
-  	CausalArgs: <class 'rex_xai.config.CausalArgs'>
+  	CausalArgs: <class 'rex_xai.input.config.CausalArgs'>
   	Data: Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
   	 Target:FOUND_CLASS: 209, FOUND_CONF: 0.39424, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
   	prediction function: <function OnnxRunner.gen_prediction_function.<locals>.<lambda> >

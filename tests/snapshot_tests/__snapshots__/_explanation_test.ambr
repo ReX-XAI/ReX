@@ -1,7 +1,7 @@
 # serializer version: 1
 # name: test__explanation_snapshot[1]
   Explanation:
-  	CausalArgs: <class 'rex_xai.config.CausalArgs'>
+  	CausalArgs: <class 'rex_xai.input.config.CausalArgs'>
   	Data: Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
   	 Target:FOUND_CLASS: 207, FOUND_CONF: 0.20462, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
   	prediction function: <function prediction_function >
@@ -16,7 +16,7 @@
 # ---
 # name: test__explanation_snapshot[64]
   Explanation:
-  	CausalArgs: <class 'rex_xai.config.CausalArgs'>
+  	CausalArgs: <class 'rex_xai.input.config.CausalArgs'>
   	Data: Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
   	 Target:FOUND_CLASS: 207, FOUND_CONF: 0.20462, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
   	prediction function: <function prediction_function >
@@ -31,7 +31,7 @@
 # ---
 # name: test__explanation_snapshot_diff_model_shape[1]
   Explanation:
-  	CausalArgs: <class 'rex_xai.config.CausalArgs'>
+  	CausalArgs: <class 'rex_xai.input.config.CausalArgs'>
   	Data: Data: RGB, ['N', 3, 256, 256], 256, 256, 3, first
   	 Target:FOUND_CLASS: 215, FOUND_CONF: 0.48740, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
   	prediction function: <function prediction_function >
@@ -46,7 +46,7 @@
 # ---
 # name: test__explanation_snapshot_diff_model_shape[64]
   Explanation:
-  	CausalArgs: <class 'rex_xai.config.CausalArgs'>
+  	CausalArgs: <class 'rex_xai.input.config.CausalArgs'>
   	Data: Data: RGB, ['N', 3, 256, 256], 256, 256, 3, first
   	 Target:FOUND_CLASS: 215, FOUND_CONF: 0.48740, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
   	prediction function: <function prediction_function >
@@ -83,7 +83,7 @@
 # ---
 # name: test_multiexplanation_snapshot
   MultiExplanation:
-  	CausalArgs: <class 'rex_xai.config.CausalArgs'>
+  	CausalArgs: <class 'rex_xai.input.config.CausalArgs'>
   	Data: Data: RGB, ['N', 3, 224, 224], 224, 224, 3, first
   	 Target:FOUND_CLASS: 84, FOUND_CONF: 0.51611, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
   	prediction function: <function prediction_function >
