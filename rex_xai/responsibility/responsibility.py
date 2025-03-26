@@ -21,7 +21,7 @@ from rex_xai.input.config import CausalArgs, Queue
 from rex_xai.input.input_data import Data
 from rex_xai.utils.logger import logger
 from rex_xai.mutants.mutant import Mutant, get_combinations, _apply_to_data
-from rex_xai.resp_maps import ResponsibilityMaps
+from rex_xai.responsibility.resp_maps import ResponsibilityMaps
 from rex_xai.prediction import Prediction
 
 

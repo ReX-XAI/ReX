@@ -15,7 +15,7 @@ from torch import Tensor
 
 from rex_xai.prediction import Prediction
 from rex_xai.input.config import CausalArgs
-from rex_xai.resp_maps import ResponsibilityMaps
+from rex_xai.responsibility.resp_maps import ResponsibilityMaps
 from rex_xai.input.input_data import Data
 from rex_xai.utils._utils import add_boundaries
 from rex_xai.utils.logger import logger

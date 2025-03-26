@@ -23,8 +23,8 @@ from rex_xai.explanation import Explanation
 from rex_xai.input.input_data import Data
 from rex_xai.utils.logger import logger
 from rex_xai.input.onnx import get_prediction_function
-from rex_xai.resp_maps import ResponsibilityMaps
-from rex_xai.responsibility import causal_explanation
+from rex_xai.responsibility.resp_maps import ResponsibilityMaps
+from rex_xai.responsibility.responsibility import causal_explanation
 from rex_xai.prediction import Prediction
 from rex_xai.utils._utils import Strategy, ReXScriptError
 
