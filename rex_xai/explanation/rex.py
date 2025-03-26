@@ -25,7 +25,7 @@ from rex_xai.utils.logger import logger
 from rex_xai.input.onnx import get_prediction_function
 from rex_xai.responsibility.resp_maps import ResponsibilityMaps
 from rex_xai.responsibility.responsibility import causal_explanation
-from rex_xai.prediction import Prediction
+from rex_xai.responsibility.prediction import Prediction
 from rex_xai.utils._utils import Strategy, ReXScriptError
 
 

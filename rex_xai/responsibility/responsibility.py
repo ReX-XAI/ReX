@@ -22,7 +22,7 @@ from rex_xai.input.input_data import Data
 from rex_xai.utils.logger import logger
 from rex_xai.mutants.mutant import Mutant, get_combinations, _apply_to_data
 from rex_xai.responsibility.resp_maps import ResponsibilityMaps
-from rex_xai.prediction import Prediction
+from rex_xai.responsibility.prediction import Prediction
 
 
 def subbox(tree, name, max_depth, min_size, mode, r_map=None):

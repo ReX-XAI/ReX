@@ -3,7 +3,7 @@ from onnxruntime.tools.ort_format_model.ort_flatbuffers_py.fbs.Tensor import Ten
 import torch as tt
 import torch.nn.functional as F
 from rex_xai.input.input_data import Data
-from rex_xai.prediction import from_pytorch_tensor
+from rex_xai.responsibility.prediction import from_pytorch_tensor
 from monai.networks.nets import DenseNet121
 from monai.transforms import Resize, LoadImage
 

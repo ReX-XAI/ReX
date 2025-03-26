@@ -7,7 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from rex_xai.input.input_data import Data
-from rex_xai.prediction import from_pytorch_tensor
+from rex_xai.responsibility.prediction import from_pytorch_tensor
 
 class ConvNet(nn.Module):
     def __init__(self):
