@@ -4,7 +4,7 @@ from rex_xai.utils._utils import get_device
 from rex_xai.input.config import get_all_args
 from rex_xai.output.database import initialise_rex_db
 
-from rex_xai.rex import explanation
+from rex_xai.explanation.rex import explanation
 from rex_xai.utils.logger import logger, set_log_level
 from rex_xai.input.config import validate_args
 

@@ -1,6 +1,6 @@
 import pytest
 from rex_xai.input.config import Strategy
-from rex_xai.rex import _explanation, analyze, get_prediction_func_from_args
+from rex_xai.explanation.rex import _explanation, analyze, get_prediction_func_from_args
 
 
 def test__explanation_snapshot(args_onnx, cpu_device, snapshot_explanation):

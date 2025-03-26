@@ -17,9 +17,9 @@ from tqdm import trange  # type: ignore
 
 from rex_xai.input.config import CausalArgs
 from rex_xai.output.database import update_database
-from rex_xai.evaluation import Evaluation
-from rex_xai.multi_explanation import MultiExplanation
-from rex_xai.explanation import Explanation
+from rex_xai.explanation.evaluation import Evaluation
+from rex_xai.explanation.multi_explanation import MultiExplanation
+from rex_xai.explanation.explanation import Explanation
 from rex_xai.input.input_data import Data
 from rex_xai.utils.logger import logger
 from rex_xai.input.onnx import get_prediction_function
