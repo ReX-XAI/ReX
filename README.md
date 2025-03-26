@@ -1,15 +1,11 @@
 # ReX: Causal *R*esponsibility *EX*planations for image classifiers
 
-<picture>
- <source media="(prefers-color-scheme: dark)" srcset="assets/rex_logo.png">
- <source media="(prefers-color-scheme: light)" srcset="assets/rex_logo.png">
- <img alt="ReX Logo with dinosaur" src="YOUR-DEFAULT-IMAGE">
-</picture>
+![ReX logo with dinosaur](https://raw.githubusercontent.com/ReX-XAI/ReX/main/assets/rex_logo.png "ReX Logo with dinosaur")
 
 <!--- BADGES: START --->
 
 [![Docs](https://readthedocs.org/projects/rex-xai/badge/?version=latest)](https://rex-xai.readthedocs.io/en/latest/)
-[![Tests](https://github.com/ReX-XAI/ReX/actions/workflows/build-and-test-python-package.yml/badge.svg)](https://github.com/ReX-XAI/ReX/actions/workflows/build-and-test-python-package.yml)
+[![Tests](https://github.com/ReX-XAI/ReX/actions/workflows/test-package-and-comment.yml/badge.svg)](https://github.com/ReX-XAI/ReX/actions/workflows/test-package-and-comment.yml)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/ReX-XAI/ReX.jl/blob/main/LICENSE)
 
 <!--- BADGES: END --->
@@ -20,7 +16,7 @@ ReX is a causal explainability tool for image classifiers. It also works on tabu
 
 Given an input image and a classifier, ReX calculates a causal responsibility map across the data and identifies a minimal, sufficient, explanation.
 
-![ladybird](tests/test_data/ladybird.jpg "Original Image") ![responsibility map](assets/ladybird_rm.png "Responsibility Map") ![minimal explanation](assets/ladybird_301.png "Explanation")
+![ladybird](https://raw.githubusercontent.com/ReX-XAI/ReX/main/tests/test_data/ladybird.jpg "Original Image") ![responsibility map](https://raw.githubusercontent.com/ReX-XAI/ReX/main/assets/ladybird_rm.png "Responsibility Map") ![minimal explanation](https://raw.githubusercontent.com/ReX-XAI/ReX/main/assets/ladybird_301.png "Explanation")
 
 ReX is black-box, that is, agnostic to the internal structure of the classifier.
 ReX finds single explanations, non-contiguous explanations (for partially obscured images), multiple independent explanations, contrastive explanations and lots of other things!
