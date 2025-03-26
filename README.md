@@ -47,7 +47,7 @@ This should install an executable `rex` in your path.
 > If you wish to use a GPU, you should uninstall `onnxruntime` and install `onnxruntime-gpu` instead.
 > You can alternatively clone the project and edit the `pyproject.toml` to read "onnxruntime-gpu >= 1.17.0" rather than "onnxruntime >= 1.17.0".
 
-If you want to use ReX with 3D data, you will need to install some optional extra dependenices:
+If you want to use ReX with 3D data, you will need to install some optional extra dependencies:
 
 ```bash
 pip install 'rex_xai[3D]'
