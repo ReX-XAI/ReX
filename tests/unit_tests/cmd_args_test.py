@@ -1,8 +1,8 @@
 from types import ModuleType
 
 import pytest
-from rex_xai._utils import Strategy
-from rex_xai.config import CausalArgs, cmdargs_parser, process_cmd_args, shared_args
+from rex_xai.utils._utils import Strategy
+from rex_xai.input.config import CausalArgs, cmdargs_parser, process_cmd_args, shared_args
 
 
 @pytest.fixture
