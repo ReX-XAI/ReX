@@ -4,7 +4,7 @@ from typing import Optional, Tuple
 from enum import Enum
 import numpy as np
 from scipy.stats import binom, betabinom
-from rex_xai.logger import logger
+from rex_xai.utils.logger import logger
 
 Distribution = Enum("Distribution", ["Binomial", "Uniform", "BetaBinomial", "Adaptive"])
 

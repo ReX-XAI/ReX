@@ -41,7 +41,7 @@ documentation = "https://rex-xai.readthedocs.io/"
 "Bug Tracker" = "https://github.com/ReX-XAI/ReX/issues"
 
 [tool.poetry.scripts]
-ReX = "rex_xai.rex:main"
+ReX = "rex_xai.rex_wrapper:main"
 
 [build-system]
 requires = ["poetry-core"]

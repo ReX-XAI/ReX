@@ -1,7 +1,7 @@
 import os
 
 import pytest
-from rex_xai.database import db_to_pandas, initialise_rex_db, update_database
+from rex_xai.output.database import db_to_pandas, initialise_rex_db, update_database
 
 
 @pytest.fixture

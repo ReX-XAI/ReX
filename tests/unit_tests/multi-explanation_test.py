@@ -3,10 +3,10 @@ import os
 
 import numpy as np
 import pytest
-from rex_xai._utils import Strategy
-from rex_xai.explanation import calculate_responsibility
-from rex_xai.extraction import Explanation
-from rex_xai.multi_explanation import MultiExplanation
+from rex_xai.utils._utils import Strategy
+from rex_xai.explanation.rex import calculate_responsibility
+from rex_xai.explanation.explanation import Explanation
+from rex_xai.explanation.multi_explanation import MultiExplanation
 
 
 @pytest.mark.parametrize("spotlights", [5, 10])

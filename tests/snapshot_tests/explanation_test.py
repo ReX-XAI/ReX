@@ -1,6 +1,6 @@
 import pytest
-from rex_xai.distributions import Distribution
-from rex_xai.explanation import calculate_responsibility, predict_target
+from rex_xai.mutants.distributions import Distribution
+from rex_xai.explanation.rex import calculate_responsibility, predict_target
 
 
 @pytest.mark.parametrize(
