@@ -9,12 +9,12 @@ try:
 except ImportError:
     from anytree import find
 
-from rex_xai.box import Box
-from rex_xai.config import CausalArgs
-from rex_xai.mutant import Mutant
-from rex_xai.input_data import Data
-from rex_xai.logger import logger
-from rex_xai._utils import ReXMapError
+from rex_xai.mutants.box import Box
+from rex_xai.input.config import CausalArgs
+from rex_xai.mutants.mutant import Mutant
+from rex_xai.input.input_data import Data
+from rex_xai.utils.logger import logger
+from rex_xai.utils._utils import ReXMapError
 
 
 class ResponsibilityMaps:
@@ -33,9 +33,13 @@ class ResponsibilityMaps:
         except KeyError:
             return
 
-    def new_map(self, k: int, height, width):
-        self.maps[k] = np.zeros((height, width), dtype="float32")
-        self.counts[k] = 1
+    def new_map(self, k: int, height, width, depth=None):
+        if depth is not None:
+            self.maps[k] = np.zeros((height, width, depth), dtype="float32")
+            self.counts[k] = 1
+        else:
+            self.maps[k] = np.zeros((height, width), dtype="float32")
+            self.counts[k] = 1
 
     def items(self):
         return self.maps.items()
@@ -100,7 +104,9 @@ class ResponsibilityMaps:
                 raise ReXMapError("the provided mutant has no known classification")
             # check if k has been seen before and has a map. If k is new, make a new map
             if k not in self.maps:
-                self.new_map(k, data.model_height, data.model_width)
+                self.new_map(
+                    k, data.model_height, data.model_width, data.model_depth
+                )
 
             # get the responsibility map for k
             resp_map = self.get(k, increment=True)
@@ -130,6 +136,12 @@ class ResponsibilityMaps:
                         section = resp_map[
                             box.row_start : box.row_stop,
                             box.col_start : box.col_stop,
+                        ]
+                    elif data.mode == "voxel":
+                        section = resp_map[
+                            box.row_start : box.row_stop,
+                            box.col_start : box.col_stop,
+                            box.depth_start : box.depth_stop,
                         ]
                     else:
                         logger.warning("not yet implemented")

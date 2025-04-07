@@ -16,13 +16,13 @@ except ImportError:
     from anytree.search import find
 
 
-from rex_xai.box import average_box_size, initialise_tree
-from rex_xai.config import CausalArgs, Queue
-from rex_xai.input_data import Data
-from rex_xai.logger import logger
-from rex_xai.mutant import Mutant, get_combinations, _apply_to_data
-from rex_xai.resp_maps import ResponsibilityMaps
-from rex_xai.prediction import Prediction
+from rex_xai.mutants.box import average_box_size, initialise_tree
+from rex_xai.input.config import CausalArgs, Queue
+from rex_xai.input.input_data import Data
+from rex_xai.utils.logger import logger
+from rex_xai.mutants.mutant import Mutant, get_combinations, _apply_to_data
+from rex_xai.responsibility.resp_maps import ResponsibilityMaps
+from rex_xai.responsibility.prediction import Prediction
 
 
 def subbox(tree, name, max_depth, min_size, mode, r_map=None):
@@ -121,6 +121,7 @@ def causal_explanation(
         data.model_width,
         args.distribution,
         args.distribution_args,
+        d_lim=data.model_depth,
     )
 
     total_work = 0
@@ -178,6 +179,11 @@ def causal_explanation(
 
                 work_done = len(mutants)
 
+                def apply_mask(m):
+                    if args.mask_value == "context":
+                        return _apply_to_data(m.mask, data, data.mask_value)
+                    return tt.where(m.mask, data.data, data.mask_value)
+
                 if data.mode in ("spectral", "tabular"):
                     preds: List[Prediction] = [
                         prediction_func(_apply_to_data(m.mask, data, data.mask_value))[
@@ -190,7 +196,7 @@ def causal_explanation(
                     if args.batch_size == 1:
                         preds = [
                             prediction_func(
-                                tt.where(m.mask, data.data, data.mask_value),  #  type: ignore
+                                apply_mask(m),  #  type: ignore
                                 data.target,
                                 binary_threshold=args.binary_threshold,
                             )[0]
@@ -199,7 +205,7 @@ def causal_explanation(
                     else:
                         tensors = tt.stack(
                             [
-                                tt.where(m.mask, data.data, data.mask_value)  #  type: ignore
+                                apply_mask(m)  #  type: ignore
                                 for m in mutants
                             ]
                         )  # type: ignore

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python3D
 # from __future__ import annotations
 """main logical entrypoint for ReX."""
 
@@ -15,18 +15,18 @@ from PIL import Image
 from sqlalchemy.orm import Session
 from tqdm import trange  # type: ignore
 
-from rex_xai.config import CausalArgs
-from rex_xai.database import update_database
-from rex_xai.evaluation import Evaluation
-from rex_xai.multi_explanation import MultiExplanation
-from rex_xai.extraction import Explanation
-from rex_xai.input_data import Data
-from rex_xai.logger import logger
-from rex_xai.onnx import get_prediction_function
-from rex_xai.resp_maps import ResponsibilityMaps
-from rex_xai.responsibility import causal_explanation
-from rex_xai.prediction import Prediction
-from rex_xai._utils import Strategy, ReXScriptError
+from rex_xai.input.config import CausalArgs
+from rex_xai.output.database import update_database
+from rex_xai.explanation.evaluation import Evaluation
+from rex_xai.explanation.multi_explanation import MultiExplanation
+from rex_xai.explanation.explanation import Explanation
+from rex_xai.input.input_data import Data
+from rex_xai.utils.logger import logger
+from rex_xai.input.onnx import get_prediction_function
+from rex_xai.responsibility.resp_maps import ResponsibilityMaps
+from rex_xai.responsibility.responsibility import causal_explanation
+from rex_xai.responsibility.prediction import Prediction
+from rex_xai.utils._utils import Strategy, ReXScriptError
 
 
 def try_preprocess(args: CausalArgs, model_shape: Tuple[int], device: tt.device):
@@ -190,6 +190,15 @@ def calculate_responsibility(
     maps = ResponsibilityMaps()
     if custom_height is not None and custom_width is not None:
         maps.new_map(data.target.classification, custom_height, custom_width)
+    else:
+        maps.new_map(data.target.classification, data.model_height, data.model_width)
+    if data.model_height is not None:
+        maps.new_map(
+            data.target.classification,
+            data.model_height,
+            data.model_width,
+            data.model_depth,
+        )
     else:
         maps.new_map(data.target.classification, data.model_height, data.model_width)
 

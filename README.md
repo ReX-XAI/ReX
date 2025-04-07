@@ -32,21 +32,15 @@ For background information and detailed usage instructions, see our [documentati
 
 ## Installation
 
-Clone this repository and `cd` into it.
-
-```bash
-git clone git@github.com:ReX-XAI/ReX.git
-cd ReX/
-```
-
+ReX can be installed using `pip`.
 We recommend creating a virtual environment to install ReX.
 ReX has been tested using versions of Python >= 3.10.
 The following instructions assume `conda`:
 
 ```bash
-conda create -n rex python=3.12
+conda create -n rex python=3.13
 conda activate rex
-pip install .
+pip install rex_xai
 ```
 
 This should install an executable `rex` in your path.
@@ -55,7 +49,13 @@ This should install an executable `rex` in your path.
 >
 > By default, `onnxruntime` will be installed.
 > If you wish to use a GPU, you should uninstall `onnxruntime` and install `onnxruntime-gpu` instead.
-> You can alternatively edit the `pyproject.toml` to read "onnxruntime-gpu >= 1.17.0" rather than "onnxruntime >= 1.17.0".
+> You can alternatively clone the project and edit the `pyproject.toml` to read "onnxruntime-gpu >= 1.17.0" rather than "onnxruntime >= 1.17.0".
+
+If you want to use ReX with 3D data, you will need to install some optional extra dependenices:
+
+```bash
+pip install 'rex_xai[3D]'
+```
 
 <!--inclusion-marker-end-do-not-remove-->
 

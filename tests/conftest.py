@@ -1,19 +1,25 @@
+import numpy as np
+import torch as tt
 import pytest
 from cached_path import cached_path
-from rex_xai._utils import get_device
-from rex_xai.config import CausalArgs, Strategy, process_custom_script
-from rex_xai.explanation import (
+from rex_xai.utils._utils import get_device
+from rex_xai.mutants.box import initialise_tree
+from rex_xai.input.config import CausalArgs, process_custom_script, Strategy
+from rex_xai.mutants.distributions import Distribution
+from rex_xai.explanation.rex import (
     calculate_responsibility,
     get_prediction_func_from_args,
     load_and_preprocess_data,
     predict_target,
     try_preprocess,
 )
-from rex_xai.extraction import Explanation
-from rex_xai.multi_explanation import MultiExplanation
+from rex_xai.explanation.explanation import Explanation
+from rex_xai.explanation.multi_explanation import MultiExplanation
 from syrupy.extensions.amber.serializer import AmberDataSerializer
 from syrupy.filters import props
 from syrupy.matchers import path_type
+
+from rex_xai.input.input_data import Data
 
 
 @pytest.fixture
@@ -28,7 +34,7 @@ def snapshot_explanation(snapshot):
                 "target_map", # large array
                 "final_mask", # large array
                 "explanation" # large array
-            ), 
+            ),
             matcher=path_type(
                 types=(CausalArgs,),
                 replacer=lambda data, _: AmberDataSerializer.object_as_named_tuple( #type: ignore
@@ -194,3 +200,57 @@ def exp_multi(args_multi, data_multi, prediction_func):
     )
     multi_exp.extract(args_multi.strategy)
     return multi_exp
+
+
+@pytest.fixture
+def data_3d():
+    voxel = np.zeros((1, 64, 64, 64), dtype=np.float32)
+    voxel[0:30, 20:30, 20:35] = 1
+    return Data(
+        input=voxel,
+        model_shape=[1, 64, 64, 64],
+        device="cpu",
+        mode="voxel"
+    )
+
+@pytest.fixture
+def data_2d():
+    return Data(
+        input=np.arange(1, 64, 64),
+        model_shape=[1, 64, 64],
+        device="cpu"
+    )
+
+@pytest.fixture
+def box_3d():
+    return initialise_tree(
+        r_lim=64,
+        c_lim=64,
+        d_lim=64,
+        r_start=0,
+        c_start=0,
+        d_start=0,
+        distribution=Distribution.Uniform,
+        distribution_args=None,
+    )
+
+@pytest.fixture
+def box_2d():
+    return initialise_tree(
+        r_lim=64,
+        c_lim=64,
+        r_start=0,
+        c_start=0,
+        distribution=Distribution.Uniform,
+        distribution_args=None,
+    )
+
+@pytest.fixture
+def resp_map_2d():
+    return np.zeros((64, 64), dtype="float32")
+
+@pytest.fixture
+def resp_map_3d():
+    resp_map = tt.zeros((64, 64, 64), dtype=tt.float32)
+    resp_map[0:10, 20:25, 20:35] = 1
+    return resp_map

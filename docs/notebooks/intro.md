@@ -24,7 +24,7 @@ First, we will set up the input parameters as a `CausalArgs` object.
 You can create a `CausalArgs` object with default parameters and then modify it, or use [`load_config`](https://rex-xai.readthedocs.io/en/latest/autoapi/rex_xai/config/index.html#rex_xai.config.load_config) to read your desired set of input parameters from a `rex.toml` file.
 
 ```{code-cell} ipython3
-from rex_xai.config import CausalArgs
+from rex_xai.input.config import CausalArgs
 
 args = CausalArgs()
 print(args)
@@ -70,7 +70,7 @@ The transformations (e.g. resizing, normalisation) should be the same as were us
 from torchvision import transforms as T
 from PIL import Image
 
-from rex_xai.input_data import Data
+from rex_xai.input.input_data import Data
 
 def preprocess(path, shape, device, mode) -> Data:
     transform = T.Compose(
@@ -100,7 +100,7 @@ Finally, we will define a `prediction_function` that will be applied to our inpu
 import torch as tt
 import torch.nn.functional as F
 
-from rex_xai.prediction import from_pytorch_tensor
+from rex_xai.responsibility.prediction import from_pytorch_tensor
 
 def prediction_function(mutants, target=None, raw=False, binary_threshold=None):
     with tt.no_grad():
@@ -113,8 +113,8 @@ def prediction_function(mutants, target=None, raw=False, binary_threshold=None):
 Now we are almost ready to run ReX. The final step is to set up the input data.
 
 ```{code-cell} ipython3
-from rex_xai.explanation import load_and_preprocess_data, predict_target
-from rex_xai._utils import get_device
+from rex_xai.explanation.rex import load_and_preprocess_data, predict_target
+from rex_xai.utils._utils import get_device
 
 device = get_device(gpu=False)
 
@@ -150,9 +150,9 @@ Here we will use the `Global` strategy. Additional strategies are available in t
 ```{code-cell} ipython3
 :tags: [hide-output]
 
-from rex_xai.explanation import calculate_responsibility
-from rex_xai.extraction import Explanation
-from rex_xai._utils import Strategy
+from rex_xai.explanation.rex import calculate_responsibility
+from rex_xai.explanation.explanation import Explanation
+from rex_xai.utils._utils import Strategy
 
 resp_maps, stats = calculate_responsibility(data, args, prediction_function)
 exp = Explanation(resp_maps, prediction_function, data, args, stats)
@@ -192,7 +192,7 @@ In this case, the tree depth is 9, almost 1000 mutants have been assessed, and t
 Another way to check explanation quality would be to analyze the `Explanation` object and calculate some common metrics.
 
 ```{code-cell} ipython3
-from rex_xai.explanation import analyze
+from rex_xai.explanation.rex import analyze
 
 analyze(exp, data.mode)
 ```
@@ -225,7 +225,7 @@ print(data.target)
 Next, we will run `calculate_responsibility` on the new image, create a `MultiExplanation` object, and extract explanations.
 
 ```{code-cell} ipython3
-from rex_xai.multi_explanation import MultiExplanation
+from rex_xai.explanation.multi_explanation import MultiExplanation
 
 resp_maps, stats = calculate_responsibility(data, peacock_args, prediction_function)
 
@@ -268,7 +268,7 @@ If you wish to calculate this you can use the `time.time()` function to calculat
 Before saving the results, we should update the `strategy` saved in the `Explanation` or `MultiExplanation` object to ensure it matches the strategy we used, as this will be saved in the database.
 
 ```{code-cell} ipython3
-from rex_xai.database import initialise_rex_db, update_database
+from rex_xai.output.database import initialise_rex_db, update_database
 
 db = initialise_rex_db("rex.db")
 
@@ -282,7 +282,7 @@ update_database(db, multi_exp, time_taken = None, multi=True)
 ReX provides a helper function to read the results from the database into a [Pandas](https://pandas.pydata.org/) dataframe for further analysis.
 
 ```{code-cell} ipython3
-from rex_xai.database import db_to_pandas
+from rex_xai.output.database import db_to_pandas
 
 df = db_to_pandas("rex.db")
 print(df)

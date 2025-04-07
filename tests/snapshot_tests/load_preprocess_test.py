@@ -1,6 +1,6 @@
 import pytest
-from rex_xai._utils import ReXDataError
-from rex_xai.explanation import (
+from rex_xai.utils._utils import ReXDataError
+from rex_xai.explanation.rex import (
     load_and_preprocess_data,
     try_preprocess,
     get_prediction_func_from_args
