@@ -354,6 +354,8 @@ def _explanation(
 
         clauses = exp.separate_by(args.permitted_overlap)
         logger.info(f"found the following sets of explanations {clauses}")
+        logger.info(f"keeping only {clauses[0]}")
+        clauses = clauses[0]
 
         if args.strategy == Strategy.Contrastive:
             clauses = exp.contrastive(clauses)
@@ -418,6 +420,7 @@ def _explanation(
                 exp,
                 time_taken,
                 multi=True,
+                clauses=clauses
             )
         else:
             logger.info("writing to database")

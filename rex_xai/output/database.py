@@ -46,12 +46,32 @@ def db_to_pandas(db, dtype=np.float32, table="rex", process=True):
 
     return df
 
+def __multi_update(db, explanation, classification, target, target_map, final_mask, time_taken, multi_no):
+    if isinstance(final_mask, tt.Tensor):
+        final_mask = final_mask.detach().cpu().numpy()
+    add_to_database(
+        db,
+        explanation.args,
+        classification,
+        target.confidence,
+        target_map,
+        final_mask,
+        explanation.explanation_confidences[multi_no],
+        time_taken,
+        explanation.run_stats["total_passing"],
+        explanation.run_stats["total_failing"],
+        explanation.run_stats["max_depth_reached"],
+        explanation.run_stats["avg_box_size"],
+        multi=True,
+        multi_no=multi_no,
+    )
 
 def update_database(
     db,
     explanation: Explanation | MultiExplanation,  # type: ignore
     time_taken=None,
     multi=False,
+    clauses=None
 ):
     target_map = explanation.target_map
 
@@ -97,24 +117,32 @@ def update_database(
             return
         else:
             for c, final_mask in enumerate(explanation.explanations):
-                if isinstance(final_mask, tt.Tensor):
-                    final_mask = final_mask.detach().cpu().numpy()
-                add_to_database(
-                    db,
-                    explanation.args,
-                    classification,
-                    target.confidence,
-                    target_map,
-                    final_mask,
-                    explanation.explanation_confidences[c],
-                    time_taken,
-                    explanation.run_stats["total_passing"],
-                    explanation.run_stats["total_failing"],
-                    explanation.run_stats["max_depth_reached"],
-                    explanation.run_stats["avg_box_size"],
-                    multi=multi,
-                    multi_no=c,
-                )
+                if clauses is not None:
+                    if c not in clauses:
+                        print(f"ignoring {c}")
+                    else:
+                        __multi_update(db, explanation, classification, target, target_map, final_mask, time_taken, c)
+                else:
+                    __multi_update(db, explanation, classification, target, target_map, final_mask, time_taken, c)
+
+            #     if isinstance(final_mask, tt.Tensor):
+            #         final_mask = final_mask.detach().cpu().numpy()
+            #     add_to_database(
+            #         db,
+            #         explanation.args,
+            #         classification,
+            #         target.confidence,
+            #         target_map,
+            #         final_mask,
+            #         explanation.explanation_confidences[c],
+            #         time_taken,
+            #         explanation.run_stats["total_passing"],
+            #         explanation.run_stats["total_failing"],
+            #         explanation.run_stats["max_depth_reached"],
+            #         explanation.run_stats["avg_box_size"],
+            #         multi=multi,
+            #         multi_no=c,
+            #     )
 
 
 def add_to_database(
