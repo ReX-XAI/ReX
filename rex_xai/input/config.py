@@ -89,7 +89,7 @@ class Args:
         self.max_spotlight_budget = 40
         self.permitted_overlap: float = 0.0
         # analysis
-        self.analyze: bool = False
+        self.analyse = None
         self.insertion_step = 100
         self.normalise_curves = True
 
@@ -300,14 +300,16 @@ def cmdargs_parser():
         help="manually override the number of iterations set in the config file",
     )
 
-    parser.add_argument(
-        "--analyze",
-        action="store_true",
-        help="area, entropy and (possibly) insertion/deletion curves",
-    )
+    # parser.add_argument(
+    #     "--analyze",
+    #     action="store_true",
+    #     help="area, entropy and (possibly) insertion/deletion curves",
+    # )
+
     parser.add_argument(
         "--analyse",
-        action="store_true",
+        nargs="?",
+        const="print",
         help="area, entropy and (possibly) insertion/deletion curves",
     )
 
@@ -557,8 +559,10 @@ def process_cmd_args(cmd_args, args):
     if cmd_args.iters is not None:
         args.iters = cmd_args.iters
 
-    if cmd_args.analyze or cmd_args.analyse:
-        args.analyze = True
+    if cmd_args.analyse:
+        args.analyse = cmd_args.analyse
+        # print(cmd_args.analyse)
+        # exit()
 
     if cmd_args.multi is not None:
         args.strategy = Strategy.MultiSpotlight

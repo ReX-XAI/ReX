@@ -369,7 +369,7 @@ def _explanation(
         exp = Explanation(resp_object, prediction_func, data, args, run_stats)
         exp.extract(args.strategy)
 
-    if args.analyze:
+    if args.analyse is not None:
         if args.strategy == Strategy.MultiSpotlight:
             logger.warn("still to write")
             pass
@@ -386,10 +386,16 @@ def _explanation(
                     f"insertion curve {results['insertion_curve']}, deletion curve {results['deletion_curve']}",
                 )
             else:
-                print(
-                    f"INFO:ReX:path {args.path}, classification {exp.data.target.classification}, area {results['area']}, entropy {results['entropy']},",  # type: ignore
-                    f"insertion curve {results['insertion_curve']}, deletion curve {results['deletion_curve']}, time {time_taken}",
-                )
+                if args.analyse == "print":
+                    print(
+                        f"INFO:ReX:path {args.path}, classification {exp.data.target.classification}, area {results['area']}, entropy {results['entropy']},",  # type: ignore
+                        f"insertion curve {results['insertion_curve']}, deletion curve {results['deletion_curve']}, time {time_taken}",
+                    )
+                else:
+                    with open(args.analyse, "a") as out:
+                        out.write(
+                            f"{args.path},{exp.data.target.classification},{results['area']},{results['entropy']},{results['insertion_curve']},{results['deletion_curve']},{time_taken}\n"
+                        )
 
     else:
         end = time.time()
