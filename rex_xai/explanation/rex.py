@@ -372,6 +372,9 @@ def _explanation(
         else:
             logger.info("Analysing explanation")
             results = analyze(exp, data.mode)
+            end = time.time()
+            time_taken = end - start
+
             if data.mode == "spectral":
                 print(
                     f"INFO:ReX:classification {exp.data.target.classification}, area {results['area']}, responsibility entropy {results['entropy']},",  # type: ignore
@@ -380,13 +383,14 @@ def _explanation(
                 )
             else:
                 print(
-                    f"INFO:ReX:classification {exp.data.target.classification}, area {results['area']}, entropy {results['entropy']},",  # type: ignore
-                    f"insertion curve {results['insertion_curve']}, deletion curve {results['deletion_curve']}",
+                    f"INFO:ReX:path {args.path}, classification {exp.data.target.classification}, area {results['area']}, entropy {results['entropy']},",  # type: ignore
+                    f"insertion curve {results['insertion_curve']}, deletion curve {results['deletion_curve']}, time {time_taken})",
                 )
 
-    end = time.time()
-    time_taken = end - start
-    logger.info(f"Time taken: {time_taken:.2f}s")
+    else:
+        end = time.time()
+        time_taken = end - start
+        logger.info(f"Time taken: {time_taken:.2f}s")
 
     if args.surface is not None:
         if path is not None:
