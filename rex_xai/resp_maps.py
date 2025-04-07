@@ -53,6 +53,13 @@ class ResponsibilityMaps:
             else:
                 self.maps[k] = v
 
+    def negative_responsibility(self, target):
+        for k, v in self.maps.items():
+            if k != target:
+                logger.debug(f"subtracting responsibility for class {k} from class {target}")
+                self.maps[target] = self.maps[target] - v #type: ignore
+
+
     def responsibility(self, mutant: Mutant, args: CausalArgs):
         responsibility = np.zeros(4, dtype=np.float32)
         parts = mutant.get_active_boxes()
@@ -108,9 +115,11 @@ class ResponsibilityMaps:
                 if box is not None and box.area() > 0:
                     index = np.uint(box_name[-1])
                     local_r = r[index]
+                    # print(box.depth)
                     if args.concentrate:
-                        local_r *= 1.0 / box.area()
+                        local_r *= box.depth
                         # Don't delete this code just yet as this is an alternative (less brutal)
+                        # local_r *= 1.0 / box.area()
                         # scaling strategy that needs further investigation
                         # scale = depth - 1
                         # local_r = 2**(local_r * scale)

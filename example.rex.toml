@@ -91,6 +91,9 @@
 # concentrate: weight responsibility by size and depth of passing partition. Defaults to false
 # concentrate = true
 
+# subtract responsibility for non target classifications. Defaults to false
+# negative_responsibility = true
+
 [causal.distribution]
 # distribution for splitting the box, defaults to uniform. Possible choices are 'uniform' | 'binom' | 'betabinom' | 'adaptive'
 # distribution = 'uniform'

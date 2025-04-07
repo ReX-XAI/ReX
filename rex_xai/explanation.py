@@ -158,7 +158,7 @@ def predict_target(data: Data, prediction_func) -> Prediction:
 
 
 def calculate_responsibility(
-    data: Data, args: CausalArgs, prediction_func, keep_all_maps=False
+    data: Data, args: CausalArgs, prediction_func, keep_all_maps=False, custom_height=None, custom_width=None
 ) -> tuple[ResponsibilityMaps, dict]:
     """Calculates ResponsibilityMaps for input data using given args.
 
@@ -188,7 +188,10 @@ def calculate_responsibility(
         )
 
     maps = ResponsibilityMaps()
-    maps.new_map(data.target.classification, data.model_height, data.model_width)
+    if custom_height is not None and custom_width is not None:
+        maps.new_map(data.target.classification, custom_height, custom_width)
+    else:
+        maps.new_map(data.target.classification, data.model_height, data.model_width)
 
     total_passing: int = 0
     total_failing: int = 0
@@ -325,6 +328,8 @@ def _explanation(
 
     logger.info("Calculating responsibility map")
     resp_object, run_stats = calculate_responsibility(data, args, prediction_func)
+    if args.negative_responsibility:
+        resp_object.negative_responsibility(data.target.classification)
 
     logger.info("Extracting explanation from responsibility map")
     clauses = None
@@ -348,20 +353,25 @@ def _explanation(
         exp = Explanation(resp_object, prediction_func, data, args, run_stats)
         exp.extract(args.strategy)
 
+
     if args.analyze:
-        logger.info("Analysing explanation")
-        results = analyze(exp, data.mode)
-        if data.mode == "spectral":
-            print(
-                f"INFO:ReX:classification {exp.data.target.classification}, area {results['area']}, responsibility entropy {results['entropy']},",  # type: ignore
-                f"max entropy {results['max_entropy']}",
-                f"insertion curve {results['insertion_curve']}, deletion curve {results['deletion_curve']}",
-            )
+        if args.strategy == Strategy.MultiSpotlight:
+            logger.warn("still to write")
+            pass
         else:
-            print(
-                f"INFO:ReX:classification {exp.data.target.classification}, area {results['area']}, entropy {results['entropy']},",  # type: ignore
-                f"insertion curve {results['insertion_curve']}, deletion curve {results['deletion_curve']}",
-            )
+            logger.info("Analysing explanation")
+            results = analyze(exp, data.mode)
+            if data.mode == "spectral":
+                print(
+                    f"INFO:ReX:classification {exp.data.target.classification}, area {results['area']}, responsibility entropy {results['entropy']},",  # type: ignore
+                    f"max entropy {results['max_entropy']}",
+                    f"insertion curve {results['insertion_curve']}, deletion curve {results['deletion_curve']}",
+                )
+            else:
+                print(
+                    f"INFO:ReX:classification {exp.data.target.classification}, area {results['area']}, entropy {results['entropy']},",  # type: ignore
+                    f"insertion curve {results['insertion_curve']}, deletion curve {results['deletion_curve']}",
+                )
 
     end = time.time()
     time_taken = end - start

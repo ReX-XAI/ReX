@@ -215,6 +215,43 @@ class MultiExplanation(Explanation):
         )
         exit()
 
+    # def contrastive_fallback(self, step=50):
+    #     print("here")
+    #     print(self.explanation.maps)
+    #     pass
+        # insertion_mask = tt.zeros(
+        #     self.explanation.data.data.squeeze(0).shape, dtype=tt.bool
+        # ).to(self.explanation.data.device)
+        # deletion_mask = tt.ones(
+        #     self.explanation.data.data.squeeze(0).shape, dtype=tt.bool
+        # ).to(self.explanation.data.device)
+        #
+        # ranking = get_map_locations(map=map)
+        #
+        # for i in range(0, len(ranking), step):
+        #     chunk = ranking[i : i + step]
+        #     for _, loc in chunk:
+        #         set_boolean_mask_value(
+        #             insertion_mask,
+        #             self.explanation.data.mode,
+        #             self.explanation.data.model_order,
+        #             loc,
+        #         )
+        #         set_boolean_mask_value(
+        #             deletion_mask,
+        #             self.explanation.data.mode,
+        #             self.explanation.data.model_order,
+        #             loc,
+        #             val=False,
+        #         )
+        #
+        #     im = _apply_to_data(insertion_mask, self.explanation.data, 0)
+        #     dm = _apply_to_data(deletion_mask, self.explanation.data, 0)
+        #     ip = prediction_func(im.to(self.explanation.data.device), raw=True)
+        #     dp = prediction_func(dm.to(self.explanation.data.device), raw=True)
+        #     print(ip.classification, dp.classification)
+
+
     def __random_step_from(self, origin, width, height, step=5):
         c, r = origin
         # flip a coin to move left (0) or right (1)

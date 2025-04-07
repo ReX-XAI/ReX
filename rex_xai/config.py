@@ -139,6 +139,7 @@ class CausalArgs(Args):
         self.weighted: bool = False
         self.iters = 20
         self.concentrate = False
+        self.negative_responsibility = False
         # queue management
         self.queue_len = 1
         self.queue_style = Queue.Area
@@ -155,6 +156,7 @@ class CausalArgs(Args):
             + f"tree_depth: {self.tree_depth}, search_limit: {self.search_limit}, "
             + f"min_box_size: {self.min_box_size}, weighted: {self.weighted}, "
             + f"confidence_filter: {self.confidence_filter}, "
+            + f"negative_responsibility: {self.negative_responsibility}, "
             + f"data_locations: {self.data_location}, distribution: {self.distribution}, "
             + f"distribution_args: {self.distribution_args}, "
             + f"queue_len: {self.queue_len}, queue_style {self.queue_style}, "
@@ -468,6 +470,7 @@ def process_config_dict(config_file_args, args):
             "min_box_size",
             "confidence_filter",
             "weighted",
+            "negative_responsibility",
             "queue_style",
             "queue_len",
             "concentrate",
