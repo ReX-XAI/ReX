@@ -158,7 +158,12 @@ def predict_target(data: Data, prediction_func) -> Prediction:
 
 
 def calculate_responsibility(
-    data: Data, args: CausalArgs, prediction_func, keep_all_maps=False, custom_height=None, custom_width=None
+    data: Data,
+    args: CausalArgs,
+    prediction_func,
+    keep_all_maps=False,
+    custom_height=None,
+    custom_width=None,
 ) -> tuple[ResponsibilityMaps, dict]:
     """Calculates ResponsibilityMaps for input data using given args.
 
@@ -364,7 +369,6 @@ def _explanation(
         exp = Explanation(resp_object, prediction_func, data, args, run_stats)
         exp.extract(args.strategy)
 
-
     if args.analyze:
         if args.strategy == Strategy.MultiSpotlight:
             logger.warn("still to write")
@@ -384,7 +388,7 @@ def _explanation(
             else:
                 print(
                     f"INFO:ReX:path {args.path}, classification {exp.data.target.classification}, area {results['area']}, entropy {results['entropy']},",  # type: ignore
-                    f"insertion curve {results['insertion_curve']}, deletion curve {results['deletion_curve']}, time {time_taken})",
+                    f"insertion curve {results['insertion_curve']}, deletion curve {results['deletion_curve']}, time {time_taken}",
                 )
 
     else:
@@ -419,13 +423,7 @@ def _explanation(
     if db is not None:
         if args.strategy == Strategy.MultiSpotlight:
             logger.info("writing multiple explanations to database")
-            update_database(
-                db,
-                exp,
-                time_taken,
-                multi=True,
-                clauses=clauses
-            )
+            update_database(db, exp, time_taken, multi=True, clauses=clauses)
         else:
             logger.info("writing to database")
             update_database(

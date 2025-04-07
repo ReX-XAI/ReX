@@ -60,9 +60,10 @@ class ResponsibilityMaps:
     def negative_responsibility(self, target):
         for k, v in self.maps.items():
             if k != target:
-                logger.debug(f"subtracting responsibility for class {k} from class {target}")
-                self.maps[target] = self.maps[target] - v #type: ignore
-
+                logger.debug(
+                    f"subtracting responsibility for class {k} from class {target}"
+                )
+                self.maps[target] = self.maps[target] - v  # type: ignore
 
     def responsibility(self, mutant: Mutant, args: CausalArgs):
         responsibility = np.zeros(4, dtype=np.float32)
@@ -104,9 +105,7 @@ class ResponsibilityMaps:
                 raise ReXMapError("the provided mutant has no known classification")
             # check if k has been seen before and has a map. If k is new, make a new map
             if k not in self.maps:
-                self.new_map(
-                    k, data.model_height, data.model_width, data.model_depth
-                )
+                self.new_map(k, data.model_height, data.model_width, data.model_depth)
 
             # get the responsibility map for k
             resp_map = self.get(k, increment=True)

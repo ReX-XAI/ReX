@@ -12,6 +12,7 @@ import numpy as np
 from rex_xai.mutants.distributions import Distribution, random_coords
 from rex_xai.utils.logger import logger
 
+
 # Enums for different axes
 class Axes:
     ROW = 0
@@ -246,7 +247,9 @@ class BoxInternal:
         }
         range1 = ranges[selected_axes[0]]
         range2 = ranges[selected_axes[1]]
-        logger.debug(f"Selected axes: {selected_axes}, which have a range of values, {range1} and {range2}")
+        logger.debug(
+            f"Selected axes: {selected_axes}, which have a range of values, {range1} and {range2}"
+        )
         # Get the random coordinates for the two axes
         space = range1[1] - range1[0]
         if space == 0 or space == 1:

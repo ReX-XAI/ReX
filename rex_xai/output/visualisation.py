@@ -314,7 +314,7 @@ def remove_background(data: Data, resp_map: np.ndarray) -> np.ndarray:
         else:
             data_m = data.data
     else:
-        data_m = data.data # need to check for other modes
+        data_m = data.data  # need to check for other modes
     # Set background to minimum value in the responsibility map if set in the Data object
     if data.background is not None and data.background is int or float:
         background = np.where(
@@ -385,49 +385,149 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
     y_slice = go.Figure()
     z_slice = go.Figure()
 
-    app.layout = html.Div([
-        html.Div([
-            # X Slice
-            html.Div([
-                html.Label("X Slice", style={"font-weight": "bold", "margin-bottom": "10px"}),
-                dcc.Graph(id="x-slice", style={"width": "100%", "height": "auto", "max-width": "400px"}),
-                dcc.Slider(0, x_max - 1, 1, value=x_max // 2, id="x-slider",
-                           marks={0: "0", x_max - 1: str(x_max - 1)},
-                           vertical=True, tooltip={"always_visible": True}),
-            ], style={"display": "flex", "align-items": "center", "gap": "20px", "flex": "1"}),
-
-            # Y Slice
-            html.Div([
-                html.Label("Y Slice", style={"font-weight": "bold", "margin-bottom": "10px"}),
-                dcc.Graph(id="y-slice", style={"width": "100%", "height": "auto", "max-width": "400px"}),
-                dcc.Slider(0, y_max - 1, 1, value=y_max // 2, id="y-slider",
-                           marks={0: "0", y_max - 1: str(y_max - 1)},
-                           vertical=True, tooltip={"always_visible": True}),
-            ], style={"display": "flex", "align-items": "center", "gap": "20px", "flex": "1"}),
-
-        ], style={"display": "flex", "justify-content": "center", "gap": "40px"}),
-
-        # Z Slice
-        html.Div([
-            html.Label("Z Slice", style={"font-weight": "bold", "margin-bottom": "10px"}),
-            dcc.Graph(id="z-slice", style={"width": "100%", "height": "auto", "max-width": "400px"}),
-            dcc.Slider(0, z_max - 1, 1, value=z_max // 2, id="z-slider",
-                       marks={0: "0", z_max - 1: str(z_max - 1)},
-                       vertical=True, tooltip={"always_visible": True}),
-        ], style={"display": "flex", "align-items": "center", "gap": "20px", "margin-top": "40px"}),
-
-        # Opacity Slider
-        html.Div([
-            html.Label("Opacity"),
-            dcc.Slider(0, 1, 0.1, value=0.5, id="opacity-slider",
-                       tooltip={"always_visible": True}, marks={0: "0", 1: "1"},
-                       vertical=True),
-            html.Label("Heatmap Colours"),
-            dcc.Dropdown(id="heatmap-colours", options=colourscales, value=args.heatmap_colours)
-        ], style={"position": "absolute", "top": "10%", "right": "10%", "width": "100px", "outline": "1px solid grey"}),
-
-    ], style={"width": "3000x", "height": "20px", "margin": "auto", "padding": "20px", "display": "flex",
-              "flex-direction": "column", "gap": "40px", "outline": "1px solid grey"})
+    app.layout = html.Div(
+        [
+            html.Div(
+                [
+                    # X Slice
+                    html.Div(
+                        [
+                            html.Label(
+                                "X Slice",
+                                style={"font-weight": "bold", "margin-bottom": "10px"},
+                            ),
+                            dcc.Graph(
+                                id="x-slice",
+                                style={
+                                    "width": "100%",
+                                    "height": "auto",
+                                    "max-width": "400px",
+                                },
+                            ),
+                            dcc.Slider(
+                                0,
+                                x_max - 1,
+                                1,
+                                value=x_max // 2,
+                                id="x-slider",
+                                marks={0: "0", x_max - 1: str(x_max - 1)},
+                                vertical=True,
+                                tooltip={"always_visible": True},
+                            ),
+                        ],
+                        style={
+                            "display": "flex",
+                            "align-items": "center",
+                            "gap": "20px",
+                            "flex": "1",
+                        },
+                    ),
+                    # Y Slice
+                    html.Div(
+                        [
+                            html.Label(
+                                "Y Slice",
+                                style={"font-weight": "bold", "margin-bottom": "10px"},
+                            ),
+                            dcc.Graph(
+                                id="y-slice",
+                                style={
+                                    "width": "100%",
+                                    "height": "auto",
+                                    "max-width": "400px",
+                                },
+                            ),
+                            dcc.Slider(
+                                0,
+                                y_max - 1,
+                                1,
+                                value=y_max // 2,
+                                id="y-slider",
+                                marks={0: "0", y_max - 1: str(y_max - 1)},
+                                vertical=True,
+                                tooltip={"always_visible": True},
+                            ),
+                        ],
+                        style={
+                            "display": "flex",
+                            "align-items": "center",
+                            "gap": "20px",
+                            "flex": "1",
+                        },
+                    ),
+                ],
+                style={"display": "flex", "justify-content": "center", "gap": "40px"},
+            ),
+            # Z Slice
+            html.Div(
+                [
+                    html.Label(
+                        "Z Slice",
+                        style={"font-weight": "bold", "margin-bottom": "10px"},
+                    ),
+                    dcc.Graph(
+                        id="z-slice",
+                        style={"width": "100%", "height": "auto", "max-width": "400px"},
+                    ),
+                    dcc.Slider(
+                        0,
+                        z_max - 1,
+                        1,
+                        value=z_max // 2,
+                        id="z-slider",
+                        marks={0: "0", z_max - 1: str(z_max - 1)},
+                        vertical=True,
+                        tooltip={"always_visible": True},
+                    ),
+                ],
+                style={
+                    "display": "flex",
+                    "align-items": "center",
+                    "gap": "20px",
+                    "margin-top": "40px",
+                },
+            ),
+            # Opacity Slider
+            html.Div(
+                [
+                    html.Label("Opacity"),
+                    dcc.Slider(
+                        0,
+                        1,
+                        0.1,
+                        value=0.5,
+                        id="opacity-slider",
+                        tooltip={"always_visible": True},
+                        marks={0: "0", 1: "1"},
+                        vertical=True,
+                    ),
+                    html.Label("Heatmap Colours"),
+                    dcc.Dropdown(
+                        id="heatmap-colours",
+                        options=colourscales,
+                        value=args.heatmap_colours,
+                    ),
+                ],
+                style={
+                    "position": "absolute",
+                    "top": "10%",
+                    "right": "10%",
+                    "width": "100px",
+                    "outline": "1px solid grey",
+                },
+            ),
+        ],
+        style={
+            "width": "3000x",
+            "height": "20px",
+            "margin": "auto",
+            "padding": "20px",
+            "display": "flex",
+            "flex-direction": "column",
+            "gap": "40px",
+            "outline": "1px solid grey",
+        },
+    )
 
     @app.callback(
         Output("x-slice", "figure"),
@@ -437,28 +537,78 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
         Input("y-slider", "value"),
         Input("z-slider", "value"),
         Input("opacity-slider", "value"),
-        Input("heatmap-colours", "value")
+        Input("heatmap-colours", "value"),
     )
-    def update_slices(x_idx, y_idx, z_idx, opacity, heatmap_colours=args.heatmap_colours):
+    def update_slices(
+        x_idx, y_idx, z_idx, opacity, heatmap_colours=args.heatmap_colours
+    ):
         # X-Slice (YZ plane)
         x_slice.add_trace(
-            go.Heatmap(z=data_m[x_idx, :, :], colorscale="gray_r", name="Data", zmin=0, zmax=1, showscale=False))
+            go.Heatmap(
+                z=data_m[x_idx, :, :],
+                colorscale="gray_r",
+                name="Data",
+                zmin=0,
+                zmax=1,
+                showscale=False,
+            )
+        )
         x_slice.add_trace(
-            go.Heatmap(z=resp_map[x_idx, :, :], colorscale=heatmap_colours, opacity=opacity, name="Resp Map", zmin=0, zmax=1))
+            go.Heatmap(
+                z=resp_map[x_idx, :, :],
+                colorscale=heatmap_colours,
+                opacity=opacity,
+                name="Resp Map",
+                zmin=0,
+                zmax=1,
+            )
+        )
         x_slice.update_layout(title=f"YZ Plane at {x_idx}")
 
         # Y-Slice (XZ plane)
         y_slice.add_trace(
-            go.Heatmap(z=data_m[:, y_idx, :], colorscale="gray_r", name="Data", zmin=0, zmax=1, showscale=False))
+            go.Heatmap(
+                z=data_m[:, y_idx, :],
+                colorscale="gray_r",
+                name="Data",
+                zmin=0,
+                zmax=1,
+                showscale=False,
+            )
+        )
         y_slice.add_trace(
-            go.Heatmap(z=resp_map[:, y_idx, :], colorscale=heatmap_colours, opacity=opacity, name="Resp Map", zmin=0, zmax=1))
+            go.Heatmap(
+                z=resp_map[:, y_idx, :],
+                colorscale=heatmap_colours,
+                opacity=opacity,
+                name="Resp Map",
+                zmin=0,
+                zmax=1,
+            )
+        )
         y_slice.update_layout(title=f"XZ Plane at {y_idx}")
 
         # Z-Slice (XY plane)
         z_slice.add_trace(
-            go.Heatmap(z=data_m[:, :, z_idx], colorscale="gray_r", name="Data", zmin=0, zmax=1, showscale=False))
+            go.Heatmap(
+                z=data_m[:, :, z_idx],
+                colorscale="gray_r",
+                name="Data",
+                zmin=0,
+                zmax=1,
+                showscale=False,
+            )
+        )
         z_slice.add_trace(
-            go.Heatmap(z=resp_map[:, :, z_idx], colorscale=heatmap_colours, opacity=opacity, name="Resp Map", zmin=0, zmax=1))
+            go.Heatmap(
+                z=resp_map[:, :, z_idx],
+                colorscale=heatmap_colours,
+                opacity=opacity,
+                name="Resp Map",
+                zmin=0,
+                zmax=1,
+            )
+        )
         z_slice.update_layout(title=f"XY Plane at {z_idx}")
 
         return x_slice, y_slice, z_slice
@@ -471,7 +621,6 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
         x_slice.write_image(f"{path}_x_slice.png")
         y_slice.write_image(f"{path}_y_slice.png")
         z_slice.write_image(f"{path}_z_slice.png")
-
 
 
 def __transpose_mask(explanation, mode, transposed):

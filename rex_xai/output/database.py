@@ -46,7 +46,17 @@ def db_to_pandas(db, dtype=np.float32, table="rex", process=True):
 
     return df
 
-def __multi_update(db, explanation, classification, target, target_map, final_mask, time_taken, multi_no):
+
+def __multi_update(
+    db,
+    explanation,
+    classification,
+    target,
+    target_map,
+    final_mask,
+    time_taken,
+    multi_no,
+):
     if isinstance(final_mask, tt.Tensor):
         final_mask = final_mask.detach().cpu().numpy()
     add_to_database(
@@ -66,12 +76,13 @@ def __multi_update(db, explanation, classification, target, target_map, final_ma
         multi_no=multi_no,
     )
 
+
 def update_database(
     db,
     explanation: Explanation | MultiExplanation,  # type: ignore
     time_taken=None,
     multi=False,
-    clauses=None
+    clauses=None,
 ):
     target_map = explanation.target_map
 
@@ -121,9 +132,27 @@ def update_database(
                     if c not in clauses:
                         print(f"ignoring {c}")
                     else:
-                        __multi_update(db, explanation, classification, target, target_map, final_mask, time_taken, c)
+                        __multi_update(
+                            db,
+                            explanation,
+                            classification,
+                            target,
+                            target_map,
+                            final_mask,
+                            time_taken,
+                            c,
+                        )
                 else:
-                    __multi_update(db, explanation, classification, target, target_map, final_mask, time_taken, c)
+                    __multi_update(
+                        db,
+                        explanation,
+                        classification,
+                        target,
+                        target_map,
+                        final_mask,
+                        time_taken,
+                        c,
+                    )
 
             #     if isinstance(final_mask, tt.Tensor):
             #         final_mask = final_mask.detach().cpu().numpy()
