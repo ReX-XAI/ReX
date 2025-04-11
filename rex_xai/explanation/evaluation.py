@@ -35,13 +35,11 @@ class Evaluation:
             return (
                 tt.count_nonzero(final_mask)  # type: ignore
                 / final_mask.size  # type: ignore
-                / self.explanation.data.model_channels
             ).item()
         except TypeError:
             return (
                 np.count_nonzero(final_mask)  # type: ignore
                 / final_mask.size  # type: ignore
-                / self.explanation.data.model_channels
             )
 
     def spectral_entropy(self) -> Tuple[float, float]:
