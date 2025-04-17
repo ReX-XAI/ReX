@@ -228,6 +228,8 @@ def surface_plot(
     # ranking = resp_maps.get(k) for each iteration
     for i, k in enumerate(keys):
         ranking = resp_map
+        if isinstance(ranking, tt.Tensor):
+            ranking = ranking.detach().cpu().numpy()
         if ranking is not None:
             ax = fig.add_subplot(rows, cols, i + 1, projection="3d")
 
