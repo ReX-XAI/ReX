@@ -344,6 +344,8 @@ def _explanation(
     resp_object, run_stats = calculate_responsibility(data, args, prediction_func)
     if args.negative_responsibility:
         resp_object.negative_responsibility(data.target.classification)
+    mid = time.time()
+    logger.info(f"Finished building responsibility map after {mid - start} seconds")
 
     logger.info("Extracting explanation from responsibility map")
     clauses = None
@@ -359,6 +361,7 @@ def _explanation(
 
         clauses = exp.separate_by(args.permitted_overlap)
         logger.info(f"found the following sets of explanations {clauses}")
+        # TODO this should be optional
         logger.info(f"keeping only {clauses[0]}")
         clauses = clauses[0]
 
@@ -513,6 +516,7 @@ def explanation(
             for f in files:
                 to_process = os.path.join(dir, f)
                 logger.info("processing %s", to_process)
+                # TODO can we remove this copy?
                 current_args = copy.copy(args)
                 current_args.path = to_process
                 if args.output is not None and args.output != "show":
@@ -528,7 +532,8 @@ def explanation(
                     db,
                     path=path,
                 )
-                explanations.append(exp)
+                if exp is not None:
+                    explanations.append(exp)
         return explanations
 
     else:
