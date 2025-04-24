@@ -19,7 +19,7 @@
 # ---
 # name: test_extract_analyze[Strategy.Global].1
   dict({
-    'area': 0.0551,
+    'area': 0.1654,
     'deletion_curve': 0.0141,
     'entropy': 5.3764,
     'insertion_curve': 0.621,
@@ -30,7 +30,7 @@
 # ---
 # name: test_extract_analyze[Strategy.Spatial].1
   dict({
-    'area': 0.1093,
+    'area': 0.3278,
     'deletion_curve': 0.0141,
     'entropy': 3.8607,
     'insertion_curve': 0.621,

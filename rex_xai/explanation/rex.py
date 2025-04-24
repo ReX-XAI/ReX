@@ -361,13 +361,13 @@ def _explanation(
 
         clauses = exp.separate_by(args.permitted_overlap)
         logger.info(f"found the following sets of explanations {clauses}")
-        # TODO this should be optional
-        logger.info(f"keeping only {clauses[0]}")
-        clauses = clauses[0]
 
         if args.strategy == Strategy.Contrastive:
             clauses = exp.contrastive(clauses)
             args.multi_style = "contrastive"
+        else:
+            logger.info(f"keeping only {clauses[0]}")
+            clauses = clauses[0]
     else:
         exp = Explanation(resp_object, prediction_func, data, args, run_stats)
         exp.extract(args.strategy)
