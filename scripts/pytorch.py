@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import platform
-from torchvision.models import resnet50
+from torchvision.models import get_model
 from torchvision import transforms as T
 import torch as tt
 import torch.nn.functional as F
@@ -10,7 +10,7 @@ from rex_xai.input.input_data import Data
 from rex_xai.responsibility.prediction import from_pytorch_tensor
 
 
-model = resnet50(weights="ResNet50_Weights.DEFAULT")
+model = get_model('convnext_large', weights="DEFAULT")
 model.eval()
 
 if platform.uname().system == "Darwin":
@@ -37,7 +37,7 @@ def preprocess(path, shape, device, mode) -> Data:
     return data
 
 
-def prediction_function(mutants, target=None, raw=False, binary_threshold=None):
+def prediction_function(mutants, target=None, raw=False, binary_threshold=False):
     with tt.no_grad():
         tensor = model(mutants)
         if raw:

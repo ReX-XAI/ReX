@@ -91,12 +91,12 @@ class MultiExplanation(Explanation):
             multi_style = self.args.multi_style
         outs = []
 
-        for i, mask in enumerate(self.explanations):
+        for mask in self.explanations:
             out = save_image(mask, self.data, self.args, path=None)
             outs.append(out)
 
         if multi_style == "separate":
-            for i, mask in enumerate(self.explanations):
+            for mask in self.explanations:
                 out = save_image(mask, self.data, self.args, path=None)
                 outs.append(out)
 
@@ -214,7 +214,7 @@ class MultiExplanation(Explanation):
                     )
                     self.final_mask = mask
                     return subset
-        logger.warn(
+        logger.warning(
             "ReX is unable to find a counterfactual, so not producing an output. Exiting here..."
         )
         exit()

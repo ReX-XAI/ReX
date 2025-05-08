@@ -161,7 +161,7 @@ def calculate_responsibility(
     data: Data,
     args: CausalArgs,
     prediction_func,
-    keep_all_maps=False,
+    # keep_all_maps=False,
     custom_height=None,
     custom_width=None,
 ) -> tuple[ResponsibilityMaps, dict]:
@@ -338,6 +338,7 @@ def _explanation(
 
     data.target = predict_target(data, prediction_func)
 
+    time_taken = 0
     start = time.time()
 
     logger.info("Calculating responsibility map")
@@ -374,7 +375,7 @@ def _explanation(
 
     if args.analyse is not None:
         if args.strategy == Strategy.MultiSpotlight:
-            logger.warn("still to write")
+            logger.warning("still to write")
             pass
         else:
             logger.info("Analysing explanation")
@@ -395,6 +396,7 @@ def _explanation(
                         f"insertion curve {results['insertion_curve']}, deletion curve {results['deletion_curve']}, time {time_taken}",
                     )
                 else:
+                    assert exp.data.target is not None
                     with open(args.analyse, "a") as out:
                         out.write(
                             f"{args.path},{exp.data.target.classification},{results['area']},{results['entropy']},{results['insertion_curve']},{results['deletion_curve']},{time_taken}\n"
