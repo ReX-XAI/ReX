@@ -739,13 +739,10 @@ def save_multi_explanation(
 
 def save_image(explanation, data: Data, args: CausalArgs, path=None):
     mask = None
-    if data.mode == "RGB" or data.mode == "L":
-        if data.mode == "L":
-            img = data.input.convert("RGB").resize(
-                (data.model_height, data.model_width)
-            )
-        else:
-            img = data.input.resize((data.model_height, data.model_width))
+    if data.mode == "RGB":
+        if len(data.input.size) == 4:
+            data.input = data.input.squeeze(0)
+        img = data.input
 
         mask = __transpose_mask(explanation, data.mode, data.transposed)
 
@@ -778,7 +775,7 @@ def save_image(explanation, data: Data, args: CausalArgs, path=None):
 
             return out
     elif data.mode == "voxel":
-        data_m: np.ndarray = data.data
+        data_m: np.ndarray = data.data  # type:ignore
         if isinstance(explanation, tt.Tensor):
             explanation = explanation.squeeze().detach().cpu().numpy()
         else:

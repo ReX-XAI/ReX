@@ -24,12 +24,15 @@ def _guess_mode(input):
 
 
 class Data:
-    def __init__(self, input, model_shape, device, mode=None, process=True) -> None:
+    def __init__(
+        self, input, model_shape, device="cpu", mode=None, process=True
+    ) -> None:
         self.input = input
         self.mode = None
         self.target: Optional[Prediction] = None
         self.device = device
         self.setup: Optional[Setup] = None
+        self.transposed = False
 
         self.mode = mode
         if mode is None:
