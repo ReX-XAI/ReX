@@ -52,6 +52,8 @@ class ResponsibilityMaps:
 
     def merge(self, maps):
         for k, v in maps.items():
+            if np.max(v) == 0:
+                break
             if k in self.maps:
                 self.maps[k] += v
             else:

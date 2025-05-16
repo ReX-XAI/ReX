@@ -232,11 +232,7 @@ def calculate_responsibility(
             total_failing += failing
             max_depth_reached = max(max_depth_reached, depth_reached)
             avg_box_size += avg_bs
-            # TODO this needs to be smarter. If we only have shallow penetration, then
-            # this is doing us a disservice. Perhaps leave merging until after completion
-            # of all iterations. Might potentially use a lot of memeory though
-            if depth_reached > 1:
-                maps.merge(local_maps)
+            maps.merge(local_maps)
 
     avg_box_size /= args.iters
 
@@ -352,26 +348,28 @@ def _explanation(
     clauses = None
     if args.strategy in (Strategy.MultiSpotlight, Strategy.Contrastive):
         exp = MultiExplanation(resp_object, prediction_func, data, args, run_stats)
-        exp.extract()
+        if not args.no_extract:
+            exp.extract()
 
-        if args.strategy == Strategy.Contrastive and args.permitted_overlap != 1.0:
-            logger.warning(
-                "contrastive explanations require a permitted overlap of 1.0, so setting this now"
-            )
-            args.permitted_overlap = 1.0
+            if args.strategy == Strategy.Contrastive and args.permitted_overlap != 1.0:
+                logger.warning(
+                    "contrastive explanations require a permitted overlap of 1.0, so setting this now"
+                )
+                args.permitted_overlap = 1.0
 
-        clauses = exp.separate_by(args.permitted_overlap)
-        logger.info(f"found the following sets of explanations {clauses}")
+            clauses = exp.separate_by(args.permitted_overlap)
+            logger.info(f"found the following sets of explanations {clauses}")
 
-        if args.strategy == Strategy.Contrastive:
-            clauses = exp.contrastive(clauses)
-            args.multi_style = "contrastive"
-        else:
-            logger.info(f"keeping only {clauses[0]}")
-            clauses = clauses[0]
+            if args.strategy == Strategy.Contrastive:
+                clauses = exp.contrastive(clauses)
+                args.multi_style = "contrastive"
+            else:
+                logger.info(f"keeping only {clauses[0]}")
+                clauses = clauses[0]
     else:
         exp = Explanation(resp_object, prediction_func, data, args, run_stats)
-        exp.extract(args.strategy)
+        if not args.no_extract:
+            exp.extract(args.strategy)
 
     if args.analyse is not None:
         if args.strategy == Strategy.MultiSpotlight:

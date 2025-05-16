@@ -72,6 +72,7 @@ class Args:
         self.heatmap_colours = "magma"
         self.multi_style = "composite"
         # explanation production strategy
+        self.no_extract = False
         self.strategy: Strategy = Strategy.Global
         self.chunk_size = 25
         self.minimum_confidence_threshold = 0.0
@@ -222,8 +223,13 @@ def cmdargs_parser():
         const="show",
         help="show minimal, sufficient causal explanation, optionally saved to <OUTPUT>. Requires a PIL compatible file extension",
     )
+
     parser.add_argument(
         "-c", "--config", type=str, help="optional config file to use for ReX"
+    )
+
+    parser.add_argument(
+        "-n", "--no_extract", action="store_true", help="prevent ReX from extracting an explanation from the responsibility map"
     )
 
     parser.add_argument(
@@ -388,6 +394,8 @@ def shared_args(cmd_args, args: CausalArgs):
         args.output = cmd_args.output
     if cmd_args.quiet:
         args.verbosity = 0
+    if cmd_args.no_extract is True:
+        args.no_extract = True
     else:
         args.verbosity = cmd_args.verbose
     if cmd_args.database is not None:
