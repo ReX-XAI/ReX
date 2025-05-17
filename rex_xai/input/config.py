@@ -394,10 +394,10 @@ def shared_args(cmd_args, args: CausalArgs):
         args.output = cmd_args.output
     if cmd_args.quiet:
         args.verbosity = 0
-    if cmd_args.no_extract is True:
-        args.no_extract = True
     else:
         args.verbosity = cmd_args.verbose
+    if cmd_args.no_extract is True:
+        args.no_extract = True
     if cmd_args.database is not None:
         args.db = cmd_args.database
     if cmd_args.mode is not None:
