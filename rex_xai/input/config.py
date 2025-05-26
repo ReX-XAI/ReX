@@ -45,6 +45,10 @@ class Args:
         self.script: Optional[ModuleType] = None
         self.script_location = None
         self.processed = False
+        # for custom occlusions through cmdline
+        self.context = False
+        self.context_location: Optional[str] = None # Path to the file to use for occlusion
+        self.occlusion_noise: Optional[float] = None # Optional gaussian noise parameter for occlusion
         # onnx processing
         self.means = None
         self.stds = None
@@ -114,6 +118,7 @@ class Args:
             + f"spotlight_eta: {self.spotlight_eta}, "
             + f"no_expansions: {self.no_expansions}, "
             + f"obj_function: {self.spotlight_objective_function}, "
+            + f"Custom Occlusion: {self.occlusion}, Location of Occlusion: {self.context_location}, Noise: {self.occlusion_noise}, "
         )
 
 
@@ -234,6 +239,18 @@ def cmdargs_parser():
         "--script",
         type=str,
         help="custom loading and preprocessing script, mostly for use with pytorch models",
+    )
+
+    parser.add_argument(
+        "--context",
+        type=str,
+        help="custom occlusion path to be loaded and preprocessed, mostly for use with pytorch models",
+    )
+
+    parser.add_argument(
+        "--noise",
+        type=float,
+        help="noise level to be added to data used for context occlusion",
     )
 
     parser.add_argument(
@@ -565,6 +582,15 @@ def process_cmd_args(cmd_args, args):
         args.strategy = Strategy.Contrastive
         args.spotlights = int(cmd_args.contrastive)
 
+    if cmd_args.context is not None:
+        args.context = True
+        if cmd_args.noise is None:
+            logger.warning("no noise specified for occlusion so will not be used")
+            args.occlusion_noise = 1
+        args.occlusion_noise = float(cmd_args.noise)
+        args.context_location = cmd_args.context
+        args.mask_value = "context"
+
 
 def load_config(config_path=None):
     if config_path is None:
@@ -625,6 +651,15 @@ def validate_args(args: CausalArgs):
 
     if args.path is None:
         raise FileNotFoundError("Input file path cannot be None")
+
+    # makes sure file exists at path
+    if not os.path.isfile(args.path):
+        raise FileNotFoundError(f"Input file {args.path} does not exist")
+
+    # make sure if provided with context path then path exists
+    if args.context and not os.path.isfile(args.context_location):
+        raise FileNotFoundError(f"Context file {args.context_location} does not exist")
+
 
     # values that must be between 0 and 1
     for arg in [
