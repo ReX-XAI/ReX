@@ -146,8 +146,8 @@
 
 [explanation.evaluation]
 
-# normalise insertion/deletion curves by confidence of original data
-# normalise_curves = false
+# normalise insertion/deletion curves by confidence of original data, defaults to true
+# normalise_curves = true
 
 # insertion/deletion curve step size
 # insertion_step = 100

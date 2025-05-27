@@ -75,16 +75,15 @@ class MultiExplanation(Explanation):
                     self.explanations, self.data, self.args, clause=clause, path=path
                 )
             else:
-                for clause in clauses:
-                    name, ext = os.path.splitext(path)
-                    new_name = f"{name}_{clause}{ext}"
-                    save_multi_explanation(
-                        self.explanations,
-                        self.data,
-                        self.args,
-                        clause=clause,
-                        path=new_name,
-                    )
+                name, ext = os.path.splitext(path)
+                new_name = f"{name}_{clauses}{ext}"
+                save_multi_explanation(
+                    self.explanations,
+                    self.data,
+                    self.args,
+                    clause=clauses,
+                    path=new_name,
+                )
 
     def show(self, path=None, multi_style=None, clauses=None):
         if multi_style is None:

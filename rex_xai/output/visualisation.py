@@ -701,11 +701,14 @@ def get_img_as_array(data):
 def save_multi_explanation(
     explanations, data, args: CausalArgs, clause=None, path=None
 ):
-    if data.mode == "RGB" or data.mode == "L":
-        img = get_img_as_array(data)
-    else:
+    if data.mode != "RGB":
         logger.warning("we do not yet handle multiple explanations for non-images")
         raise NotImplementedError
+
+    # else
+    img = get_img_as_array(data)
+    print(type(img))
+    print("we are here")
 
     if img is not None:
         rgb_colours = generate_colours(args.spotlights, args.heatmap_colours)
@@ -743,6 +746,11 @@ def save_image(explanation, data: Data, args: CausalArgs, path=None):
         if len(data.input.size) == 4:
             data.input = data.input.squeeze(0)
         img = data.input
+        if explanation.shape[0] == 3:
+            resize = tuple(explanation.shape[1:])
+        else:
+            resize = tuple(explanation.shape[:2])
+        img = img.resize(resize)
 
         mask = __transpose_mask(explanation, data.mode, data.transposed)
 
@@ -785,9 +793,9 @@ def save_image(explanation, data: Data, args: CausalArgs, path=None):
         explanation = remove_background(data, explanation)
 
         num_slices = 10
-        fig, axes = plt.subplots(3, num_slices, figsize=(15, 6))
+        _, axes = plt.subplots(3, num_slices, figsize=(15, 6))
 
-        for axis, index in enumerate(explanation.shape):
+        for axis, _ in enumerate(explanation.shape):
             slice_indices = np.linspace(0, axis - 1, num_slices, dtype=int)
             for i, slice_index in enumerate(slice_indices):
                 ax = axes[axis, i]

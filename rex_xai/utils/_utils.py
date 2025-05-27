@@ -21,7 +21,7 @@ SpatialSearch = Enum("SpatialSearch", ["NotFound", "Found"])
 def one_d_permute(tensor):
     perm = tt.randperm(len(tensor))
     return tensor[perm], perm
-    
+
 
 def powerset(r, reverse=True):
     ps = list(chain.from_iterable(combinations(r, lim) for lim in range(1, len(r) + 1)))

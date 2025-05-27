@@ -8,11 +8,11 @@ _rex() {
     '--help[show help]' \
     '--surface[Plot a 3D responsibility map, optionally save to <filename>]' \
     '--heatmap[Plot a 2D responsibility map, optionally save to <filename>]' \
-    '--script[PyTorch compatible python script]' \
-    '--model[onnx model to use]' \
+    '--script[PyTorch compatible python script]:::_files' \
+    '--model[onnx model to use]:::_files' \
     '--no_extract[Do not extract an explanation from the responsibility map]' \
     '--config[optional config file to use with ReX]'\
-    '--output[save explanation to <filename]'\
+    '--output[save explanation to <filename>]'\
     {-v,--verbosity}'[set verbosity level, one of -v, -vv, or -vvv]'\
     {-q,--quiet}'[set verbosity level to 0 (errors only)]'\
     '--strategy[explanation extraction strategy, by default <global>]:::(global spatial)'\

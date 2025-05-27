@@ -117,7 +117,9 @@ class Data:
     def _normalise_rgb_data(self, means, stds, norm):
         assert self.data is not None
         if self.model_channels != 3:
-            raise ReXDataError(f"expected RGB data, but got data with the shape {self.model_shape}")
+            raise ReXDataError(
+                f"expected RGB data, but got data with the shape {self.model_shape}"
+            )
 
         normed_data = self.data
         if norm is not None:

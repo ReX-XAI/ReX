@@ -229,7 +229,10 @@ def cmdargs_parser():
     )
 
     parser.add_argument(
-        "-n", "--no_extract", action="store_true", help="prevent ReX from extracting an explanation from the responsibility map"
+        "-n",
+        "--no_extract",
+        action="store_true",
+        help="prevent ReX from extracting an explanation from the responsibility map",
     )
 
     parser.add_argument(
