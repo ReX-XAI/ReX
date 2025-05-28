@@ -53,8 +53,8 @@ def test_multiexplanation_save_composite(exp_multi, tmp_path):
     assert os.path.exists(p)
     assert os.stat(p).st_size > 0
 
-    exp_multi.save(path=p, multi_style="composite", clauses=clauses)
     for c in clauses:
+        exp_multi.save(path=p, multi_style="composite", clauses=c)
         clause_path = tmp_path / f"exp_{c}.png"
         assert os.path.exists(clause_path)
         assert os.stat(clause_path).st_size > 0

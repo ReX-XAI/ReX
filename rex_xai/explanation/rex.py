@@ -263,7 +263,7 @@ def analyze(exp: Explanation, data_mode: str | None):
     Args:
         exp: Explanation object as returned by :py:func:`~rex_xai.explanation._explanation`
         data_mode: Mode of the input data. Entropy difference is only calculated if ``data_mode``
-            is one of ["RGB", "L"].
+            is "RGB". If ``data_mode'' is ``spectral'' then spectral entropy is calculated.
 
     Returns:
         tuple containing
@@ -278,10 +278,10 @@ def analyze(exp: Explanation, data_mode: str | None):
     rat = eval.ratio()
     ent = None
     max_ent = None
-    if data_mode in ("RGB", "RGBA", "L"):
+    if data_mode == "RGB":
         be, ae = eval.entropy_loss()  # type: ignore
         ent = be - ae
-    elif data_mode in ("spectral", "tabular"):
+    elif data_mode == "spectral":
         ent, max_ent = eval.spectral_entropy()
 
     iauc, dauc = eval.insertion_deletion_curve(

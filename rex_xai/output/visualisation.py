@@ -15,7 +15,6 @@ from torch import Tensor
 
 from rex_xai.responsibility.prediction import Prediction
 from rex_xai.input.config import CausalArgs
-from rex_xai.responsibility.resp_maps import ResponsibilityMaps
 from rex_xai.input.input_data import Data
 from rex_xai.utils._utils import add_boundaries
 from rex_xai.utils.logger import logger
@@ -99,7 +98,7 @@ def _transparent_cmap(cmap, N=255):
 
 
 def heatmap_plot(data: Data, resp_map, colour, path=None):
-    if data.mode in ("RGB", "L"):
+    if data.mode == "RGB":
         mycmap = _transparent_cmap(mpl.colormaps[colour])
         background = data.input.resize(
             (data.model_height, data.model_width)
@@ -117,29 +116,25 @@ def heatmap_plot(data: Data, resp_map, colour, path=None):
             plt.show()
 
 
-def contour_plot(path, maps: ResponsibilityMaps, target, levels=30, destination=None):
-    """plots a contour plot"""
-    pass
-
-
-def __group_spectral_parts(explanation):
-    # coords = tt.where(explanation)[0]
-
-    coords = np.where(explanation.detach().cpu().numpy())[0]
-
-    res = []
-    local = [coords[0]]
-    p = 1
-    while p < len(coords):
-        if coords[p] == coords[p - 1] + 1:
-            local.append(coords[p])
-        else:
-            res.append(local)
-            local = [coords[p]]
-        p += 1
-    res.append(local)
-
-    return res
+# def __group_spectral_parts(explanation):
+#     try:
+#         coords = np.where(explanation.detach().cpu().numpy())[0]
+#     except AttributeError:
+#         coords = np.where(explanation)[0]
+#
+#     res = []
+#     local = [coords[0]]
+#     p = 1
+#     while p < len(coords):
+#         if coords[p] == coords[p - 1] + 1:
+#             local.append(coords[p])
+#         else:
+#             res.append(local)
+#             local = [coords[p]]
+#         p += 1
+#     res.append(local)
+#
+#     return res
 
 
 def spectral_plot(explanation, data: Data, ranking, colour, extra=True, path=None):
@@ -189,7 +184,7 @@ def spectral_plot(explanation, data: Data, ranking, colour, extra=True, path=Non
 
     c = ax.pcolormesh(ranking, cmap=mycmap)
     if not extra:
-        # only plot the colorbar is we are not plotting a separate responsibility plot.
+        # only plot the colorbar if we are not plotting a separate responsibility plot.
         fig.colorbar(c, ax=ax)
 
     fig.tight_layout()
@@ -698,6 +693,27 @@ def get_img_as_array(data):
     return np.array(img)
 
 
+def __save_multi(path, explanations_subset, data, img, colours_subset, args):
+    explanations_subset = [
+        __transpose_mask(explanation, data.mode, data.transposed)
+        for explanation in explanations_subset
+    ]
+    composite_mask = make_composite_mask(explanations_subset)
+
+    img = apply_boundaries_to_image(img, explanations_subset, colours_subset)
+
+    if composite_mask is not None:
+        cover = np.where(composite_mask, img, args.colour)
+        cover = Image.fromarray(cover, data.mode)
+        img = Image.fromarray(img, data.mode)
+        out = Image.blend(cover, img, args.alpha)
+
+        if path is None:
+            return out
+        else:
+            out.save(path)
+
+
 def save_multi_explanation(
     explanations, data, args: CausalArgs, clause=None, path=None
 ):
@@ -705,10 +721,7 @@ def save_multi_explanation(
         logger.warning("we do not yet handle multiple explanations for non-images")
         raise NotImplementedError
 
-    # else
     img = get_img_as_array(data)
-    print(type(img))
-    print("we are here")
 
     if img is not None:
         rgb_colours = generate_colours(args.spotlights, args.heatmap_colours)
@@ -717,27 +730,11 @@ def save_multi_explanation(
             if isinstance(clause, int):
                 explanations_subset = [explanations[clause]]
                 colours_subset = [rgb_colours[clause]]
+                __save_multi(path, explanations_subset, data, img, colours_subset, args)
             else:
                 explanations_subset = [explanations[c] for c in clause]
                 colours_subset = [rgb_colours[c] for c in clause]
-            explanations_subset = [
-                __transpose_mask(explanation, data.mode, data.transposed)
-                for explanation in explanations_subset
-            ]
-            composite_mask = make_composite_mask(explanations_subset)
-
-            img = apply_boundaries_to_image(img, explanations_subset, colours_subset)
-
-            if composite_mask is not None:
-                cover = np.where(composite_mask, img, args.colour)
-                cover = Image.fromarray(cover, data.mode)
-                img = Image.fromarray(img, data.mode)
-                out = Image.blend(cover, img, args.alpha)
-
-                if path is None:
-                    return out
-                else:
-                    out.save(path)
+                __save_multi(path, explanations_subset, data, img, colours_subset, args)
 
 
 def save_image(explanation, data: Data, args: CausalArgs, path=None):
