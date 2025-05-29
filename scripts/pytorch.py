@@ -10,8 +10,7 @@ from rex_xai.input.input_data import Data
 from rex_xai.responsibility.prediction import from_pytorch_tensor
 
 
-# model = get_model('resnet50', weights="DEFAULT")
-model = get_model('convnext_large', weights="DEFAULT")
+model = get_model('resnet50', weights="DEFAULT")
 model.eval()
 
 if platform.uname().system == "Darwin":
@@ -20,7 +19,7 @@ else:
     model.to("cuda")
 
 
-def preprocess(path, shape, device, mode) -> Data:
+def preprocess(path, shape, device, _) -> Data:
     transform = T.Compose(
         [
             T.Resize((224, 224)),
@@ -39,9 +38,9 @@ def preprocess(path, shape, device, mode) -> Data:
 
 
 def prediction_function(mutants, target=None, raw=False, binary_threshold=False):
-    with tt.no_grad():
+    with tt.no_grad(): # we don't use the grad and inference is faster without it
         tensor = model(mutants)
-        if raw:
+        if raw: # used when computing insertion/deletion curves
             return F.softmax(tensor, dim=1)
         # from_pytorch_tensor consumes a tensor and converts it to a Prediction object
         # you can  alternatively use your own function here
