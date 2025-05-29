@@ -19,7 +19,7 @@ else:
     model.to("cuda")
 
 
-def preprocess(path, shape, device, _) -> Data:
+def preprocess(path, shape, device, mode) -> Data:
     transform = T.Compose(
         [
             T.Resize((224, 224)),
