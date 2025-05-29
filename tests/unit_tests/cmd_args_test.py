@@ -31,7 +31,7 @@ def non_default_cmd_args():
         "5",
         "--iters",
         "10",
-        "--analyze",
+        "--analyse",
         "--mode",
         "RGB",
     ]
@@ -49,7 +49,7 @@ def test_process_cmd_args(non_default_cmd_args):
     assert args.path == non_default_cmd_args.filename
     assert args.strategy == Strategy.MultiSpotlight
     assert args.iters == int(non_default_cmd_args.iters)
-    assert args.analyze
+    assert args.analyse
     assert args.spotlights == int(non_default_cmd_args.multi)
 
 
