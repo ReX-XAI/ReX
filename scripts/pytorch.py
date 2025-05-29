@@ -10,8 +10,8 @@ from rex_xai.input.input_data import Data
 from rex_xai.responsibility.prediction import from_pytorch_tensor
 
 
-model = get_model('resnet50', weights="DEFAULT")
-# model = get_model('convnext_large', weights="DEFAULT")
+# model = get_model('resnet50', weights="DEFAULT")
+model = get_model('convnext_large', weights="DEFAULT")
 model.eval()
 
 if platform.uname().system == "Darwin":

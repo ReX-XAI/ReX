@@ -309,11 +309,11 @@ def cmdargs_parser():
         help="manually override the number of iterations set in the config file",
     )
 
-    # parser.add_argument(
-    #     "--analyze",
-    #     action="store_true",
-    #     help="area, entropy and (possibly) insertion/deletion curves",
-    # )
+    parser.add_argument(
+        "--analyze",
+        action="store_true",
+        help="area, entropy and (possibly) insertion/deletion curves",
+    )
 
     parser.add_argument(
         "--analyse",
@@ -572,8 +572,9 @@ def process_cmd_args(cmd_args, args):
 
     if cmd_args.analyse:
         args.analyse = cmd_args.analyse
-        # print(cmd_args.analyse)
-        # exit()
+
+    if cmd_args.analyze:
+        args.analyse = cmd_args.analyse
 
     if cmd_args.multi is not None:
         args.strategy = Strategy.MultiSpotlight
