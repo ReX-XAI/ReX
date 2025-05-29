@@ -116,27 +116,6 @@ def heatmap_plot(data: Data, resp_map, colour, path=None):
             plt.show()
 
 
-# def __group_spectral_parts(explanation):
-#     try:
-#         coords = np.where(explanation.detach().cpu().numpy())[0]
-#     except AttributeError:
-#         coords = np.where(explanation)[0]
-#
-#     res = []
-#     local = [coords[0]]
-#     p = 1
-#     while p < len(coords):
-#         if coords[p] == coords[p - 1] + 1:
-#             local.append(coords[p])
-#         else:
-#             res.append(local)
-#             local = [coords[p]]
-#         p += 1
-#     res.append(local)
-#
-#     return res
-
-
 def spectral_plot(explanation, data: Data, ranking, colour, extra=True, path=None):
     if isinstance(ranking, tt.Tensor):
         ranking = ranking.detach().cpu().numpy()
@@ -188,14 +167,6 @@ def spectral_plot(explanation, data: Data, ranking, colour, extra=True, path=Non
         fig.colorbar(c, ax=ax)
 
     fig.tight_layout()
-
-    # coords = __group_spectral_parts(explanation)
-    #
-    # for rect in coords:
-    #     rectangle = Rectangle(
-    #         (rect[0], 0), rect[-1] - rect[0], 3, alpha=0.3, color="red"
-    #     )
-    #     axs[0].add_patch(rectangle)
 
     if path is None:
         plt.show()

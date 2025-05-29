@@ -130,7 +130,7 @@ def update_database(
             for c, final_mask in enumerate(explanation.explanations):
                 if clauses is not None:
                     if c not in clauses:
-                        print(f"ignoring {c}")
+                        logger.warning("ignoring %s", c)
                     else:
                         __multi_update(
                             db,
@@ -153,25 +153,6 @@ def update_database(
                         time_taken,
                         c,
                     )
-
-            #     if isinstance(final_mask, tt.Tensor):
-            #         final_mask = final_mask.detach().cpu().numpy()
-            #     add_to_database(
-            #         db,
-            #         explanation.args,
-            #         classification,
-            #         target.confidence,
-            #         target_map,
-            #         final_mask,
-            #         explanation.explanation_confidences[c],
-            #         time_taken,
-            #         explanation.run_stats["total_passing"],
-            #         explanation.run_stats["total_failing"],
-            #         explanation.run_stats["max_depth_reached"],
-            #         explanation.run_stats["avg_box_size"],
-            #         multi=multi,
-            #         multi_no=c,
-            #     )
 
 
 def add_to_database(

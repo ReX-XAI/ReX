@@ -218,10 +218,15 @@ Default: 1.
 
 
 `concentrate = false`
-This parameter scales for the responsibility calculation by the current tree depth. Normally, responsibilityis between 0 and 1, but we can get much cleaner peaks in the responsibility landscape if we multiply the raw responsibility of a passing mutation by its depth in the search tree. This will have a tendency to depress *lesser* explanations, so possibly avoid if you are calculating multiple or contrastive explanations.
+This parameter scales for the responsibility calculation by the current tree depth. Normally, responsibility
+is between 0 and 1, but we can get much cleaner peaks in the responsibility landscape if we multiply the raw responsibility 
+of a passing mutation by its depth in the search tree. This will have a tendency to depress *lesser* explanations, so possibly avoid if you are calculating multiple or contrastive explanations.
 
 `negative_responsibility = false`
-ReX is a tool based on actual causality, so it iteratively refines only on the top classification from the model. Many of the mutations it creates will not have the target classification. With `negative_responsibility` set to true, the calculated responsibility for a *non-passing* mutation is subtracted from the target's responsibility map. This can, especially coupled with `concentrate = true`, to very clean responsibility landscapes.
+ReX is a tool based on actual causality, so it iteratively refines only on the top classification from the model. 
+Many of the mutations it creates will not have the target classification. 
+With `negative_responsibility` set to true, the calculated responsibility for a *non-passing* mutation is subtracted from the target's responsibility map. 
+This can, especially coupled with `concentrate = true`, lead to less noisy responsibility landscapes.
 
 ### [causal.distribution] section
 

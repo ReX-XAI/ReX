@@ -1,4 +1,4 @@
-#!/usr/bin/env python3D
+#!/usr/bin/env python
 # from __future__ import annotations
 """main logical entrypoint for ReX."""
 
