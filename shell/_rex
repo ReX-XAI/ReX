@@ -16,7 +16,7 @@ _rex() {
     {-v,--verbosity}'[set verbosity level, one of -v, -vv, or -vvv]'\
     {-q,--quiet}'[set verbosity level to 0 (errors only)]'\
     '--strategy[explanation extraction strategy, by default <global>]:::(global spatial)'\
-    {-db,--database}'[store output in sqlite database <DATABASE>, creating it if necessary]'\
+    {-db,--database}'[store output in sqlite database <DATABASE>, creating it if necessary]:::_files'\
     '--multi[multiple explanations, with optional <x> spotlights]'\
     '--contrastive[sufficent and necessary explanations, with <x> optional spotlights]'\
     '--iters[number of iterations <x> of the main algorithm to perform]'\
