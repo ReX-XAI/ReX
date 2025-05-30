@@ -39,7 +39,11 @@ class ConvNet(nn.Module):
         out = self.fc2(out)
         return out
 
-model = ConvNet().to('mps')
+# model = ConvNet().to('mps')
+if platform.uname().system == "Darwin":
+    model = ConvNet().to("mps")
+else:
+    model = ConvNet().to("cuda")
 
 model.load_state_dict(tt.load("simple_DNA_model.pt", map_location='mps', weights_only=True))
 model.eval()

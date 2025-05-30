@@ -88,8 +88,11 @@
 # maximum number of things to hold in search queue, either an integer or 'all'
 # queue_len = 1
 
-# concentrate: weight responsibility by size and depth of passing partition. Defaults to false
+# concentrate: weight responsibility by tree depth of passing partition. Defaults to false
 # concentrate = true
+
+# subtract responsibility for non-target classifications. Defaults to false
+# negative_responsibility = true
 
 [causal.distribution]
 # distribution for splitting the box, defaults to uniform. Possible choices are 'uniform' | 'binom' | 'betabinom' | 'adaptive'
@@ -143,8 +146,8 @@
 
 [explanation.evaluation]
 
-# normalise insertion/deletion curves by confidence of original data
-# normalise_curves = false
+# normalise insertion/deletion curves by confidence of original data, defaults to true
+# normalise_curves = true
 
 # insertion/deletion curve step size
 # insertion_step = 100

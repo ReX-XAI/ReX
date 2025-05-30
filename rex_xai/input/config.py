@@ -72,6 +72,7 @@ class Args:
         self.heatmap_colours = "magma"
         self.multi_style = "composite"
         # explanation production strategy
+        self.no_extract = False
         self.strategy: Strategy = Strategy.Global
         self.chunk_size = 25
         self.minimum_confidence_threshold = 0.0
@@ -89,7 +90,7 @@ class Args:
         self.max_spotlight_budget = 40
         self.permitted_overlap: float = 0.0
         # analysis
-        self.analyze: bool = False
+        self.analyse = None
         self.insertion_step = 100
         self.normalise_curves = True
 
@@ -139,6 +140,7 @@ class CausalArgs(Args):
         self.weighted: bool = False
         self.iters = 20
         self.concentrate = False
+        self.negative_responsibility = False
         # queue management
         self.queue_len = 1
         self.queue_style = Queue.Area
@@ -155,6 +157,7 @@ class CausalArgs(Args):
             + f"tree_depth: {self.tree_depth}, search_limit: {self.search_limit}, "
             + f"min_box_size: {self.min_box_size}, weighted: {self.weighted}, "
             + f"confidence_filter: {self.confidence_filter}, "
+            + f"negative_responsibility: {self.negative_responsibility}, "
             + f"data_locations: {self.data_location}, distribution: {self.distribution}, "
             + f"distribution_args: {self.distribution_args}, "
             + f"queue_len: {self.queue_len}, queue_style {self.queue_style}, "
@@ -220,8 +223,16 @@ def cmdargs_parser():
         const="show",
         help="show minimal, sufficient causal explanation, optionally saved to <OUTPUT>. Requires a PIL compatible file extension",
     )
+
     parser.add_argument(
         "-c", "--config", type=str, help="optional config file to use for ReX"
+    )
+
+    parser.add_argument(
+        "-n",
+        "--no_extract",
+        action="store_true",
+        help="prevent ReX from extracting an explanation from the responsibility map",
     )
 
     parser.add_argument(
@@ -303,9 +314,11 @@ def cmdargs_parser():
         action="store_true",
         help="area, entropy and (possibly) insertion/deletion curves",
     )
+
     parser.add_argument(
         "--analyse",
-        action="store_true",
+        nargs="?",
+        const="print",
         help="area, entropy and (possibly) insertion/deletion curves",
     )
 
@@ -386,6 +399,8 @@ def shared_args(cmd_args, args: CausalArgs):
         args.verbosity = 0
     else:
         args.verbosity = cmd_args.verbose
+    if cmd_args.no_extract is True:
+        args.no_extract = True
     if cmd_args.database is not None:
         args.db = cmd_args.database
     if cmd_args.mode is not None:
@@ -468,6 +483,7 @@ def process_config_dict(config_file_args, args):
             "min_box_size",
             "confidence_filter",
             "weighted",
+            "negative_responsibility",
             "queue_style",
             "queue_len",
             "concentrate",
@@ -554,8 +570,11 @@ def process_cmd_args(cmd_args, args):
     if cmd_args.iters is not None:
         args.iters = cmd_args.iters
 
-    if cmd_args.analyze or cmd_args.analyse:
-        args.analyze = True
+    if cmd_args.analyse:
+        args.analyse = cmd_args.analyse
+
+    if cmd_args.analyze:
+        args.analyse = cmd_args.analyse
 
     if cmd_args.multi is not None:
         args.strategy = Strategy.MultiSpotlight
