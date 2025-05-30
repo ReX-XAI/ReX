@@ -11,8 +11,15 @@ from itertools import combinations
 
 from rex_xai.explanation.explanation import Explanation
 from rex_xai.mutants.distributions import random_coords, Distribution
+from rex_xai.mutants.mutant import _apply_to_data
 from rex_xai.utils.logger import logger
-from rex_xai.utils._utils import powerset, clause_area, SpatialSearch
+from rex_xai.utils._utils import (
+    powerset,
+    clause_area,
+    SpatialSearch,
+    get_map_locations,
+    set_boolean_mask_value,
+)
 from rex_xai.output.visualisation import (
     save_multi_explanation,
     save_image,
@@ -191,33 +198,121 @@ class MultiExplanation(Explanation):
         clauses = sorted(clauses, key=lambda x: clause_area(x, sizes))
         return clauses
 
-    def contrastive(self, clauses):
-        for clause in clauses:
-            for subset in powerset(clause, reverse=False):
-                mask = sum([self.explanations[x] for x in subset])
-                mask = mask.to(tt.bool)  # type: ignore
-                sufficient = tt.where(mask, self.data.data, self.data.mask_value)  # type: ignore
-                counterfactual = tt.where(mask, self.data.mask_value, self.data.data)  # type: ignore
-                ps = self.prediction_func(sufficient)[0]
-                pn = self.prediction_func(counterfactual)[0]
+    def contrastive(self):
+        insertion_mask = tt.zeros(self.data.data.squeeze(0).shape, dtype=tt.bool).to(
+            self.data.device
+        )
+        deletion_mask = tt.ones(self.data.data.squeeze(0).shape, dtype=tt.bool).to(
+            self.data.device
+        )
 
+        ranking = get_map_locations(map=self.target_map)
+
+        found = None
+        target_confidence = (
+            self.args.minimum_confidence_threshold * self.data.target.confidence
+        )
+        sufficiency_confidence = 0.0
+
+        step = 10
+        i = 0
+        while found is None:
+            # for i in range(0, len(ranking), step):
+            chunk = ranking[i : i + step]
+            for _, loc in chunk:
+                set_boolean_mask_value(
+                    insertion_mask,
+                    self.data.mode,
+                    self.data.model_order,
+                    loc,
+                )
+                set_boolean_mask_value(
+                    deletion_mask,
+                    self.data.mode,
+                    self.data.model_order,
+                    loc,
+                    val=False,
+                )
+            sufficient = self.prediction_func(
+                _apply_to_data(insertion_mask, self.data, self.data.mask_value)
+            )
+            necessary = self.prediction_func(
+                _apply_to_data(deletion_mask, self.data, self.data.mask_value)
+            )
+
+            for j in range(0, len(sufficient)):
                 if (
-                    ps.classification == self.data.target.classification  # type: ignore
-                    and pn.classification != self.data.target.classification  # type: ignore
-                    and ps.confidence >= self.args.minimum_confidence_threshold * self.data.target.confidence
+                    sufficient[j].classification == self.data.target.classification
+                    and necessary[j].classification != self.data.target.classification
+                    and sufficient[j].confidence >= target_confidence
                 ):
                     logger.info(
-                        "found sufficient and necessary explanation of class %d, %d with confidence %f",
-                        ps.classification,
-                        pn.classification,
-                        ps.confidence,
+                        "found sufficient and necessary explanation of class %d with confidence %f. Removing these pixels results in class %d with confidence %f",
+                        sufficient[j].classification,
+                        sufficient[j].confidence,
+                        necessary[j].classification,
+                        necessary[j].confidence,
                     )
-                    self.final_mask = mask
-                    return subset
-        logger.warning(
-            "ReX is unable to find a counterfactual, so not producing an output. Exiting here..."
+                    found = insertion_mask
+                    sufficiency_confidence = sufficient[j].confidence
+                    break
+
+            i += step
+
+        # completeness
+        j = len(ranking)
+        target_confidence = round(self.data.target.confidence, 2)
+        while round(sufficiency_confidence, 2) > target_confidence:
+            chunk = ranking[j - step : j]
+            for _, loc in chunk:
+                set_boolean_mask_value(
+                    insertion_mask,
+                    self.data.mode,
+                    self.data.model_order,
+                    loc,
+                )
+            sufficient = self.prediction_func(
+                _apply_to_data(insertion_mask, self.data, self.data.mask_value)
+            )
+            sufficiency_confidence = sufficient[0].confidence
+            found = insertion_mask
+            j -= step
+            if j <= i:
+                print("too small", sufficient[0].confidence, target_confidence)
+                break
+
+        logger.info(
+            "a complete explanation found with confidence %f", sufficiency_confidence
         )
-        exit()
+        self.final_mask = found
+
+    # def contrastive(self, clauses):
+    #     for clause in clauses:
+    #         for subset in powerset(clause, reverse=False):
+    #             mask = sum([self.explanations[x] for x in subset])
+    #             mask = mask.to(tt.bool)  # type: ignore
+    #             sufficient = tt.where(mask, self.data.data, self.data.mask_value)  # type: ignore
+    #             counterfactual = tt.where(mask, self.data.mask_value, self.data.data)  # type: ignore
+    #             ps = self.prediction_func(sufficient)[0]
+    #             pn = self.prediction_func(counterfactual)[0]
+    #
+    #             if (
+    #                 ps.classification == self.data.target.classification  # type: ignore
+    #                 and pn.classification != self.data.target.classification  # type: ignore
+    #                 and ps.confidence >= self.args.minimum_confidence_threshold * self.data.target.confidence
+    #             ):
+    #                 logger.info(
+    #                     "found sufficient and necessary explanation of class %d, %d with confidence %f",
+    #                     ps.classification,
+    #                     pn.classification,
+    #                     ps.confidence,
+    #                 )
+    #                 self.final_mask = mask
+    #                 return subset
+    #     logger.warning(
+    #         "ReX is unable to find a counterfactual, so not producing an output. Exiting here..."
+    #     )
+    #     exit()
 
     def __random_step_from(self, origin, width, height, step=5):
         c, r = origin

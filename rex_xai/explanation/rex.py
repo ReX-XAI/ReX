@@ -346,26 +346,21 @@ def _explanation(
 
     logger.info("Extracting explanation from responsibility map")
     clauses = None
-    if args.strategy in (Strategy.MultiSpotlight, Strategy.Contrastive):
+    if args.strategy == Strategy.Contrastive:
+        if args.strategy == Strategy.Contrastive:
+            exp = MultiExplanation(resp_object, prediction_func, data, args, run_stats)
+            exp.contrastive()
+            args.multi_style = "contrastive"
+    elif args.strategy == Strategy.MultiSpotlight:
         exp = MultiExplanation(resp_object, prediction_func, data, args, run_stats)
         if not args.no_extract:
             exp.extract()
 
-            if args.strategy == Strategy.Contrastive and args.permitted_overlap != 1.0:
-                logger.warning(
-                    "contrastive explanations require a permitted overlap of 1.0, so setting this now"
-                )
-                args.permitted_overlap = 1.0
-
             clauses = exp.separate_by(args.permitted_overlap)
             logger.info(f"found the following sets of explanations {clauses}")
 
-            if args.strategy == Strategy.Contrastive:
-                clauses = exp.contrastive(clauses)
-                args.multi_style = "contrastive"
-            else:
-                logger.info(f"keeping only {clauses[0]}")
-                clauses = clauses[0]
+            logger.info(f"keeping only {clauses[0]}")
+            clauses = clauses[0]
     else:
         exp = Explanation(resp_object, prediction_func, data, args, run_stats)
         if not args.no_extract:

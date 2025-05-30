@@ -100,6 +100,7 @@ class Evaluation:
                     loc,
                     val=False,
                 )
+            # TODO value should not be zero
             im.append(
                 _apply_to_data(insertion_mask, self.explanation.data, 0).squeeze(0)
             )
@@ -124,12 +125,6 @@ class Evaluation:
             d_auc /= const
 
         return i_auc, d_auc
-
-    # # def sensitivity(self):
-    #     #     pass
-
-    # # def infidelity(self):
-    #     #     pass
 
     def __batch(self, im, dm, prediction_func, insertion_curve, deletion_curve):
         assert self.explanation.data.target is not None
