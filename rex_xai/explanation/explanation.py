@@ -138,8 +138,7 @@ class Explanation:
                 for j, p in enumerate(preds):
                     if (
                         p.classification == self.data.target.classification
-                        and p.confidence
-                        >= self.data.target.confidence
+                        and p.confidence >= self.data.target.confidence
                         * self.args.minimum_confidence_threshold
                     ):  #  type: ignore
                         logger.info(

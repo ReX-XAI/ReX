@@ -201,16 +201,17 @@ class MultiExplanation(Explanation):
                 if (
                     ps.classification == self.data.target.classification  # type: ignore
                     and pn.classification != self.data.target.classification  # type: ignore
+                    and ps.confidence >= self.args.minimum_confidence_threshold * self.data.target.confidence
                 ):
                     logger.info(
                         "found sufficient and necessary explanation of class %d, %d with confidence %f",
                         ps.classification,
                         pn.classification,
-                        pn.confidence,
+                        ps.confidence,
                     )
                     self.final_mask = mask
                     return subset
-        logger.warn(
+        logger.warning(
             "ReX is unable to find a counterfactual, so not producing an output. Exiting here..."
         )
         exit()
