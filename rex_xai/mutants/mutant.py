@@ -119,10 +119,10 @@ class Mutant:
         return _apply_to_data(self.mask, data, self.masking_func)
 
     def save_mutant(self, data: Data, name=None, segs=None):
-        if data.mode in ("RGB", "L"):
+        if data.mode == "RGB":
             m = np.array(data.input.resize((data.model_height, data.model_width)))
             mask = self.mask.squeeze().detach().cpu().numpy()
-            if data.transposed and data.mode == "RGB":
+            if data.transposed:
                 # if transposed, we have C * H * W, so change that to H * W * C
                 m = np.where(mask, m.transpose((2, 0, 1)), 0)
                 m = m.transpose((1, 2, 0))
@@ -146,4 +146,6 @@ class Mutant:
             plt.savefig(f"{self.get_name()}.png")
         # 3d image
         if data.mode == "voxel":
+            # TODO
+            logger.info("saving 3d mutants is not yet implemented")
             pass

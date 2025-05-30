@@ -5,7 +5,11 @@ from typing import Optional
 import torch as tt
 
 from rex_xai.output import visualisation
-from rex_xai.utils._utils import SpatialSearch, get_map_locations, set_boolean_mask_value
+from rex_xai.utils._utils import (
+    SpatialSearch,
+    get_map_locations,
+    set_boolean_mask_value,
+)
 from rex_xai.input.config import CausalArgs, Strategy
 from rex_xai.input.input_data import Data
 from rex_xai.utils.logger import logger
@@ -256,7 +260,7 @@ class Explanation:
     def save(self, path, mask=None, multi=None, multi_style="", clauses=None):
         # NOTE: the parameter multi_style="" is here simply to make overriding
         # the save function in MultiExplanation typecheck, same holds for clauses
-        if self.data.mode in ("RGB", "L", "voxel"):
+        if self.data.mode in ("RGB", "voxel"):
             if path is None:
                 path = f"{self.data.target.classification}.png"  # type: ignore
             if mask is None:
@@ -277,25 +281,26 @@ class Explanation:
             pass
 
     def heatmap_plot(self, path=None):
-        if self.data.mode in ("RGB", "L"):
-            visualisation.heatmap_plot(
-                self.data,
-                self.target_map,
-                self.args.heatmap_colours,
-                path=path,
-            )
-        elif self.data.mode == "voxel":
-            visualisation.voxel_plot(
-                self.args,
-                self.target_map,
-                self.data,
-                path=path,
-            )
-        else:
-            return NotImplementedError
+        if self.target_map is not None:
+            if self.data.mode == "RGB":
+                visualisation.heatmap_plot(
+                    self.data,
+                    self.target_map,
+                    self.args.heatmap_colours,
+                    path=path,
+                )
+            elif self.data.mode == "voxel":
+                visualisation.voxel_plot(
+                    self.args,
+                    self.target_map,  # type: ignore
+                    self.data,
+                    path=path,
+                )
+            else:
+                return NotImplementedError
 
     def surface_plot(self, path=None):
-        if self.data.mode in ("RGB", "L"):
+        if self.data.mode == "RGB":
             visualisation.surface_plot(
                 self.args,
                 self.target_map,  # type: ignore
@@ -303,10 +308,12 @@ class Explanation:
                 path=path,
             )
         elif self.data.mode == "voxel":
-            logger.warning("Surface plot not available for voxel data using voxel plot instead")
+            logger.warning(
+                "Surface plot not available for voxel data using voxel plot instead"
+            )
             visualisation.voxel_plot(
                 self.args,
-                self.target_map,
+                self.target_map,  # type: ignore
                 self.data,
                 path=path,
             )
@@ -314,7 +321,7 @@ class Explanation:
             return NotImplementedError
 
     def show(self, path=None):
-        if self.data.mode in ("RGB", "L", "voxel"):
+        if self.data.mode in ("RGB", "voxel"):
             out = visualisation.save_image(
                 self.explanation, self.data, self.args, path=path
             )

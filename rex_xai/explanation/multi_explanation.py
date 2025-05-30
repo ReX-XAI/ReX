@@ -13,7 +13,11 @@ from rex_xai.explanation.explanation import Explanation
 from rex_xai.mutants.distributions import random_coords, Distribution
 from rex_xai.utils.logger import logger
 from rex_xai.utils._utils import powerset, clause_area, SpatialSearch
-from rex_xai.output.visualisation import save_multi_explanation, save_image, plot_image_grid
+from rex_xai.output.visualisation import (
+    save_multi_explanation,
+    save_image,
+    plot_image_grid,
+)
 
 
 class MultiExplanation(Explanation):
@@ -71,28 +75,27 @@ class MultiExplanation(Explanation):
                     self.explanations, self.data, self.args, clause=clause, path=path
                 )
             else:
-                for clause in clauses:
-                    name, ext = os.path.splitext(path)
-                    new_name = f"{name}_{clause}{ext}"
-                    save_multi_explanation(
-                        self.explanations,
-                        self.data,
-                        self.args,
-                        clause=clause,
-                        path=new_name,
-                    )
+                name, ext = os.path.splitext(path)
+                new_name = f"{name}_{clauses}{ext}"
+                save_multi_explanation(
+                    self.explanations,
+                    self.data,
+                    self.args,
+                    clause=clauses,
+                    path=new_name,
+                )
 
     def show(self, path=None, multi_style=None, clauses=None):
         if multi_style is None:
             multi_style = self.args.multi_style
         outs = []
 
-        for i, mask in enumerate(self.explanations):
+        for mask in self.explanations:
             out = save_image(mask, self.data, self.args, path=None)
             outs.append(out)
 
         if multi_style == "separate":
-            for i, mask in enumerate(self.explanations):
+            for mask in self.explanations:
                 out = save_image(mask, self.data, self.args, path=None)
                 outs.append(out)
 
@@ -210,7 +213,7 @@ class MultiExplanation(Explanation):
                     )
                     self.final_mask = mask
                     return subset
-        logger.warn(
+        logger.warning(
             "ReX is unable to find a counterfactual, so not producing an output. Exiting here..."
         )
         exit()
