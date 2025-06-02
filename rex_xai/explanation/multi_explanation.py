@@ -126,7 +126,7 @@ class MultiExplanation(Explanation):
         self.blank()
         # we start with the global max explanation
         logger.info("spotlight number 1 (global max)")
-        conf = self._Explanation__global()  # type: ignore
+        conf = self._global() 
         if self.final_mask is not None:
             self.explanations.append(self.final_mask)
             self.explanation_confidences.append(conf)
@@ -254,7 +254,7 @@ class MultiExplanation(Explanation):
         else:
             centre = origin
 
-        ret, resp, conf = self._Explanation__spatial(  # type: ignore
+        ret, resp, conf = self._spatial(  # type: ignore
             centre=centre, expansion_limit=self.args.no_expansions
         )
 
@@ -262,7 +262,7 @@ class MultiExplanation(Explanation):
         while ret == SpatialSearch.NotFound and steps < self.args.max_spotlight_budget:
             if self.args.spotlight_objective_function == "none":
                 centre = self.__random_location()
-                ret, resp, conf = self._Explanation__spatial(  # type: ignore
+                ret, resp, conf = self._spatial(  # type: ignore
                     centre=centre, expansion_limit=self.args.no_expansions
                 )
             else:
@@ -274,12 +274,12 @@ class MultiExplanation(Explanation):
                         self.data.model_width,
                         step=self.args.spotlight_step,
                     )
-                    ret, new_resp, conf = self._Explanation__spatial(  # type: ignore
+                    ret, new_resp, conf = self._spatial(  # type: ignore
                         centre=centre, expansion_limit=self.args.no_expansions
                     )
                     if ret == SpatialSearch.Found:
                         return conf
-                ret, resp, conf = self._Explanation__spatial(  # type: ignore
+                ret, resp, conf = self._spatial(  # type: ignore
                     centre=centre, expansion_limit=self.args.no_expansions
                 )
             steps += 1
