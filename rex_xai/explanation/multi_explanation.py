@@ -260,30 +260,30 @@ class MultiExplanation(Explanation):
             i += step
 
         # completeness
-        j = len(ranking)
-        target_confidence = round(self.data.target.confidence, 2)
-        while round(sufficiency_confidence, 2) > target_confidence:
-            chunk = ranking[j - step : j]
-            for _, loc in chunk:
-                set_boolean_mask_value(
-                    insertion_mask,
-                    self.data.mode,
-                    self.data.model_order,
-                    loc,
-                )
-            sufficient = self.prediction_func(
-                _apply_to_data(insertion_mask, self.data, self.data.mask_value)
-            )
-            sufficiency_confidence = sufficient[0].confidence
-            found = insertion_mask
-            j -= step
-            if j <= i:
-                print("too small", sufficient[0].confidence, target_confidence)
-                break
-
-        logger.info(
-            "a complete explanation found with confidence %f", sufficiency_confidence
-        )
+        # j = len(ranking)
+        # target_confidence = round(self.data.target.confidence, 2)
+        # while round(sufficiency_confidence, 2) > target_confidence:
+        #     chunk = ranking[j - step : j]
+        #     for _, loc in chunk:
+        #         set_boolean_mask_value(
+        #             insertion_mask,
+        #             self.data.mode,
+        #             self.data.model_order,
+        #             loc,
+        #         )
+        #     sufficient = self.prediction_func(
+        #         _apply_to_data(insertion_mask, self.data, self.data.mask_value)
+        #     )
+        #     sufficiency_confidence = sufficient[0].confidence
+        #     found = insertion_mask
+        #     j -= step
+        #     if j <= i:
+        #         print("too small", sufficient[0].confidence, target_confidence)
+        #         break
+        #
+        # logger.info(
+        #     "a complete explanation found with confidence %f", sufficiency_confidence
+        # )
         self.final_mask = found
 
     # def contrastive(self, clauses):

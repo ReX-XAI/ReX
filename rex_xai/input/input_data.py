@@ -223,6 +223,8 @@ class Data:
                 self.mask_value = lambda m, d: spectral_occlusion(
                     m, d, device=self.device
                 )
+            case "none":
+                self.mask_value = tt.nan
             case "context":
                 self.mask_value = lambda m, d: context_occlusion(m, d, self.context)
                 # TODO: Add args for noise and setting the context as currently only available through custom script

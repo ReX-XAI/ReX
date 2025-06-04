@@ -101,22 +101,16 @@ class BoxInternal:
             return (self.row_start, self.row_stop, self.col_start, self.col_stop)
 
     def __1d_parts(self):
-        c1 = random_coords(self.distribution, [self.col_stop - self.col_start])
-        if c1 is not None and isinstance(c1, np.ndarray):
-            c1 = c1[0] + self.col_start
-
-        c2 = random_coords(self.distribution, [self.col_stop - self.col_start])
-        if c2 is not None and isinstance(c2, np.ndarray):
-            c2 = c2[0] + self.col_start
-
-        c3 = random_coords(self.distribution, [self.col_stop - self.col_start])
-        if c3 is not None and isinstance(c3, np.ndarray):
-            c3 = c3[0] + self.col_start
-
-        if c1 is None or c2 is None or c3 is None:
+        if self.col_stop - self.col_start < 4:
             return None
 
-        ordered = sorted([c1, c2, c3])
+        width = self.col_stop - self.col_start
+        xs = random_coords(self.distribution, width, 4, self.distribution_args, 1, width)
+        if xs is None:
+            return None
+
+        xs = xs + self.col_start
+        ordered = sorted(xs)
 
         b0 = Box(
             0,
@@ -170,10 +164,8 @@ class BoxInternal:
         else:
             h = int(self.row_stop - self.row_start)
             w = int(self.col_stop - self.col_start)
-            space: int = h * w
-            pos = random_coords(
-                self.distribution, space, h, w, self.distribution_args, map=map
-            )
+            space: int = (h * w)
+            pos = random_coords(self.distribution, space, 1, self.distribution_args, h, w, map=map)
 
         if pos is None:
             return

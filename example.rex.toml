@@ -101,7 +101,7 @@
 # blend = 0.5
 
 # supplimental arguments for distribution creation, these are ignored if <distribution> does not take any parameters
-# dist_args = [1.1, 1.1]
+# distribution_args = [1.1, 1.1]
 
 [explanation]
 # iterate through pixel ranking in chunks, defaults to causal.min_box_size

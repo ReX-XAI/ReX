@@ -43,11 +43,14 @@ __combinations = [
 
 
 def _apply_to_data(mask, data: Data, masking_func):
-    if isinstance(masking_func, (float, int)):
-        res = tt.where(mask, data.data, masking_func)  # type: ignore
-        return res
+    # if isinstance(masking_func, (float, int, tt.nan)):
+    #     res = tt.where(mask, data.data, masking_func)  # type: ignore
+    #     return res
     if callable(masking_func):
         return masking_func(mask, data.data)
+    if masking_func is not None:
+        m = tt.where(mask, data.data, masking_func)
+        return m
 
     logger.warning("applying default masking value of 0")
     return tt.where(mask, data.data, 0)  # type: ignore

@@ -135,6 +135,7 @@ class Explanation:
             limit += self.args.chunk_size
             for _, loc in chunk:
                 self.set_to_true(loc, mutant)
+            #  TODO  this is not correct 
             d = _apply_to_data(mutant, self.data, self.data.mask_value).squeeze(0)
             masks.append(d)
             if len(masks) == self.args.batch_size:
