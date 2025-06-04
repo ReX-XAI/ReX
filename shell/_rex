@@ -18,7 +18,8 @@ _rex() {
     '--strategy[explanation extraction strategy, by default <global>]:::(global spatial)'\
     {-db,--database}'[store output in sqlite database <DATABASE>, creating it if necessary]:::_files'\
     '--multi[multiple explanations, with optional <x> spotlights]'\
-    '--contrastive[sufficent and necessary explanations, with <x> optional spotlights]'\
+    '--contrastive[sufficent and necessary explanations]'\
+    '--complete[sufficent, necessary and complete explanations]'\
     '--iters[number of iterations <x> of the main algorithm to perform]'\
     '--analyse[perform some basic analysis of the explanation, optionally saved to <filename>]'\
     '--mode[assist ReX with input type, one of tabular | spectral | RGB | voxel]:::(tabular spectral RGB voxel)'\
