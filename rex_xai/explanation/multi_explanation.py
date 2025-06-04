@@ -239,6 +239,7 @@ class MultiExplanation(Explanation):
                 _apply_to_data(deletion_mask, self.data, self.data.mask_value)
             )
 
+            # print(i, sufficient, necessary)
             for j in range(0, len(sufficient)):
                 if (
                     sufficient[j].classification == self.data.target.classification #type: ignore

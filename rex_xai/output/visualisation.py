@@ -75,6 +75,7 @@ def plot_3d(path, ranking, ogrid, norm=255.0):
     If <path> is greyscale or RGBA, it is converted to RGB for plotting.
     """
     img = Image.open(path).convert("RGB")
+    # TODO this is wrong
     img = img.resize((ranking.shape[0], ranking.shape[1]))
     img = np.asarray(img)
 
@@ -596,9 +597,6 @@ def __transpose_mask(explanation, mode, transposed):
     if transposed:
         if mode == "RGB":
             mask = explanation.squeeze().detach().cpu().numpy().transpose((1, 2, 0))
-        elif mode == "L":
-            mask = explanation.squeeze(0).detach().cpu().numpy().transpose((2, 1, 0))
-            mask = np.repeat(mask, 3, axis=-1)
     else:
         mask = explanation.squeeze(0).detach().cpu().numpy()
 
@@ -714,11 +712,11 @@ def save_image(explanation, data: Data, args: CausalArgs, path=None):
         if len(data.input.size) == 4:
             data.input = data.input.squeeze(0)
         img = data.input
-        if explanation.shape[0] == 3:
-            resize = tuple(explanation.shape[1:])
-        else:
-            resize = tuple(explanation.shape[:2])
-        img = img.resize(resize)
+        # if explanation.shape[0] == 3:
+        #     resize = tuple(explanation.shape[1:])
+        # else:
+        #     resize = tuple(explanation.shape[:2])
+        # img = img.resize(resize)
 
         mask = __transpose_mask(explanation, data.mode, data.transposed)
 

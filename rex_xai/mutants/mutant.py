@@ -123,6 +123,7 @@ class Mutant:
 
     def save_mutant(self, data: Data, name=None, segs=None):
         if data.mode == "RGB":
+            # m = np.array(data.input)
             m = np.array(data.input.resize((data.model_height, data.model_width)))
             mask = self.mask.squeeze().detach().cpu().numpy()
             if data.transposed:

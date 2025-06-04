@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 
 import platform
-from torchvision.models import get_model
+from torchvision.models import get_model, get_weight
 from torchvision import transforms as T
 import torch as tt
 import torch.nn.functional as F
 from PIL import Image  # type: ignore
 from rex_xai.input.input_data import Data
 from rex_xai.responsibility.prediction import from_pytorch_tensor
+# from torchvision.models.weights import ResNet50_Weights
 
 
 model = get_model('resnet50', weights="DEFAULT")
+weights = get_weight("ResNet50_Weights.IMAGENET1K_V2")
 model.eval()
 
 if platform.uname().system == "Darwin":
@@ -18,22 +20,19 @@ if platform.uname().system == "Darwin":
 else:
     model.to("cuda")
 
+# transform = weights.transforms()
 
 def preprocess(path, shape, device, mode) -> Data:
-    transform = T.Compose(
-        [
-            T.Resize((256, 256)),
-            T.CenterCrop(224),
-            T.ToTensor(),
-            T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        ]
-    )
     # open the image with mode "RGB"
     img = Image.open(path).convert("RGB")
-    # create a Data object
     data = Data(img, shape, device, mode='RGB')
     # manually set the data to the transformed image for model consumption
-    data.data = transform(img).unsqueeze(0).to(device)  # type: ignore
+    data.data = weights.transforms()(img).unsqueeze(0).to(device)  # type: ignore
+    # make a copy
+    original = Image.open(path).convert("RGB")
+    original = T.functional.resize(original, (256, 256))
+    original = T.functional.center_crop(original, 224)
+    data.input = original
 
     return data
 
