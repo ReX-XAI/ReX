@@ -115,6 +115,7 @@ class Data:
         self.data = tt.from_numpy(self.data).to(self.device)
 
     def _normalise_rgb_data(self, means, stds, norm):
+        """used for onnx input data only"""
         assert self.data is not None
         if self.model_channels != 3:
             raise ReXDataError(
@@ -171,8 +172,6 @@ class Data:
         if self.mode == "RGB" and self.data is not None:
             self.data = self._normalise_rgb_data(means, stds, norm)
             self.try_unsqueeze()
-        if self.mode == "L":
-            self.data = self._normalise_rgb_data(means, stds, norm)
 
     def __get_shape(self):
         """returns height, width, channels, order, depth for the model"""
