@@ -74,6 +74,7 @@ class Args:
         # explanation production strategy
         self.no_extract = False
         self.strategy: Strategy = Strategy.Global
+        self.complete = False
         self.chunk_size = 25
         self.minimum_confidence_threshold = 0.0
         self.batch_size: int = 1
@@ -299,10 +300,16 @@ def cmdargs_parser():
 
     parser.add_argument(
         "--contrastive",
-        nargs="?",
-        const=10,
-        help="a contrastive explanation, minimal, necessary and sufficient. Needs optional number <x> of floodlights, defaults to value in <rex.toml>, or 10 if undefined",
+        action="store_true",
+        help="a contrastive explanation: (approximately) minimal, necessary and sufficient",
     )
+
+    parser.add_argument(
+        "--complete",
+        action="store_true",
+        help="a complete explanation: (approximately) minimal, necessary, sufficient and having approximately the same confidence as the original image",
+    )
+
     parser.add_argument(
         "--iters",
         type=int,
@@ -580,10 +587,12 @@ def process_cmd_args(cmd_args, args):
         args.strategy = Strategy.MultiSpotlight
         args.spotlights = int(cmd_args.multi)
 
-    if cmd_args.contrastive is not None:
+    if cmd_args.contrastive: 
         args.strategy = Strategy.Contrastive
-        args.spotlights = int(cmd_args.contrastive)
 
+    if cmd_args.complete:
+        args.strategy = Strategy.Contrastive
+        args.complete = True
 
 def load_config(config_path=None):
     if config_path is None:

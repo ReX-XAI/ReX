@@ -210,14 +210,13 @@ class MultiExplanation(Explanation):
 
         found = None
         target_confidence = (
-            self.args.minimum_confidence_threshold * self.data.target.confidence
-        )
+            self.args.minimum_confidence_threshold * self.data.target.confidence  #type: ignore
+        ) 
         sufficiency_confidence = 0.0
 
         step = 10
         i = 0
         while found is None:
-            # for i in range(0, len(ranking), step):
             chunk = ranking[i : i + step]
             for _, loc in chunk:
                 set_boolean_mask_value(
@@ -242,8 +241,8 @@ class MultiExplanation(Explanation):
 
             for j in range(0, len(sufficient)):
                 if (
-                    sufficient[j].classification == self.data.target.classification
-                    and necessary[j].classification != self.data.target.classification
+                    sufficient[j].classification == self.data.target.classification #type: ignore
+                    and necessary[j].classification != self.data.target.classification #type: ignore
                     and sufficient[j].confidence >= target_confidence
                 ):
                     logger.info(
@@ -260,59 +259,32 @@ class MultiExplanation(Explanation):
             i += step
 
         # completeness
-        # j = len(ranking)
-        # target_confidence = round(self.data.target.confidence, 2)
-        # while round(sufficiency_confidence, 2) > target_confidence:
-        #     chunk = ranking[j - step : j]
-        #     for _, loc in chunk:
-        #         set_boolean_mask_value(
-        #             insertion_mask,
-        #             self.data.mode,
-        #             self.data.model_order,
-        #             loc,
-        #         )
-        #     sufficient = self.prediction_func(
-        #         _apply_to_data(insertion_mask, self.data, self.data.mask_value)
-        #     )
-        #     sufficiency_confidence = sufficient[0].confidence
-        #     found = insertion_mask
-        #     j -= step
-        #     if j <= i:
-        #         print("too small", sufficient[0].confidence, target_confidence)
-        #         break
-        #
-        # logger.info(
-        #     "a complete explanation found with confidence %f", sufficiency_confidence
-        # )
-        self.final_mask = found
+        if self.args.complete:
+            j = len(ranking)
+            target_confidence = round(self.data.target.confidence, 2) #type: ignore
+            while round(sufficiency_confidence, 2) > target_confidence:
+                chunk = ranking[j - step : j]
+                for _, loc in chunk:
+                    set_boolean_mask_value(
+                        insertion_mask,
+                        self.data.mode,
+                        self.data.model_order,
+                        loc,
+                    )
+                sufficient = self.prediction_func(
+                    _apply_to_data(insertion_mask, self.data, self.data.mask_value)
+                )
+                sufficiency_confidence = sufficient[0].confidence
+                found = insertion_mask
+                j -= step
+                if j <= i:
+                    logger.warning("too small", sufficient[0].confidence, target_confidence)
+                    break
 
-    # def contrastive(self, clauses):
-    #     for clause in clauses:
-    #         for subset in powerset(clause, reverse=False):
-    #             mask = sum([self.explanations[x] for x in subset])
-    #             mask = mask.to(tt.bool)  # type: ignore
-    #             sufficient = tt.where(mask, self.data.data, self.data.mask_value)  # type: ignore
-    #             counterfactual = tt.where(mask, self.data.mask_value, self.data.data)  # type: ignore
-    #             ps = self.prediction_func(sufficient)[0]
-    #             pn = self.prediction_func(counterfactual)[0]
-    #
-    #             if (
-    #                 ps.classification == self.data.target.classification  # type: ignore
-    #                 and pn.classification != self.data.target.classification  # type: ignore
-    #                 and ps.confidence >= self.args.minimum_confidence_threshold * self.data.target.confidence
-    #             ):
-    #                 logger.info(
-    #                     "found sufficient and necessary explanation of class %d, %d with confidence %f",
-    #                     ps.classification,
-    #                     pn.classification,
-    #                     ps.confidence,
-    #                 )
-    #                 self.final_mask = mask
-    #                 return subset
-    #     logger.warning(
-    #         "ReX is unable to find a counterfactual, so not producing an output. Exiting here..."
-    #     )
-    #     exit()
+            logger.info(
+                "a complete explanation found with confidence %f", sufficiency_confidence
+            )
+        self.final_mask = found
 
     def __random_step_from(self, origin, width, height, step=5):
         c, r = origin
