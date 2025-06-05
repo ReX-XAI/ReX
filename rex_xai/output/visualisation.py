@@ -592,13 +592,10 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
         z_slice.write_image(f"{path}_z_slice.png")
 
 
-def __transpose_mask(explanation, mode, transposed):
-    mask = None
+def __transpose_mask(mask, mode, transposed):
     if transposed:
         if mode == "RGB":
-            mask = explanation.squeeze().detach().cpu().numpy().transpose((1, 2, 0))
-    else:
-        mask = explanation.squeeze(0).detach().cpu().numpy()
+            mask = mask.transpose((1, 2, 0))
 
     return mask
 
@@ -706,19 +703,13 @@ def save_multi_explanation(
                 __save_multi(path, explanations_subset, data, img, colours_subset, args)
 
 
-def save_image(explanation, data: Data, args: CausalArgs, path=None):
-    mask = None
+def save_image(explanation, data: Data, args: CausalArgs, path=None, mask=None):
     if data.mode == "RGB":
         if len(data.input.size) == 4:
             data.input = data.input.squeeze(0)
         img = data.input
-        # if explanation.shape[0] == 3:
-        #     resize = tuple(explanation.shape[1:])
-        # else:
-        #     resize = tuple(explanation.shape[:2])
-        # img = img.resize(resize)
 
-        mask = __transpose_mask(explanation, data.mode, data.transposed)
+        mask = __transpose_mask(mask, data.mode, data.transposed)
 
         if mask is not None:
             if args.raw:
@@ -748,6 +739,7 @@ def save_image(explanation, data: Data, args: CausalArgs, path=None):
                 out.save(path)
 
             return out
+
     elif data.mode == "voxel":
         data_m: np.ndarray = data.data  # type:ignore
         if isinstance(explanation, tt.Tensor):

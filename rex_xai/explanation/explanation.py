@@ -266,10 +266,10 @@ class Explanation:
                 path = f"{self.data.target.classification}.png"  # type: ignore
             if mask is None:
                 visualisation.save_image(
-                    self.explanation, self.data, self.args, path=path
+                    self.explanation, self.data, self.args, path=path, mask=self.final_mask
                 )
             else:
-                visualisation.save_image(mask, self.data, self.args, path=path)
+                visualisation.save_image(mask, self.explanation, self.data, self.args, path=path)
         if self.data.mode == "spectral":
             visualisation.spectral_plot(
                 self.explanation,
