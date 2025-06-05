@@ -79,15 +79,23 @@ def test_quiet_overrides_verbose():
 
 
 def test_contrastive():
-    cmd_args_list = ["filename.jpg", "--contrastive", "5"]
+    cmd_args_list = ["filename.jpg", "--contrastive"]
     parser = cmdargs_parser()
     cmd_args = parser.parse_args(cmd_args_list)
     args = CausalArgs()
     process_cmd_args(cmd_args, args)
 
     assert args.strategy == Strategy.Contrastive
-    assert args.spotlights == int(cmd_args.contrastive)
 
+def test_complete():
+    cmd_args_list = ["filename.jpg", "--complete"]
+    parser = cmdargs_parser()
+    cmd_args = parser.parse_args(cmd_args_list)
+    args = CausalArgs()
+    process_cmd_args(cmd_args, args)
+
+    assert args.strategy == Strategy.Contrastive
+    assert args.complete == True
 
 def test_spectral():
     cmd_args_list = ["filename.jpg", "--spectral"]
