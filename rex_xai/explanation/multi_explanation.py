@@ -209,9 +209,14 @@ class MultiExplanation(Explanation):
         ranking = get_map_locations(map=self.target_map)
 
         found = None
-        target_confidence = (
-            self.args.minimum_confidence_threshold * self.data.target.confidence  # type: ignore
-        )
+        if self.args.complete:
+            if self.args.minimum_confidence_threshold < 1.0:
+                logger.info("setting the minimum confidence threshold to 1 in order to calculate a complete explanation.")
+            target_confidence = self.data.target.confidence  #type: ignore
+        else:
+            target_confidence = (
+                self.args.minimum_confidence_threshold * self.data.target.confidence  # type: ignore
+            )
         sufficiency_confidence = 0.0
 
         step = 10
@@ -239,7 +244,6 @@ class MultiExplanation(Explanation):
                 _apply_to_data(deletion_mask, self.data, self.data.mask_value)
             )
 
-            # print(i, sufficient, necessary)
             for j in range(0, len(sufficient)):
                 if (
                     sufficient[j].classification == self.data.target.classification  # type: ignore
@@ -260,6 +264,7 @@ class MultiExplanation(Explanation):
             i += step
 
         # completeness
+        step = 5
         if self.args.complete:
             j = len(ranking)
             target_confidence = round(self.data.target.confidence, 2)  # type: ignore

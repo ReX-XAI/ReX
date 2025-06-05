@@ -12,15 +12,13 @@ from rex_xai.responsibility.prediction import from_pytorch_tensor
 
 
 model = get_model('resnet50', weights="DEFAULT")
-weights = get_weight("ResNet50_Weights.IMAGENET1K_V2")
+weights = get_weight("ResNet50_Weights.IMAGENET1K_V1")
 model.eval()
 
 if platform.uname().system == "Darwin":
     model.to("mps")
 else:
     model.to("cuda")
-
-# transform = weights.transforms()
 
 def preprocess(path, shape, device, mode) -> Data:
     # open the image with mode "RGB"
