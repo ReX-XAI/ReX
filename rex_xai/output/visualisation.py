@@ -593,6 +593,8 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
 
 
 def __transpose_mask(mask, mode, transposed):
+    if isinstance(mask, tt.Tensor):
+        mask = mask.detach().cpu().numpy()
     if transposed:
         if mode == "RGB":
             mask = mask.transpose((1, 2, 0))

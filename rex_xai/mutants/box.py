@@ -105,7 +105,9 @@ class BoxInternal:
             return None
 
         width = self.col_stop - self.col_start
-        xs = random_coords(self.distribution, width, 4, self.distribution_args, 1, width)
+        xs = random_coords(
+            self.distribution, width, 4, self.distribution_args, 1, width
+        )
         if xs is None:
             return None
 
@@ -164,8 +166,10 @@ class BoxInternal:
         else:
             h = int(self.row_stop - self.row_start)
             w = int(self.col_stop - self.col_start)
-            space: int = (h * w)
-            pos = random_coords(self.distribution, space, 1, self.distribution_args, h, w, map=map)
+            space: int = h * w
+            pos = random_coords(
+                self.distribution, space, 1, self.distribution_args, h, w, map=map
+            )
 
         if pos is None:
             return

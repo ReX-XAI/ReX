@@ -135,7 +135,7 @@ class Explanation:
             limit += self.args.chunk_size
             for _, loc in chunk:
                 self.set_to_true(loc, mutant)
-            #  TODO  this is not correct 
+            #  TODO  this is not correct
             d = _apply_to_data(mutant, self.data, self.data.mask_value).squeeze(0)
             masks.append(d)
             if len(masks) == self.args.batch_size:
@@ -258,18 +258,22 @@ class Explanation:
                 mask[circle, :] = True
             expansions += 1
 
-    def save(self, path, mask=None, multi=None, multi_style="", clauses=None):
+    def save(self, path, mask=None, multi=None, multi_style="", clauses=None):  # type: ignore
         # NOTE: the parameter multi_style="" is here simply to make overriding
         # the save function in MultiExplanation typecheck, same holds for clauses
         if self.data.mode in ("RGB", "voxel"):
-            if path is None:
-                path = f"{self.data.target.classification}.png"  # type: ignore
             if mask is None:
                 visualisation.save_image(
-                    self.explanation, self.data, self.args, path=path, mask=self.final_mask
+                    self.explanation,
+                    self.data,
+                    self.args,
+                    path=path,
+                    mask=self.final_mask,
                 )
             else:
-                visualisation.save_image(mask, self.explanation, self.data, self.args, path=path)
+                visualisation.save_image(
+                    self.explanation, self.data, self.args, path=path, mask=mask
+                )
         if self.data.mode == "spectral":
             visualisation.spectral_plot(
                 self.explanation,

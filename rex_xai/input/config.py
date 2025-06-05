@@ -587,12 +587,13 @@ def process_cmd_args(cmd_args, args):
         args.strategy = Strategy.MultiSpotlight
         args.spotlights = int(cmd_args.multi)
 
-    if cmd_args.contrastive: 
+    if cmd_args.contrastive:
         args.strategy = Strategy.Contrastive
 
     if cmd_args.complete:
         args.strategy = Strategy.Contrastive
         args.complete = True
+
 
 def load_config(config_path=None):
     if config_path is None:

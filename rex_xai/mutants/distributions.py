@@ -33,6 +33,8 @@ def _betabinom2d(height, width, alpha, beta):
 #
 def _2d_adaptive(map, args: Tuple[int, int, int, int], alpha=0.0, base=None) -> int:
     return 0
+
+
 #     # if the map exists and is not 0.0 everywhere...
 #     if map is not None and np.max(map) > 0.0:
 #         s = map[args[0] : args[1], args[2] : args[3]]
@@ -69,7 +71,7 @@ def str2distribution(d: str) -> Distribution:
 
 
 def random_coords(d: Optional[Distribution], *args, map=None):
-# def random_coords(d: Optional[Distribution], *args, map=None) -> Optional[int]:
+    # def random_coords(d: Optional[Distribution], *args, map=None) -> Optional[int]:
     """generates random coordinates given a distribution and args"""
 
     try:
@@ -88,7 +90,7 @@ def random_coords(d: Optional[Distribution], *args, map=None):
                 return _betabinom2d(args[3], args[4], args[2][0], args[2][1])
             elif args[1] == 4:
                 y = betabinom(args[0], *args[2])
-                pmf = np.array([y.pmf(i) for i in range(0, args[0] + 1)]) # type:ignore
+                pmf = np.array([y.pmf(i) for i in range(0, args[0] + 1)])  # type:ignore
                 return np.random.choice(args[0] + 1, 4, replace=False, p=pmf)
             else:
                 pass

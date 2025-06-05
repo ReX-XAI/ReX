@@ -74,7 +74,7 @@ class MultiExplanation(Explanation):
                 name, ext = os.path.splitext(path)
                 exp_path = f"{name}_{i}{ext}"
                 super().save(exp_path, mask=mask)
-        elif multi_style == "composite":
+        if multi_style == "composite":
             logger.info("using composite style to save explanations")
             if clauses is None:
                 clause = range(0, len(self.explanations))
@@ -92,7 +92,7 @@ class MultiExplanation(Explanation):
                     path=new_name,
                 )
 
-    def show(self, path=None, multi_style=None, clauses=None):
+    def show(self, path=None, multi_style=None, clauses=None):  # type: ignore
         if multi_style is None:
             multi_style = self.args.multi_style
         outs = []
@@ -210,8 +210,8 @@ class MultiExplanation(Explanation):
 
         found = None
         target_confidence = (
-            self.args.minimum_confidence_threshold * self.data.target.confidence  #type: ignore
-        ) 
+            self.args.minimum_confidence_threshold * self.data.target.confidence  # type: ignore
+        )
         sufficiency_confidence = 0.0
 
         step = 10
@@ -242,8 +242,8 @@ class MultiExplanation(Explanation):
             # print(i, sufficient, necessary)
             for j in range(0, len(sufficient)):
                 if (
-                    sufficient[j].classification == self.data.target.classification #type: ignore
-                    and necessary[j].classification != self.data.target.classification #type: ignore
+                    sufficient[j].classification == self.data.target.classification  # type: ignore
+                    and necessary[j].classification != self.data.target.classification  # type: ignore
                     and sufficient[j].confidence >= target_confidence
                 ):
                     logger.info(
@@ -262,7 +262,7 @@ class MultiExplanation(Explanation):
         # completeness
         if self.args.complete:
             j = len(ranking)
-            target_confidence = round(self.data.target.confidence, 2) #type: ignore
+            target_confidence = round(self.data.target.confidence, 2)  # type: ignore
             while round(sufficiency_confidence, 2) > target_confidence:
                 chunk = ranking[j - step : j]
                 for _, loc in chunk:
@@ -279,11 +279,14 @@ class MultiExplanation(Explanation):
                 found = insertion_mask
                 j -= step
                 if j <= i:
-                    logger.warning("too small", sufficient[0].confidence, target_confidence)
+                    logger.warning(
+                        "too small", sufficient[0].confidence, target_confidence
+                    )
                     break
 
             logger.info(
-                "a complete explanation found with confidence %f", sufficiency_confidence
+                "a complete explanation found with confidence %f",
+                sufficiency_confidence,
             )
         self.final_mask = found
 
