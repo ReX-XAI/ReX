@@ -4,7 +4,7 @@ import numpy as np
 import torch as tt
 from scipy.integrate import simpson
 from scipy.signal import periodogram
-from skimage.measure import shannon_entropy
+from scipy.stats import entropy
 
 from rex_xai.explanation.explanation import Explanation
 from rex_xai.utils._utils import get_map_locations
@@ -20,16 +20,9 @@ class Evaluation:
 
     def ratio(self) -> float:
         """Returns percentage of data required for sufficient explanation"""
-        if (
-            self.explanation.explanation is None
-            or self.explanation.data.model_channels is None
-        ):
-            raise ValueError("Invalid Explanation object")
-
-        try:
-            final_mask = self.explanation.final_mask.squeeze().item()  # type: ignore
-        except Exception:
-            final_mask = self.explanation.final_mask
+        final_mask = self.explanation.final_mask
+        if isinstance(final_mask, tt.Tensor):
+            final_mask = final_mask.detach().cpu().numpy()
 
         try:
             return (
@@ -56,12 +49,8 @@ class Evaluation:
             max_ent = np.log2(len(psd_norm))
         return ent, max_ent
 
-    def entropy_loss(self):
-        img = np.array(self.explanation.data.input)
-        assert self.explanation.explanation is not None
-        exp = shannon_entropy(self.explanation.explanation.detach().cpu().numpy())
-
-        return shannon_entropy(img), exp
+    def responsibility_entropy(self):
+        return entropy(self.explanation.target_map.detach().cpu().numpy().ravel(), base=2)
 
     def insertion_deletion_curve(self, prediction_func, normalise=False):
         insertion_curve = []

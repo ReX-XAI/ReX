@@ -294,6 +294,8 @@ class MultiExplanation(Explanation):
                 sufficiency_confidence,
             )
         self.final_mask = found
+        self.explanations.append(found)
+        self.explanation_confidences.append(sufficiency_confidence)
 
     def __random_step_from(self, origin, width, height, step=5):
         c, r = origin

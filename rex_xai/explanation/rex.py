@@ -262,14 +262,14 @@ def analyze(exp: Explanation, data_mode: str | None):
 
     Args:
         exp: Explanation object as returned by :py:func:`~rex_xai.explanation._explanation`
-        data_mode: Mode of the input data. Entropy difference is only calculated if ``data_mode``
+        data_mode: Mode of the input data. Entropy of the responsibility map calculated if ``data_mode``
             is "RGB". If ``data_mode'' is ``spectral'' then spectral entropy is calculated.
 
     Returns:
         tuple containing
 
         - area (float)
-        - entropy_diff (float)
+        - entropy (float)
         - insertion_curve (float)
         - deletion_curve (float)
 
@@ -279,8 +279,7 @@ def analyze(exp: Explanation, data_mode: str | None):
     ent = None
     max_ent = None
     if data_mode == "RGB":
-        be, ae = eval.entropy_loss()  # type: ignore
-        ent = be - ae
+        ent  = eval.responsibility_entropy()  # type: ignore
     elif data_mode == "spectral":
         ent, max_ent = eval.spectral_entropy()
 
@@ -346,6 +345,7 @@ def _explanation(
 
     logger.info("Extracting explanation from responsibility map")
     clauses = None
+    exp = None
     if args.strategy == Strategy.Contrastive:
         if args.strategy == Strategy.Contrastive:
             exp = MultiExplanation(resp_object, prediction_func, data, args, run_stats)
@@ -366,6 +366,7 @@ def _explanation(
         if not args.no_extract:
             exp.extract(args.strategy)
 
+    assert exp is not None
     if args.analyse is not None:
         if args.strategy == Strategy.MultiSpotlight:
             logger.warning("still to write")
@@ -380,12 +381,11 @@ def _explanation(
                 print(
                     f"INFO:ReX:classification {exp.data.target.classification}, area {results['area']}, responsibility entropy {results['entropy']},",  # type: ignore
                     f"max entropy {results['max_entropy']}",
-                    f"insertion curve {results['insertion_curve']}, deletion curve {results['deletion_curve']}",
                 )
             else:
                 if args.analyse == "print":
                     print(
-                        f"INFO:ReX:path {args.path}, classification {exp.data.target.classification}, area {results['area']}, entropy {results['entropy']},",  # type: ignore
+                        f"INFO:ReX:path {args.path}, classification {exp.data.target.classification}, area {results['area']}, responsibility entropy {results['entropy']},",  # type: ignore
                         f"insertion curve {results['insertion_curve']}, deletion curve {results['deletion_curve']}, time {time_taken}",
                     )
                 else:

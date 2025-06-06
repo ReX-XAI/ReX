@@ -119,7 +119,7 @@ class Explanation:
                 mask, self.data.mode, self.data.model_order, coords
             )
 
-    def __global(self, map=None, wipe=False):
+    def __global(self, map=None):
         if map is None:
             map = self.target_map
         ranking = get_map_locations(map)
