@@ -79,7 +79,7 @@ def plot_3d(input, ranking, ogrid, norm=255.0):
     # img = img.resize((ranking.shape[0], ranking.shape[1]))
     img = np.asarray(input)
 
-    # img = img / norm  # type: ignore
+    img = img / norm  # type: ignore
     if ogrid:
         x, y = np.ogrid[0 : img.shape[0], 0 : img.shape[1]]
     else:
@@ -638,21 +638,21 @@ def apply_boundaries_to_image(image, explanations, colours):
     return image
 
 
-def get_img_as_array(data):
-    """
-    Return original input image as a numpy array, resized to match model size and converted to RGB if necessary.
-    """
-    if data.mode == "RGB" or data.mode == "L":
-        if data.mode == "L":
-            img = data.input.convert("RGB").resize(
-                (data.model_height, data.model_width)
-            )
-        else:
-            img = data.input.resize((data.model_height, data.model_width))
-    else:
-        raise NotImplementedError
-
-    return np.array(img)
+# def get_img_as_array(data):
+#     """
+#     Return original input image as a numpy array, resized to match model size and converted to RGB if necessary.
+#     """
+#     if data.mode == "RGB" or data.mode == "L":
+#         if data.mode == "L":
+#             img = data.input.convert("RGB").resize(
+#                 (data.model_height, data.model_width)
+#             )
+#         else:
+#             img = data.input.resize((data.model_height, data.model_width))
+#     else:
+#         raise NotImplementedError
+#
+#     return np.array(img)
 
 
 def __save_multi(path, explanations_subset, data, img, colours_subset, args):
@@ -683,7 +683,8 @@ def save_multi_explanation(
         logger.warning("we do not yet handle multiple explanations for non-images")
         raise NotImplementedError
 
-    img = get_img_as_array(data)
+    img = data.input
+    # img = get_img_as_array(data)
 
     if img is not None:
         rgb_colours = generate_colours(args.spotlights, args.heatmap_colours)

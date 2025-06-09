@@ -112,7 +112,7 @@ def load_and_preprocess_data(
     if args.script is not None:
         if hasattr(args.script, "preprocess"):
             data = args.script.preprocess(
-                args.path, model_shape, device, mode=args.mode
+                args.path, model_shape, device
             )
         else:
             raise ReXScriptError(

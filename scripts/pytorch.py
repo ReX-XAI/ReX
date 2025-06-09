@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import platform
+# from matplotlib.collections import transforms
 from torchvision.models import get_model, get_weight
 from torchvision import transforms as T
 import torch as tt
@@ -20,25 +21,35 @@ if platform.uname().system == "Darwin":
 else:
     model.to("cuda")
 
-def preprocess(path, shape, device, mode) -> Data:
+transform = T.Compose(
+        [
+            T.Resize((224, 224)),
+            T.ToTensor(),
+            T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ]
+    )
+
+def preprocess(path, shape, device) -> Data:
     # open the image with mode "RGB"
     img = Image.open(path).convert("RGB")
 
-    data = Data(img, shape, device, mode='RGB', process=False)
+    data = Data(img, shape, device, mode='RGB')
 
     # manually set the data to the transformed image for model consumption
+    # data.data = transform(img).unsqueeze(0).to(device)
     data.data = weights.transforms()(img).unsqueeze(0).to(device)  # type: ignore
 
     # make a copy
-    original = Image.open(path).convert("RGB")
-    original = T.functional.resize(original, (256, 256))
-    original = T.functional.center_crop(original, 224)
+    original = Image.open(path).convert("RGB").resize((224, 224))
+    # original = Image.open(path).convert("RGB") # .resize((224, 224))
+    # original = T.functional.resize(original, (256, 256))
+    # original = T.functional.center_crop(original, 224)
     data.input = original
 
     return data
 
 
-def prediction_function(mutants, target=None, raw=False, binary_threshold=False):
+def prediction_function(mutants, target=None, raw=False):
     with tt.no_grad(): # we don't use the grad and inference is faster without it
         tensor = model(mutants)
         if raw: # used when computing insertion/deletion curves

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import numbers
 from typing import List, Optional
 import numpy as np
 import torch as tt
@@ -43,14 +44,10 @@ __combinations = [
 
 
 def _apply_to_data(mask, data: Data, masking_func):
-    # if isinstance(masking_func, (float, int, tt.nan)):
-    #     res = tt.where(mask, data.data, masking_func)  # type: ignore
-    #     return res
     if callable(masking_func):
         return masking_func(mask, data.data)
-    if masking_func is not None:
-        m = tt.where(mask, data.data, masking_func)
-        return m
+    if isinstance(masking_func, numbers.Number):
+        return tt.where(mask, data.data, masking_func)
 
     logger.warning("applying default masking value of 0")
     return tt.where(mask, data.data, 0)  # type: ignore
@@ -124,7 +121,7 @@ class Mutant:
     def save_mutant(self, data: Data, name=None, segs=None):
         if data.mode == "RGB":
             # m = np.array(data.input)
-            m = np.array(data.input.resize((data.model_height, data.model_width)))
+            m = np.array(data.input)
             mask = self.mask.squeeze().detach().cpu().numpy()
             if data.transposed:
                 # if transposed, we have C * H * W, so change that to H * W * C
