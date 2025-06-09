@@ -79,7 +79,10 @@ def random_coords(d: Optional[Distribution], *args, map=None):
             return _2d_adaptive(map, args[0])
 
         if d == Distribution.Uniform:
-            return np.random.choice(args[0], args[1], replace=False)
+            if args[1] ==1 :
+                return np.random.randint(1, args[0])
+            else:
+                return np.random.choice(args[0], args[1], replace=False)
 
         # if d == Distribution.Binomial:
         #     start, stop, *dist_args = args[0]
@@ -88,10 +91,10 @@ def random_coords(d: Optional[Distribution], *args, map=None):
         if d == Distribution.BetaBinomial:
             if args[1] == 1:
                 return _betabinom2d(args[3], args[4], args[2][0], args[2][1])
-            elif args[1] == 4:
+            elif args[1] == 3:
                 y = betabinom(args[0], *args[2])
                 pmf = np.array([y.pmf(i) for i in range(0, args[0] + 1)])  # type:ignore
-                return np.random.choice(args[0] + 1, 4, replace=False, p=pmf)
+                return np.random.choice(args[0] + 1, 3, replace=False, p=pmf)
             else:
                 pass
 

@@ -70,16 +70,16 @@ def plot_curve(curve, chunk_size, style="insertion", destination=None):
         plt.savefig(destination, bbox_inches="tight", dpi=300, pad_inches=0)
 
 
-def plot_3d(path, ranking, ogrid, norm=255.0):
+def plot_3d(input, ranking, ogrid, norm=255.0):
     """plots a 3d grid in matplotlib given an image <path>
     If <path> is greyscale or RGBA, it is converted to RGB for plotting.
     """
-    img = Image.open(path).convert("RGB")
-    # TODO this is wrong
-    img = img.resize((ranking.shape[0], ranking.shape[1]))
-    img = np.asarray(img)
+    # img = Image.open(path).convert("RGB")
+    # # TODO this is wrong
+    # img = img.resize((ranking.shape[0], ranking.shape[1]))
+    img = np.asarray(input)
 
-    img = img / norm  # type: ignore
+    # img = img / norm  # type: ignore
     if ogrid:
         x, y = np.ogrid[0 : img.shape[0], 0 : img.shape[1]]
     else:
@@ -101,12 +101,13 @@ def _transparent_cmap(cmap, N=255):
 def heatmap_plot(data: Data, resp_map, colour, path=None):
     if data.mode == "RGB":
         mycmap = _transparent_cmap(mpl.colormaps[colour])
-        background = data.input.resize(
-            (data.model_height, data.model_width)
-        )  # TODO check these dimensions
+        # background = data.input.resize(
+        #     (data.model_height, data.model_width)
+        # )  # TODO check these dimensions
         y, x = np.mgrid[0 : data.model_height, 0 : data.model_width]
-        fig, ax = plt.subplots(1, 1)
-        ax.imshow(background)
+        _, ax = plt.subplots(1, 1)
+        # ax.imshow(background)
+        ax.imshow(data.input)
         ax.contourf(x, y, resp_map, 15, cmap=mycmap)
         plt.axis("off")
         ax.get_xaxis().set_visible(False)
@@ -176,13 +177,14 @@ def spectral_plot(explanation, data: Data, ranking, colour, extra=True, path=Non
 
 
 def surface_plot(
+    input,
     args: CausalArgs,
     resp_map: np.ndarray,
     target: Prediction,
     path=None,
 ):
     """plots a 3d surface plot"""
-    img, _x, _y = plot_3d(args.path, resp_map, True)
+    img, _x, _y = plot_3d(input, resp_map, True)
     fig = plt.figure()
 
     # TODO enable visualisation of sub-responsibility maps
@@ -211,15 +213,7 @@ def surface_plot(
                 cmap=mpl.colormaps[args.heatmap_colours],
             )
             if args.info:
-                # confidence = 0.0
-                # if k == target.classification:
                 confidence = target.confidence
-                # else:
-                #     for p in args.extra_targets:
-                #         if p.pred == k:
-                #             confidence = p.conf
-                #             break
-
                 try:
                     x, y = center_of_mass(ranking)
                     x = int(round(x))  # type: ignore

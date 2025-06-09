@@ -106,13 +106,13 @@ class BoxInternal:
 
         width = self.col_stop - self.col_start
         xs = random_coords(
-            self.distribution, width, 4, self.distribution_args, 1, width
+            self.distribution, width, 3, self.distribution_args, 1, width
         )
         if xs is None:
             return None
 
         xs = xs + self.col_start
-        ordered = sorted(xs)
+        ordered = sorted(xs) # type: ignore
 
         b0 = Box(
             0,

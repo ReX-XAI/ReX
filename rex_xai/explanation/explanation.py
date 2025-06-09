@@ -307,6 +307,7 @@ class Explanation:
     def surface_plot(self, path=None):
         if self.data.mode == "RGB":
             visualisation.surface_plot(
+                self.data.input,
                 self.args,
                 self.target_map,  # type: ignore
                 self.data.target,  #  type: ignore
