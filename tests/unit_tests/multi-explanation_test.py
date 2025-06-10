@@ -40,7 +40,7 @@ def test_multiexplanation(data_multi, args_multi, prediction_func, spotlights, c
         len(multi_exp.explanations) == spotlights
     )  # not always true but is for this data/parameters
     assert np.array_equal(
-        multi_exp.explanations[0].detach().cpu().numpy(), exp.final_mask
+        multi_exp.explanations[0].detach().cpu().numpy(), exp.sufficiency_mask
     )  # first explanation is global explanation
 
 

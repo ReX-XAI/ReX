@@ -36,8 +36,8 @@ def preprocess(path, shape, device) -> Data:
     data = Data(img, shape, device, mode='RGB')
 
     # manually set the data to the transformed image for model consumption
-    data.data = transform(img).unsqueeze(0).to(device)
-    # data.data = weights.transforms()(img).unsqueeze(0).to(device)  # type: ignore
+    # data.data = transform(img).unsqueeze(0).to(device)
+    data.data = weights.transforms()(img).unsqueeze(0).to(device)  # type: ignore
 
     # make a copy
     # original = Image.open(path).convert("RGB").resize((224, 224))

@@ -20,7 +20,7 @@ class Evaluation:
 
     def ratio(self) -> float:
         """Returns percentage of data required for sufficient explanation"""
-        final_mask = self.explanation.final_mask
+        final_mask = self.explanation.sufficiency_mask
         if isinstance(final_mask, tt.Tensor):
             final_mask = final_mask.detach().cpu().numpy()
 

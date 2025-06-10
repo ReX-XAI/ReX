@@ -627,6 +627,8 @@ def apply_boundaries_to_image(image, explanations, colours):
     """
     Draws the boundaries of the explanations on the image, using the provided colours.
     """
+    if isinstance(image, Image.Image):
+        image = np.array(image)
     for i in range(len(explanations)):
         explanation = explanations[i]
 
@@ -638,23 +640,6 @@ def apply_boundaries_to_image(image, explanations, colours):
         image = add_boundaries(image, explanation, colour=colours[i])
 
     return image
-
-
-# def get_img_as_array(data):
-#     """
-#     Return original input image as a numpy array, resized to match model size and converted to RGB if necessary.
-#     """
-#     if data.mode == "RGB" or data.mode == "L":
-#         if data.mode == "L":
-#             img = data.input.convert("RGB").resize(
-#                 (data.model_height, data.model_width)
-#             )
-#         else:
-#             img = data.input.resize((data.model_height, data.model_width))
-#     else:
-#         raise NotImplementedError
-#
-#     return np.array(img)
 
 
 def __save_multi(path, explanations_subset, data, img, colours_subset, args):

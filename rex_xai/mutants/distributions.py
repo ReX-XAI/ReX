@@ -24,7 +24,9 @@ def _betabinom2d(height, width, alpha, beta):
     return p
 
 
-# def _blend(dist, alpha, base):
+def _blend(dist, alpha, base):
+    pass
+    # def random_coords(d: Optional[Distribution], *args, map=None) -> Optional[int]:
 #     pmf = np.array([base.pmf(x) for x in range(0, len(dist))])
 #     blend = ((1.0 - alpha) * pmf) + (alpha * dist)
 #     blend /= np.sum(blend)
@@ -71,7 +73,6 @@ def str2distribution(d: str) -> Distribution:
 
 
 def random_coords(d: Optional[Distribution], *args, map=None):
-    # def random_coords(d: Optional[Distribution], *args, map=None) -> Optional[int]:
     """generates random coordinates given a distribution and args"""
 
     try:
@@ -83,10 +84,6 @@ def random_coords(d: Optional[Distribution], *args, map=None):
                 return np.random.randint(1, args[0])
             else:
                 return np.random.choice(args[0], args[1], replace=False)
-
-        # if d == Distribution.Binomial:
-        #     start, stop, *dist_args = args[0]
-        #     return binom(stop - start - 1, dist_args).rvs() + start
 
         if d == Distribution.BetaBinomial:
             if args[1] == 1:

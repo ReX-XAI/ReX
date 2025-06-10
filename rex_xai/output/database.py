@@ -96,8 +96,8 @@ def update_database(
     classification = int(target.classification)  # type: ignore
 
     if not multi:
-        final_mask = explanation.final_mask
-        if explanation.final_mask is None:
+        final_mask = explanation.sufficiency_mask
+        if explanation.sufficiency_mask is None:
             logger.warning("unable to update database as explanation is empty")
             return
         if isinstance(final_mask, tt.Tensor):

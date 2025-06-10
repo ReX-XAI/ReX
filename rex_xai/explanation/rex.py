@@ -344,12 +344,7 @@ def _explanation(
     logger.info("Extracting explanation from responsibility map")
     clauses = None
     exp = None
-    if args.strategy == Strategy.Contrastive:
-        if args.strategy == Strategy.Contrastive:
-            exp = MultiExplanation(resp_object, prediction_func, data, args, run_stats)
-            exp.contrastive()
-            args.multi_style = "contrastive"
-    elif args.strategy == Strategy.MultiSpotlight:
+    if args.strategy == Strategy.MultiSpotlight:
         exp = MultiExplanation(resp_object, prediction_func, data, args, run_stats)
         if not args.no_extract:
             exp.extract()
@@ -362,7 +357,10 @@ def _explanation(
     else:
         exp = Explanation(resp_object, prediction_func, data, args, run_stats)
         if not args.no_extract:
-            exp.extract(args.strategy)
+            if args.strategy == Strategy.Contrastive:
+                exp.contrastive()
+            else:
+                exp.extract(args.strategy)
 
     assert exp is not None
     if args.analyse is not None:
