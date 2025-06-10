@@ -673,6 +673,7 @@ def validate_args(args: CausalArgs):
         "spatial_radius_eta",
         "spotlight_eta",
         "binary_threshold",
+        "minimum_confidence_threshold",
     ]:
         val = getattr(args, arg)
         if val is not None:
