@@ -27,6 +27,8 @@ def _betabinom2d(height, width, alpha, beta):
 def _blend(dist, alpha, base):
     pass
     # def random_coords(d: Optional[Distribution], *args, map=None) -> Optional[int]:
+
+
 #     pmf = np.array([base.pmf(x) for x in range(0, len(dist))])
 #     blend = ((1.0 - alpha) * pmf) + (alpha * dist)
 #     blend /= np.sum(blend)

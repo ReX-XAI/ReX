@@ -258,7 +258,6 @@ class Explanation:
                 mask[circle, :] = True
             expansions += 1
 
-
     def contrastive(self):
         insertion_mask = tt.zeros(self.data.data.squeeze(0).shape, dtype=tt.bool).to(
             self.data.device
@@ -269,22 +268,17 @@ class Explanation:
 
         ranking = get_map_locations(map=self.target_map)
 
-        found = None
-        if self.args.complete:
-            if self.args.minimum_confidence_threshold < 1.0:
-                logger.info(
-                    "setting the minimum confidence threshold to 1 in order to calculate a complete explanation."
-                )
-            target_confidence = self.data.target.confidence  # type: ignore
-        else:
-            target_confidence = (
-                self.args.minimum_confidence_threshold * self.data.target.confidence  # type: ignore
-            )
+        target_confidence = self.args.minimum_confidence_threshold * self.data.target.confidence
+
         sufficiency_confidence = 0.0
+        necessity_confidence = 0.0
 
         step = 10
         i = 0
-        while found is None:
+        sufficient_found = False
+        found = False
+
+        while not found:
             chunk = ranking[i : i + step]
             for _, loc in chunk:
                 set_boolean_mask_value(
@@ -300,15 +294,24 @@ class Explanation:
                     loc,
                     val=False,
                 )
-            sufficient = self.prediction_func(
-                _apply_to_data(insertion_mask, self.data)
-            )
-            necessary = self.prediction_func(
-                _apply_to_data(deletion_mask, self.data)
-            )
+            sufficient = self.prediction_func(_apply_to_data(insertion_mask, self.data))
+            necessary = self.prediction_func(_apply_to_data(deletion_mask, self.data))
+
 
             for j in range(0, len(sufficient)):
-                if (
+                if sufficient[j].classification == self.data.target.classification and not sufficient_found:
+                    self.sufficiency_mask = insertion_mask.detach().clone()
+                    sufficient_found = True
+                    sufficiency_confidence = sufficient[j].confidence
+                    logger.info("found sufficient explanation of class %d with confidence %f", sufficient[j].classification,  sufficient[j].confidence)
+
+                    if self.args.complete:
+                        if self.args.minimum_confidence_threshold < 1.0:
+                            logger.info(
+                                "setting the minimum confidence threshold to 1 in order to calculate a complete explanation."
+                            )
+                            target_confidence = self.data.target.confidence
+                elif (
                     sufficient[j].classification == self.data.target.classification  # type: ignore
                     and necessary[j].classification != self.data.target.classification  # type: ignore
                     and sufficient[j].confidence >= target_confidence
@@ -320,18 +323,19 @@ class Explanation:
                         necessary[j].classification,
                         necessary[j].confidence,
                     )
-                    found = insertion_mask
-                    sufficiency_confidence = sufficient[j].confidence
-                    break
+                    self.necessity_mask = insertion_mask.detach().clone()
+                    necessity_confidence = sufficient[j].confidence
+                    found = True
 
             i += step
 
         # completeness
-        step = 5
         if self.args.complete:
+            step = 5
+            completeness_confidence = necessity_confidence
             j = len(ranking)
-            target_confidence = round(self.data.target.confidence, 2)  # type: ignore
-            while round(sufficiency_confidence, 2) > target_confidence:
+            target_confidence = round(self.data.target.confidence, 3)  # type: ignore
+            while round(completeness_confidence, 3) > target_confidence:
                 chunk = ranking[j - step : j]
                 for _, loc in chunk:
                     set_boolean_mask_value(
@@ -343,8 +347,7 @@ class Explanation:
                 sufficient = self.prediction_func(
                     _apply_to_data(insertion_mask, self.data)
                 )
-                sufficiency_confidence = sufficient[0].confidence
-                found = insertion_mask
+                completeness_confidence = sufficient[0].confidence
                 j -= step
                 if j <= i:
                     logger.warning(
@@ -354,13 +357,21 @@ class Explanation:
 
             logger.info(
                 "a complete explanation found with confidence %f",
-                sufficiency_confidence,
+                completeness_confidence,
             )
-        self.sufficiency_mask = found
-        self.explanation_confidence = sufficiency_confidence
-        # self.explanations.append(found)
-        # self.explanation_confidences.append(sufficiency_confidence)
+            self.complete_mask = tt.logical_xor(insertion_mask.detach().clone(), self.necessity_mask)
 
+        self.explanation_confidence = necessity_confidence
+
+        print(tt.count_nonzero(self.sufficiency_mask))
+        print(tt.count_nonzero(self.necessity_mask))
+        if self.args.complete:
+            print(tt.count_nonzero(self.complete_mask))
+
+            cp = self.prediction_func(_apply_to_data(self.complete_mask, self.data))
+            print(cp)
+
+        exit()
 
     def save(self, path, mask=None, multi=None, multi_style="", clauses=None):  # type: ignore
         # NOTE: the parameter multi_style="" is here simply to make overriding

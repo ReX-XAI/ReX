@@ -63,7 +63,6 @@ class Evaluation:
         insertion_curve = []
         deletion_curve = []
 
-
         assert self.explanation.data.data is not None
         insertion_mask = tt.zeros(
             self.explanation.data.data.squeeze(0).shape, dtype=tt.bool
@@ -90,12 +89,8 @@ class Evaluation:
                     loc,
                     val=False,
                 )
-            im.append(
-                _apply_to_data(insertion_mask, self.explanation.data).squeeze(0)
-            )
-            dm.append(
-                _apply_to_data(deletion_mask, self.explanation.data).squeeze(0)
-            )
+            im.append(_apply_to_data(insertion_mask, self.explanation.data).squeeze(0))
+            dm.append(_apply_to_data(deletion_mask, self.explanation.data).squeeze(0))
 
             if len(im) == self.explanation.args.batch_size:
                 self.__batch(im, dm, prediction_func, insertion_curve, deletion_curve)

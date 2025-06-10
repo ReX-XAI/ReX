@@ -19,9 +19,10 @@ from rex_xai.utils._utils import ReXMapError
 
 
 class ResponsibilityMaps:
-    def __init__(self) -> None:
+    def __init__(self, style="additive") -> None:
         self.maps = {}
         self.counts = {}
+        self.style = style
 
     def __repr__(self) -> str:
         return str(self.counts)
@@ -36,12 +37,17 @@ class ResponsibilityMaps:
 
     def new_map(self, k: int, height, width, depth=None):
         if depth is not None:
-            self.maps[k] = np.ones((height, width, depth), dtype="float32")
-            # self.maps[k] = np.zeros((height, width, depth), dtype="float32")
+            if self.style == "additive":
+            # self.maps[k] = np.ones((height, width, depth), dtype="float32")
+                self.maps[k] = np.zeros((height, width, depth), dtype="float32")
+            else:
+                self.maps[k] = np.ones((height, width, depth), dtype="float32")
             self.counts[k] = 1
         else:
-            self.maps[k] = np.ones((height, width), dtype="float32")
-            # self.maps[k] = np.zeros((height, width), dtype="float32")
+            if self.style == "additive":
+                self.maps[k] = np.zeros((height, width), dtype="float32")
+            else:
+                self.maps[k] = np.ones((height, width), dtype="float32")
             self.counts[k] = 1
 
     def items(self):
@@ -58,7 +64,10 @@ class ResponsibilityMaps:
             if np.max(v) == 0:
                 pass
             if k in self.maps:
-                self.maps[k] *= v
+                if self.style == "additive":
+                    self.maps[k] += v
+                else:
+                    self.maps[k] *= v
             else:
                 self.maps[k] = v
 

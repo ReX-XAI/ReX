@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import platform
-# from matplotlib.collections import transforms
 from torchvision.models import get_model, get_weight
 from torchvision import transforms as T
 import torch as tt
@@ -9,7 +8,6 @@ import torch.nn.functional as F
 from PIL import Image  # type: ignore
 from rex_xai.input.input_data import Data
 from rex_xai.responsibility.prediction import from_pytorch_tensor
-# from torchvision.models.weights import ResNet50_Weights
 
 
 model = get_model('resnet50', weights="DEFAULT")
@@ -36,14 +34,14 @@ def preprocess(path, shape, device) -> Data:
     data = Data(img, shape, device, mode='RGB')
 
     # manually set the data to the transformed image for model consumption
-    # data.data = transform(img).unsqueeze(0).to(device)
-    data.data = weights.transforms()(img).unsqueeze(0).to(device)  # type: ignore
+    data.data = transform(img).unsqueeze(0).to(device)
+    # data.data = weights.transforms()(img).unsqueeze(0).to(device)  # type: ignore
 
     # make a copy
-    # original = Image.open(path).convert("RGB").resize((224, 224))
-    original = Image.open(path).convert("RGB") # .resize((224, 224))
-    original = T.functional.resize(original, (256, 256))
-    original = T.functional.center_crop(original, 224)
+    original = Image.open(path).convert("RGB").resize((224, 224))
+    # original = Image.open(path).convert("RGB") # .resize((224, 224))
+    # original = T.functional.resize(original, (256, 256))
+    # original = T.functional.center_crop(original, 224)
     data.input = original
 
     return data

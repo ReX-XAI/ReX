@@ -587,7 +587,7 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
 
 
 def __transpose_mask(mask, mode):
-    if mode != 'RGB':
+    if mode != "RGB":
         raise TypeError
     if isinstance(mask, tt.Tensor):
         mask = mask.detach().cpu().numpy()
@@ -644,8 +644,7 @@ def apply_boundaries_to_image(image, explanations, colours):
 
 def __save_multi(path, explanations_subset, data, img, colours_subset, args):
     explanations_subset = [
-        __transpose_mask(explanation, data.mode)
-        for explanation in explanations_subset
+        __transpose_mask(explanation, data.mode) for explanation in explanations_subset
     ]
     composite_mask = make_composite_mask(explanations_subset)
 

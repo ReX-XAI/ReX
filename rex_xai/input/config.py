@@ -145,6 +145,8 @@ class CausalArgs(Args):
         # queue management
         self.queue_len = 1
         self.queue_style = Queue.Area
+        # responsibility
+        self.resp_style = "additive"
 
         if self.min_box_size is not None:
             self.chunk_size = self.min_box_size
@@ -162,7 +164,7 @@ class CausalArgs(Args):
             + f"data_locations: {self.data_location}, distribution: {self.distribution}, "
             + f"distribution_args: {self.distribution_args}, "
             + f"queue_len: {self.queue_len}, queue_style {self.queue_style}, "
-            + f"concentrate: {self.concentrate}, "
+            + f"concentrate: {self.concentrate}, responsibility style {self.resp_style} "
             + f"iterations: {self.iters}>"
         )
 
@@ -242,11 +244,10 @@ def cmdargs_parser():
         help="prevent ReX from performing any preprocessing",
     )
 
-
     parser.add_argument(
         "--confidence",
         type=float,
-        help="minimum confidence threshold, overriding the setting in <rex.toml>"
+        help="minimum confidence threshold, overriding the setting in <rex.toml>",
     )
 
     parser.add_argument(
@@ -503,6 +504,7 @@ def process_config_dict(config_file_args, args):
             "queue_style",
             "queue_len",
             "concentrate",
+            "responsibility_style",
         ],
         "distribution": ["distribution", "blend", "distribution_args"],
         "explanation": ["chunk_size", "minimum_confidence_threshold"],

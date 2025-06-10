@@ -221,13 +221,18 @@ class MultiExplanation(Explanation):
 
         if self.args.distribution == Distribution.Uniform:
             origin = random_coords(
-                self.args.distribution, 
-                self.data.model_width * self.data.model_height, 1
+                self.args.distribution,
+                self.data.model_width * self.data.model_height,
+                1,
             )
         else:
             origin = random_coords(
-                self.args.distribution, 
-                self.data.model_width * self.data.model_height, 1, self.args.distribution_args, self.data.model_height, self.data.model_width
+                self.args.distribution,
+                self.data.model_width * self.data.model_height,
+                1,
+                self.args.distribution_args,
+                self.data.model_height,
+                self.data.model_width,
             )
 
         return np.unravel_index(origin, (self.data.model_height, self.data.model_width))  # type: ignore
