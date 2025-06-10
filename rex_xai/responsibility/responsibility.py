@@ -179,17 +179,13 @@ def causal_explanation(
 
                 work_done = len(mutants)
 
+                # TODO find out why this was added
                 def apply_mask(m):
-                    if args.mask_value == "context":
-                        return _apply_to_data(m.mask, data, data.mask_value)
-                    return tt.where(m.mask, data.data, data.mask_value)
+                    return _apply_to_data(m.mask, data)
 
                 if data.mode in ("spectral", "tabular"):
                     preds: List[Prediction] = [
-                        prediction_func(_apply_to_data(m.mask, data, data.mask_value))[
-                            0
-                        ]
-                        for m in mutants
+                        prediction_func(apply_mask(m))[0] for m in mutants
                     ]
                 else:
                     # TODO this needs testing
@@ -198,7 +194,6 @@ def causal_explanation(
                             prediction_func(
                                 apply_mask(m),  #  type: ignore
                                 data.target,
-                                binary_threshold=args.binary_threshold,
                             )[0]
                             for m in mutants
                         ]  # type: ignore
@@ -214,7 +209,6 @@ def causal_explanation(
                         preds: List[Prediction] = prediction_func(
                             tensors,
                             data.target,
-                            binary_threshold=args.binary_threshold,
                         )
 
                 for i, m in enumerate(mutants):

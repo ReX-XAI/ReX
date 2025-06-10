@@ -111,9 +111,7 @@ def load_and_preprocess_data(
     """
     if args.script is not None:
         if hasattr(args.script, "preprocess"):
-            data = args.script.preprocess(
-                args.path, model_shape, device
-            )
+            data = args.script.preprocess(args.path, model_shape, device)
         else:
             raise ReXScriptError(
                 f"{args.script_location} is missing a preprocess() function"
@@ -279,7 +277,7 @@ def analyze(exp: Explanation, data_mode: str | None):
     ent = None
     max_ent = None
     if data_mode == "RGB":
-        ent  = eval.responsibility_entropy()  # type: ignore
+        ent = eval.responsibility_entropy()  # type: ignore
     elif data_mode == "spectral":
         ent, max_ent = eval.spectral_entropy()
 

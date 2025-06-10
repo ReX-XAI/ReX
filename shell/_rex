@@ -11,7 +11,8 @@ _rex() {
     '--script[PyTorch compatible python script]:::_files' \
     '--model[onnx model to use]:::_files' \
     '--no_extract[Do not extract an explanation from the responsibility map]' \
-    '--config[optional config file to use with ReX]'\
+    {-c,--config}'[optional config file to use with ReX]:::_files'\
+    '--confidence[minimum confidence threshold, between 0.0 and 1.0]'\
     '--output[save explanation to <filename>]:::_files'\
     {-v,--verbosity}'[set verbosity level, one of -v, -vv, or -vvv]'\
     {-q,--quiet}'[set verbosity level to 0 (errors only)]'\

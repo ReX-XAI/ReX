@@ -79,7 +79,7 @@ def random_coords(d: Optional[Distribution], *args, map=None):
             return _2d_adaptive(map, args[0])
 
         if d == Distribution.Uniform:
-            if args[1] ==1 :
+            if args[1] == 1:
                 return np.random.randint(1, args[0])
             else:
                 return np.random.choice(args[0], args[1], replace=False)

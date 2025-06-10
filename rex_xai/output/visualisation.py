@@ -586,12 +586,14 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
         z_slice.write_image(f"{path}_z_slice.png")
 
 
-def __transpose_mask(mask, mode, transposed):
+def __transpose_mask(mask, mode):
+    if mode != 'RGB':
+        raise TypeError
     if isinstance(mask, tt.Tensor):
         mask = mask.detach().cpu().numpy()
-    if transposed:
-        if mode == "RGB":
-            mask = mask.transpose((1, 2, 0))
+
+    if mask.shape[0] == 3:
+        mask = mask.transpose((1, 2, 0))
 
     return mask
 
@@ -657,7 +659,7 @@ def apply_boundaries_to_image(image, explanations, colours):
 
 def __save_multi(path, explanations_subset, data, img, colours_subset, args):
     explanations_subset = [
-        __transpose_mask(explanation, data.mode, data.transposed)
+        __transpose_mask(explanation, data.mode)
         for explanation in explanations_subset
     ]
     composite_mask = make_composite_mask(explanations_subset)
@@ -684,7 +686,6 @@ def save_multi_explanation(
         raise NotImplementedError
 
     img = data.input
-    # img = get_img_as_array(data)
 
     if img is not None:
         rgb_colours = generate_colours(args.spotlights, args.heatmap_colours)
@@ -706,7 +707,7 @@ def save_image(explanation, data: Data, args: CausalArgs, path=None, mask=None):
             data.input = data.input.squeeze(0)
         img = data.input
 
-        mask = __transpose_mask(mask, data.mode, data.transposed)
+        mask = __transpose_mask(mask, data.mode)
 
         if mask is not None:
             if args.raw:

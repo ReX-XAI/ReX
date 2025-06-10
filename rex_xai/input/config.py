@@ -104,9 +104,9 @@ class Args:
             + f"output_file: {self.output}, surface_plot: {self.surface}, "
             + f"heatmap_plot: {self.heatmap}, "
             + f"onnx_means: {self.means}, onnx_stds: {self.stds}, onnx_norm: {self.norm} "
-            + f"onnx_inter_op_threads: {self.inter_op_num_threads}, onnx_intra_op_threads: {self.intra_op_num_threads}, onnx_logger: {self.ort_logger}"
+            + f"onnx_inter_op_threads: {self.inter_op_num_threads}, onnx_intra_op_threads: {self.intra_op_num_threads}, onnx_logger: {self.ort_logger} "
             + f"explanation_strategy: {self.strategy}, "
-            + f"min_confidence_scalar: {self.minimum_confidence_threshold}, "
+            + f"minimum confidence threshold: {self.minimum_confidence_threshold}, "
             + f"chunk size: {self.chunk_size}, "
             + f"spatial_radius: {self.spatial_initial_radius}, "
             + f"spatial_eta: {self.spatial_radius_eta}, seed: {self.seed}, "
@@ -240,6 +240,13 @@ def cmdargs_parser():
         "--processed",
         action="store_true",
         help="prevent ReX from performing any preprocessing",
+    )
+
+
+    parser.add_argument(
+        "--confidence",
+        type=float,
+        help="minimum confidence threshold, overriding the setting in <rex.toml>"
     )
 
     parser.add_argument(
@@ -414,6 +421,8 @@ def shared_args(cmd_args, args: CausalArgs):
         args.mode = cmd_args.mode
     if cmd_args.spectral:
         args.mode = "spectral"
+    if cmd_args.confidence:
+        args.minimum_confidence_threshold = cmd_args.confidence
 
     args.processed = cmd_args.processed
 

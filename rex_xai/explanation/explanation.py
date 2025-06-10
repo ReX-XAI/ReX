@@ -136,7 +136,7 @@ class Explanation:
             for _, loc in chunk:
                 self.set_to_true(loc, mutant)
             #  TODO  this is not correct
-            d = _apply_to_data(mutant, self.data, self.data.mask_value).squeeze(0)
+            d = _apply_to_data(mutant, self.data).squeeze(0)
             masks.append(d)
             if len(masks) == self.args.batch_size:
                 preds = self.prediction_func(tt.stack(masks).to(self.data.device))
@@ -241,7 +241,7 @@ class Explanation:
                         f"no explanation found after {expansion_limit} expansions"
                     )
                     return SpatialSearch.NotFound, masked_responsibility, None
-            d = _apply_to_data(mask, self.data, self.data.mask_value)
+            d = _apply_to_data(mask, self.dat)
             p = self.prediction_func(d)[0]
             if (
                 p.classification == self.data.target.classification  # type: ignore

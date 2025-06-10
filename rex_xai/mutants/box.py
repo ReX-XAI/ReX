@@ -112,7 +112,7 @@ class BoxInternal:
             return None
 
         xs = xs + self.col_start
-        ordered = sorted(xs) # type: ignore
+        ordered = sorted(xs)  # type: ignore
 
         b0 = Box(
             0,

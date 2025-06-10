@@ -211,8 +211,10 @@ class MultiExplanation(Explanation):
         found = None
         if self.args.complete:
             if self.args.minimum_confidence_threshold < 1.0:
-                logger.info("setting the minimum confidence threshold to 1 in order to calculate a complete explanation.")
-            target_confidence = self.data.target.confidence  #type: ignore
+                logger.info(
+                    "setting the minimum confidence threshold to 1 in order to calculate a complete explanation."
+                )
+            target_confidence = self.data.target.confidence  # type: ignore
         else:
             target_confidence = (
                 self.args.minimum_confidence_threshold * self.data.target.confidence  # type: ignore

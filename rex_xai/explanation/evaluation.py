@@ -50,14 +50,19 @@ class Evaluation:
         return ent, max_ent
 
     def responsibility_entropy(self):
-        return entropy(self.explanation.target_map.detach().cpu().numpy().ravel(), base=2)
+        flat_map = self.explanation.target_map.ravel()
+        return entropy(flat_map, base=2)
 
     def insertion_deletion_curve(self, prediction_func, normalise=False):
+        assert self.explanation.data.target is not None
+        assert self.explanation.data.target.confidence is not None
+
+        step = self.explanation.args.insertion_step
+        ranking = get_map_locations(map=self.explanation.target_map)
+
         insertion_curve = []
         deletion_curve = []
 
-        assert self.explanation.data.target is not None
-        assert self.explanation.data.target.confidence is not None
 
         assert self.explanation.data.data is not None
         insertion_mask = tt.zeros(
@@ -68,10 +73,6 @@ class Evaluation:
         ).to(self.explanation.data.device)
         im = []
         dm = []
-
-        step = self.explanation.args.insertion_step
-        ranking = get_map_locations(map=self.explanation.target_map)
-        iters = len(ranking) // step
 
         for i in range(0, len(ranking), step):
             chunk = ranking[i : i + step]
@@ -89,12 +90,11 @@ class Evaluation:
                     loc,
                     val=False,
                 )
-            # TODO value should not be zero
             im.append(
-                _apply_to_data(insertion_mask, self.explanation.data, 0).squeeze(0)
+                _apply_to_data(insertion_mask, self.explanation.data).squeeze(0)
             )
             dm.append(
-                _apply_to_data(deletion_mask, self.explanation.data, 0).squeeze(0)
+                _apply_to_data(deletion_mask, self.explanation.data).squeeze(0)
             )
 
             if len(im) == self.explanation.args.batch_size:
@@ -109,7 +109,7 @@ class Evaluation:
         d_auc = simpson(deletion_curve, dx=step)
 
         if normalise:
-            const = self.explanation.data.target.confidence * iters * step
+            const = self.explanation.data.target.confidence * len(ranking)
             i_auc /= const
             d_auc /= const
 

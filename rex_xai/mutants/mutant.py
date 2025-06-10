@@ -43,11 +43,13 @@ __combinations = [
 ]
 
 
-def _apply_to_data(mask, data: Data, masking_func):
-    if callable(masking_func):
-        return masking_func(mask, data.data)
-    if isinstance(masking_func, numbers.Number):
-        return tt.where(mask, data.data, masking_func)
+def _apply_to_data(mask, data: Data):
+    # def _apply_to_data(mask, data: Data, masking_func):
+    if callable(data.mask_value):
+        return data.mask_value(mask, data.data)
+        # return data.masking_func(mask, data.data)
+    if isinstance(data.mask_value, numbers.Number):
+        return tt.where(mask, data.data, data.mask_value)
 
     logger.warning("applying default masking value of 0")
     return tt.where(mask, data.data, 0)  # type: ignore
