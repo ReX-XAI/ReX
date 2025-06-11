@@ -146,7 +146,7 @@ class CausalArgs(Args):
         self.queue_len = 1
         self.queue_style = Queue.Area
         # responsibility
-        self.resp_style = "additive"
+        self.responsibility_style = "additive"
 
         if self.min_box_size is not None:
             self.chunk_size = self.min_box_size
@@ -164,7 +164,7 @@ class CausalArgs(Args):
             + f"data_locations: {self.data_location}, distribution: {self.distribution}, "
             + f"distribution_args: {self.distribution_args}, "
             + f"queue_len: {self.queue_len}, queue_style {self.queue_style}, "
-            + f"concentrate: {self.concentrate}, responsibility style {self.resp_style} "
+            + f"concentrate: {self.concentrate}, responsibility style {self.responsibility_style}, "
             + f"iterations: {self.iters}>"
         )
 
@@ -525,6 +525,7 @@ def process_config_dict(config_file_args, args):
     if "causal" in config_file_args.keys():
         causal_dict = config_file_args["causal"]
         apply_dict_to_args(causal_dict, args, expected_values["causal"])
+
         if "distribution" in causal_dict.keys():
             apply_dict_to_args(
                 causal_dict["distribution"], args, expected_values["distribution"]
@@ -663,8 +664,8 @@ def validate_args(args: CausalArgs):
         args: configuration values for ReX
     """
 
-    if args.path is None:
-        raise FileNotFoundError("Input file path cannot be None")
+    # if args.path is None:
+    #     raise FileNotFoundError("Input file path cannot be None")
 
     # values that must be between 0 and 1
     for arg in [

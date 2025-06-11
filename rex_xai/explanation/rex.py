@@ -190,7 +190,7 @@ def calculate_responsibility(
             "No target classification found. Please run `predict_target` before running `calculate_responsibility`."
         )
 
-    maps = ResponsibilityMaps()
+    maps = ResponsibilityMaps(style=args.responsibility_style)
     if custom_height is not None and custom_width is not None:
         maps.new_map(data.target.classification, custom_height, custom_width)
     else:
@@ -475,7 +475,6 @@ def get_prediction_func_from_args(args: CausalArgs):
             raise ReXDataError("ReX cannot find a valid prediction function")
     if model_shape is None:
         raise ReXDataError("ReX cannot find a valid model shape")
-    print(prediction_func)
     return prediction_func, model_shape
 
 

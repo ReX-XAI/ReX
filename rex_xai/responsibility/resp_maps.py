@@ -19,7 +19,7 @@ from rex_xai.utils._utils import ReXMapError
 
 
 class ResponsibilityMaps:
-    def __init__(self, style="additive") -> None:
+    def __init__(self, style) -> None:
         self.maps = {}
         self.counts = {}
         self.style = style
