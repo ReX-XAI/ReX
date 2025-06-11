@@ -25,8 +25,8 @@ from rex_xai.utils.logger import logger
 from rex_xai.input.onnx import get_prediction_function
 from rex_xai.responsibility.resp_maps import ResponsibilityMaps
 from rex_xai.responsibility.responsibility import causal_explanation
-from rex_xai.responsibility.prediction import Prediction
-from rex_xai.utils._utils import Strategy, ReXScriptError
+from rex_xai.responsibility.prediction import Prediction, default_prediction_function
+from rex_xai.utils._utils import ReXDataError, Strategy, ReXScriptError
 
 
 def try_preprocess(args: CausalArgs, model_shape: Tuple[int], device: tt.device):
@@ -455,11 +455,12 @@ def get_prediction_func_from_args(args: CausalArgs):
         RuntimeError: if an onnx inference instance cannot be created from the provided model file.
 
     """
-    if hasattr(args.script, "prediction_function") and hasattr(
-        args.script, "model_shape"
-    ):
+    prediction_func = None
+    model_shape = None
+    if hasattr(args.script, "prediction_function"):
         prediction_func = args.script.prediction_function  # type: ignore
-        model_shape = args.script.model_shape()  # type: ignore
+    if hasattr(args.script, "model_shape"):
+        model_shape = args.script.model_shape #type: ignore
     else:
         ps = get_prediction_function(args)
         if ps is None:
@@ -467,6 +468,14 @@ def get_prediction_func_from_args(args: CausalArgs):
         else:
             prediction_func, model_shape = ps
 
+    if prediction_func is None:
+        if hasattr(args.script, "model"):
+            prediction_func = default_prediction_function(args.script.model)
+        else:
+            raise ReXDataError("ReX cannot find a valid prediction function")
+    if model_shape is None:
+        raise ReXDataError("ReX cannot find a valid model shape")
+    print(prediction_func)
     return prediction_func, model_shape
 
 

@@ -269,7 +269,16 @@ class Explanation:
         ranking = get_map_locations(map=self.target_map)
 
         target_confidence = self.args.minimum_confidence_threshold * self.data.target.confidence
-
+        # if self.args.complete:
+        #     if self.args.minimum_confidence_threshold < 1.0:
+        #         logger.info(
+        #             "setting the minimum confidence threshold to 1 in order to calculate a complete explanation."
+        #         )
+        #     target_confidence = self.data.target.confidence  # type: ignore
+        # else:
+        #     target_confidence = (
+        #         self.args.minimum_confidence_threshold * self.data.target.confidence  # type: ignore
+        #     )
         sufficiency_confidence = 0.0
         necessity_confidence = 0.0
 
@@ -330,12 +339,12 @@ class Explanation:
             i += step
 
         # completeness
+        completeness_confidence = necessity_confidence
+        step = 5
         if self.args.complete:
-            step = 5
-            completeness_confidence = necessity_confidence
             j = len(ranking)
-            target_confidence = round(self.data.target.confidence, 3)  # type: ignore
-            while round(completeness_confidence, 3) > target_confidence:
+            target_confidence = round(self.data.target.confidence, 2)  # type: ignore
+            while round(necessity_confidence, 2) > target_confidence:
                 chunk = ranking[j - step : j]
                 for _, loc in chunk:
                     set_boolean_mask_value(
@@ -347,7 +356,8 @@ class Explanation:
                 sufficient = self.prediction_func(
                     _apply_to_data(insertion_mask, self.data)
                 )
-                completeness_confidence = sufficient[0].confidence
+                necessity_confidence = sufficient[0].confidence
+                print("here", necessity_confidence, target_confidence)
                 j -= step
                 if j <= i:
                     logger.warning(
@@ -357,20 +367,13 @@ class Explanation:
 
             logger.info(
                 "a complete explanation found with confidence %f",
-                completeness_confidence,
+                sufficiency_confidence,
             )
-            self.complete_mask = tt.logical_xor(insertion_mask.detach().clone(), self.necessity_mask)
-
+            self.complete_mask = insertion_mask.detach().clone()
         self.explanation_confidence = necessity_confidence
-
         print(tt.count_nonzero(self.sufficiency_mask))
         print(tt.count_nonzero(self.necessity_mask))
-        if self.args.complete:
-            print(tt.count_nonzero(self.complete_mask))
-
-            cp = self.prediction_func(_apply_to_data(self.complete_mask, self.data))
-            print(cp)
-
+        print(tt.count_nonzero(self.complete_mask))
         exit()
 
     def save(self, path, mask=None, multi=None, multi_style="", clauses=None):  # type: ignore

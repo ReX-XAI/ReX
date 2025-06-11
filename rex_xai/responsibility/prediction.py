@@ -47,8 +47,7 @@ class Prediction:
         return self.target == self.classification
 
 
-def from_pytorch_tensor(tensor, target=None, binary_threshold=None) -> List[Prediction]:
-    # TODO get this to handle binary models
+def from_pytorch_tensor(tensor, target=None) -> List[Prediction]:
     softmax_tensor = F.softmax(tensor, dim=1)
     prediction_scores, pred_labels = tt.topk(softmax_tensor, 1)
     predictions = []
@@ -60,3 +59,14 @@ def from_pytorch_tensor(tensor, target=None, binary_threshold=None) -> List[Pred
         predictions.append(p)
 
     return predictions
+
+
+def default_prediction_function(model):
+    def inner(mutants, target=None, raw=False):
+        with tt.no_grad():
+            tensor = model(mutants)
+            if raw:
+                return F.softmax(tensor, dim=1)
+            return from_pytorch_tensor(tensor, target=target)
+
+    return inner

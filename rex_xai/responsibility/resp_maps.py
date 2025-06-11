@@ -38,7 +38,7 @@ class ResponsibilityMaps:
     def new_map(self, k: int, height, width, depth=None):
         if depth is not None:
             if self.style == "additive":
-            # self.maps[k] = np.ones((height, width, depth), dtype="float32")
+                # self.maps[k] = np.ones((height, width, depth), dtype="float32")
                 self.maps[k] = np.zeros((height, width, depth), dtype="float32")
             else:
                 self.maps[k] = np.ones((height, width, depth), dtype="float32")

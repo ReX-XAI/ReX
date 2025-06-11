@@ -1,18 +1,35 @@
 #!/usr/bin/env python3
 
 import platform
-from torchvision.models import get_model, get_weight
+from torchvision.models import get_model
 from torchvision import transforms as T
-import torch as tt
-import torch.nn.functional as F
 from PIL import Image  # type: ignore
 from rex_xai.input.input_data import Data
-from rex_xai.responsibility.prediction import from_pytorch_tensor
 
 
+"""
+a sample script for a torchvision model. This has its own custom transform and uses the 
+default prediction function provided in `rex_xai/responsibility/prediction.py`.
+
+The file must contain *at least* a variable called `model_shape` of type `List`.
+It must also contain a function `preprocess(path, shape, device) -> Data` which
+returns a ReX `Data` object (`rex_xai/input/input_data.py`).
+
+If there is no `prediction_function(mutants, target=None, raw=False)` then 
+ReX will use the default prediction function provided in `rex_xai/responsibility/prediction.py`.
+ReX expects the model to be called simply `model`.
+
+Alternatively, you can write your own `prediction_function` which return a list of `Prediction`
+objects. 
+"""
+
+
+# this must be called model
 model = get_model('resnet50', weights="DEFAULT")
-weights = get_weight("ResNet50_Weights.IMAGENET1K_V1")
 model.eval()
+
+# you have to include this
+model_shape = ["N", 3, 224, 224]
 
 if platform.uname().system == "Darwin":
     model.to("mps")
@@ -27,6 +44,7 @@ transform = T.Compose(
         ]
     )
 
+# you have to write this
 def preprocess(path, shape, device) -> Data:
     # open the image with mode "RGB"
     img = Image.open(path).convert("RGB")
@@ -35,27 +53,19 @@ def preprocess(path, shape, device) -> Data:
 
     # manually set the data to the transformed image for model consumption
     data.data = transform(img).unsqueeze(0).to(device)
-    # data.data = weights.transforms()(img).unsqueeze(0).to(device)  # type: ignore
 
     # make a copy
     original = Image.open(path).convert("RGB").resize((224, 224))
-    # original = Image.open(path).convert("RGB") # .resize((224, 224))
-    # original = T.functional.resize(original, (256, 256))
-    # original = T.functional.center_crop(original, 224)
     data.input = original
 
     return data
 
 
-def prediction_function(mutants, target=None, raw=False):
-    with tt.no_grad(): # we don't use the grad and inference is faster without it
-        tensor = model(mutants)
-        if raw: # used when computing insertion/deletion curves
-            return F.softmax(tensor, dim=1)
-        # from_pytorch_tensor consumes a tensor and converts it to a Prediction object
-        # you can  alternatively use your own function here
-        return from_pytorch_tensor(tensor, target=target)
-
-
-def model_shape():
-    return ["N", 3, 224, 224]
+# def prediction_function(mutants, target=None, raw=False):
+#     with tt.no_grad(): # we don't use the grad and inference is faster without it
+#         tensor = model(mutants)
+#         if raw: # used when computing insertion/deletion curves
+#             return F.softmax(tensor, dim=1)
+#         # from_pytorch_tensor consumes a tensor and converts it to a Prediction object
+#         # you can  alternatively use your own function here
+#         return from_pytorch_tensor(tensor, target=target)
