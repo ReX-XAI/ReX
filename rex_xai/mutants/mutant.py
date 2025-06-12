@@ -146,4 +146,17 @@ class Mutant:
             plt.savefig(f"{self.get_name()}.png")
         # 3d image
         if data.mode == "voxel":
-            pass
+            volume = self.apply_to_data(data).squeeze().detach().cpu().numpy()
+            num_slices = min(volume.shape[0], 8)
+            slice_indices = np.linspace(0, volume.shape[0] - 1, num_slices, dtype=int)
+
+            fig, axes = plt.subplots(1, num_slices, figsize=(num_slices * 2, 2))
+            for i, idx in enumerate(slice_indices):
+                ax = axes[i]
+                ax.imshow(volume[idx], cmap="gray")
+                ax.axis("off")
+
+            plt.tight_layout()
+            plt.savefig(name or f"{self.get_name()}.png")
+            plt.close(fig)
+
