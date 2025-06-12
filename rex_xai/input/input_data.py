@@ -45,6 +45,7 @@ class Data:
         self.mask_value = None
         self.background = None
         self.context = None
+        self.context_noise = 0.4
 
         if process:
             # RGB model but greyscale input so we convert greyscale to pseudo-RGB
@@ -246,7 +247,7 @@ class Data:
                     m, d, device=self.device
                 )
             case "context":
-                self.mask_value = lambda m, d: context_occlusion(m, d, self.context)
+                self.mask_value = lambda m, d: context_occlusion(m, d, self.context, self.context_noise)
                 # TODO: Add args for noise and setting the context as currently only available through custom script
             case _:
                 raise ValueError(
