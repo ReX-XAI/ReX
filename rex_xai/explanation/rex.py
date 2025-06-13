@@ -470,7 +470,7 @@ def get_prediction_func_from_args(args: CausalArgs):
 
     if prediction_func is None:
         if hasattr(args.script, "model"):
-            prediction_func = default_prediction_function(args.script.model)
+            prediction_func = default_prediction_function(args.script.model) #type: ignore
         else:
             raise ReXDataError("ReX cannot find a valid prediction function")
     if model_shape is None:

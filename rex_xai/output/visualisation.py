@@ -662,6 +662,33 @@ def __save_multi(path, explanations_subset, data, img, colours_subset, args):
             out.save(path)
 
 
+def save_complete(explanation, data, args: CausalArgs, path=None):
+    rgb_colours = generate_colours(args.spotlights, args.heatmap_colours)
+    colours_subset = [rgb_colours[c] for c in range(0, 3)]
+
+    explanations_subset = []
+    explanations_subset.append(__transpose_mask(explanation.sufficiency_mask, 'RGB'))
+    explanations_subset.append(__transpose_mask(explanation.necessity_mask, 'RGB'))
+    explanations_subset.append(__transpose_mask(explanation.complete_mask, 'RGB'))
+
+    composite_mask = make_composite_mask(explanations_subset)
+
+    img = apply_boundaries_to_image(data.input, explanations_subset, colours_subset)
+
+    if composite_mask is not None:
+        cover = np.where(composite_mask, img, args.colour)
+        cover = Image.fromarray(cover, data.mode)
+        img = Image.fromarray(img, data.mode)
+        out = Image.blend(cover, img, args.alpha)
+
+        out.save(f"complete_{data.target.classification}.png")
+        if path is None:
+            return out
+        else:
+            out.save(path)
+
+    
+
 def save_multi_explanation(
     explanations, data, args: CausalArgs, clause=None, path=None
 ):
