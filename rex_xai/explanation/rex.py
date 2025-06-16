@@ -116,8 +116,8 @@ def load_and_preprocess_data(
             )
             if args.context_location is not None:
                 data.context = args.script.preprocess(
-                args.context_location, model_shape, device, mode=args.mode
-            )
+                    args.context_location, model_shape, device, mode=args.mode
+                ).data.to(device)
         else:
             raise ReXScriptError(
                 f"{args.script_location} is missing a preprocess() function"
@@ -382,7 +382,6 @@ def _explanation(
     end = time.time()
     time_taken = end - start
     logger.info(f"Time taken: {time_taken:.2f}s")
-
     if args.surface is not None:
         if path is not None:
             pass
@@ -390,6 +389,7 @@ def _explanation(
             path = None
         else:
             path = args.surface
+        logger.info(f"Surface plot is saved at {path}")
         exp.surface_plot(path)
 
     if args.heatmap is not None:
@@ -397,14 +397,15 @@ def _explanation(
             path = None
         else:
             path = args.heatmap
+        logger.info(f"Heatmap plot is saved at {path}")
         exp.heatmap_plot(path)
 
     if args.output is not None:
-        if path is None:
-            if args.output == "show":
-                path = None
-            else:
-                path = args.output
+        if args.output == "show":
+            path = None
+        else:
+            path = args.output
+        logger.info(f"Explanation is saved at {args.output}")
         exp.save(path, clauses=clauses)
 
     if db is not None:

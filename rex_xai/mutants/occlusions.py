@@ -59,5 +59,7 @@ def context_occlusion(mask: tt.Tensor, data: tt.Tensor, context: tt.Tensor, nois
     @return torch.Tensor
     """
     if noise > 0.0:
-        context = tt.tensor(gaussian_filter(context, sigma=noise), dtype=tt.float32)
+        device = data.device
+        context = context.to("cpu") # As gaussian_filter expects cpu bound
+        context = tt.tensor(gaussian_filter(context, sigma=noise), dtype=tt.float32).to(device)
     return tt.where(mask == 0, context, data)

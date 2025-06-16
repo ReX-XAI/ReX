@@ -148,12 +148,27 @@ class Mutant:
         if data.mode == "voxel":
             volume = self.apply_to_data(data).squeeze().detach().cpu().numpy()
             num_slices = min(volume.shape[0], 8)
-            slice_indices = np.linspace(0, volume.shape[0] - 1, num_slices, dtype=int)
+            slice_indices_x = np.linspace(0, volume.shape[0] - 1, num_slices, dtype=int)
+            slice_indices_y = np.linspace(0, volume.shape[1] - 1, num_slices, dtype=int)
+            slice_indices_z = np.linspace(0, volume.shape[2] - 1, num_slices, dtype=int)
 
-            fig, axes = plt.subplots(1, num_slices, figsize=(num_slices * 2, 2))
-            for i, idx in enumerate(slice_indices):
-                ax = axes[i]
-                ax.imshow(volume[idx], cmap="gray")
+            fig, axes = plt.subplots(3, num_slices, figsize=(15, 6))
+            for i, idx in enumerate(slice_indices_x):
+                ax = axes[0, i]
+                ax.imshow(volume[idx, :, :], cmap="gray")
+                ax.set_title(f"X={idx}")
+                ax.axis("off")
+
+            for j, idy in enumerate(slice_indices_y):
+                ax = axes[1, j]
+                ax.imshow(volume[:, idy, :], cmap="gray")
+                ax.set_title(f"Y={idy}")
+                ax.axis("off")
+
+            for z, idz in enumerate(slice_indices_z):
+                ax = axes[2, z]
+                ax.imshow(volume[:, :, idz], cmap="gray")
+                ax.set_title(f"Z={idz}")
                 ax.axis("off")
 
             plt.tight_layout()

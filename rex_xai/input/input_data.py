@@ -248,7 +248,6 @@ class Data:
                 )
             case "context":
                 self.mask_value = lambda m, d: context_occlusion(m, d, self.context, self.context_noise)
-                # TODO: Add args for noise and setting the context as currently only available through custom script
             case _:
                 raise ValueError(
                     f"Invalid mask value {m}. Should be an integer, float, or one of 'min', 'mean', 'spectral'"

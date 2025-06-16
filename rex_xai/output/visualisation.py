@@ -206,6 +206,7 @@ def spectral_plot(explanation, data: Data, ranking, colour, extra=True, path=Non
         plt.show()
     else:
         plt.savefig(path, dpi=300)
+    plt.close()
 
 
 def surface_plot(
@@ -281,6 +282,7 @@ def surface_plot(
             plt.show()
         else:
             plt.savefig(path, bbox_inches="tight", dpi=300)
+        plt.close()
 
 
 def overlay_grid(img, step_count=10):
@@ -595,16 +597,20 @@ def save_image(explanation, data: Data, args: CausalArgs, path=None):
             )
         else:
             img = data.input.resize((data.model_height, data.model_width))
-
         mask = __transpose_mask(explanation, data.mode, data.transposed)
-
         if mask is not None:
             if args.raw:
                 out = np.where(mask, img, 0).squeeze(
                     0
                 )  # 0 used to mask image with black
                 out = Image.fromarray(out, data.mode)
-
+            elif args.mask_value == "context":
+                if path is not None:
+                    plt.imshow(mask, cmap="gray")
+                    plt.axis("off")
+                    plt.savefig(path)
+                    plt.close()
+                return mask
             else:
                 exp = np.where(mask, img, args.colour)
                 exp = Image.fromarray(exp, "RGB")
