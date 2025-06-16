@@ -4,24 +4,24 @@
 
 import os
 import re
-import numpy as np
-
-import torch as tt
 from itertools import combinations
+
+import numpy as np
+import torch as tt
 
 from rex_xai.explanation.explanation import Explanation
 from rex_xai.mutants.distributions import Distribution, random_coords
-from rex_xai.utils.logger import logger
-from rex_xai.utils._utils import (
-    powerset,
-    clause_area,
-    SpatialSearch,
-)
 from rex_xai.output.visualisation import (
-    save_multi_explanation,
-    save_image,
     plot_image_grid,
+    save_image,
+    save_multi_explanation,
 )
+from rex_xai.utils._utils import (
+    SpatialSearch,
+    clause_area,
+    powerset,
+)
+from rex_xai.utils.logger import logger
 
 
 class MultiExplanation(Explanation):

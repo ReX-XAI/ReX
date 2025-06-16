@@ -1,21 +1,30 @@
 #!/usr/bin/env python3
 
 import importlib.metadata
-from itertools import chain, combinations
 from enum import Enum
-from typing import Tuple, Union, Dict
-from numpy.typing import NDArray
-import torch as tt
+from itertools import chain, combinations
+from typing import Dict, Tuple, Union
+
 import numpy as np
+import torch as tt
+from numpy.typing import NDArray
 from skimage.segmentation import mark_boundaries
-from rex_xai.utils.logger import logger
+
 from rex_xai.mutants.box import Box
+from rex_xai.utils.logger import logger
 
 Strategy = Enum("Strategy", ["Global", "Spatial", "MultiSpotlight", "Contrastive"])
 
 Queue = Enum("Queue", ["Area", "All", "Intersection", "DC"])
 
 SpatialSearch = Enum("SpatialSearch", ["NotFound", "Found"])
+
+
+def try_detach(t):
+    if isinstance(t, tt.Tensor):
+        return t.detach().cpu().numpy()
+    else:
+        return t
 
 
 def one_d_permute(tensor):
@@ -103,9 +112,9 @@ def add_boundaries(
     img: Union[NDArray, tt.Tensor], segs: NDArray, colour=None
 ) -> NDArray:
     if colour is None:
-        m = mark_boundaries(img, segs, mode="thick")
+        m = mark_boundaries(img, segs, mode="inner")
     else:
-        m = mark_boundaries(img, segs, colour, mode="thick")
+        m = mark_boundaries(img, segs, colour, mode="inner")
     m *= 255  # type: ignore
     m = m.astype(np.uint8)
     return m

@@ -6,27 +6,27 @@ import copy
 import os
 import sys
 import time
-from typing import Tuple, List, Union
+from typing import List, Tuple, Union
 
-from scipy.io import loadmat
 import numpy as np
 import torch as tt
 from PIL import Image
+from scipy.io import loadmat
 from sqlalchemy.orm import Session
 from tqdm import trange  # type: ignore
 
-from rex_xai.input.config import CausalArgs
-from rex_xai.output.database import update_database
 from rex_xai.explanation.evaluation import Evaluation
-from rex_xai.explanation.multi_explanation import MultiExplanation
 from rex_xai.explanation.explanation import Explanation
+from rex_xai.explanation.multi_explanation import MultiExplanation
+from rex_xai.input.config import CausalArgs
 from rex_xai.input.input_data import Data
-from rex_xai.utils.logger import logger
 from rex_xai.input.onnx import get_prediction_function
+from rex_xai.output.database import update_database
+from rex_xai.responsibility.prediction import Prediction, default_prediction_function
 from rex_xai.responsibility.resp_maps import ResponsibilityMaps
 from rex_xai.responsibility.responsibility import causal_explanation
-from rex_xai.responsibility.prediction import Prediction, default_prediction_function
-from rex_xai.utils._utils import ReXDataError, Strategy, ReXScriptError
+from rex_xai.utils._utils import ReXDataError, ReXScriptError, Strategy
+from rex_xai.utils.logger import logger
 
 
 def try_preprocess(args: CausalArgs, model_shape: Tuple[int], device: tt.device):
@@ -418,7 +418,7 @@ def _explanation(
                 path = None
             else:
                 path = args.output
-        exp.save(path, clauses=clauses)
+        exp.save(path)
 
     if db is not None:
         if args.strategy == Strategy.MultiSpotlight:
@@ -460,7 +460,7 @@ def get_prediction_func_from_args(args: CausalArgs):
     if hasattr(args.script, "prediction_function"):
         prediction_func = args.script.prediction_function  # type: ignore
     if hasattr(args.script, "model_shape"):
-        model_shape = args.script.model_shape #type: ignore
+        model_shape = args.script.model_shape  # type: ignore
     else:
         ps = get_prediction_function(args)
         if ps is None:
@@ -470,7 +470,7 @@ def get_prediction_func_from_args(args: CausalArgs):
 
     if prediction_func is None:
         if hasattr(args.script, "model"):
-            prediction_func = default_prediction_function(args.script.model) #type: ignore
+            prediction_func = default_prediction_function(args.script.model)  # type: ignore
         else:
             raise ReXDataError("ReX cannot find a valid prediction function")
     if model_shape is None:

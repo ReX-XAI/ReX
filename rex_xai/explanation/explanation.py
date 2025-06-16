@@ -1,20 +1,20 @@
 #!/usr/bin/env python
 import re
-from typing import Optional
 
 import torch as tt
 
+from rex_xai.input.config import CausalArgs, Strategy
+from rex_xai.input.input_data import Data
+from rex_xai.mutants.mutant import _apply_to_data
 from rex_xai.output import visualisation
+from rex_xai.responsibility.resp_maps import ResponsibilityMaps
 from rex_xai.utils._utils import (
     SpatialSearch,
     get_map_locations,
     set_boolean_mask_value,
+    try_detach,
 )
-from rex_xai.input.config import CausalArgs, Strategy
-from rex_xai.input.input_data import Data
 from rex_xai.utils.logger import logger
-from rex_xai.mutants.mutant import _apply_to_data
-from rex_xai.responsibility.resp_maps import ResponsibilityMaps
 
 
 class Explanation:
@@ -48,7 +48,6 @@ class Explanation:
                 f"No responsibility map found for target {data.target.classification}!"
             )
 
-        self.explanation: Optional[tt.Tensor] = None
         self.sufficiency_mask = None
         self.explanation_confidence = 0.0
         self.prediction_func = prediction_func
@@ -73,20 +72,11 @@ class Explanation:
             + f"\n\trun statistics: {run_stats} (5 dp)"
         )
 
-        if self.explanation is None or self.sufficiency_mask is None:
-            return (
-                exp_text
-                + f"\n\texplanation: {self.explanation}"
-                + f"\n\tfinal mask: {self.sufficiency_mask}"
-                + f"\n\texplanation confidence: {self.explanation_confidence}"
-            )
-        else:
-            return (
-                exp_text
-                + f"\n\texplanation: {type(self.explanation)} of shape {self.explanation.shape}"
-                + f"\n\tfinal mask: {type(self.sufficiency_mask)} of shape {self.sufficiency_mask.shape}"
-                + f"\n\texplanation confidence: {self.explanation_confidence:.5f} (5 dp)"
-            )
+        return (
+            exp_text
+            + f"\n\tsufficiency mask: {self.sufficiency_mask}"
+            + f"\n\texplanation confidence: {self.explanation_confidence}"
+        )
 
     def extract(self, method: Strategy):
         self.blank()
@@ -97,21 +87,18 @@ class Explanation:
                 logger.warning(
                     "spatial search not yet implemented for spectral data, so defaulting to global search"
                 )
-                self.__global()
+                _ = self.__global()
             else:
                 _ = self.__spatial()
 
-        if isinstance(self.sufficiency_mask, tt.Tensor):
-            self.sufficiency_mask = self.sufficiency_mask.detach().cpu().numpy()
-        if isinstance(self.target_map, tt.Tensor):
-            self.target_map = self.target_map.detach().cpu().numpy()
+        self.sufficiency_mask = try_detach(self.sufficiency_mask)
+        self.target_map = try_detach(self.target_map)
 
     def blank(self):
         assert self.data.data is not None
-        self.explanation = tt.zeros(
+        self.sufficiency_mask = tt.zeros(
             self.data.data.shape, dtype=tt.bool, device=self.data.device
         )
-        self.sufficiency_mask = None
 
     def set_to_true(self, coords, mask=None):
         if mask is not None:
@@ -128,6 +115,7 @@ class Explanation:
             self.data.model_shape[1:], dtype=tt.bool, device=self.data.device
         )
         masks = []
+        tests = []
 
         limit = 0
         for i in range(0, len(ranking), self.args.chunk_size):
@@ -135,16 +123,15 @@ class Explanation:
             limit += self.args.chunk_size
             for _, loc in chunk:
                 self.set_to_true(loc, mutant)
-            #  TODO  this is not correct
-            d = _apply_to_data(mutant, self.data).squeeze(0)
-            masks.append(d)
+            masks.append(mutant)
+            tests.append(_apply_to_data(mutant, self.data).squeeze(0))
             if len(masks) == self.args.batch_size:
-                preds = self.prediction_func(tt.stack(masks).to(self.data.device))
+                preds = self.prediction_func(tt.stack(tests).to(self.data.device))
                 for j, p in enumerate(preds):
                     if (
-                        p.classification == self.data.target.classification
+                        p.classification == self.data.target.classification  # type:ignore
                         and p.confidence
-                        >= self.data.target.confidence
+                        >= self.data.target.confidence  # type:ignore
                         * self.args.minimum_confidence_threshold
                     ):  #  type: ignore
                         logger.info(
@@ -152,13 +139,11 @@ class Explanation:
                             p.classification,
                             p.confidence,
                         )
-                        self.explanation = masks[j]
                         self.explanation_confidence = p.confidence
-                        self.sufficiency_mask = mutant.zero_()
-                        for _, loc in ranking[:limit]:
-                            self.set_to_true(loc, self.sufficiency_mask)
+                        self.sufficiency_mask = masks[j]
                         return p.confidence
                 masks = []
+                tests = []
 
     def __generate_circle_coordinates(self, centre, radius: int):
         assert self.data.model_height is not None
@@ -195,11 +180,15 @@ class Explanation:
     def compute_masked_responsibility(self, mask):
         try:
             masked_responsibility = tt.where(
-                mask, self.target_map, self.data.mask_value
+                mask,
+                self.target_map,  # type: ignore
+                self.data.mask_value,  # type: ignore
             )  # type: ignore
         except RuntimeError:
             masked_responsibility = tt.where(
-                mask.permute((2, 0, 1)), self.target_map, self.data.mask_value
+                mask.permute((2, 0, 1)),
+                self.target_map,  # type: ignore
+                self.data.mask_value,  # type: ignore
             )  # type: ignore
         except Exception as e:
             logger.fatal(e)
@@ -268,7 +257,9 @@ class Explanation:
 
         ranking = get_map_locations(map=self.target_map)
 
-        target_confidence = self.args.minimum_confidence_threshold * self.data.target.confidence  #type: ignore
+        target_confidence = (
+            self.args.minimum_confidence_threshold * self.data.target.confidence  # type: ignore
+        )
         necessity_confidence = 0.0
 
         step = 10
@@ -296,15 +287,28 @@ class Explanation:
             necessary = self.prediction_func(_apply_to_data(deletion_mask, self.data))
 
             necessity_classification = None
+            necessity_confidence = None
             inverse_confidence = None
 
+            assert self.data.target is not None
             for j in range(0, len(sufficient)):
-                if sufficient[j].classification == self.data.target.classification and not sufficient_found:
-                    self.sufficiency_mask = insertion_mask.detach().clone()
+                if (
+                    not sufficient_found
+                    and sufficient[j].classification == self.data.target.classification
+                    and sufficient[j].confidence >= target_confidence
+                ):
+                    # sufficient explanation has been found
                     sufficient_found = True
-                    sufficiency_confidence = sufficient[j].confidence
-                    logger.info("found sufficient explanation of class %d with confidence %f", sufficient[j].classification,  sufficient[j].confidence)
+                    self.sufficiency_mask = insertion_mask.detach().clone()
+                    logger.info(
+                        "found sufficient explanation of class %d with confidence %f",
+                        sufficient[j].classification,
+                        sufficient[j].confidence,
+                    )
 
+                    # we have found a sufficient explanation. If we are looking for a `complete` explanation,
+                    # then we need to reset the `minimum_confidence_threshold` to 1 in order to find a core of
+                    # enough confidence
                     if self.args.complete:
                         if self.args.minimum_confidence_threshold < 1.0:
                             logger.info(
@@ -321,9 +325,14 @@ class Explanation:
                     self.necessity_mask = insertion_mask.detach().clone()
                     necessity_confidence = sufficient[j].confidence
                     found = True
+                    logger.info(
+                        "found contrastive explanation, changing %d to %d with confidence %.3f",
+                        self.data.target.classification,
+                        necessity_classification,
+                        inverse_confidence,
+                    )
 
             i += step
-
 
         # completeness
         if self.args.complete:
@@ -331,7 +340,7 @@ class Explanation:
             step = 5
             j = len(ranking)
             target_confidence = round(self.data.target.confidence, 2)  # type: ignore
-            while round(completeness_confidence, 2) > target_confidence:
+            while round(completeness_confidence, 2) > target_confidence:  # type: ignore
                 chunk = ranking[j - step : j]
                 for _, loc in chunk:
                     set_boolean_mask_value(
@@ -351,56 +360,52 @@ class Explanation:
                     )
                     break
 
-            self.complete_mask = tt.logical_xor(insertion_mask.detach().clone(), self.necessity_mask)
+            self.complete_mask = tt.logical_xor(
+                insertion_mask.detach().clone(), self.necessity_mask
+            )
 
         else:
             self.sufficiency_mask = self.necessity_mask
 
-
         if self.args.complete:
             cp = self.prediction_func(_apply_to_data(self.complete_mask, self.data))[0]
-            diff = necessity_confidence - self.data.target.confidence
+            diff = necessity_confidence - self.data.target.confidence  # type: ignore
             direction = "increases" if diff < 0 else "reduces"
             logger.info(
-                ("found sufficient, necessary and complete explanation of class %d with confidence %.2f " +
-                "where sufficient and necessary explanation has confidence %.2f. " +
-                 "Removing these pixels results in class %d with confidence %.2f." + 
-                 "The complete explanation %s the sufficient and necessary confidence by %f and has class %d " +
-                 "with confidence %.2f."),
-                self.data.target.classification,
-                round(completeness_confidence, 2),
-                round(necessity_confidence, 2),
-                necessity_classification, #type: ignore
-                round(inverse_confidence, 2),  #type: ignore
+                (
+                    "found sufficient, necessary and complete explanation of class %d with confidence %.2f "
+                    + "where sufficient and necessary explanation has confidence %.2f. "
+                    + "Removing these pixels results in class %d with confidence %.2f."
+                    + "The complete explanation %s the sufficient and necessary confidence by %f and has class %d "
+                    + "with confidence %.2f."
+                ),
+                self.data.target.classification,  # type: ignore
+                round(completeness_confidence, 2),  # type: ignore
+                round(necessity_confidence, 2),  # type: ignore
+                necessity_classification,  # type: ignore
+                round(inverse_confidence, 2),  # type: ignore
                 direction,
                 abs(diff),
                 cp.classification,
-                cp.confidence
+                cp.confidence,
             )
 
-
-
-    def save(self, path, mask=None, multi=None, multi_style="", clauses=None):  # type: ignore
-        if self.args.complete:
-            visualisation.save_complete(self, self.data, self.args, path=path)
-        # NOTE: the parameter multi_style="" is here simply to make overriding
-        # the save function in MultiExplanation typecheck, same holds for clauses
-        if self.data.mode in ("RGB", "voxel"):
-            if mask is None:
+    def save(self, path, mask=None):
+        if self.data.mode in ("RGB", "voxel") and mask is None:
+            if self.args.complete:
+                visualisation.save_complete(self, self.data, self.args, path=path)
+            else:
                 visualisation.save_image(
-                    self.explanation,
+                    self.sufficiency_mask,
                     self.data,
                     self.args,
                     path=path,
                     mask=self.sufficiency_mask,
                 )
-            else:
-                visualisation.save_image(
-                    self.explanation, self.data, self.args, path=path, mask=mask
-                )
+
         if self.data.mode == "spectral":
             visualisation.spectral_plot(
-                self.explanation,
+                self.sufficiency_mask,
                 self.data,
                 self.target_map,
                 self.args.heatmap_colours,
@@ -453,7 +458,7 @@ class Explanation:
     def show(self, path=None):
         if self.data.mode in ("RGB", "voxel"):
             out = visualisation.save_image(
-                self.explanation, self.data, self.args, path=path
+                self.sufficiency_mask, self.data, self.args, path=path
             )
             return out
         else:

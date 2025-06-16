@@ -1,20 +1,20 @@
 #!/usr/bin/env python
-from datetime import datetime
 import zlib
-import torch as tt
-import sqlalchemy as sa
-from sqlalchemy import Boolean, Float, String, create_engine
-from sqlalchemy import Column, Integer, Unicode
-from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from ast import literal_eval
+from datetime import datetime
 
-import pandas as pd
 import numpy as np
+import pandas as pd
+import sqlalchemy as sa
+import torch as tt
+from sqlalchemy import Boolean, Column, Float, Integer, String, Unicode, create_engine
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
-from rex_xai.utils.logger import logger
-from rex_xai.input.config import CausalArgs, Strategy
 from rex_xai.explanation.explanation import Explanation
 from rex_xai.explanation.multi_explanation import MultiExplanation
+from rex_xai.input.config import CausalArgs, Strategy
+from rex_xai.utils._utils import try_detach
+from rex_xai.utils.logger import logger
 
 
 def _dataframe(db, table):
@@ -96,12 +96,21 @@ def update_database(
     classification = int(target.classification)  # type: ignore
 
     if not multi:
-        final_mask = explanation.sufficiency_mask
         if explanation.sufficiency_mask is None:
             logger.warning("unable to update database as explanation is empty")
             return
-        if isinstance(final_mask, tt.Tensor):
-            final_mask = final_mask.detach().cpu().numpy()
+        sufficiency_mask = try_detach(explanation.sufficiency_mask)
+
+        necessity_mask = None
+        complete_mask = None
+        necessity_confidence = None
+        complete_confidence = None
+        if hasattr(explanation, "necessity_mask"):
+            necessity_mask = try_detach(explanation.necessity_mask)
+            # necessity_confidence = explanation.necessity_confidence  # type: ignore
+        if hasattr(explanation, "complete_mask"):
+            complete_mask = try_detach(explanation.complete_mask)
+            # complete_confidence = explanation.complete_confidence  # type: ignore
 
         explanation_confidence = explanation.explanation_confidence
 
@@ -111,8 +120,12 @@ def update_database(
             classification,
             target.confidence,
             target_map,
-            final_mask,
+            sufficiency_mask,
             explanation_confidence,
+            necessity_mask,
+            necessity_confidence,
+            complete_mask,
+            complete_confidence,
             time_taken,
             explanation.run_stats["total_passing"],
             explanation.run_stats["total_failing"],
@@ -161,8 +174,12 @@ def add_to_database(
     target,
     confidence,
     responsibility,
-    explanation,
-    explanation_confidence,
+    sufficiency_mask,
+    sufficiency_confidence,
+    necessity_mask,
+    necessity_confidence,
+    complete_mask,
+    complete_confidence,
     time_taken,
     passing,
     failing,
@@ -177,7 +194,7 @@ def add_to_database(
         id = hash(str(datetime.now().time()))
 
     responsibility_shape = responsibility.shape
-    explanation_shape = explanation.shape
+    explanation_shape = sufficiency_mask.shape
 
     object = DataBaseEntry(
         id,
@@ -186,9 +203,13 @@ def add_to_database(
         confidence,
         responsibility,
         responsibility_shape,
-        explanation,
+        sufficiency_mask,
         explanation_shape,
-        explanation_confidence,
+        sufficiency_confidence,
+        necessity_mask,
+        necessity_confidence,
+        complete_mask,
+        complete_confidence,
         time_taken,
         depth_reached=depth_reached,
         avg_box_size=avg_box_size,
@@ -248,9 +269,18 @@ class DataBaseEntry(Base):
     total_work = Column(Integer)
     passing = Column(Integer)
     failing = Column(Integer)
-    explanation = Column(NumpyType)
-    explanation_shape = Column(Unicode)
-    explanation_confidence = Column(Float)
+    # basic explanation type
+    sufficiency_mask = Column(NumpyType)
+    mask_shape = Column(Unicode)
+    sufficiency_confidence = Column(Float)
+    # sufficient and necessary mask
+    contrastive_mask = Column(NumpyType)
+    contrastive_confidence = Column(Float)
+
+    # complete mask
+    complete_mask = Column(NumpyType)
+    complete_confidence = Column(Float)
+
     multi = Column(Boolean)
     multi_no = Column(Integer)
 
@@ -283,10 +313,14 @@ class DataBaseEntry(Base):
         confidence,
         responsibility,
         responsibility_shape,
-        explanation,
-        explanation_shape,
-        explanation_confidence,
+        sufficiency_mask,
+        mask_shape,
+        sufficiency_confidence,
         time_taken,
+        contrastive_mask=None,
+        contrastive_confidence=None,
+        complete_mask=None,
+        complete_confidence=None,
         passing=None,
         failing=None,
         total_work=None,
@@ -314,13 +348,20 @@ class DataBaseEntry(Base):
         self.confidence = confidence
         self.responsibility = responsibility
         self.responsibility_shape = str(responsibility_shape)
-        self.explanation = explanation
-        self.explanation_shape = str(explanation_shape)
-        self.explanation_confidence = explanation_confidence
+        self.sufficiency_mask = sufficiency_mask
+        self.mask_shape = str(mask_shape)
+        self.sufficiency_confidence = sufficiency_confidence
         self.time = time_taken
         self.total_work = total_work
         self.passing = passing
         self.failing = failing
+
+        # contrastive and complete explanations
+        self.contrastive_mask = contrastive_mask
+        self.contrastive_confidence = contrastive_confidence
+        self.complete_mask = complete_mask
+        self.complete_confidence = complete_confidence
+
         # multi status
         self.multi = multi
         self.multi_no = multi_no

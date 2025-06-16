@@ -2,20 +2,20 @@
 
 """image generation functions"""
 
-from PIL import Image, ImageDraw
 import os
 
-import torch as tt
-import numpy as np
-import matplotlib.pyplot as plt
 import matplotlib as mpl
+import matplotlib.pyplot as plt
+import numpy as np
+import torch as tt
+from PIL import Image, ImageDraw
 from scipy.ndimage import center_of_mass
 from skimage.segmentation import slic
 from torch import Tensor
 
-from rex_xai.responsibility.prediction import Prediction
 from rex_xai.input.config import CausalArgs
 from rex_xai.input.input_data import Data
+from rex_xai.responsibility.prediction import Prediction
 from rex_xai.utils._utils import add_boundaries
 from rex_xai.utils.logger import logger
 
@@ -307,7 +307,7 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
     """
     try:
         import plotly.graph_objs as go
-        from dash import Dash, dcc, html, Input, Output
+        from dash import Dash, Input, Output, dcc, html
     except ImportError as e:
         logger.error(f"Plotly failed to import caused by {e}.")
         return
@@ -667,9 +667,9 @@ def save_complete(explanation, data, args: CausalArgs, path=None):
     colours_subset = [rgb_colours[c] for c in range(0, 3)]
 
     explanations_subset = []
-    explanations_subset.append(__transpose_mask(explanation.sufficiency_mask, 'RGB'))
-    explanations_subset.append(__transpose_mask(explanation.necessity_mask, 'RGB'))
-    explanations_subset.append(__transpose_mask(explanation.complete_mask, 'RGB'))
+    explanations_subset.append(__transpose_mask(explanation.sufficiency_mask, "RGB"))
+    explanations_subset.append(__transpose_mask(explanation.necessity_mask, "RGB"))
+    explanations_subset.append(__transpose_mask(explanation.complete_mask, "RGB"))
 
     composite_mask = make_composite_mask(explanations_subset)
 
@@ -687,7 +687,6 @@ def save_complete(explanation, data, args: CausalArgs, path=None):
         else:
             out.save(path)
 
-    
 
 def save_multi_explanation(
     explanations, data, args: CausalArgs, clause=None, path=None
