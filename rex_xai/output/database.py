@@ -49,37 +49,6 @@ def db_to_pandas(db, dtype=np.float32, table="rex", process=True):
     return df
 
 
-# def __multi_update(
-#     db,
-#     explanation,
-#     classification,
-#     target,
-#     target_map,
-#     sufficiency_mask,
-#     time_taken,
-#     multi_no,
-# ):
-#     if isinstance(sufficiency_mask, tt.Tensor):
-#         sufficiency_mask = sufficiency_mask.detach().cpu().numpy()
-#     pass
-# add_to_database(
-#     db,
-#     explanation.args,
-#     classification,
-#     target.confidence,
-#     target_map,
-#     final_mask,
-#     explanation.explanation_confidences[multi_no],
-#     time_taken,
-#     explanation.run_stats["total_passing"],
-#     explanation.run_stats["total_failing"],
-#     explanation.run_stats["max_depth_reached"],
-#     explanation.run_stats["avg_box_size"],
-#     multi=True,
-#     multi_no=multi_no,
-# )
-
-
 def update_database(
     db,
     explanation: Explanation | MultiExplanation,  # type: ignore
@@ -99,6 +68,19 @@ def update_database(
         return
     classification = int(target.classification)  # type: ignore
 
+    # potentially enmpty fields in the database
+    necessity_mask = None
+    complete_mask = None
+    inverse_classification = None
+    inverse_confidence = None
+    necessity_confidence = None
+    complete_classification = None
+    complete_confidence = None
+    area = None
+    entropy = None
+    insertion_curve = None
+    deletion_curve = None
+
     if not multi:
         if explanation.sufficiency_mask is None:
             logger.warning("unable to update database as explanation is empty")
@@ -106,13 +88,6 @@ def update_database(
 
         sufficiency_mask = try_detach(explanation.sufficiency_mask)
 
-        necessity_mask = None
-        complete_mask = None
-        inverse_classification = None
-        inverse_confidence = None
-        necessity_confidence = None
-        complete_classification = None
-        complete_confidence = None
         if hasattr(explanation, "necessity_mask"):
             necessity_mask = try_detach(explanation.necessity_mask)
             necessity_confidence = explanation.necessity_confidence  # type: ignore
@@ -125,10 +100,6 @@ def update_database(
 
         explanation_confidence = explanation.sufficiency_confidence
 
-        area = None
-        entropy = None
-        insertion_curve = None
-        deletion_curve = None
         if analysis_results is not None:
             area = analysis_results["area"]
             entropy = analysis_results["entropy"]
@@ -168,34 +139,40 @@ def update_database(
             )
             return
         else:
+            if clauses is None:
+                clauses = [i for i in range(0, len(explanation.explanations))]
             for c, sufficiency_mask in enumerate(explanation.explanations):
-                if clauses is not None:
-                    if c not in clauses:
-                        logger.warning("ignoring %s", c)
-                    pass
-                #     else:
-                #         __multi_update(
-                #             db,
-                #             explanation,
-                #             classification,
-                #             target,
-                #             target_map,
-                #             final_mask,
-                #             time_taken,
-                #             c,
-                #         )
-                # else:
-                #     __multi_update(
-                #         db,
-                #         explanation,
-                #         classification,
-                #         target,
-                #         target_map,
-                #         final_mask,
-                #         time_taken,
-                #         c,
-                #     )
-                #
+                if c in clauses:
+                    sufficiency_mask = try_detach(explanation.explanations[c])
+                    add_to_database(
+                        db,
+                        explanation.args,
+                        classification,
+                        target.confidence,
+                        target_map,
+                        sufficiency_mask,
+                        explanation.explanation_confidences[c],
+                        necessity_mask,
+                        necessity_confidence,
+                        inverse_classification,
+                        inverse_confidence,
+                        complete_mask,
+                        complete_classification,
+                        complete_confidence,
+                        area,
+                        entropy,
+                        insertion_curve,
+                        deletion_curve,
+                        time_taken,
+                        explanation.run_stats["total_passing"],
+                        explanation.run_stats["total_failing"],
+                        explanation.run_stats["max_depth_reached"],
+                        explanation.run_stats["avg_box_size"],
+                        multi_no=c,
+                    )
+
+                else:
+                    logger.info("not adding %s into the database", c)
 
 
 def add_to_database(
