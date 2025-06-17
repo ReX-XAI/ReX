@@ -681,7 +681,6 @@ def save_complete(explanation, data, args: CausalArgs, path=None):
         img = Image.fromarray(img, data.mode)
         out = Image.blend(cover, img, args.alpha)
 
-        out.save(f"complete_{data.target.classification}.png")
         if path is None:
             return out
         else:
