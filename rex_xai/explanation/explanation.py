@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+from __future__ import annotations
+
 import re
 
 import torch as tt
@@ -49,7 +51,7 @@ class Explanation:
             )
 
         self.sufficiency_mask = None
-        self.explanation_confidence = 0.0
+        self.sufficiency_confidence = 0.0
         self.prediction_func = prediction_func
         self.data = data
         self.args = args
@@ -75,7 +77,7 @@ class Explanation:
         return (
             exp_text
             + f"\n\tsufficiency mask: {self.sufficiency_mask}"
-            + f"\n\texplanation confidence: {self.explanation_confidence}"
+            + f"\n\texplanation confidence: {self.sufficiency_confidence}"
         )
 
     def extract(self, method: Strategy):
@@ -139,7 +141,7 @@ class Explanation:
                             p.classification,
                             p.confidence,
                         )
-                        self.explanation_confidence = p.confidence
+                        self.sufficiency_confidence = p.confidence
                         self.sufficiency_mask = masks[j]
                         return p.confidence
                 masks = []
@@ -260,13 +262,17 @@ class Explanation:
         target_confidence = (
             self.args.minimum_confidence_threshold * self.data.target.confidence  # type: ignore
         )
-        necessity_confidence = 0.0
+
+        self.necessity_confidence = 0.0
+        self.necessity_classification = None
+        self.inverse_classification = None
+        self.inverse_confidence = None
 
         step = 10
-        i = 0
         sufficient_found = False
         found = False
 
+        i = 0
         while not found:
             chunk = ranking[i : i + step]
             for _, loc in chunk:
@@ -283,65 +289,79 @@ class Explanation:
                     loc,
                     val=False,
                 )
+
+            # mutants for insertion and deletion of pixels
             sufficient = self.prediction_func(_apply_to_data(insertion_mask, self.data))
             necessary = self.prediction_func(_apply_to_data(deletion_mask, self.data))
 
-            necessity_classification = None
-            necessity_confidence = None
-            inverse_confidence = None
-
             assert self.data.target is not None
-            for j in range(0, len(sufficient)):
+            # at the moment we do not have batching for this function, so len(sufficient) == 1 all the time
+            for len_ranking in range(0, len(sufficient)):
                 if (
                     not sufficient_found
-                    and sufficient[j].classification == self.data.target.classification
-                    and sufficient[j].confidence >= target_confidence
+                    and sufficient[len_ranking].classification
+                    == self.data.target.classification
+                    and sufficient[len_ranking].confidence >= target_confidence
                 ):
                     # sufficient explanation has been found
                     sufficient_found = True
-                    self.sufficiency_mask = insertion_mask.detach().clone()
                     logger.info(
                         "found sufficient explanation of class %d with confidence %f",
-                        sufficient[j].classification,
-                        sufficient[j].confidence,
+                        sufficient[len_ranking].classification,
+                        sufficient[len_ranking].confidence,
                     )
+
+                    # set sufficiency_mask and confidence
+                    self.sufficiency_mask = insertion_mask.detach().clone()
+                    self.sufficiency_confidence = sufficient[len_ranking].confidence
 
                     # we have found a sufficient explanation. If we are looking for a `complete` explanation,
                     # then we need to reset the `minimum_confidence_threshold` to 1 in order to find a core of
                     # enough confidence
-                    if self.args.complete:
-                        if self.args.minimum_confidence_threshold < 1.0:
-                            logger.info(
-                                "setting the minimum confidence threshold to 1 in order to calculate a complete explanation."
-                            )
-                            target_confidence = self.data.target.confidence
+                    if (
+                        self.args.complete
+                        and self.args.minimum_confidence_threshold < 1.0
+                    ):
+                        logger.info(
+                            "setting the minimum confidence threshold to 1 in order to calculate a complete explanation."
+                        )
+                        target_confidence = self.data.target.confidence
+                # if we get here, then we have already found a minimal, sufficient mask
                 elif (
-                    sufficient[j].classification == self.data.target.classification  # type: ignore
-                    and necessary[j].classification != self.data.target.classification  # type: ignore
-                    and sufficient[j].confidence >= target_confidence
+                    sufficient[len_ranking].classification
+                    == self.data.target.classification  # type: ignore
+                    and necessary[len_ranking].classification
+                    != self.data.target.classification  # type: ignore
+                    and sufficient[len_ranking].confidence >= target_confidence
                 ):
-                    necessity_classification = necessary[j].classification
-                    inverse_confidence = necessary[j].confidence
+                    self.necessity_classification = necessary[
+                        len_ranking
+                    ].classification
+                    self.inverse_classification = necessary[len_ranking].classification
+                    self.inverse_confidence = necessary[len_ranking].confidence
                     self.necessity_mask = insertion_mask.detach().clone()
-                    necessity_confidence = sufficient[j].confidence
-                    found = True
+                    self.necessity_confidence = sufficient[len_ranking].confidence
                     logger.info(
                         "found contrastive explanation, changing %d to %d with confidence %.3f",
                         self.data.target.classification,
-                        necessity_classification,
-                        inverse_confidence,
+                        self.necessity_classification,
+                        self.inverse_confidence,
                     )
+                    # stop the loop here
+                    found = True
 
             i += step
 
         # completeness
         if self.args.complete:
-            completeness_confidence = necessity_confidence
-            step = 5
-            j = len(ranking)
-            target_confidence = round(self.data.target.confidence, 2)  # type: ignore
-            while round(completeness_confidence, 2) > target_confidence:  # type: ignore
-                chunk = ranking[j - step : j]
+            # set a new target <completeness_confidence> which we need to bring as close to <target_confidence> as we can
+            completeness_confidence = round(self.necessity_confidence, 2)
+            step = 5  # hard coded fro the moment
+            rounding = 2  # also hard coded for the moment
+            len_ranking = len(ranking)
+            target_confidence = round(self.data.target.confidence, rounding)  # type: ignore
+            while completeness_confidence > target_confidence:  # type: ignore
+                chunk = ranking[len_ranking - step : len_ranking]
                 for _, loc in chunk:
                     set_boolean_mask_value(
                         insertion_mask,
@@ -352,42 +372,45 @@ class Explanation:
                 sufficient = self.prediction_func(
                     _apply_to_data(insertion_mask, self.data)
                 )
-                completeness_confidence = sufficient[0].confidence
-                j -= step
-                if j <= i:
+                completeness_confidence = round(sufficient[0].confidence, rounding)
+                len_ranking -= step
+                # if len_ranking is less than <i> then we are infringing on the necessity_mask. This should never happen...
+                if len_ranking < i:
                     logger.warning(
-                        "too small", sufficient[0].confidence, target_confidence
+                        "unable to find a minimal completeness explanation",
+                        sufficient[0].confidence,
+                        target_confidence,
                     )
                     break
 
+            # subtract the necessity_mask from the completenss mask so that we can have it separate
             self.complete_mask = tt.logical_xor(
                 insertion_mask.detach().clone(), self.necessity_mask
             )
 
-        else:
-            self.sufficiency_mask = self.necessity_mask
-
-        if self.args.complete:
             cp = self.prediction_func(_apply_to_data(self.complete_mask, self.data))[0]
-            diff = necessity_confidence - self.data.target.confidence  # type: ignore
+
+            self.completeness_classification = cp.classification
+            self.completeness_confidence = cp.confidence
+            diff = self.necessity_confidence - self.data.target.confidence  # type: ignore
             direction = "increases" if diff < 0 else "reduces"
             logger.info(
                 (
-                    "found sufficient, necessary and complete explanation of class %d with confidence %.2f "
-                    + "where sufficient and necessary explanation has confidence %.2f. "
-                    + "Removing these pixels results in class %d with confidence %.2f."
-                    + "The complete explanation %s the sufficient and necessary confidence by %f and has class %d "
-                    + "with confidence %.2f."
+                    "found sufficient, necessary and complete explanation of class %d with confidence %.3f "
+                    + "where sufficient and necessary explanation has confidence %.3f. "
+                    + "Removing these pixels results in class %d with confidence %.3f."
+                    + "The complete explanation %s the sufficient and necessary confidence by %.3f and has class %d "
+                    + "with confidence %.3f."
                 ),
                 self.data.target.classification,  # type: ignore
-                round(completeness_confidence, 2),  # type: ignore
-                round(necessity_confidence, 2),  # type: ignore
-                necessity_classification,  # type: ignore
-                round(inverse_confidence, 2),  # type: ignore
+                completeness_confidence,  # type: ignore
+                self.necessity_confidence,  # type: ignore
+                self.necessity_classification,  # type: ignore
+                self.inverse_confidence,  # type: ignore
                 direction,
                 abs(diff),
-                cp.classification,
-                cp.confidence,
+                self.completeness_classification,
+                self.completeness_confidence,
             )
 
     def save(self, path, mask=None):

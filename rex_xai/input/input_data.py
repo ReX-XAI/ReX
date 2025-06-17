@@ -1,14 +1,14 @@
 #!/usr/bin/env python
+from enum import Enum
 from typing import Optional
+
 import numpy as np
 import torch as tt
 
-from enum import Enum
-
-from rex_xai.mutants.occlusions import spectral_occlusion, context_occlusion
+from rex_xai.mutants.occlusions import context_occlusion, spectral_occlusion
 from rex_xai.responsibility.prediction import Prediction
-from rex_xai.utils.logger import logger
 from rex_xai.utils._utils import ReXDataError
+from rex_xai.utils.logger import logger
 
 Setup = Enum("Setup", ["ONNXMPS", "ONNX", "PYTORCH"])
 
@@ -25,7 +25,12 @@ def _guess_mode(input):
 
 class Data:
     def __init__(
-        self, input, model_shape, device="cpu", mode=None, process=False
+        self,
+        input,
+        model_shape,
+        device: str | tt.device = "cpu",
+        mode=None,
+        process=False,
     ) -> None:
         self.input = input
         self.mode = None
@@ -225,7 +230,8 @@ class Data:
             case "none":
                 self.mask_value = tt.nan
             case "context":
-                self.mask_value = lambda m, d: context_occlusion(m, d, self.context)
+                if isinstance(self.context, tt.Tensor):
+                    self.mask_value = lambda m, d: context_occlusion(m, d, self.context)  # type: ignore
                 # TODO: Add args for noise and setting the context as currently only available through custom script
             case _:
                 raise ValueError(

@@ -62,8 +62,6 @@ class Evaluation:
 
         insertion_curve = np.zeros(len(ranking) // step)
         deletion_curve = np.zeros(len(ranking) // step)
-        # insertion_curve = []
-        # deletion_curve = []
 
         assert self.explanation.data.data is not None
         insertion_mask = tt.zeros(
@@ -78,8 +76,13 @@ class Evaluation:
         im = tt.empty(model_shape, dtype=tt.float32)
         dm = tt.empty(model_shape, dtype=tt.float32)
 
-        j = 0
-        for i in range(0, len(ranking), step):
+        print(len(insertion_curve))
+        print(insertion_curve)
+        print(deletion_curve)
+
+        # j = 0
+        pointer = 0
+        for j, i in enumerate(range(0, len(ranking), step)):
             chunk = ranking[i : i + step]
             for _, loc in chunk:
                 set_boolean_mask_value(
@@ -97,26 +100,35 @@ class Evaluation:
                 )
             im[j] = _apply_to_data(insertion_mask, self.explanation.data).squeeze(0)
             dm[j] = _apply_to_data(deletion_mask, self.explanation.data).squeeze(0)
-            j += 1
+            # j += 1
+            pointer += 1
 
-            if j == self.explanation.args.batch_size:
-                self.__batch(im, dm, prediction_func, insertion_curve, deletion_curve)
+            print(j)
+            if j == 50:
+                # if j == self.explanation.args.batch_size or j == 50:
+                self.__batch(
+                    im, dm, prediction_func, insertion_curve, deletion_curve, pointer
+                )
                 im = tt.empty(
                     (self.explanation.args.batch_size, 3, 224, 224), dtype=tt.float32
                 )
                 dm = tt.empty(
                     (self.explanation.args.batch_size, 3, 224, 224), dtype=tt.float32
                 )
-                j = 0
 
+        print(insertion_curve)
+        print(deletion_curve)
         # TODO check this this is correct
-        self.__batch(
-            im[:j, :, :, :],
-            dm[:j, :, :, :],
-            prediction_func,
-            insertion_curve,
-            deletion_curve,
-        )
+        # print(pointer)
+        # exit()
+        # self.__batch(
+        #     im[:j, :, :, :],
+        #     dm[:j, :, :, :],
+        #     prediction_func,
+        #     insertion_curve,
+        #     deletion_curve,
+        #     pointer,
+        # )
 
         i_auc = simpson(insertion_curve, dx=step)
         d_auc = simpson(deletion_curve, dx=step)
@@ -135,14 +147,15 @@ class Evaluation:
         prediction_func,
         insertion_curve,
         deletion_curve,
+        pointer,
     ):
         assert self.explanation.data.target is not None
         ip = prediction_func(im.to(self.explanation.data.device), raw=True)
         dp = prediction_func(dm.to(self.explanation.data.device), raw=True)
         for p in range(0, ip.shape[0]):
-            insertion_curve[p] = ip[
+            insertion_curve[pointer:] = ip[
                 p, self.explanation.data.target.classification
             ].item()
-            deletion_curve[p] = dp[
+            deletion_curve[pointer:] = dp[
                 p, self.explanation.data.target.classification
             ].item()  # type: ignore

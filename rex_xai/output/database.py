@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+from __future__ import annotations
+
 import zlib
 from ast import literal_eval
 from datetime import datetime
@@ -47,40 +49,41 @@ def db_to_pandas(db, dtype=np.float32, table="rex", process=True):
     return df
 
 
-def __multi_update(
-    db,
-    explanation,
-    classification,
-    target,
-    target_map,
-    final_mask,
-    time_taken,
-    multi_no,
-):
-    if isinstance(final_mask, tt.Tensor):
-        final_mask = final_mask.detach().cpu().numpy()
-    add_to_database(
-        db,
-        explanation.args,
-        classification,
-        target.confidence,
-        target_map,
-        final_mask,
-        explanation.explanation_confidences[multi_no],
-        time_taken,
-        explanation.run_stats["total_passing"],
-        explanation.run_stats["total_failing"],
-        explanation.run_stats["max_depth_reached"],
-        explanation.run_stats["avg_box_size"],
-        multi=True,
-        multi_no=multi_no,
-    )
+# def __multi_update(
+#     db,
+#     explanation,
+#     classification,
+#     target,
+#     target_map,
+#     sufficiency_mask,
+#     time_taken,
+#     multi_no,
+# ):
+#     if isinstance(sufficiency_mask, tt.Tensor):
+#         sufficiency_mask = sufficiency_mask.detach().cpu().numpy()
+#     pass
+# add_to_database(
+#     db,
+#     explanation.args,
+#     classification,
+#     target.confidence,
+#     target_map,
+#     final_mask,
+#     explanation.explanation_confidences[multi_no],
+#     time_taken,
+#     explanation.run_stats["total_passing"],
+#     explanation.run_stats["total_failing"],
+#     explanation.run_stats["max_depth_reached"],
+#     explanation.run_stats["avg_box_size"],
+#     multi=True,
+#     multi_no=multi_no,
+# )
 
 
 def update_database(
     db,
     explanation: Explanation | MultiExplanation,  # type: ignore
-    time_taken=None,
+    time_taken: float,
     multi=False,
     clauses=None,
 ):
@@ -103,16 +106,22 @@ def update_database(
 
         necessity_mask = None
         complete_mask = None
+        inverse_classification = None
+        inverse_confidence = None
         necessity_confidence = None
+        complete_classification = None
         complete_confidence = None
         if hasattr(explanation, "necessity_mask"):
             necessity_mask = try_detach(explanation.necessity_mask)
-            # necessity_confidence = explanation.necessity_confidence  # type: ignore
+            necessity_confidence = explanation.necessity_confidence  # type: ignore
+            inverse_classification = explanation.inverse_classification
+            inverse_confidence = explanation.inverse_confidence
         if hasattr(explanation, "complete_mask"):
             complete_mask = try_detach(explanation.complete_mask)
-            # complete_confidence = explanation.complete_confidence  # type: ignore
+            complete_confidence = explanation.completeness_confidence
+            complete_classification = explanation.completeness_classification
 
-        explanation_confidence = explanation.explanation_confidence
+        explanation_confidence = explanation.sufficiency_confidence
 
         add_to_database(
             db,
@@ -124,7 +133,10 @@ def update_database(
             explanation_confidence,
             necessity_mask,
             necessity_confidence,
+            inverse_classification,
+            inverse_confidence,
             complete_mask,
+            complete_classification,
             complete_confidence,
             time_taken,
             explanation.run_stats["total_passing"],
@@ -140,51 +152,56 @@ def update_database(
             )
             return
         else:
-            for c, final_mask in enumerate(explanation.explanations):
+            for c, sufficiency_mask in enumerate(explanation.explanations):
                 if clauses is not None:
                     if c not in clauses:
                         logger.warning("ignoring %s", c)
-                    else:
-                        __multi_update(
-                            db,
-                            explanation,
-                            classification,
-                            target,
-                            target_map,
-                            final_mask,
-                            time_taken,
-                            c,
-                        )
-                else:
-                    __multi_update(
-                        db,
-                        explanation,
-                        classification,
-                        target,
-                        target_map,
-                        final_mask,
-                        time_taken,
-                        c,
-                    )
+                    pass
+                #     else:
+                #         __multi_update(
+                #             db,
+                #             explanation,
+                #             classification,
+                #             target,
+                #             target_map,
+                #             final_mask,
+                #             time_taken,
+                #             c,
+                #         )
+                # else:
+                #     __multi_update(
+                #         db,
+                #         explanation,
+                #         classification,
+                #         target,
+                #         target_map,
+                #         final_mask,
+                #         time_taken,
+                #         c,
+                #     )
+                #
 
 
 def add_to_database(
     db,
     args: CausalArgs,
-    target,
-    confidence,
+    target: int,
+    confidence: float | None,
     responsibility,
     sufficiency_mask,
-    sufficiency_confidence,
-    necessity_mask,
-    necessity_confidence,
+    sufficiency_confidence: float | None,
+    contrastive_mask,
+    contrastive_confidence: float | None,
+    inverse_classification: int | None,
+    inverse_confidence: float | None,
     complete_mask,
+    complete_classification: int | None,
     complete_confidence,
-    time_taken,
-    passing,
-    failing,
-    depth_reached,
-    avg_box_size,
+    time_taken: float,
+    passing: int,
+    failing: int,
+    depth_reached: int,
+    avg_box_size: float,
     multi=False,
     multi_no=None,
 ):
@@ -206,11 +223,16 @@ def add_to_database(
         sufficiency_mask,
         explanation_shape,
         sufficiency_confidence,
-        necessity_mask,
-        necessity_confidence,
-        complete_mask,
-        complete_confidence,
         time_taken,
+        passing=passing,
+        failing=failing,
+        contrastive_mask=contrastive_mask,
+        contrastive_confidence=contrastive_confidence,
+        complete_mask=complete_mask,
+        complete_classification=complete_classification,
+        complete_confidence=complete_confidence,
+        inverse_classification=inverse_classification,
+        inverse_confidence=inverse_confidence,
         depth_reached=depth_reached,
         avg_box_size=avg_box_size,
         tree_depth=args.tree_depth,
@@ -277,8 +299,12 @@ class DataBaseEntry(Base):
     contrastive_mask = Column(NumpyType)
     contrastive_confidence = Column(Float)
 
+    inverse_classification = Column(Integer)
+    inverse_confidence = Column(Float)
+
     # complete mask
     complete_mask = Column(NumpyType)
+    complete_classification = Column(Integer)
     complete_confidence = Column(Float)
 
     multi = Column(Boolean)
@@ -319,7 +345,10 @@ class DataBaseEntry(Base):
         time_taken,
         contrastive_mask=None,
         contrastive_confidence=None,
+        inverse_classification=None,
+        inverse_confidence=None,
         complete_mask=None,
+        complete_classification=None,
         complete_confidence=None,
         passing=None,
         failing=None,
@@ -359,7 +388,10 @@ class DataBaseEntry(Base):
         # contrastive and complete explanations
         self.contrastive_mask = contrastive_mask
         self.contrastive_confidence = contrastive_confidence
+        self.inverse_classification = inverse_classification
+        self.inverse_confidence = inverse_confidence
         self.complete_mask = complete_mask
+        self.complete_classification = complete_classification
         self.complete_confidence = complete_confidence
 
         # multi status
