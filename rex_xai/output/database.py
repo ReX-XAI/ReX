@@ -38,7 +38,7 @@ def db_to_pandas(db, dtype=np.float32, table="rex", process=True):
             ),
             axis=1,
         )
-        #
+
         df["explanation"] = df.apply(
             lambda row: _to_numpy(
                 row["explanation"], literal_eval(row["explanation_shape"]), np.bool_
@@ -86,6 +86,7 @@ def update_database(
     time_taken: float,
     multi=False,
     clauses=None,
+    analysis_results=None,
 ):
     target_map = explanation.target_map
 
@@ -102,6 +103,7 @@ def update_database(
         if explanation.sufficiency_mask is None:
             logger.warning("unable to update database as explanation is empty")
             return
+
         sufficiency_mask = try_detach(explanation.sufficiency_mask)
 
         necessity_mask = None
@@ -123,6 +125,16 @@ def update_database(
 
         explanation_confidence = explanation.sufficiency_confidence
 
+        area = None
+        entropy = None
+        insertion_curve = None
+        deletion_curve = None
+        if analysis_results is not None:
+            area = analysis_results["area"]
+            entropy = analysis_results["entropy"]
+            insertion_curve = analysis_results["insertion_curve"]
+            deletion_curve = analysis_results["deletion_curve"]
+
         add_to_database(
             db,
             explanation.args,
@@ -138,6 +150,10 @@ def update_database(
             complete_mask,
             complete_classification,
             complete_confidence,
+            area,
+            entropy,
+            insertion_curve,
+            deletion_curve,
             time_taken,
             explanation.run_stats["total_passing"],
             explanation.run_stats["total_failing"],
@@ -197,6 +213,10 @@ def add_to_database(
     complete_mask,
     complete_classification: int | None,
     complete_confidence,
+    area: float | None,
+    entropy: float | None,
+    insertion_curve: float | None,
+    deletion_curve: float | None,
     time_taken: float,
     passing: int,
     failing: int,
@@ -224,6 +244,10 @@ def add_to_database(
         explanation_shape,
         sufficiency_confidence,
         time_taken,
+        area=area,
+        entropy=entropy,
+        insertion_curve=insertion_curve,
+        deletion_curve=deletion_curve,
         passing=passing,
         failing=failing,
         contrastive_mask=contrastive_mask,
@@ -307,6 +331,12 @@ class DataBaseEntry(Base):
     complete_classification = Column(Integer)
     complete_confidence = Column(Float)
 
+    # analysis results, if available
+    area = Column(Float)
+    entropy = Column(Float)
+    insertion_curve = Column(Float)
+    deletion_curve = Column(Float)
+
     multi = Column(Boolean)
     multi_no = Column(Integer)
 
@@ -352,6 +382,10 @@ class DataBaseEntry(Base):
         complete_confidence=None,
         passing=None,
         failing=None,
+        area=None,
+        entropy=None,
+        insertion_curve=None,
+        deletion_curve=None,
         total_work=None,
         multi=False,
         multi_no=None,
@@ -394,9 +428,16 @@ class DataBaseEntry(Base):
         self.complete_classification = complete_classification
         self.complete_confidence = complete_confidence
 
+        # analysis results
+        self.area = area
+        self.entropy = entropy
+        self.insertion_curve = insertion_curve
+        self.deletion_curve = deletion_curve
+
         # multi status
         self.multi = multi
         self.multi_no = multi_no
+
         # causal
         self.depth_reached = depth_reached
         self.avg_box_size = avg_box_size

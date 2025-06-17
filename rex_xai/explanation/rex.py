@@ -363,6 +363,7 @@ def _explanation(
                 exp.extract(args.strategy)
 
     assert exp is not None
+    results = None
     if args.analyse is not None:
         if args.strategy == Strategy.MultiSpotlight:
             logger.warning("still to write")
@@ -426,11 +427,7 @@ def _explanation(
             update_database(db, exp, time_taken, multi=True, clauses=clauses)
         else:
             logger.info("writing to database")
-            update_database(
-                db,
-                exp,
-                time_taken,
-            )
+            update_database(db, exp, time_taken, analysis_results=results)
 
     return exp
 
