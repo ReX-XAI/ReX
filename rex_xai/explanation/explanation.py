@@ -142,12 +142,8 @@ class Explanation:
                         >= self.data.target.confidence
                         * self.args.minimum_confidence_threshold
                     ):  #  type: ignore
-                        logger.info(
-                            "found an explanation of %d with %f confidence",
-                            p.classification,
-                            p.confidence,
-                        )
-                        self.explanation = masks[j]
+                        logger.info(f"Found an explanation of \"{p.classification}\" with {p.confidence} confidence")
+                        self.explanation = masks[j] # TODO: Handle multiple predictions
                         self.explanation_confidence = p.confidence
                         self.final_mask = mutant.zero_()
                         for _, loc in ranking[:limit]:

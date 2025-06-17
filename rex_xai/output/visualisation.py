@@ -99,11 +99,12 @@ def _transparent_cmap(cmap, N=255):
 
 
 def heatmap_plot(data: Data, resp_map, colour, path=None):
+    print(f"I am in the heatmap and the data is {data.data.shape} and the resp_map is {resp_map.shape}")
     if data.mode in ("RGB", "L"):
         mycmap = _transparent_cmap(mpl.colormaps[colour])
-        background = data.input.resize(
-            (data.model_height, data.model_width)
-        )  # TODO check these dimensions
+        background = data.data.cpu()
+        if data.model_channels == 3:
+            background =  background / 255.0
         y, x = np.mgrid[0 : data.model_height, 0 : data.model_width]
         fig, ax = plt.subplots(1, 1)
         ax.imshow(background)
@@ -589,6 +590,7 @@ def save_multi_explanation(
 
 
 def save_image(explanation, data: Data, args: CausalArgs, path=None):
+    logger.debug(f"Trying to save the explanation with the shape of {explanation.shape} by combining with the data with the shape of {data.data.shape}")
     mask = None
     if data.mode == "RGB" or data.mode == "L":
         if data.mode == "L":
@@ -596,8 +598,12 @@ def save_image(explanation, data: Data, args: CausalArgs, path=None):
                 (data.model_height, data.model_width)
             )
         else:
-            img = data.input.resize((data.model_height, data.model_width))
+            if (data.input.height, data.input.width) != (data.model_height, data.model_width):
+                img = data.input.convert("RGB").resize((data.model_height, data.model_width))
+            else:
+                img = data.input.resize((data.model_width, data.model_height))
         mask = __transpose_mask(explanation, data.mode, data.transposed)
+        logger.debug(f"Trying to combine the mask of shape: {mask.shape} and the unprocessed Image with the shape of ({img.height}, {img.width})")
         if mask is not None:
             if args.raw:
                 out = np.where(mask, img, 0).squeeze(
