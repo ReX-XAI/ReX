@@ -125,7 +125,7 @@ class Explanation:
             limit += self.args.chunk_size
             for _, loc in chunk:
                 self.set_to_true(loc, mutant)
-            masks.append(mutant)
+            masks.append(mutant.detach().clone())
             tests.append(_apply_to_data(mutant, self.data).squeeze(0))
             if len(masks) == self.args.batch_size:
                 preds = self.prediction_func(tt.stack(tests).to(self.data.device))
@@ -268,7 +268,7 @@ class Explanation:
         self.inverse_classification = None
         self.inverse_confidence = None
 
-        step = 10
+        step = self.args.chunk_size
         sufficient_found = False
         found = False
 
@@ -296,24 +296,23 @@ class Explanation:
 
             assert self.data.target is not None
             # at the moment we do not have batching for this function, so len(sufficient) == 1 all the time
-            for len_ranking in range(0, len(sufficient)):
+            for j in range(0, len(sufficient)):
                 if (
                     not sufficient_found
-                    and sufficient[len_ranking].classification
-                    == self.data.target.classification
-                    and sufficient[len_ranking].confidence >= target_confidence
+                    and sufficient[j].classification == self.data.target.classification
+                    and sufficient[j].confidence >= target_confidence
                 ):
                     # sufficient explanation has been found
                     sufficient_found = True
                     logger.info(
                         "found sufficient explanation of class %d with confidence %f",
-                        sufficient[len_ranking].classification,
-                        sufficient[len_ranking].confidence,
+                        sufficient[j].classification,
+                        sufficient[j].confidence,
                     )
 
                     # set sufficiency_mask and confidence
                     self.sufficiency_mask = insertion_mask.detach().clone()
-                    self.sufficiency_confidence = sufficient[len_ranking].confidence
+                    self.sufficiency_confidence = sufficient[j].confidence
 
                     # we have found a sufficient explanation. If we are looking for a `complete` explanation,
                     # then we need to reset the `minimum_confidence_threshold` to 1 in order to find a core of
@@ -328,19 +327,15 @@ class Explanation:
                         target_confidence = self.data.target.confidence
                 # if we get here, then we have already found a minimal, sufficient mask
                 elif (
-                    sufficient[len_ranking].classification
-                    == self.data.target.classification  # type: ignore
-                    and necessary[len_ranking].classification
-                    != self.data.target.classification  # type: ignore
-                    and sufficient[len_ranking].confidence >= target_confidence
+                    sufficient[j].classification == self.data.target.classification  # type: ignore
+                    and necessary[j].classification != self.data.target.classification  # type: ignore
+                    and sufficient[j].confidence >= target_confidence
                 ):
-                    self.necessity_classification = necessary[
-                        len_ranking
-                    ].classification
-                    self.inverse_classification = necessary[len_ranking].classification
-                    self.inverse_confidence = necessary[len_ranking].confidence
+                    self.necessity_classification = necessary[j].classification
+                    self.inverse_classification = necessary[j].classification
+                    self.inverse_confidence = necessary[j].confidence
                     self.necessity_mask = insertion_mask.detach().clone()
-                    self.necessity_confidence = sufficient[len_ranking].confidence
+                    self.necessity_confidence = sufficient[j].confidence
                     logger.info(
                         "found contrastive explanation, changing %d to %d with confidence %.3f",
                         self.data.target.classification,
