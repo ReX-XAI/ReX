@@ -9,7 +9,12 @@ from scipy.stats import entropy
 
 from rex_xai.explanation.explanation import Explanation
 from rex_xai.mutants.mutant import _apply_to_data
-from rex_xai.utils._utils import get_map_locations, set_boolean_mask_value, xlogx
+from rex_xai.utils._utils import (
+    get_map_locations,
+    set_boolean_mask_value,
+    try_detach,
+    xlogx,
+)
 
 
 class Evaluation:
@@ -50,7 +55,7 @@ class Evaluation:
         return ent, max_ent
 
     def responsibility_entropy(self):
-        flat_map = self.explanation.target_map.ravel()
+        flat_map = try_detach(self.explanation.target_map).ravel()
         return entropy(flat_map, base=2)
 
     def insertion_deletion_curve(self, prediction_func, normalise=False):
