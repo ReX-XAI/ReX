@@ -19,6 +19,16 @@ Queue = Enum("Queue", ["Area", "All", "Intersection", "DC"])
 
 SpatialSearch = Enum("SpatialSearch", ["NotFound", "Found"])
 
+ResponsibilityStyle = Enum("ResponsibilityStyle", ["Additive", "Multiplicative"])
+
+
+def match_resposnibility_style(s: str) -> ResponsibilityStyle:
+    if s == "additive":
+        return ResponsibilityStyle.Additive
+    if s == "multiplicative":
+        return ResponsibilityStyle.Multiplicative
+    raise ReXTomlError(f"{s} is an unknown responsibility style")
+
 
 def try_detach(t):
     if isinstance(t, tt.Tensor):

@@ -1,21 +1,19 @@
 #!/usr/bin/env python
+from typing import List, Optional
+
 import numpy as np
-from typing import List
-
-from typing import Optional
-
 
 try:
     from anytree.cachedsearch import find
 except ImportError:
     from anytree import find
 
-from rex_xai.mutants.box import Box
 from rex_xai.input.config import CausalArgs
-from rex_xai.mutants.mutant import Mutant
 from rex_xai.input.input_data import Data
+from rex_xai.mutants.box import Box
+from rex_xai.mutants.mutant import Mutant
+from rex_xai.utils._utils import ResponsibilityStyle, ReXMapError
 from rex_xai.utils.logger import logger
-from rex_xai.utils._utils import ReXMapError
 
 
 class ResponsibilityMaps:
@@ -37,8 +35,7 @@ class ResponsibilityMaps:
 
     def new_map(self, k: int, height, width, depth=None):
         if depth is not None:
-            if self.style == "additive":
-                # self.maps[k] = np.ones((height, width, depth), dtype="float32")
+            if self.style == ResponsibilityStyle.Additive:
                 self.maps[k] = np.zeros((height, width, depth), dtype="float32")
             else:
                 self.maps[k] = np.ones((height, width, depth), dtype="float32")

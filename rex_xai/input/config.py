@@ -12,15 +12,16 @@ from typing import List, Optional, Union
 import matplotlib as mpl
 import toml  # type: ignore
 
+from rex_xai.mutants.distributions import Distribution, str2distribution
 from rex_xai.utils._utils import (
     Queue,
     ReXError,
     ReXPathError,
     ReXTomlError,
     Strategy,
+    match_resposnibility_style,
     version,
 )
-from rex_xai.mutants.distributions import Distribution, str2distribution
 from rex_xai.utils.logger import logger
 
 
@@ -146,7 +147,7 @@ class CausalArgs(Args):
         self.queue_len = 1
         self.queue_style = Queue.Area
         # responsibility
-        self.responsibility_style = "additive"
+        self.responsibility_style = "multiplicative"
 
         if self.min_box_size is not None:
             self.chunk_size = self.min_box_size
@@ -559,6 +560,14 @@ def process_config_dict(config_file_args, args):
 
     if type(args.strategy) is str:
         args.strategy = match_strategy(args.strategy)
+
+    try:
+        args.responsibility_style = match_resposnibility_style(
+            args.responsibility_style
+        )
+    except ReXTomlError as e:
+        print(e)
+        exit()
 
 
 def process_custom_script(script, args):
