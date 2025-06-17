@@ -150,6 +150,7 @@ def predict_target(data: Data, prediction_func) -> Prediction:
     target = prediction_func(data.data, None)
 
     if isinstance(target, list):
+        logger.info(f"Found {len(target)} targets, the targets found are: {target}")
         target = target[0]
 
     if target is not None:

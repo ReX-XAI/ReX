@@ -31,21 +31,20 @@ def yolo_result_to_pred(results, target):
     predictions = []
     for result in results:
         boxes = result.boxes  # Boxes object for bounding box outputs
-        # print(f"Boxes: {boxes}")
         if len(boxes.cls) == 0:
             predictions.append(Prediction("NONE"))
             continue
         elif len(boxes.cls) == 1:
             label = result.names.get(boxes.cls.item())
             confidence = boxes.conf.item()
-            box= boxes.xyxy
+            box = boxes.xyxy
             prediction = Prediction(label, confidence, box, target)
             predictions.append(prediction)
         else:
             for i, box in enumerate(boxes):
                 label = result.names.get(box.cls.item())
-                print(f"There are multi class {label}")
                 confidence = box.conf.item()
+                box = box.xyxy
                 prediction = Prediction(label, confidence, box, target)
                 predictions.append(prediction)
     return predictions
