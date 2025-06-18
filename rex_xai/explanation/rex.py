@@ -360,7 +360,7 @@ def _explanation(
             if args.strategy == Strategy.Contrastive:
                 exp.contrastive()
             else:
-                exp.extract(args.strategy)
+                exp.extract()
 
     assert exp is not None
     results = None
@@ -419,7 +419,10 @@ def _explanation(
                 path = None
             else:
                 path = args.output
-        exp.save(path)
+        if args.strategy == Strategy.MultiSpotlight:
+            exp.save(path, clauses=clauses)  # type: ignore
+        else:
+            exp.save(path)  # type: ignore
 
     if db is not None:
         if args.strategy == Strategy.MultiSpotlight:

@@ -80,11 +80,11 @@ class Explanation:
             + f"\n\texplanation confidence: {self.sufficiency_confidence}"
         )
 
-    def extract(self, method: Strategy):
+    def extract(self):
         self.blank()
-        if method == Strategy.Global:
+        if self.args.strategy == Strategy.Global:
             self.__global()
-        if method == Strategy.Spatial:
+        if self.args.strategy == Strategy.Spatial:
             if self.data.mode == "spectral":
                 logger.warning(
                     "spatial search not yet implemented for spectral data, so defaulting to global search"

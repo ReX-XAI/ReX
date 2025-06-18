@@ -5,6 +5,7 @@
 import os
 import re
 from itertools import combinations
+from typing import List
 
 import numpy as np
 import torch as tt
@@ -60,11 +61,15 @@ class MultiExplanation(Explanation):
                 + f"\n\texplanation confidences: {[round(x, ndigits=5) for x in self.explanation_confidences]} (5 dp)"
             )
 
-    def save(self, path, mask=None, multi=None, multi_style=None, clauses=None):
+    def save(
+        self,
+        path: str,
+        mask=None,
+        clauses: List[int] | None = None,
+        multi_style: str | None = None,
+    ):
         if multi_style is None:
             multi_style = self.args.multi_style
-        # if multi_style == "contrastive":
-        #     super().save(path, mask=self.sufficienty_mask)
         if multi_style == "separate":
             logger.info("saving explanations in multiple different files")
             for i, mask in enumerate(self.explanations):
@@ -89,7 +94,7 @@ class MultiExplanation(Explanation):
                     path=new_name,
                 )
 
-    def show(self, path=None, multi_style=None, clauses=None):  # type: ignore
+    def show(self, multi_style=None, clauses=None):  # type: ignore
         if multi_style is None:
             multi_style = self.args.multi_style
         outs = []
@@ -126,7 +131,7 @@ class MultiExplanation(Explanation):
         else:
             return outs[0]
 
-    def extract(self, method=None):
+    def extract(self):
         self.blank()
         # we start with the global max explanation
         logger.info("spotlight number 1 (global max)")
