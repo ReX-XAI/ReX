@@ -91,6 +91,9 @@
 # concentrate: weight responsibility by size and depth of passing partition. Defaults to false
 # concentrate = true
 
+# use bounding box: enables the splitting of boxes to occur on the bounding box of the target(s) found. Defaults to false
+# use_bounding_box = true
+
 [causal.distribution]
 # distribution for splitting the box, defaults to uniform. Possible choices are 'uniform' | 'binom' | 'betabinom' | 'adaptive'
 # distribution = 'uniform'

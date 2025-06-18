@@ -116,13 +116,27 @@ def causal_explanation(
         np.random.seed(args.seed + process)
         tt.manual_seed(args.seed + process)
 
-    search_tree = initialise_tree(
-        data.model_height,
-        data.model_width,
-        args.distribution,
-        args.distribution_args,
-        d_lim=data.model_depth,
-    )
+    if args.use_bounding_box:
+        assert data.target.bounding_box is not None
+        logger.info(f"Using bounding box bounding box for {data.target.classification} that has the bounding box {data.target.bounding_box}")
+        box = data.target.bounding_box
+        search_tree = initialise_tree(
+            int(box[3]),
+            int(box[2]),
+            args.distribution,
+            args.distribution_args,
+            d_lim=data.model_depth,
+            r_start=int(box[1]),
+            c_start=int(box[0]),
+        )
+    else:
+        search_tree = initialise_tree(
+            data.model_height,
+            data.model_width,
+            args.distribution,
+            args.distribution_args,
+            d_lim=data.model_depth,
+        )
 
     total_work = 0
     total_passing = 0

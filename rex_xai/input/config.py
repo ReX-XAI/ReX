@@ -144,6 +144,7 @@ class CausalArgs(Args):
         self.weighted: bool = False
         self.iters = 20
         self.concentrate = False
+        self.use_bounding_box: bool = False
         # queue management
         self.queue_len = 1
         self.queue_style = Queue.Area
@@ -488,6 +489,7 @@ def process_config_dict(config_file_args, args):
             "queue_style",
             "queue_len",
             "concentrate",
+            "use_bounding_box",
         ],
         "distribution": ["distribution", "blend", "distribution_args"],
         "explanation": ["chunk_size", "minimum_confidence_threshold"],
@@ -704,6 +706,7 @@ def validate_args(args: CausalArgs):
         "weighted",
         "concentrate",
         "normalise_curves",
+        "use_bounding_box",
     ]:
         val = getattr(args, arg)
         if val is not None:

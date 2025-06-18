@@ -13,11 +13,9 @@ def preprocess(path, shape, device, mode) -> Data:
     img = Image.open(path).convert("RGB")
     tensor = tt.tensor(np.asarray(img), dtype=tt.float32).to(device)
     data = Data(img, shape, device, mode=mode, process=False)
-    print(f"Data shape: {tensor.shape}")
     data.data = tensor
     data.mode = "RGB"
     data.model_shape = shape
-    print(f"Proposed shape: {shape}")
     data.model_height = img.height
     data.model_width = img.width
     data.model_channels = 3
@@ -44,7 +42,7 @@ def yolo_result_to_pred(results, target):
             for i, box in enumerate(boxes):
                 label = result.names.get(box.cls.item())
                 confidence = box.conf.item()
-                box = box.xyxy
+                box = box.xyxy.cpu().numpy()[0]
                 prediction = Prediction(label, confidence, box, target)
                 predictions.append(prediction)
     return predictions
