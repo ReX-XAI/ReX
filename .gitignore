@@ -4,7 +4,7 @@ tmp/
 yolo/
 typings/
 results/
-scripts/
+# scripts/
 dist/
 ReX.egg-info/
 local/
