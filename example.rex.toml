@@ -94,6 +94,8 @@
 # use bounding box: enables the splitting of boxes to occur on the bounding box of the target(s) found. Defaults to false
 # use_bounding_box = true
 
+# multi_class: whethher there is a single target class or multiple target classes to consider. Defaults to false
+# multi_class = true
 [causal.distribution]
 # distribution for splitting the box, defaults to uniform. Possible choices are 'uniform' | 'binom' | 'betabinom' | 'adaptive'
 # distribution = 'uniform'

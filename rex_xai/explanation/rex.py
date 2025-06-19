@@ -133,7 +133,7 @@ def load_and_preprocess_data(
     return data
 
 
-def predict_target(data: Data, prediction_func) -> Prediction:
+def predict_target(data: Data, args: CausalArgs, prediction_func) -> Prediction | list[Prediction]:
     """Predicts classification of input data, using given prediction function.
 
     Uses ``prediction_func`` to identify the classification of the input data and return
@@ -151,7 +151,11 @@ def predict_target(data: Data, prediction_func) -> Prediction:
 
     if isinstance(target, list):
         logger.info(f"Found {len(target)} targets, the targets found are: {target}")
-        target = target[0]
+        if not args.multi_class:
+            logger.warning(
+                "multiple targets found, but args.multi_class is False, so using the first one"
+            )
+            target = target[0]
 
     if target is not None:
         logger.info(
@@ -336,7 +340,7 @@ def _explanation(
         "args.mask_value is %s, data.mask_value is %s", args.mask_value, data.mask_value
     )
 
-    data.target = predict_target(data, prediction_func)
+    data.target = predict_target(data, args, prediction_func)
 
     start = time.time()
 
