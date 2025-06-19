@@ -379,10 +379,20 @@ class Explanation:
         # completeness
         if self.args.complete:
             # set a new target <completeness_confidence> which we need to bring as close to <target_confidence> as we can
-            rounding = 2
+            rounding = 3
             target_confidence = round(self.data.target.confidence, rounding)  # type: ignore
             step = self.args.chunk_size
             chunk_pointer = len(ranking)
+
+            # check that the confidences aren't already at the correct levels
+            if round(self.necessity_confidence, rounding) == target_confidence:  # type: ignore
+                logger.info(
+                    "the sufficient and necessary explanation is already complete"
+                )
+                self.complete_mask = self.necessity_mask
+                self.completeness_confidence = self.necessity_confidence
+                self.completeness_classification = self.data.target.classification
+                return
 
             complete_explanation_found = False
             insertion_mask = insertion_mask.zero_()
@@ -431,8 +441,30 @@ class Explanation:
                         )
                         cp = self.prediction_func(
                             _apply_to_data(self.complete_mask, self.data)
+                        )[0]
+                        self.completeness_classification = cp.classification
+                        self.completeness_confidence = cp.confidence
+                        diff = self.necessity_confidence - self.data.target.confidence  # type: ignore
+                        direction = "increases" if diff < 0 else "reduces"
+                        logger.info(
+                            (
+                                "found sufficient, necessary and complete explanation for class %d (original confidence %.3f) "
+                                + "where the sufficient and necessary explanation has confidence %.3f.\n"
+                                + "Removing the necessary pixels results in the contrastive class %d (confidence %.3f).\n"
+                                + "The complete explanation %s the sufficient and necessary confidence by %.3f and is class %d "
+                                + "(confidence %.3f) by itself."
+                            ),
+                            self.data.target.classification,  # type: ignore
+                            self.data.target.confidence,  # type: ignore
+                            self.necessity_confidence,  # type: ignore
+                            self.contrastive_classification,  # type: ignore
+                            self.contrastive_confidence,  # type: ignore
+                            direction,
+                            abs(diff),
+                            self.completeness_classification,
+                            self.completeness_confidence,
                         )
-                        print(cp)
+
                     else:
                         insertion_memo = insertion_mask[-1]
                         ind = 0

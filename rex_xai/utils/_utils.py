@@ -55,41 +55,10 @@ def find_complete_prediction(
         p = insertion_predictions[i]
         if (
             p.classification == target
-            and round(p.confidence, rounding) == target_confidence
+            and round(p.confidence, rounding) == target_confidence  # type: ignore
         ):
             return i
     return None
-
-    # for i in range(0, len(sufficient)):
-    #     if (
-    #         round(sufficient[i].confidence, rounding)
-    #         == target_confidence
-    #     ):
-    #         complete_explanation_found = True
-    #         self.complete_mask = tt.logical_xor(
-    #             insertion_mask[i].detach().clone(),
-    #             self.necessity_mask.detach().clone(),
-    #         )
-
-
-# def find_matching_prediction(
-#     target: int, threshold: float, predictions: List[Prediction]
-# ):
-#     for i, p in enumerate(predictions):
-#         if p.classification == target and p.confidence >= threshold:  # type: ignore
-#             return i, p
-#
-#     return -1, None
-#
-#
-# def find_different_prediction(
-#     target: int, threshold: float, predictions: List[Prediction]
-# ):
-#     for i, p in enumerate(predictions):
-#         if p.classification != target and p.confidence >= threshold:  # type: ignore
-#             return i, p
-#
-#     return -1, None
 
 
 def match_resposnibility_style(s: str) -> ResponsibilityStyle:

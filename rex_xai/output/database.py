@@ -91,8 +91,8 @@ def update_database(
         if hasattr(explanation, "necessity_mask"):
             necessity_mask = try_detach(explanation.necessity_mask)
             necessity_confidence = explanation.necessity_confidence  # type: ignore
-            inverse_classification = explanation.inverse_classification
-            inverse_confidence = explanation.inverse_confidence
+            inverse_classification = explanation.contrastive_classification
+            inverse_confidence = explanation.contrastive_confidence
         if hasattr(explanation, "complete_mask"):
             complete_mask = try_detach(explanation.complete_mask)
             complete_confidence = explanation.completeness_confidence
