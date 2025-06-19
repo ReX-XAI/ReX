@@ -26,13 +26,6 @@ objects.
 
 model = get_model("swin_s", weights="DEFAULT")
 weights = get_weight("Swin_S_Weights.IMAGENET1K_V1")
-# model = get_model("mobilenet_v3_small", weights="DEFAULT")
-# weights = get_weight("MobileNet_V3_Small_Weights.IMAGENET1K_V1")
-
-# this must be called model
-# model = get_model("convnext_large", weights="DEFAULT")
-# weights = get_weight("ConvNeXt_Large_Weights.IMAGENET1K_V1")
-# model = get_model('resnet50', weights="DEFAULT")
 model.eval()
 
 # you have to include this
@@ -43,15 +36,6 @@ if platform.uname().system == "Darwin":
 else:
     model.to("cuda")
 
-# transform = T.Compose(
-#     [
-#         T.Resize((224, 224)),
-#         T.ToTensor(),
-#         T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-#     ]
-# )
-#
-
 
 # you have to write this
 def preprocess(path, shape, device) -> Data:
@@ -61,22 +45,10 @@ def preprocess(path, shape, device) -> Data:
     data = Data(img, shape, device, mode="RGB")
 
     data.data = weights.transforms()(img).unsqueeze(0).to(device)  # type: ignore
-    # manually set the data to the transformed image for model consumption
-    # data.data = transform(img).unsqueeze(0).to(device)
 
-    # make a copy
+    # make a copy for visualisation
     original = Image.open(path).convert("RGB").resize((246, 246))
-    original = T.functional.center_crop(original, 224)  # type: ignore
+    original = T.functional.center_crop(original, 224)
     data.input = original
 
     return data
-
-
-# def prediction_function(mutants, target=None, raw=False):
-#     with tt.no_grad(): # we don't use the grad and inference is faster without it
-#         tensor = model(mutants)
-#         if raw: # used when computing insertion/deletion curves
-#             return F.softmax(tensor, dim=1)
-#         # from_pytorch_tensor consumes a tensor and converts it to a Prediction object
-#         # you can  alternatively use your own function here
-#         return from_pytorch_tensor(tensor, target=target)
