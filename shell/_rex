@@ -1,0 +1,29 @@
+#compdef ReX
+
+_rex() {
+  local state
+
+  _arguments \
+    '1: :_files'\
+    '--help[show help]' \
+    '--surface[Plot a 3D responsibility map, optionally save to <filename>]' \
+    '--heatmap[Plot a 2D responsibility map, optionally save to <filename>]' \
+    '--script[PyTorch compatible python script]:::_files' \
+    '--model[onnx model to use]:::_files' \
+    '--no_extract[Do not extract an explanation from the responsibility map]' \
+    {-c,--config}'[optional config file to use with ReX]:::_files'\
+    '--confidence[minimum confidence threshold, between 0.0 and 1.0]'\
+    '--output[save explanation to <filename>]:::_files'\
+    {-v,--verbosity}'[set verbosity level, one of -v, -vv, or -vvv]'\
+    {-q,--quiet}'[set verbosity level to 0 (errors only)]'\
+    '--strategy[explanation extraction strategy, by default <global>]:::(global spatial)'\
+    {-db,--database}'[store output in sqlite database <DATABASE>, creating it if necessary]:::_files'\
+    '--multi[multiple explanations, with optional <x> spotlights]'\
+    '--contrastive[sufficent and necessary explanations]'\
+    '--complete[sufficent, necessary and complete explanations]'\
+    '--iters[number of iterations <x> of the main algorithm to perform]'\
+    '--analyse[perform some basic analysis of the explanation, optionally saved to <filename>]'\
+    '--mode[assist ReX with input type, one of tabular | spectral | RGB | voxel]:::(tabular spectral RGB voxel)'\
+    '--spectral[shortcut for --mode spectral]'\
+    '--version[print version number and quit]'\
+}

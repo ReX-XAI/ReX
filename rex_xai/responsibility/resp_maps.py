@@ -1,26 +1,26 @@
 #!/usr/bin/env python
-import numpy as np
-from typing import List
+from typing import List, Optional
 
-from typing import Optional
+import numpy as np
 
 try:
     from anytree.cachedsearch import find
 except ImportError:
     from anytree import find
 
-from rex_xai.mutants.box import Box
 from rex_xai.input.config import CausalArgs
-from rex_xai.mutants.mutant import Mutant
 from rex_xai.input.input_data import Data
+from rex_xai.mutants.box import Box
+from rex_xai.mutants.mutant import Mutant
+from rex_xai.utils._utils import ResponsibilityStyle, ReXMapError
 from rex_xai.utils.logger import logger
-from rex_xai.utils._utils import ReXMapError
 
 
 class ResponsibilityMaps:
-    def __init__(self) -> None:
+    def __init__(self, style) -> None:
         self.maps = {}
         self.counts = {}
+        self.style = style
 
     def __repr__(self) -> str:
         return str(self.counts)
@@ -35,10 +35,16 @@ class ResponsibilityMaps:
 
     def new_map(self, k: int, height, width, depth=None):
         if depth is not None:
-            self.maps[k] = np.zeros((height, width, depth), dtype="float32")
+            if self.style == ResponsibilityStyle.Additive:
+                self.maps[k] = np.zeros((height, width, depth), dtype="float32")
+            else:
+                self.maps[k] = np.ones((height, width, depth), dtype="float32")
             self.counts[k] = 1
         else:
-            self.maps[k] = np.zeros((height, width), dtype="float32")
+            if self.style == "additive":
+                self.maps[k] = np.zeros((height, width), dtype="float32")
+            else:
+                self.maps[k] = np.ones((height, width), dtype="float32")
             self.counts[k] = 1
 
     def items(self):
@@ -52,10 +58,23 @@ class ResponsibilityMaps:
 
     def merge(self, maps):
         for k, v in maps.items():
+            if np.max(v) == 0:
+                pass
             if k in self.maps:
-                self.maps[k] += v
+                if self.style == "additive":
+                    self.maps[k] += v
+                else:
+                    self.maps[k] *= v
             else:
                 self.maps[k] = v
+
+    def negative_responsibility(self, target):
+        for k, v in self.maps.items():
+            if k != target:
+                logger.debug(
+                    f"subtracting responsibility for class {k} from class {target}"
+                )
+                self.maps[target] = self.maps[target] - v  # type: ignore
 
     def responsibility(self, mutant: Mutant, args: CausalArgs):
         responsibility = np.zeros(4, dtype=np.float32)
@@ -97,9 +116,7 @@ class ResponsibilityMaps:
                 raise ReXMapError("the provided mutant has no known classification")
             # check if k has been seen before and has a map. If k is new, make a new map
             if k not in self.maps:
-                self.new_map(
-                    k, data.model_height, data.model_width, data.model_depth
-                )
+                self.new_map(k, data.model_height, data.model_width, data.model_depth)
 
             # get the responsibility map for k
             resp_map = self.get(k, increment=True)
@@ -114,9 +131,11 @@ class ResponsibilityMaps:
                 if box is not None and box.area() > 0:
                     index = np.uint(box_name[-1])
                     local_r = r[index]
+                    # print(box.depth)
                     if args.concentrate:
-                        local_r *= 1.0 / box.area()
+                        local_r *= box.depth
                         # Don't delete this code just yet as this is an alternative (less brutal)
+                        # local_r *= 1.0 / box.area()
                         # scaling strategy that needs further investigation
                         # scale = depth - 1
                         # local_r = 2**(local_r * scale)

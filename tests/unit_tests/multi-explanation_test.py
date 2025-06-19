@@ -40,7 +40,7 @@ def test_multiexplanation(data_multi, args_multi, prediction_func, spotlights, c
         len(multi_exp.explanations) == spotlights
     )  # not always true but is for this data/parameters
     assert np.array_equal(
-        multi_exp.explanations[0].detach().cpu().numpy(), exp.final_mask
+        multi_exp.explanations[0].detach().cpu().numpy(), exp.sufficiency_mask
     )  # first explanation is global explanation
 
 
@@ -53,8 +53,8 @@ def test_multiexplanation_save_composite(exp_multi, tmp_path):
     assert os.path.exists(p)
     assert os.stat(p).st_size > 0
 
-    exp_multi.save(path=p, multi_style="composite", clauses=clauses)
     for c in clauses:
+        exp_multi.save(path=p, multi_style="composite", clauses=c)
         clause_path = tmp_path / f"exp_{c}.png"
         assert os.path.exists(clause_path)
         assert os.stat(clause_path).st_size > 0

@@ -19,20 +19,20 @@
 # ---
 # name: test_extract_analyze[Strategy.Global].1
   dict({
-    'area': 0.0551,
-    'deletion_curve': 0.0141,
+    'area': 0.1654,
+    'deletion_curve': 0.0259,
     'entropy': 5.3764,
-    'insertion_curve': 0.621,
+    'insertion_curve': 0.503,
   })
 # ---
 # name: test_extract_analyze[Strategy.Spatial]
-  250330363344313757
+  976237796511694519
 # ---
 # name: test_extract_analyze[Strategy.Spatial].1
   dict({
-    'area': 0.1093,
-    'deletion_curve': 0.0141,
-    'entropy': 3.8607,
-    'insertion_curve': 0.621,
+    'area': 0.1654,
+    'deletion_curve': 0.0259,
+    'entropy': 5.3764,
+    'insertion_curve': 0.503,
   })
 # ---

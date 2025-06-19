@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
-from typing import Optional
+from typing import List, Optional
+
 import torch as tt
 import torch.nn.functional as F
 from numpy.typing import NDArray
-from typing import List
-from rex_xai.utils._utils import ff
 
 
 class Prediction:
@@ -33,9 +32,9 @@ class Prediction:
                 if self.target is None:
                     return f"FOUND_CLASS: {self.classification}, FOUND_CONF: {self.confidence:.5f}, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a"
                 else:
-                    return f"FOUND_CLASS: {self.classification}, FOUND_CONF: {self.confidence:.5f}, TARGET_CLASS: {self.target}, TARGET_CONFIDENCE: {ff(self.target_confidence, '.5f')}"
+                    return f"FOUND_CLASS: {self.classification}, FOUND_CONF: {self.confidence:.5f}, TARGET_CLASS: {self.target}, TARGET_CONFIDENCE: {(self.target_confidence, '.5f')}"
 
-        return f"CLASS: {self.classification}, CONF: {self.confidence:.5f}, TARGET_CLASS: {self.target}, TARGET_CONFIDENCE: {ff(self.target_confidence, '.5f')}, BOUNDING_BOX: {self.bounding_box}"
+        return f"CLASS: {self.classification}, CONF: {self.confidence:.5f}, TARGET_CLASS: {self.target}, TARGET_CONFIDENCE: {(self.target_confidence, '.5f')}, BOUNDING_BOX: {self.bounding_box}"
 
     def get_class(self):
         return self.classification
@@ -47,8 +46,7 @@ class Prediction:
         return self.target == self.classification
 
 
-def from_pytorch_tensor(tensor, target=None, binary_threshold=None) -> List[Prediction]:
-    # TODO get this to handle binary models
+def from_pytorch_tensor(tensor, target=None) -> List[Prediction]:
     softmax_tensor = F.softmax(tensor, dim=1)
     prediction_scores, pred_labels = tt.topk(softmax_tensor, 1)
     predictions = []
@@ -60,3 +58,14 @@ def from_pytorch_tensor(tensor, target=None, binary_threshold=None) -> List[Pred
         predictions.append(p)
 
     return predictions
+
+
+def default_prediction_function(model):
+    def inner(mutants, target=None, raw=False):
+        with tt.no_grad():
+            tensor = model(mutants)
+            if raw:
+                return F.softmax(tensor, dim=1)
+            return from_pytorch_tensor(tensor, target=target)
+
+    return inner

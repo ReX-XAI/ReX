@@ -1,20 +1,22 @@
 #!/usr/bin/env python
-from datetime import datetime
+from __future__ import annotations
+
 import zlib
-import torch as tt
-import sqlalchemy as sa
-from sqlalchemy import Boolean, Float, String, create_engine
-from sqlalchemy import Column, Integer, Unicode
-from sqlalchemy.orm import sessionmaker, DeclarativeBase
 from ast import literal_eval
+from datetime import datetime
 
-import pandas as pd
 import numpy as np
+import pandas as pd
+import sqlalchemy as sa
+import torch as tt
+from sqlalchemy import Boolean, Column, Float, Integer, String, Unicode, create_engine
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
-from rex_xai.utils.logger import logger
-from rex_xai.input.config import CausalArgs, Strategy
 from rex_xai.explanation.explanation import Explanation
 from rex_xai.explanation.multi_explanation import MultiExplanation
+from rex_xai.input.config import CausalArgs, Strategy
+from rex_xai.utils._utils import try_detach
+from rex_xai.utils.logger import logger
 
 
 def _dataframe(db, table):
@@ -36,7 +38,7 @@ def db_to_pandas(db, dtype=np.float32, table="rex", process=True):
             ),
             axis=1,
         )
-        #
+
         df["explanation"] = df.apply(
             lambda row: _to_numpy(
                 row["explanation"], literal_eval(row["explanation_shape"]), np.bool_
@@ -50,8 +52,10 @@ def db_to_pandas(db, dtype=np.float32, table="rex", process=True):
 def update_database(
     db,
     explanation: Explanation | MultiExplanation,  # type: ignore
-    time_taken=None,
+    time_taken: float,
     multi=False,
+    clauses=None,
+    analysis_results=None,
 ):
     target_map = explanation.target_map
 
@@ -64,15 +68,43 @@ def update_database(
         return
     classification = int(target.classification)  # type: ignore
 
+    # potentially enmpty fields in the database
+    necessity_mask = None
+    complete_mask = None
+    inverse_classification = None
+    inverse_confidence = None
+    necessity_confidence = None
+    complete_classification = None
+    complete_confidence = None
+    area = None
+    entropy = None
+    insertion_curve = None
+    deletion_curve = None
+
     if not multi:
-        final_mask = explanation.final_mask
-        if explanation.final_mask is None:
+        if explanation.sufficiency_mask is None:
             logger.warning("unable to update database as explanation is empty")
             return
-        if isinstance(final_mask, tt.Tensor):
-            final_mask = final_mask.detach().cpu().numpy()
 
-        explanation_confidence = explanation.explanation_confidence
+        sufficiency_mask = try_detach(explanation.sufficiency_mask)
+
+        if hasattr(explanation, "necessity_mask"):
+            necessity_mask = try_detach(explanation.necessity_mask)
+            necessity_confidence = explanation.necessity_confidence  # type: ignore
+            inverse_classification = explanation.contrastive_classification
+            inverse_confidence = explanation.contrastive_confidence
+        if hasattr(explanation, "complete_mask"):
+            complete_mask = try_detach(explanation.complete_mask)
+            complete_confidence = explanation.completeness_confidence
+            complete_classification = explanation.completeness_classification
+
+        explanation_confidence = explanation.sufficiency_confidence
+
+        if analysis_results is not None:
+            area = analysis_results["area"]
+            entropy = analysis_results["entropy"]
+            insertion_curve = analysis_results["insertion_curve"]
+            deletion_curve = analysis_results["deletion_curve"]
 
         add_to_database(
             db,
@@ -80,8 +112,19 @@ def update_database(
             classification,
             target.confidence,
             target_map,
-            final_mask,
+            sufficiency_mask,
             explanation_confidence,
+            necessity_mask,
+            necessity_confidence,
+            inverse_classification,
+            inverse_confidence,
+            complete_mask,
+            complete_classification,
+            complete_confidence,
+            area,
+            entropy,
+            insertion_curve,
+            deletion_curve,
             time_taken,
             explanation.run_stats["total_passing"],
             explanation.run_stats["total_failing"],
@@ -96,40 +139,66 @@ def update_database(
             )
             return
         else:
-            for c, final_mask in enumerate(explanation.explanations):
-                if isinstance(final_mask, tt.Tensor):
-                    final_mask = final_mask.detach().cpu().numpy()
-                add_to_database(
-                    db,
-                    explanation.args,
-                    classification,
-                    target.confidence,
-                    target_map,
-                    final_mask,
-                    explanation.explanation_confidences[c],
-                    time_taken,
-                    explanation.run_stats["total_passing"],
-                    explanation.run_stats["total_failing"],
-                    explanation.run_stats["max_depth_reached"],
-                    explanation.run_stats["avg_box_size"],
-                    multi=multi,
-                    multi_no=c,
-                )
+            if clauses is None:
+                clauses = [i for i in range(0, len(explanation.explanations))]
+            for c, sufficiency_mask in enumerate(explanation.explanations):
+                if c in clauses:
+                    sufficiency_mask = try_detach(explanation.explanations[c])
+                    add_to_database(
+                        db,
+                        explanation.args,
+                        classification,
+                        target.confidence,
+                        target_map,
+                        sufficiency_mask,
+                        explanation.explanation_confidences[c],
+                        necessity_mask,
+                        necessity_confidence,
+                        inverse_classification,
+                        inverse_confidence,
+                        complete_mask,
+                        complete_classification,
+                        complete_confidence,
+                        area,
+                        entropy,
+                        insertion_curve,
+                        deletion_curve,
+                        time_taken,
+                        explanation.run_stats["total_passing"],
+                        explanation.run_stats["total_failing"],
+                        explanation.run_stats["max_depth_reached"],
+                        explanation.run_stats["avg_box_size"],
+                        multi_no=c,
+                    )
+
+                else:
+                    logger.info("not adding %s into the database", c)
 
 
 def add_to_database(
     db,
     args: CausalArgs,
-    target,
-    confidence,
+    target: int,
+    confidence: float | None,
     responsibility,
-    explanation,
-    explanation_confidence,
-    time_taken,
-    passing,
-    failing,
-    depth_reached,
-    avg_box_size,
+    sufficiency_mask,
+    sufficiency_confidence: float | None,
+    contrastive_mask,
+    contrastive_confidence: float | None,
+    inverse_classification: int | None,
+    inverse_confidence: float | None,
+    complete_mask,
+    complete_classification: int | None,
+    complete_confidence,
+    area: float | None,
+    entropy: float | None,
+    insertion_curve: float | None,
+    deletion_curve: float | None,
+    time_taken: float,
+    passing: int,
+    failing: int,
+    depth_reached: int,
+    avg_box_size: float,
     multi=False,
     multi_no=None,
 ):
@@ -139,7 +208,7 @@ def add_to_database(
         id = hash(str(datetime.now().time()))
 
     responsibility_shape = responsibility.shape
-    explanation_shape = explanation.shape
+    explanation_shape = sufficiency_mask.shape
 
     object = DataBaseEntry(
         id,
@@ -148,10 +217,23 @@ def add_to_database(
         confidence,
         responsibility,
         responsibility_shape,
-        explanation,
+        sufficiency_mask,
         explanation_shape,
-        explanation_confidence,
+        sufficiency_confidence,
         time_taken,
+        area=area,
+        entropy=entropy,
+        insertion_curve=insertion_curve,
+        deletion_curve=deletion_curve,
+        passing=passing,
+        failing=failing,
+        contrastive_mask=contrastive_mask,
+        contrastive_confidence=contrastive_confidence,
+        complete_mask=complete_mask,
+        complete_classification=complete_classification,
+        complete_confidence=complete_confidence,
+        inverse_classification=inverse_classification,
+        inverse_confidence=inverse_confidence,
         depth_reached=depth_reached,
         avg_box_size=avg_box_size,
         tree_depth=args.tree_depth,
@@ -210,9 +292,28 @@ class DataBaseEntry(Base):
     total_work = Column(Integer)
     passing = Column(Integer)
     failing = Column(Integer)
-    explanation = Column(NumpyType)
-    explanation_shape = Column(Unicode)
-    explanation_confidence = Column(Float)
+    # basic explanation type
+    sufficiency_mask = Column(NumpyType)
+    mask_shape = Column(Unicode)
+    sufficiency_confidence = Column(Float)
+    # sufficient and necessary mask
+    contrastive_mask = Column(NumpyType)
+    contrastive_confidence = Column(Float)
+
+    inverse_classification = Column(Integer)
+    inverse_confidence = Column(Float)
+
+    # complete mask
+    complete_mask = Column(NumpyType)
+    complete_classification = Column(Integer)
+    complete_confidence = Column(Float)
+
+    # analysis results, if available
+    area = Column(Float)
+    entropy = Column(Float)
+    insertion_curve = Column(Float)
+    deletion_curve = Column(Float)
+
     multi = Column(Boolean)
     multi_no = Column(Integer)
 
@@ -245,12 +346,23 @@ class DataBaseEntry(Base):
         confidence,
         responsibility,
         responsibility_shape,
-        explanation,
-        explanation_shape,
-        explanation_confidence,
+        sufficiency_mask,
+        mask_shape,
+        sufficiency_confidence,
         time_taken,
+        contrastive_mask=None,
+        contrastive_confidence=None,
+        inverse_classification=None,
+        inverse_confidence=None,
+        complete_mask=None,
+        complete_classification=None,
+        complete_confidence=None,
         passing=None,
         failing=None,
+        area=None,
+        entropy=None,
+        insertion_curve=None,
+        deletion_curve=None,
         total_work=None,
         multi=False,
         multi_no=None,
@@ -276,16 +388,33 @@ class DataBaseEntry(Base):
         self.confidence = confidence
         self.responsibility = responsibility
         self.responsibility_shape = str(responsibility_shape)
-        self.explanation = explanation
-        self.explanation_shape = str(explanation_shape)
-        self.explanation_confidence = explanation_confidence
+        self.sufficiency_mask = sufficiency_mask
+        self.mask_shape = str(mask_shape)
+        self.sufficiency_confidence = sufficiency_confidence
         self.time = time_taken
         self.total_work = total_work
         self.passing = passing
         self.failing = failing
+
+        # contrastive and complete explanations
+        self.contrastive_mask = contrastive_mask
+        self.contrastive_confidence = contrastive_confidence
+        self.inverse_classification = inverse_classification
+        self.inverse_confidence = inverse_confidence
+        self.complete_mask = complete_mask
+        self.complete_classification = complete_classification
+        self.complete_confidence = complete_confidence
+
+        # analysis results
+        self.area = area
+        self.entropy = entropy
+        self.insertion_curve = insertion_curve
+        self.deletion_curve = deletion_curve
+
         # multi status
         self.multi = multi
         self.multi_no = multi_no
+
         # causal
         self.depth_reached = depth_reached
         self.avg_box_size = avg_box_size

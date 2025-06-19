@@ -105,7 +105,7 @@ def test_process_config_dict_invalid_distribution(caplog):
     assert args.distribution == Distribution.Uniform
     assert (
         caplog.records[0].message
-        == "Invalid distribution 'an-invalid-distribution', reverting to default value Distribution.Uniform"
+        == "Invalid distribution 'an-invalid-distribution', reverting to uniform distribution"
     )
 
 

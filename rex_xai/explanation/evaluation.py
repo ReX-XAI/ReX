@@ -1,15 +1,20 @@
 #!/usr/bin/env python
 from typing import Tuple
+
 import numpy as np
 import torch as tt
 from scipy.integrate import simpson
 from scipy.signal import periodogram
-from skimage.measure import shannon_entropy
+from scipy.stats import entropy
 
 from rex_xai.explanation.explanation import Explanation
-from rex_xai.utils._utils import get_map_locations
 from rex_xai.mutants.mutant import _apply_to_data
-from rex_xai.utils._utils import set_boolean_mask_value, xlogx
+from rex_xai.utils._utils import (
+    get_map_locations,
+    set_boolean_mask_value,
+    try_detach,
+    xlogx,
+)
 
 
 class Evaluation:
@@ -20,28 +25,20 @@ class Evaluation:
 
     def ratio(self) -> float:
         """Returns percentage of data required for sufficient explanation"""
-        if (
-            self.explanation.explanation is None
-            or self.explanation.data.model_channels is None
-        ):
-            raise ValueError("Invalid Explanation object")
-
-        try:
-            final_mask = self.explanation.final_mask.squeeze().item()  # type: ignore
-        except Exception:
-            final_mask = self.explanation.final_mask
+        if hasattr(self.explanation, "necessity_mask"):
+            mask = try_detach(self.explanation.necessity_mask)
+        else:
+            mask = try_detach(self.explanation.sufficiency_mask)
 
         try:
             return (
-                tt.count_nonzero(final_mask)  # type: ignore
-                / final_mask.size  # type: ignore
-                / self.explanation.data.model_channels
+                tt.count_nonzero(mask)  # type: ignore
+                / mask.size  # type: ignore
             ).item()
         except TypeError:
             return (
-                np.count_nonzero(final_mask)  # type: ignore
-                / final_mask.size  # type: ignore
-                / self.explanation.data.model_channels
+                np.count_nonzero(mask)  # type: ignore
+                / mask.size  # type: ignore
             )
 
     def spectral_entropy(self) -> Tuple[float, float]:
@@ -58,43 +55,54 @@ class Evaluation:
             max_ent = np.log2(len(psd_norm))
         return ent, max_ent
 
-    def entropy_loss(self):
-        img = np.array(self.explanation.data.input)
-        assert self.explanation.explanation is not None
-        exp = shannon_entropy(self.explanation.explanation.detach().cpu().numpy())
-
-        return shannon_entropy(img), exp
+    def responsibility_entropy(self):
+        flat_map = try_detach(self.explanation.target_map).ravel()
+        return entropy(flat_map, base=2)
 
     def insertion_deletion_curve(self, prediction_func, normalise=False):
-        insertion_curve = []
-        deletion_curve = []
-
+        # keep pyright happy...
         assert self.explanation.data.target is not None
-        assert self.explanation.data.target.confidence is not None
-
         assert self.explanation.data.data is not None
-        insertion_mask = tt.zeros(
-            self.explanation.data.data.squeeze(0).shape, dtype=tt.bool
-        ).to(self.explanation.data.device)
-        deletion_mask = tt.ones(
-            self.explanation.data.data.squeeze(0).shape, dtype=tt.bool
-        ).to(self.explanation.data.device)
-        im = []
-        dm = []
+        assert self.explanation.data.target.confidence is not None
 
         step = self.explanation.args.insertion_step
         ranking = get_map_locations(map=self.explanation.target_map)
-        iters = len(ranking) // step
 
+        # initialise empty insertion and delection curves arrays
+        insertion_curve = np.zeros(len(ranking) // step)
+        deletion_curve = np.zeros(len(ranking) // step)
+
+        # blank insertion mask
+        insertion_mask = tt.zeros(
+            self.explanation.data.data.squeeze(0).shape, dtype=tt.bool
+        ).to(self.explanation.data.device)
+        # dense deletion mask
+        deletion_mask = tt.ones(
+            self.explanation.data.data.squeeze(0).shape, dtype=tt.bool
+        ).to(self.explanation.data.device)
+
+        # edit the model shape to include a batch number, if necessary and make it a tuple
+        model_shape = self.explanation.data.model_shape
+        model_shape[0] = self.explanation.args.batch_size
+        model_shape = tuple(model_shape)
+
+        # initialise tensors for insertion and deletion mutants
+        insertion_mutants = tt.empty(model_shape, dtype=tt.float32)
+        deletion_mutants = tt.empty(model_shape, dtype=tt.float32)
+
+        pointer = 0
+        j = 0
         for i in range(0, len(ranking), step):
             chunk = ranking[i : i + step]
             for _, loc in chunk:
+                # set insertion_mask values to true
                 set_boolean_mask_value(
                     insertion_mask,
                     self.explanation.data.mode,
                     self.explanation.data.model_order,
                     loc,
                 )
+                # set deletion mask values to false
                 set_boolean_mask_value(
                     deletion_mask,
                     self.explanation.data.mode,
@@ -102,45 +110,61 @@ class Evaluation:
                     loc,
                     val=False,
                 )
-            im.append(
-                _apply_to_data(insertion_mask, self.explanation.data, 0).squeeze(0)
-            )
-            dm.append(
-                _apply_to_data(deletion_mask, self.explanation.data, 0).squeeze(0)
-            )
+            insertion_mutants[j] = _apply_to_data(
+                insertion_mask, self.explanation.data
+            ).squeeze(0)
+            deletion_mutants[j] = _apply_to_data(
+                deletion_mask, self.explanation.data
+            ).squeeze(0)
+            j += 1
 
-            if len(im) == self.explanation.args.batch_size:
-                self.__batch(im, dm, prediction_func, insertion_curve, deletion_curve)
-                im = []
-                dm = []
+            if j == self.explanation.args.batch_size - 1:
+                insertion_update, deletion_update = self.__batch(
+                    insertion_mutants, deletion_mutants, prediction_func
+                )
+                insertion_curve[pointer : pointer + len(insertion_update)] = (
+                    insertion_update
+                )
+                deletion_curve[pointer : pointer + len(insertion_update)] = (
+                    deletion_update
+                )
 
-        if im != [] and dm != []:
-            self.__batch(im, dm, prediction_func, insertion_curve, deletion_curve)
+                pointer += j
+                j = 0
+                insertion_mutants = tt.empty(model_shape, dtype=tt.float32)
+                deletion_mutants = tt.empty(model_shape, dtype=tt.float32)
+
+        remaining = len(insertion_curve) - pointer
+        insertion_update, deletion_update = self.__batch(
+            insertion_mutants, deletion_mutants, prediction_func
+        )
+        insertion_curve[pointer : pointer + remaining] = insertion_update[:remaining]
+        deletion_curve[pointer : pointer + remaining] = deletion_update[:remaining]
 
         i_auc = simpson(insertion_curve, dx=step)
         d_auc = simpson(deletion_curve, dx=step)
 
         if normalise:
-            const = self.explanation.data.target.confidence * iters * step
+            const = self.explanation.data.target.confidence * len(ranking)
             i_auc /= const
             d_auc /= const
 
         return i_auc, d_auc
 
-    # # def sensitivity(self):
-    #     #     pass
-
-    # # def infidelity(self):
-    #     #     pass
-
-    def __batch(self, im, dm, prediction_func, insertion_curve, deletion_curve):
-        assert self.explanation.data.target is not None
-        ip = prediction_func(tt.stack(im).to(self.explanation.data.device), raw=True)
-        dp = prediction_func(tt.stack(dm).to(self.explanation.data.device), raw=True)
-        for p in range(0, ip.shape[0]):
-            insertion_curve.append(
-                ip[p, self.explanation.data.target.classification].item()
-            )  # type: ignore
-            deletion_curve.append(
-                dp[p, self.explanation.data.target.classification].item()
-            )  # type: ignore
+    def __batch(
+        self,
+        im,
+        dm,
+        prediction_func,
+    ):
+        ip = prediction_func(im.to(self.explanation.data.device), raw=True)
+        ipe = [
+            ip[p, self.explanation.data.target.classification].item()  # type: ignore
+            for p in range(0, ip.shape[0])
+        ]
+        dp = prediction_func(dm.to(self.explanation.data.device), raw=True)
+        dpe = [
+            dp[p, self.explanation.data.target.classification].item()  # type: ignore
+            for p in range(0, dm.shape[0])
+        ]
+        return ipe, dpe

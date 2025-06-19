@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import numbers
 from typing import List, Optional
 import numpy as np
 import torch as tt
@@ -42,12 +43,13 @@ __combinations = [
 ]
 
 
-def _apply_to_data(mask, data: Data, masking_func):
-    if isinstance(masking_func, (float, int)):
-        res = tt.where(mask, data.data, masking_func)  # type: ignore
-        return res
-    if callable(masking_func):
-        return masking_func(mask, data.data)
+def _apply_to_data(mask, data: Data):
+    # def _apply_to_data(mask, data: Data, masking_func):
+    if callable(data.mask_value):
+        return data.mask_value(mask, data.data)
+        # return data.masking_func(mask, data.data)
+    if isinstance(data.mask_value, numbers.Number):
+        return tt.where(mask, data.data, data.mask_value)
 
     logger.warning("applying default masking value of 0")
     return tt.where(mask, data.data, 0)  # type: ignore
@@ -119,10 +121,11 @@ class Mutant:
         return _apply_to_data(self.mask, data, self.masking_func)
 
     def save_mutant(self, data: Data, name=None, segs=None):
-        if data.mode in ("RGB", "L"):
-            m = np.array(data.input.resize((data.model_height, data.model_width)))
+        if data.mode == "RGB":
+            # m = np.array(data.input)
+            m = np.array(data.input)
             mask = self.mask.squeeze().detach().cpu().numpy()
-            if data.transposed and data.mode == "RGB":
+            if data.transposed:
                 # if transposed, we have C * H * W, so change that to H * W * C
                 m = np.where(mask, m.transpose((2, 0, 1)), 0)
                 m = m.transpose((1, 2, 0))

@@ -147,7 +147,7 @@ def causal_explanation(
     # The <queue> is a list of strings in the form "R:x:y:...n"
     queue = deque(search_tree.name)
 
-    local_maps = ResponsibilityMaps()
+    local_maps = ResponsibilityMaps(args.responsibility_style)
 
     # a <job> is of the form "R:x:y:...n", where x,y...n are integers.
     # This is both the unique name for a passing mutant and the node name for
@@ -193,17 +193,13 @@ def causal_explanation(
 
                 work_done = len(mutants)
 
+                # TODO find out why this was added
                 def apply_mask(m):
-                    if args.mask_value == "context":
-                        return _apply_to_data(m.mask, data, data.mask_value)
-                    return tt.where(m.mask, data.data, data.mask_value)
+                    return _apply_to_data(m.mask, data)
 
                 if data.mode in ("spectral", "tabular"):
                     preds: List[Prediction] = [
-                        prediction_func(_apply_to_data(m.mask, data, data.mask_value))[
-                            0
-                        ]
-                        for m in mutants
+                        prediction_func(apply_mask(m))[0] for m in mutants
                     ]
                 else:
                     # TODO this needs testing
@@ -212,7 +208,6 @@ def causal_explanation(
                             prediction_func(
                                 apply_mask(m),  #  type: ignore
                                 data.target,
-                                binary_threshold=args.binary_threshold,
                             )[0]
                             for m in mutants
                         ]  # type: ignore
@@ -228,7 +223,6 @@ def causal_explanation(
                         preds: List[Prediction] = prediction_func(
                             tensors,
                             data.target,
-                            binary_threshold=args.binary_threshold,
                         )
 
                 for i, m in enumerate(mutants):

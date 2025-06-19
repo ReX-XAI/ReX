@@ -1,14 +1,14 @@
 #!/usr/bin/env python
+from enum import Enum
 from typing import Optional
+
 import numpy as np
 import torch as tt
 
-from enum import Enum
-
-from rex_xai.mutants.occlusions import spectral_occlusion, context_occlusion
+from rex_xai.mutants.occlusions import context_occlusion, spectral_occlusion
 from rex_xai.responsibility.prediction import Prediction
-from rex_xai.utils.logger import logger
 from rex_xai.utils._utils import ReXDataError
+from rex_xai.utils.logger import logger
 
 Setup = Enum("Setup", ["ONNXMPS", "ONNX", "PYTORCH"])
 
@@ -24,12 +24,20 @@ def _guess_mode(input):
 
 
 class Data:
-    def __init__(self, input, model_shape, device, mode=None, process=True) -> None:
+    def __init__(
+        self,
+        input,
+        model_shape,
+        device: str | tt.device = "cpu",
+        mode=None,
+        process=False,
+    ) -> None:
         self.input = input
         self.mode = None
         self.target: Optional[Prediction] = None
         self.device = device
         self.setup: Optional[Setup] = None
+        self.transposed = False
 
         self.mode = mode
         if mode is None:
@@ -48,12 +56,9 @@ class Data:
         self.context_noise = 0.4
 
         if process:
-            # RGB model but greyscale input so we convert greyscale to pseudo-RGB
-            if self.model_channels == 3 and self.mode == "L":
-                self.input = self.input.convert("RGB")
-                self.mode = "RGB"
-            elif self.mode == "RGB" and self.model_order == "first":
-                self.transposed = True
+            if self.mode == "RGB":
+                if self.model_order == "first":
+                    self.transposed = True
             elif self.mode in ("tabular", "spectral"):
                 self.data = self.input
                 self.match_data_to_model_shape()
@@ -92,12 +97,7 @@ class Data:
         if self.mode == "RGB" and self.model_order == "first":
             self.data = self.data.transpose(2, 0, 1)  # type: ignore
             self.transposed = True
-        if self.mode == "L" and self.model_order == "first":
-            self.data = self.data.transpose(1, 0)
-            self.transposed = True
-        if self.mode == "L" and self.model_order == "last":
-            self.data = self.data.transpose(1, 0)
-        if self.mode == "tabular" or self.mode == "spectral":
+        if self.mode in ("tabular", "spectral"):
             self.data = self.generic_tab_preprocess()
         if self.mode == "voxel":
             pass
@@ -120,14 +120,19 @@ class Data:
         self.match_data_to_model_shape()
         self.data = tt.from_numpy(self.data).to(self.device)
 
-    def _normalise(self, means, stds, astype, norm):
+    def _normalise_rgb_data(self, means, stds, norm):
+        """used for onnx input data only"""
         assert self.data is not None
+        if self.model_channels != 3:
+            raise ReXDataError(
+                f"expected RGB data, but got data with the shape {self.model_shape}"
+            )
 
         normed_data = self.data
         if norm is not None:
             normed_data /= norm
 
-        if self.model_order == "first" and self.model_channels == 3:
+        if self.model_order == "first":
             if means is not None:
                 for i, m in enumerate(means):
                     normed_data[:, i, :, :] = normed_data[:, i, :, :] - m
@@ -135,22 +140,13 @@ class Data:
                 for i, s in enumerate(stds):
                     normed_data[:, i, :, :] = normed_data[:, i, :, :] / s
 
-        if self.model_order == "last" and self.model_channels == 3:
+        if self.model_order == "last":
             if means is not None:
                 for i, m in enumerate(means):
                     normed_data[:, :, i] = normed_data[:, :, i] - m
             if stds is not None:
                 for i, s in enumerate(stds):
                     normed_data[:, :, i] = normed_data[:, :, i] / s
-
-        # greyscale
-        if self.model_channels == 1:
-            if means is not None:
-                for i, m in enumerate(means):
-                    normed_data[i] = normed_data[i] - m
-            if stds is not None:
-                for i, s in enumerate(stds):
-                    normed_data[i] = normed_data[i] / s
 
         return normed_data
 
@@ -180,10 +176,8 @@ class Data:
         self.load_data(astype=astype)
 
         if self.mode == "RGB" and self.data is not None:
-            self.data = self._normalise(means, stds, astype, norm)
+            self.data = self._normalise_rgb_data(means, stds, norm)
             self.try_unsqueeze()
-        if self.mode == "L":
-            self.data = self._normalise(means, stds, astype, norm)
 
     def __get_shape(self):
         """returns height, width, channels, order, depth for the model"""
@@ -194,7 +188,7 @@ class Data:
             # an array of the form (batch, h, w), so no channel info or order or depth
             if len(self.model_shape) == 3:
                 return self.model_shape[1], self.model_shape[2], 1, None, None
-        if self.mode in ("RGB", "RGBA"):
+        if self.mode == "RGB":
             if len(self.model_shape) == 4:
                 _, a, b, c = self.model_shape
                 if a in (1, 3, 4):
@@ -203,27 +197,15 @@ class Data:
                     return a, b, c, "last", None
         if self.mode == "voxel":
             if len(self.model_shape) == 4:
-                batch, w, h, d = self.model_shape  # If batch is present
+                _, w, h, d = self.model_shape  # If batch is present
                 return w, h, None, None, d
             else:
                 w, h, d = self.model_shape
                 return w, h, None, None, d
 
         raise ReXDataError(
-            f"Incompatible 'mode' {self.mode}  and 'model_shape' ({self.model_shape}), cannot get valid shape of Data object so returning None"
+            f"Incompatible 'mode' {self.mode}  and 'model_shape' ({self.model_shape}), cannot get valid shape of Data object so exiting here"
         )
-
-        # elif self.mode in ("RGB", "RGBA", "L") and len(self.model_shape) == 4:
-        #     _, a, b, c = self.model_shape
-        #     if a == 1 or a == 3 or a == 4:
-        #         return b, c, a, "first"
-        #     else:
-        #         return a, b, c, "last"
-        # elif self.mode == "voxel":
-        #     pass
-        # else:
-        #     logger.warning("Incompatible 'mode' and 'model_shape', cannot get valid shape of Data object so returning None")
-        #     return None, None, None, None
 
     def set_mask_value(self, m):
         assert self.data is not None
@@ -246,6 +228,8 @@ class Data:
                 self.mask_value = lambda m, d: spectral_occlusion(
                     m, d, device=self.device
                 )
+            case "none":
+                self.mask_value = tt.nan
             case "context":
                 self.mask_value = lambda m, d: context_occlusion(m, d, self.context, self.context_noise)
             case _:

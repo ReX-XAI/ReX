@@ -1,16 +1,24 @@
 #!/usr/bin/env python
+from __future__ import annotations
+
 import re
-from typing import Optional
 
 import torch as tt
 
-from rex_xai.output import visualisation
-from rex_xai.utils._utils import SpatialSearch, get_map_locations, set_boolean_mask_value
 from rex_xai.input.config import CausalArgs, Strategy
 from rex_xai.input.input_data import Data
-from rex_xai.utils.logger import logger
 from rex_xai.mutants.mutant import _apply_to_data
+from rex_xai.output import visualisation
 from rex_xai.responsibility.resp_maps import ResponsibilityMaps
+from rex_xai.utils._utils import (
+    SpatialSearch,
+    find_complete_prediction,
+    find_required_prediction,
+    get_map_locations,
+    set_boolean_mask_value,
+    try_detach,
+)
+from rex_xai.utils.logger import logger
 
 
 class Explanation:
@@ -44,9 +52,10 @@ class Explanation:
                 f"No responsibility map found for target {data.target.classification}!"
             )
 
-        self.explanation: Optional[tt.Tensor] = None
-        self.final_mask = None
-        self.explanation_confidence = 0.0
+        self.sufficiency_mask: tt.Tensor | None = None
+        self.sufficiency_confidence = None
+        self.necessity_mask = None
+        self.complete_mask = None
         self.prediction_func = prediction_func
         self.data = data
         self.args = args
@@ -69,45 +78,33 @@ class Explanation:
             + f"\n\trun statistics: {run_stats} (5 dp)"
         )
 
-        if self.explanation is None or self.final_mask is None:
-            return (
-                exp_text
-                + f"\n\texplanation: {self.explanation}"
-                + f"\n\tfinal mask: {self.final_mask}"
-                + f"\n\texplanation confidence: {self.explanation_confidence}"
-            )
-        else:
-            return (
-                exp_text
-                + f"\n\texplanation: {type(self.explanation)} of shape {self.explanation.shape}"
-                + f"\n\tfinal mask: {type(self.final_mask)} of shape {self.final_mask.shape}"
-                + f"\n\texplanation confidence: {self.explanation_confidence:.5f} (5 dp)"
-            )
+        return (
+            exp_text
+            + f"\n\tsufficiency mask: {self.sufficiency_mask}"
+            + f"\n\texplanation confidence: {self.sufficiency_confidence}"
+        )
 
-    def extract(self, method: Strategy):
+    def extract(self):
         self.blank()
-        if method == Strategy.Global:
+        if self.args.strategy == Strategy.Global:
             self.__global()
-        if method == Strategy.Spatial:
+        if self.args.strategy == Strategy.Spatial:
             if self.data.mode == "spectral":
                 logger.warning(
                     "spatial search not yet implemented for spectral data, so defaulting to global search"
                 )
-                self.__global()
+                _ = self.__global()
             else:
                 _ = self.__spatial()
 
-        if isinstance(self.final_mask, tt.Tensor):
-            self.final_mask = self.final_mask.detach().cpu().numpy()
-        if isinstance(self.target_map, tt.Tensor):
-            self.target_map = self.target_map.detach().cpu().numpy()
+        self.sufficiency_mask = try_detach(self.sufficiency_mask)
+        self.target_map = try_detach(self.target_map)
 
     def blank(self):
         assert self.data.data is not None
-        self.explanation = tt.zeros(
+        self.sufficiency_mask = tt.zeros(
             self.data.data.shape, dtype=tt.bool, device=self.data.device
         )
-        self.final_mask = None
 
     def set_to_true(self, coords, mask=None):
         if mask is not None:
@@ -115,7 +112,7 @@ class Explanation:
                 mask, self.data.mode, self.data.model_order, coords
             )
 
-    def __global(self, map=None, wipe=False):
+    def __global(self, map=None):
         if map is None:
             map = self.target_map
         ranking = get_map_locations(map)
@@ -124,6 +121,7 @@ class Explanation:
             self.data.model_shape[1:], dtype=tt.bool, device=self.data.device
         )
         masks = []
+        tests = []
 
         limit = 0
         for i in range(0, len(ranking), self.args.chunk_size):
@@ -131,25 +129,27 @@ class Explanation:
             limit += self.args.chunk_size
             for _, loc in chunk:
                 self.set_to_true(loc, mutant)
-            d = _apply_to_data(mutant, self.data, self.data.mask_value).squeeze(0)
-            masks.append(d)
+            masks.append(mutant.detach().clone())
+            tests.append(_apply_to_data(mutant, self.data).squeeze(0))
             if len(masks) == self.args.batch_size:
-                preds = self.prediction_func(tt.stack(masks).to(self.data.device))
+                preds = self.prediction_func(tt.stack(tests).to(self.data.device))
                 for j, p in enumerate(preds):
                     if (
-                        p.classification == self.data.target.classification
+                        p.classification == self.data.target.classification  # type:ignore
                         and p.confidence
-                        >= self.data.target.confidence
+                        >= self.data.target.confidence  # type:ignore
                         * self.args.minimum_confidence_threshold
                     ):  #  type: ignore
-                        logger.info(f"Found an explanation of \"{p.classification}\" with {p.confidence} confidence")
-                        self.explanation = masks[j] # TODO: Handle multiple predictions
-                        self.explanation_confidence = p.confidence
-                        self.final_mask = mutant.zero_()
-                        for _, loc in ranking[:limit]:
-                            self.set_to_true(loc, self.final_mask)
+                        logger.info(
+                            "found an explanation of %d with %f confidence",
+                            p.classification,
+                            p.confidence,
+                        )
+                        self.sufficiency_confidence = p.confidence
+                        self.sufficiency_mask = masks[j]
                         return p.confidence
                 masks = []
+                tests = []
 
     def __generate_circle_coordinates(self, centre, radius: int):
         assert self.data.model_height is not None
@@ -186,11 +186,15 @@ class Explanation:
     def compute_masked_responsibility(self, mask):
         try:
             masked_responsibility = tt.where(
-                mask, self.target_map, self.data.mask_value
+                mask,
+                self.target_map,  # type: ignore
+                self.data.mask_value,  # type: ignore
             )  # type: ignore
         except RuntimeError:
             masked_responsibility = tt.where(
-                mask.permute((2, 0, 1)), self.target_map, self.data.mask_value
+                mask.permute((2, 0, 1)),
+                self.target_map,  # type: ignore
+                self.data.mask_value,  # type: ignore
             )  # type: ignore
         except Exception as e:
             logger.fatal(e)
@@ -232,7 +236,7 @@ class Explanation:
                         f"no explanation found after {expansion_limit} expansions"
                     )
                     return SpatialSearch.NotFound, masked_responsibility, None
-            d = _apply_to_data(mask, self.data, self.data.mask_value)
+            d = _apply_to_data(mask, self.data)
             p = self.prediction_func(d)[0]
             if (
                 p.classification == self.data.target.classification  # type: ignore
@@ -249,21 +253,243 @@ class Explanation:
                 mask[circle, :] = True
             expansions += 1
 
-    def save(self, path, mask=None, multi=None, multi_style="", clauses=None):
-        # NOTE: the parameter multi_style="" is here simply to make overriding
-        # the save function in MultiExplanation typecheck, same holds for clauses
-        if self.data.mode in ("RGB", "L", "voxel"):
-            if path is None:
-                path = f"{self.data.target.classification}.png"  # type: ignore
-            if mask is None:
-                visualisation.save_image(
-                    self.explanation, self.data, self.args, path=path
+    def contrastive(self):
+        # TODO there is a lot of code repetition here, refactor into separate functions
+        mask_shape = self.data.model_shape
+        mask_shape[0] = self.args.batch_size
+        mask_shape = tuple(mask_shape)
+        insertion_mask = tt.zeros(mask_shape, dtype=tt.bool).to(self.data.device)
+        deletion_mask = tt.ones(mask_shape, dtype=tt.bool).to(self.data.device)
+
+        ranking = get_map_locations(map=self.target_map)
+
+        target_confidence: float = (
+            self.args.minimum_confidence_threshold * self.data.target.confidence  # type: ignore
+        )
+
+        # self.sufficiency_confidence = None
+        self.necessity_mask = None
+        self.necessity_confidence = None
+        self.contrastive_classification = None
+        self.contrastive_confidence = None
+
+        step = self.args.chunk_size
+        sufficient_found = False
+        contrastive_found = False
+
+        insertion_memo = None
+        deletion_memo = None
+        chunk_pointer = 0
+        ind = 0
+        while not contrastive_found:
+            chunk = ranking[chunk_pointer : chunk_pointer + step]
+            for _, loc in chunk:
+                set_boolean_mask_value(
+                    insertion_mask[ind],
+                    self.data.mode,
+                    self.data.model_order,
+                    loc,
                 )
+                set_boolean_mask_value(
+                    deletion_mask[ind],
+                    self.data.mode,
+                    self.data.model_order,
+                    loc,
+                    val=False,
+                )
+
+            if ind == 0 and insertion_memo is not None and deletion_memo is not None:
+                insertion_mask[ind] = tt.logical_or(insertion_memo, insertion_mask[ind])
+                deletion_mask[ind] = tt.logical_xor(deletion_memo, deletion_mask[ind])
+            if ind > 0:
+                insertion_mask[ind] = tt.logical_or(
+                    insertion_mask[ind - 1], insertion_mask[ind]
+                )
+                deletion_mask[ind] = tt.logical_xor(
+                    deletion_mask[ind - 1], insertion_mask[ind]
+                )
+
+            chunk_pointer += step
+            ind += 1
+
+            if ind == self.args.batch_size:
+                sufficient = self.prediction_func(
+                    _apply_to_data(insertion_mask, self.data)
+                )
+                contrastive = self.prediction_func(
+                    _apply_to_data(deletion_mask, self.data)
+                )
+
+                position = find_required_prediction(
+                    self.data.target.classification,  # type: ignore
+                    target_confidence,
+                    sufficient,
+                )
+                if position is not None:
+                    if not sufficient_found:
+                        # set the sufficiency mask for the first (and only) time
+                        self.sufficiency_mask = (
+                            insertion_mask[position].detach().clone()
+                        )
+                        self.sufficiency_confidence = sufficient[position].confidence
+                        sufficient_found = True
+                        logger.info(
+                            "a sufficient explanation for %d found with confidence %.3f",
+                            self.data.target.classification,  # type: ignore
+                            self.sufficiency_confidence,
+                        )
+
+                if (
+                    sufficient_found
+                    and self.args.complete
+                    and self.args.minimum_confidence_threshold < 1.0
+                ):
+                    #     logger.info("setting confidence threshold to 1.0")
+                    target_confidence = self.data.target.confidence  # type: ignore
+
+                position = find_required_prediction(
+                    self.data.target.classification,  # type: ignore
+                    target_confidence,
+                    sufficient,
+                    contrastive,
+                )
+
+                # exit the loop as a contrastive has been found
+                if position is not None:
+                    self.necessity_mask = insertion_mask[position].detach().clone()
+                    self.necessity_confidence = sufficient[position].confidence
+                    self.contrastive_classification = contrastive[
+                        position
+                    ].classification
+                    self.contrastive_confidence = contrastive[position].confidence
+                    contrastive_found = True
+
+                    logger.info(
+                        "a contrastive explanation for %d found with confidence %.3f",
+                        self.data.target.classification,  # type: ignore
+                        self.necessity_confidence,
+                    )
+
+                # we haven't found a contrastive explanation in that batch, so go around the loop again
+                else:
+                    insertion_memo = insertion_mask[-1]
+                    deletion_memo = deletion_mask[-1]
+                    ind = 0
+
+        # completeness
+        if self.args.complete:
+            # set a new target <completeness_confidence> which we need to bring as close to <target_confidence> as we can
+            rounding = 3
+            target_confidence = round(self.data.target.confidence, rounding)  # type: ignore
+            step = self.args.chunk_size
+            chunk_pointer = len(ranking)
+
+            # check that the confidences aren't already at the correct levels
+            if round(self.necessity_confidence, rounding) == target_confidence:  # type: ignore
+                logger.info(
+                    "the sufficient and necessary explanation is already complete"
+                )
+                self.complete_mask = self.necessity_mask
+                self.completeness_confidence = self.necessity_confidence
+                self.completeness_classification = self.data.target.classification
+                return
+
+            complete_explanation_found = False
+            insertion_mask = insertion_mask.zero_()
+            insertion_memo = None
+            insertion_mask[0] = self.necessity_mask.detach().clone()  # type: ignore
+            ind = 1
+            while not complete_explanation_found:
+                chunk = ranking[chunk_pointer - step : chunk_pointer]
+                for _, loc in chunk:
+                    set_boolean_mask_value(
+                        insertion_mask[ind],
+                        self.data.mode,
+                        self.data.model_order,
+                        loc,
+                    )
+
+                if ind == 0 and insertion_memo is not None:
+                    insertion_mask[ind] = tt.logical_or(
+                        insertion_memo, insertion_mask[ind]
+                    )
+                else:
+                    insertion_mask[ind] = tt.logical_or(
+                        insertion_mask[ind - 1], insertion_mask[ind]
+                    )
+
+                chunk_pointer -= step
+                ind += 1
+
+                if ind == self.args.batch_size:
+                    sufficient = self.prediction_func(
+                        _apply_to_data(insertion_mask, self.data)
+                    )
+
+                    position = find_complete_prediction(
+                        self.data.target.classification,  # type: ignore
+                        target_confidence,
+                        sufficient,
+                        rounding=rounding,
+                    )
+
+                    if position is not None:
+                        complete_explanation_found = True
+                        self.complete_mask = tt.logical_xor(
+                            insertion_mask[position].detach().clone(),
+                            self.necessity_mask.detach().clone(),  # type: ignore
+                        )
+                        cp = self.prediction_func(
+                            _apply_to_data(self.complete_mask, self.data)
+                        )[0]
+                        self.completeness_classification = cp.classification
+                        self.completeness_confidence = cp.confidence
+                        diff = self.necessity_confidence - self.data.target.confidence  # type: ignore
+                        direction = "increases" if diff < 0 else "reduces"
+                        logger.info(
+                            (
+                                "found sufficient, necessary and complete explanation for class %d (original confidence %.3f) "
+                                + "where the sufficient and necessary explanation has confidence %.3f.\n"
+                                + "Removing the necessary pixels results in the contrastive class %d (confidence %.3f).\n"
+                                + "The complete explanation %s the sufficient and necessary confidence by %.3f and is class %d "
+                                + "(confidence %.3f) by itself."
+                            ),
+                            self.data.target.classification,  # type: ignore
+                            self.data.target.confidence,  # type: ignore
+                            self.necessity_confidence,  # type: ignore
+                            self.contrastive_classification,  # type: ignore
+                            self.contrastive_confidence,  # type: ignore
+                            direction,
+                            abs(diff),
+                            self.completeness_classification,
+                            self.completeness_confidence,
+                        )
+
+                    else:
+                        insertion_memo = insertion_mask[-1]
+                        ind = 0
+
+    def save(self, path, mask=None):
+        if self.data.mode in ("RGB", "voxel") and mask is None:
+            if self.args.complete:
+                visualisation.save_complete(self, self.data, self.args, path=path)
             else:
-                visualisation.save_image(mask, self.data, self.args, path=path)
+                mask = (
+                    self.sufficiency_mask
+                    if self.necessity_mask is None
+                    else self.necessity_mask
+                )
+                visualisation.save_image(
+                    self.sufficiency_mask,
+                    self.data,
+                    self.args,
+                    path=path,
+                    mask=mask,
+                )
+
         if self.data.mode == "spectral":
             visualisation.spectral_plot(
-                self.explanation,
+                self.sufficiency_mask,
                 self.data,
                 self.target_map,
                 self.args.heatmap_colours,
@@ -273,36 +499,40 @@ class Explanation:
             pass
 
     def heatmap_plot(self, path=None):
-        if self.data.mode in ("RGB", "L"):
-            visualisation.heatmap_plot(
-                self.data,
-                self.target_map,
-                self.args.heatmap_colours,
-                path=path,
-            )
-        elif self.data.mode == "voxel":
-            visualisation.voxel_plot(
-                self.args,
-                self.target_map,
-                self.data,
-                path=path,
-            )
-        else:
-            return NotImplementedError
+        if self.target_map is not None:
+            if self.data.mode == "RGB":
+                visualisation.heatmap_plot(
+                    self.data,
+                    self.target_map,
+                    self.args.heatmap_colours,
+                    path=path,
+                )
+            elif self.data.mode == "voxel":
+                visualisation.voxel_plot(
+                    self.args,
+                    self.target_map,  # type: ignore
+                    self.data,
+                    path=path,
+                )
+            else:
+                return NotImplementedError
 
     def surface_plot(self, path=None):
-        if self.data.mode in ("RGB", "L"):
+        if self.data.mode == "RGB":
             visualisation.surface_plot(
+                self.data.input,
                 self.args,
                 self.target_map,  # type: ignore
                 self.data.target,  #  type: ignore
                 path=path,
             )
         elif self.data.mode == "voxel":
-            logger.warning("Surface plot not available for voxel data using voxel plot instead")
+            logger.warning(
+                "Surface plot not available for voxel data using voxel plot instead"
+            )
             visualisation.voxel_plot(
                 self.args,
-                self.target_map,
+                self.target_map,  # type: ignore
                 self.data,
                 path=path,
             )
@@ -310,9 +540,9 @@ class Explanation:
             return NotImplementedError
 
     def show(self, path=None):
-        if self.data.mode in ("RGB", "L", "voxel"):
+        if self.data.mode in ("RGB", "voxel"):
             out = visualisation.save_image(
-                self.explanation, self.data, self.args, path=path
+                self.sufficiency_mask, self.data, self.args, path=path
             )
             return out
         else:

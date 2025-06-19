@@ -12,15 +12,16 @@ from typing import List, Optional, Union
 import matplotlib as mpl
 import toml  # type: ignore
 
+from rex_xai.mutants.distributions import Distribution, str2distribution
 from rex_xai.utils._utils import (
     Queue,
     ReXError,
     ReXPathError,
     ReXTomlError,
     Strategy,
+    match_resposnibility_style,
     version,
 )
-from rex_xai.mutants.distributions import Distribution, str2distribution
 from rex_xai.utils.logger import logger
 
 
@@ -76,7 +77,9 @@ class Args:
         self.heatmap_colours = "magma"
         self.multi_style = "composite"
         # explanation production strategy
+        self.no_extract = False
         self.strategy: Strategy = Strategy.Global
+        self.complete = False
         self.chunk_size = 25
         self.minimum_confidence_threshold = 0.0
         self.batch_size: int = 1
@@ -93,7 +96,7 @@ class Args:
         self.max_spotlight_budget = 40
         self.permitted_overlap: float = 0.0
         # analysis
-        self.analyze: bool = False
+        self.analyse = None
         self.insertion_step = 100
         self.normalise_curves = True
 
@@ -106,9 +109,9 @@ class Args:
             + f"output_file: {self.output}, surface_plot: {self.surface}, "
             + f"heatmap_plot: {self.heatmap}, "
             + f"onnx_means: {self.means}, onnx_stds: {self.stds}, onnx_norm: {self.norm} "
-            + f"onnx_inter_op_threads: {self.inter_op_num_threads}, onnx_intra_op_threads: {self.intra_op_num_threads}, onnx_logger: {self.ort_logger}"
+            + f"onnx_inter_op_threads: {self.inter_op_num_threads}, onnx_intra_op_threads: {self.intra_op_num_threads}, onnx_logger: {self.ort_logger} "
             + f"explanation_strategy: {self.strategy}, "
-            + f"min_confidence_scalar: {self.minimum_confidence_threshold}, "
+            + f"minimum confidence threshold: {self.minimum_confidence_threshold}, "
             + f"chunk size: {self.chunk_size}, "
             + f"spatial_radius: {self.spatial_initial_radius}, "
             + f"spatial_eta: {self.spatial_radius_eta}, seed: {self.seed}, "
@@ -118,7 +121,6 @@ class Args:
             + f"spotlight_eta: {self.spotlight_eta}, "
             + f"no_expansions: {self.no_expansions}, "
             + f"obj_function: {self.spotlight_objective_function}, "
-            + f"Custom Occlusion: {self.occlusion}, Location of Occlusion: {self.context_location}, Noise: {self.occlusion_noise}, "
         )
 
 
@@ -144,10 +146,13 @@ class CausalArgs(Args):
         self.weighted: bool = False
         self.iters = 20
         self.concentrate = False
+        self.negative_responsibility = False
         self.use_bounding_box: bool = False
         # queue management
         self.queue_len = 1
         self.queue_style = Queue.Area
+        # responsibility
+        self.responsibility_style = "multiplicative"
 
         if self.min_box_size is not None:
             self.chunk_size = self.min_box_size
@@ -161,10 +166,11 @@ class CausalArgs(Args):
             + f"tree_depth: {self.tree_depth}, search_limit: {self.search_limit}, "
             + f"min_box_size: {self.min_box_size}, weighted: {self.weighted}, "
             + f"confidence_filter: {self.confidence_filter}, "
+            + f"negative_responsibility: {self.negative_responsibility}, "
             + f"data_locations: {self.data_location}, distribution: {self.distribution}, "
             + f"distribution_args: {self.distribution_args}, "
             + f"queue_len: {self.queue_len}, queue_style {self.queue_style}, "
-            + f"concentrate: {self.concentrate}, "
+            + f"concentrate: {self.concentrate}, responsibility style {self.responsibility_style}, "
             + f"iterations: {self.iters}>"
         )
 
@@ -226,14 +232,28 @@ def cmdargs_parser():
         const="show",
         help="show minimal, sufficient causal explanation, optionally saved to <OUTPUT>. Requires a PIL compatible file extension",
     )
+
     parser.add_argument(
         "-c", "--config", type=str, help="optional config file to use for ReX"
+    )
+
+    parser.add_argument(
+        "-n",
+        "--no_extract",
+        action="store_true",
+        help="prevent ReX from extracting an explanation from the responsibility map",
     )
 
     parser.add_argument(
         "--processed",
         action="store_true",
         help="prevent ReX from performing any preprocessing",
+    )
+
+    parser.add_argument(
+        "--confidence",
+        type=float,
+        help="minimum confidence threshold, overriding the setting in <rex.toml>",
     )
 
     parser.add_argument(
@@ -306,10 +326,16 @@ def cmdargs_parser():
 
     parser.add_argument(
         "--contrastive",
-        nargs="?",
-        const=10,
-        help="a contrastive explanation, minimal, necessary and sufficient. Needs optional number <x> of floodlights, defaults to value in <rex.toml>, or 10 if undefined",
+        action="store_true",
+        help="a contrastive explanation: (approximately) minimal, necessary and sufficient",
     )
+
+    parser.add_argument(
+        "--complete",
+        action="store_true",
+        help="a complete explanation: (approximately) minimal, necessary, sufficient and having approximately the same confidence as the original image",
+    )
+
     parser.add_argument(
         "--iters",
         type=int,
@@ -321,9 +347,11 @@ def cmdargs_parser():
         action="store_true",
         help="area, entropy and (possibly) insertion/deletion curves",
     )
+
     parser.add_argument(
         "--analyse",
-        action="store_true",
+        nargs="?",
+        const="print",
         help="area, entropy and (possibly) insertion/deletion curves",
     )
 
@@ -404,12 +432,16 @@ def shared_args(cmd_args, args: CausalArgs):
         args.verbosity = 0
     else:
         args.verbosity = cmd_args.verbose
+    if cmd_args.no_extract is True:
+        args.no_extract = True
     if cmd_args.database is not None:
         args.db = cmd_args.database
     if cmd_args.mode is not None:
         args.mode = cmd_args.mode
     if cmd_args.spectral:
         args.mode = "spectral"
+    if cmd_args.confidence:
+        args.minimum_confidence_threshold = cmd_args.confidence
 
     args.processed = cmd_args.processed
 
@@ -486,9 +518,11 @@ def process_config_dict(config_file_args, args):
             "min_box_size",
             "confidence_filter",
             "weighted",
+            "negative_responsibility",
             "queue_style",
             "queue_len",
             "concentrate",
+            "responsibility_style",
             "use_bounding_box",
         ],
         "distribution": ["distribution", "blend", "distribution_args"],
@@ -510,6 +544,7 @@ def process_config_dict(config_file_args, args):
     if "causal" in config_file_args.keys():
         causal_dict = config_file_args["causal"]
         apply_dict_to_args(causal_dict, args, expected_values["causal"])
+
         if "distribution" in causal_dict.keys():
             apply_dict_to_args(
                 causal_dict["distribution"], args, expected_values["distribution"]
@@ -544,6 +579,14 @@ def process_config_dict(config_file_args, args):
     if type(args.strategy) is str:
         args.strategy = match_strategy(args.strategy)
 
+    try:
+        args.responsibility_style = match_resposnibility_style(
+            args.responsibility_style
+        )
+    except ReXTomlError as e:
+        print(e)
+        exit()
+
 
 def process_custom_script(script, args):
     name, _ = os.path.splitext(script)
@@ -573,16 +616,22 @@ def process_cmd_args(cmd_args, args):
     if cmd_args.iters is not None:
         args.iters = cmd_args.iters
 
-    if cmd_args.analyze or cmd_args.analyse:
-        args.analyze = True
+    if cmd_args.analyse:
+        args.analyse = cmd_args.analyse
+
+    if cmd_args.analyze:
+        args.analyse = cmd_args.analyse
 
     if cmd_args.multi is not None:
         args.strategy = Strategy.MultiSpotlight
         args.spotlights = int(cmd_args.multi)
 
-    if cmd_args.contrastive is not None:
+    if cmd_args.contrastive:
         args.strategy = Strategy.Contrastive
-        args.spotlights = int(cmd_args.contrastive)
+
+    if cmd_args.complete:
+        args.strategy = Strategy.Contrastive
+        args.complete = True
 
     if cmd_args.context is not None:
         args.context = True
@@ -651,8 +700,8 @@ def validate_args(args: CausalArgs):
         args: configuration values for ReX
     """
 
-    if args.path is None:
-        raise FileNotFoundError("Input file path cannot be None")
+    # if args.path is None:
+    #     raise FileNotFoundError("Input file path cannot be None")
 
     # makes sure file exists at path
     if not os.path.isfile(args.path):
@@ -672,6 +721,7 @@ def validate_args(args: CausalArgs):
         "spatial_radius_eta",
         "spotlight_eta",
         "binary_threshold",
+        "minimum_confidence_threshold",
     ]:
         val = getattr(args, arg)
         if val is not None:

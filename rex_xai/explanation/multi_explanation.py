@@ -4,16 +4,25 @@
 
 import os
 import re
-import numpy as np
-
-import torch as tt
 from itertools import combinations
+from typing import List
+
+import numpy as np
+import torch as tt
 
 from rex_xai.explanation.explanation import Explanation
-from rex_xai.mutants.distributions import random_coords, Distribution
+from rex_xai.mutants.distributions import Distribution, random_coords
+from rex_xai.output.visualisation import (
+    plot_image_grid,
+    save_image,
+    save_multi_explanation,
+)
+from rex_xai.utils._utils import (
+    SpatialSearch,
+    clause_area,
+    powerset,
+)
 from rex_xai.utils.logger import logger
-from rex_xai.utils._utils import powerset, clause_area, SpatialSearch
-from rex_xai.output.visualisation import save_multi_explanation, save_image, plot_image_grid
 
 
 class MultiExplanation(Explanation):
@@ -52,18 +61,22 @@ class MultiExplanation(Explanation):
                 + f"\n\texplanation confidences: {[round(x, ndigits=5) for x in self.explanation_confidences]} (5 dp)"
             )
 
-    def save(self, path, mask=None, multi=None, multi_style=None, clauses=None):
+    def save(
+        self,
+        path: str,
+        mask=None,
+        clauses: List[int] | None = None,
+        multi_style: str | None = None,
+    ):
         if multi_style is None:
             multi_style = self.args.multi_style
-        if multi_style == "contrastive":
-            super().save(path, mask=self.final_mask)
         if multi_style == "separate":
             logger.info("saving explanations in multiple different files")
             for i, mask in enumerate(self.explanations):
                 name, ext = os.path.splitext(path)
                 exp_path = f"{name}_{i}{ext}"
                 super().save(exp_path, mask=mask)
-        elif multi_style == "composite":
+        if multi_style == "composite":
             logger.info("using composite style to save explanations")
             if clauses is None:
                 clause = range(0, len(self.explanations))
@@ -71,28 +84,27 @@ class MultiExplanation(Explanation):
                     self.explanations, self.data, self.args, clause=clause, path=path
                 )
             else:
-                for clause in clauses:
-                    name, ext = os.path.splitext(path)
-                    new_name = f"{name}_{clause}{ext}"
-                    save_multi_explanation(
-                        self.explanations,
-                        self.data,
-                        self.args,
-                        clause=clause,
-                        path=new_name,
-                    )
+                name, ext = os.path.splitext(path)
+                new_name = f"{name}_{clauses}{ext}"
+                save_multi_explanation(
+                    self.explanations,
+                    self.data,
+                    self.args,
+                    clause=clauses,
+                    path=new_name,
+                )
 
-    def show(self, path=None, multi_style=None, clauses=None):
+    def show(self, multi_style=None, clauses=None):  # type: ignore
         if multi_style is None:
             multi_style = self.args.multi_style
         outs = []
 
-        for i, mask in enumerate(self.explanations):
+        for mask in self.explanations:
             out = save_image(mask, self.data, self.args, path=None)
             outs.append(out)
 
         if multi_style == "separate":
-            for i, mask in enumerate(self.explanations):
+            for mask in self.explanations:
                 out = save_image(mask, self.data, self.args, path=None)
                 outs.append(out)
 
@@ -119,21 +131,21 @@ class MultiExplanation(Explanation):
         else:
             return outs[0]
 
-    def extract(self, method=None):
+    def extract(self):
         self.blank()
         # we start with the global max explanation
         logger.info("spotlight number 1 (global max)")
         conf = self._Explanation__global()  # type: ignore
-        if self.final_mask is not None:
-            self.explanations.append(self.final_mask)
+        if self.sufficiency_mask is not None:
+            self.explanations.append(self.sufficiency_mask)
             self.explanation_confidences.append(conf)
         self.blank()
 
         for i in range(0, self.args.spotlights - 1):
             logger.info("spotlight number %d", i + 2)
             conf = self.spotlight_search()
-            if self.final_mask is not None:
-                self.explanations.append(self.final_mask)
+            if self.sufficiency_mask is not None:
+                self.explanations.append(self.sufficiency_mask)
                 self.explanation_confidences.append(conf)
             self.blank()
         logger.info(
@@ -188,33 +200,6 @@ class MultiExplanation(Explanation):
         clauses = sorted(clauses, key=lambda x: clause_area(x, sizes))
         return clauses
 
-    def contrastive(self, clauses):
-        for clause in clauses:
-            for subset in powerset(clause, reverse=False):
-                mask = sum([self.explanations[x] for x in subset])
-                mask = mask.to(tt.bool)  # type: ignore
-                sufficient = tt.where(mask, self.data.data, self.data.mask_value)  # type: ignore
-                counterfactual = tt.where(mask, self.data.mask_value, self.data.data)  # type: ignore
-                ps = self.prediction_func(sufficient)[0]
-                pn = self.prediction_func(counterfactual)[0]
-
-                if (
-                    ps.classification == self.data.target.classification  # type: ignore
-                    and pn.classification != self.data.target.classification  # type: ignore
-                ):
-                    logger.info(
-                        "found sufficient and necessary explanation of class %d, %d with confidence %f",
-                        ps.classification,
-                        pn.classification,
-                        pn.confidence,
-                    )
-                    self.final_mask = mask
-                    return subset
-        logger.warn(
-            "ReX is unable to find a counterfactual, so not producing an output. Exiting here..."
-        )
-        exit()
-
     def __random_step_from(self, origin, width, height, step=5):
         c, r = origin
         # flip a coin to move left (0) or right (1)
@@ -238,10 +223,22 @@ class MultiExplanation(Explanation):
     def __random_location(self):
         assert self.data.model_width is not None
         assert self.data.model_height is not None
-        origin = random_coords(
-            Distribution.Uniform,
-            self.data.model_width * self.data.model_height,
-        )
+
+        if self.args.distribution == Distribution.Uniform:
+            origin = random_coords(
+                self.args.distribution,
+                self.data.model_width * self.data.model_height,
+                1,
+            )
+        else:
+            origin = random_coords(
+                self.args.distribution,
+                self.data.model_width * self.data.model_height,
+                1,
+                self.args.distribution_args,
+                self.data.model_height,
+                self.data.model_width,
+            )
 
         return np.unravel_index(origin, (self.data.model_height, self.data.model_width))  # type: ignore
 

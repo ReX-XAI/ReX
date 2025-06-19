@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 # from __future__ import annotations
 """main logical entrypoint for ReX."""
 
@@ -6,27 +6,27 @@ import copy
 import os
 import sys
 import time
-from typing import Tuple, List, Union
+from typing import List, Tuple, Union
 
-from scipy.io import loadmat
 import numpy as np
 import torch as tt
 from PIL import Image
+from scipy.io import loadmat
 from sqlalchemy.orm import Session
 from tqdm import trange  # type: ignore
 
-from rex_xai.input.config import CausalArgs
-from rex_xai.output.database import update_database
 from rex_xai.explanation.evaluation import Evaluation
-from rex_xai.explanation.multi_explanation import MultiExplanation
 from rex_xai.explanation.explanation import Explanation
+from rex_xai.explanation.multi_explanation import MultiExplanation
+from rex_xai.input.config import CausalArgs
 from rex_xai.input.input_data import Data
-from rex_xai.utils.logger import logger
 from rex_xai.input.onnx import get_prediction_function
+from rex_xai.output.database import update_database
+from rex_xai.responsibility.prediction import Prediction, default_prediction_function
 from rex_xai.responsibility.resp_maps import ResponsibilityMaps
 from rex_xai.responsibility.responsibility import causal_explanation
-from rex_xai.responsibility.prediction import Prediction
-from rex_xai.utils._utils import Strategy, ReXScriptError
+from rex_xai.utils._utils import ReXDataError, ReXScriptError, Strategy
+from rex_xai.utils.logger import logger
 
 
 def try_preprocess(args: CausalArgs, model_shape: Tuple[int], device: tt.device):
@@ -111,9 +111,7 @@ def load_and_preprocess_data(
     """
     if args.script is not None:
         if hasattr(args.script, "preprocess"):
-            data = args.script.preprocess(
-                args.path, model_shape, device, mode=args.mode
-            )
+            data = args.script.preprocess(args.path, model_shape, device)
             if args.context_location is not None:
                 data.context = args.script.preprocess(
                     args.context_location, model_shape, device, mode=args.mode
@@ -171,7 +169,12 @@ def predict_target(data: Data, args: CausalArgs, prediction_func) -> Prediction 
 
 
 def calculate_responsibility(
-    data: Data, args: CausalArgs, prediction_func, keep_all_maps=False
+    data: Data,
+    args: CausalArgs,
+    prediction_func,
+    # keep_all_maps=False,
+    custom_height=None,
+    custom_width=None,
 ) -> tuple[ResponsibilityMaps, dict]:
     """Calculates ResponsibilityMaps for input data using given args.
 
@@ -200,7 +203,11 @@ def calculate_responsibility(
             "No target classification found. Please run `predict_target` before running `calculate_responsibility`."
         )
 
-    maps = ResponsibilityMaps()
+    maps = ResponsibilityMaps(style=args.responsibility_style)
+    if custom_height is not None and custom_width is not None:
+        maps.new_map(data.target.classification, custom_height, custom_width)
+    else:
+        maps.new_map(data.target.classification, data.model_height, data.model_width)
     if data.model_height is not None:
         maps.new_map(
             data.target.classification,
@@ -236,11 +243,7 @@ def calculate_responsibility(
             total_failing += failing
             max_depth_reached = max(max_depth_reached, depth_reached)
             avg_box_size += avg_bs
-            # TODO this needs to be smarter. If we only have shallow penetration, then
-            # this is doing us a disservice. Perhaps leave merging until after completion
-            # of all iterations. Might potentially use a lot of memeory though
-            if depth_reached > 1:
-                maps.merge(local_maps)
+            maps.merge(local_maps)
 
     avg_box_size /= args.iters
 
@@ -270,14 +273,14 @@ def analyze(exp: Explanation, data_mode: str | None):
 
     Args:
         exp: Explanation object as returned by :py:func:`~rex_xai.explanation._explanation`
-        data_mode: Mode of the input data. Entropy difference is only calculated if ``data_mode``
-            is one of ["RGB", "L"].
+        data_mode: Mode of the input data. Entropy of the responsibility map calculated if ``data_mode``
+            is "RGB". If ``data_mode'' is ``spectral'' then spectral entropy is calculated.
 
     Returns:
         tuple containing
 
         - area (float)
-        - entropy_diff (float)
+        - entropy (float)
         - insertion_curve (float)
         - deletion_curve (float)
 
@@ -286,10 +289,9 @@ def analyze(exp: Explanation, data_mode: str | None):
     rat = eval.ratio()
     ent = None
     max_ent = None
-    if data_mode in ("RGB", "RGBA", "L"):
-        be, ae = eval.entropy_loss()  # type: ignore
-        ent = be - ae
-    elif data_mode in ("spectral", "tabular"):
+    if data_mode == "RGB":
+        ent = eval.responsibility_entropy()  # type: ignore
+    elif data_mode == "spectral":
         ent, max_ent = eval.spectral_entropy()
 
     iauc, dauc = eval.insertion_deletion_curve(
@@ -342,51 +344,72 @@ def _explanation(
 
     data.target = predict_target(data, args, prediction_func)
 
+    time_taken = 0
     start = time.time()
 
     logger.info("Calculating responsibility map")
     resp_object, run_stats = calculate_responsibility(data, args, prediction_func)
+    if args.negative_responsibility:
+        resp_object.negative_responsibility(data.target.classification)
+    mid = time.time()
+    logger.info(f"Finished building responsibility map after {mid - start} seconds")
 
     logger.info("Extracting explanation from responsibility map")
     clauses = None
-    if args.strategy in (Strategy.MultiSpotlight, Strategy.Contrastive):
+    exp = None
+    if args.strategy == Strategy.MultiSpotlight:
         exp = MultiExplanation(resp_object, prediction_func, data, args, run_stats)
-        exp.extract()
+        if not args.no_extract:
+            exp.extract()
 
-        if args.strategy == Strategy.Contrastive and args.permitted_overlap != 1.0:
-            logger.warning(
-                "contrastive explanations require a permitted overlap of 1.0, so setting this now"
-            )
-            args.permitted_overlap = 1.0
+            clauses = exp.separate_by(args.permitted_overlap)
+            logger.info(f"found the following sets of explanations {clauses}")
 
-        clauses = exp.separate_by(args.permitted_overlap)
-        logger.info(f"found the following sets of explanations {clauses}")
-
-        if args.strategy == Strategy.Contrastive:
-            clauses = exp.contrastive(clauses)
-            args.multi_style = "contrastive"
+            logger.info(f"keeping only {clauses[0]}")
+            clauses = clauses[0]
     else:
         exp = Explanation(resp_object, prediction_func, data, args, run_stats)
-        exp.extract(args.strategy)
+        if not args.no_extract:
+            if args.strategy == Strategy.Contrastive:
+                exp.contrastive()
+            else:
+                exp.extract()
 
-    if args.analyze:
-        logger.info("Analysing explanation")
-        results = analyze(exp, data.mode)
-        if data.mode == "spectral":
-            print(
-                f"INFO:ReX:classification {exp.data.target.classification}, area {results['area']}, responsibility entropy {results['entropy']},",  # type: ignore
-                f"max entropy {results['max_entropy']}",
-                f"insertion curve {results['insertion_curve']}, deletion curve {results['deletion_curve']}",
-            )
+    assert exp is not None
+    results = None
+    if args.analyse is not None:
+        if args.strategy == Strategy.MultiSpotlight:
+            logger.warning("still to write")
+            pass
         else:
-            print(
-                f"INFO:ReX:classification {exp.data.target.classification}, area {results['area']}, entropy {results['entropy']},",  # type: ignore
-                f"insertion curve {results['insertion_curve']}, deletion curve {results['deletion_curve']}",
-            )
+            logger.info("Analysing explanation")
+            results = analyze(exp, data.mode)
+            end = time.time()
+            time_taken = end - start
 
-    end = time.time()
-    time_taken = end - start
-    logger.info(f"Time taken: {time_taken:.2f}s")
+            if data.mode == "spectral":
+                print(
+                    f"INFO:ReX:classification {exp.data.target.classification}, area {results['area']}, responsibility entropy {results['entropy']},",  # type: ignore
+                    f"max entropy {results['max_entropy']}",
+                )
+            else:
+                if args.analyse == "print":
+                    print(
+                        f"INFO:ReX:path {args.path}, classification {exp.data.target.classification}, area {results['area']}, responsibility entropy {results['entropy']},",  # type: ignore
+                        f"insertion curve {results['insertion_curve']}, deletion curve {results['deletion_curve']}, time {time_taken}",
+                    )
+                else:
+                    assert exp.data.target is not None
+                    with open(args.analyse, "a") as out:
+                        out.write(
+                            f"{args.path},{exp.data.target.classification},{results['area']},{results['entropy']},{results['insertion_curve']},{results['deletion_curve']},{time_taken}\n"
+                        )
+
+    else:
+        end = time.time()
+        time_taken = end - start
+        logger.info(f"Time taken: {time_taken:.2f}s")
+
     if args.surface is not None:
         if path is not None:
             pass
@@ -406,29 +429,23 @@ def _explanation(
         exp.heatmap_plot(path)
 
     if args.output is not None:
-        if args.output == "show":
-            path = None
+        if path is None:
+            if args.output == "show":
+                path = None
+            else:
+                path = args.output
+        if args.strategy == Strategy.MultiSpotlight:
+            exp.save(path, clauses=clauses)  # type: ignore
         else:
-            path = args.output
-        logger.info(f"Explanation is saved at {args.output}")
-        exp.save(path, clauses=clauses)
+            exp.save(path)  # type: ignore
 
     if db is not None:
         if args.strategy == Strategy.MultiSpotlight:
             logger.info("writing multiple explanations to database")
-            update_database(
-                db,
-                exp,
-                time_taken,
-                multi=True,
-            )
+            update_database(db, exp, time_taken, multi=True, clauses=clauses)
         else:
             logger.info("writing to database")
-            update_database(
-                db,
-                exp,
-                time_taken,
-            )
+            update_database(db, exp, time_taken, analysis_results=results)
 
     return exp
 
@@ -453,11 +470,12 @@ def get_prediction_func_from_args(args: CausalArgs):
         RuntimeError: if an onnx inference instance cannot be created from the provided model file.
 
     """
-    if hasattr(args.script, "prediction_function") and hasattr(
-        args.script, "model_shape"
-    ):
+    prediction_func = None
+    model_shape = None
+    if hasattr(args.script, "prediction_function"):
         prediction_func = args.script.prediction_function  # type: ignore
-        model_shape = args.script.model_shape()  # type: ignore
+    if hasattr(args.script, "model_shape"):
+        model_shape = args.script.model_shape  # type: ignore
     else:
         ps = get_prediction_function(args)
         if ps is None:
@@ -465,6 +483,13 @@ def get_prediction_func_from_args(args: CausalArgs):
         else:
             prediction_func, model_shape = ps
 
+    if prediction_func is None:
+        if hasattr(args.script, "model"):
+            prediction_func = default_prediction_function(args.script.model)  # type: ignore
+        else:
+            raise ReXDataError("ReX cannot find a valid prediction function")
+    if model_shape is None:
+        raise ReXDataError("ReX cannot find a valid model shape")
     return prediction_func, model_shape
 
 
@@ -505,6 +530,7 @@ def explanation(
             for f in files:
                 to_process = os.path.join(dir, f)
                 logger.info("processing %s", to_process)
+                # TODO can we remove this copy?
                 current_args = copy.copy(args)
                 current_args.path = to_process
                 if args.output is not None and args.output != "show":
@@ -520,7 +546,8 @@ def explanation(
                     db,
                     path=path,
                 )
-                explanations.append(exp)
+                if exp is not None:
+                    explanations.append(exp)
         return explanations
 
     else:
