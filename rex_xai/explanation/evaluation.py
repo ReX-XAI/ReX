@@ -25,19 +25,20 @@ class Evaluation:
 
     def ratio(self) -> float:
         """Returns percentage of data required for sufficient explanation"""
-        final_mask = self.explanation.sufficiency_mask
-        if isinstance(final_mask, tt.Tensor):
-            final_mask = final_mask.detach().cpu().numpy()
+        if hasattr(self.explanation, "necessity_mask"):
+            mask = try_detach(self.explanation.necessity_mask)
+        else:
+            mask = try_detach(self.explanation.sufficiency_mask)
 
         try:
             return (
-                tt.count_nonzero(final_mask)  # type: ignore
-                / final_mask.size  # type: ignore
+                tt.count_nonzero(mask)  # type: ignore
+                / mask.size  # type: ignore
             ).item()
         except TypeError:
             return (
-                np.count_nonzero(final_mask)  # type: ignore
-                / final_mask.size  # type: ignore
+                np.count_nonzero(mask)  # type: ignore
+                / mask.size  # type: ignore
             )
 
     def spectral_entropy(self) -> Tuple[float, float]:

@@ -3,7 +3,7 @@
 import importlib.metadata
 from enum import Enum
 from itertools import chain, combinations
-from typing import Dict, Tuple, Union
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import torch as tt
@@ -11,6 +11,7 @@ from numpy.typing import NDArray
 from skimage.segmentation import mark_boundaries
 
 from rex_xai.mutants.box import Box
+from rex_xai.responsibility.prediction import Prediction
 from rex_xai.utils.logger import logger
 
 Strategy = Enum("Strategy", ["Global", "Spatial", "MultiSpotlight", "Contrastive"])
@@ -22,6 +23,75 @@ SpatialSearch = Enum("SpatialSearch", ["NotFound", "Found"])
 ResponsibilityStyle = Enum("ResponsibilityStyle", ["Additive", "Multiplicative"])
 
 
+def find_required_prediction(
+    target: int,
+    threshold: float,
+    insertion_predictions: List[Prediction],
+    deletion_predictions: List[Prediction] | None = None,
+):
+    if deletion_predictions is None:
+        for i, p in enumerate(insertion_predictions):
+            if p.classification == target and p.confidence >= threshold:  # type: ignore
+                return i
+        return None
+    else:
+        for i in range(0, len(insertion_predictions)):
+            if (
+                insertion_predictions[i].classification == target
+                and insertion_predictions[i].confidence >= threshold  # type: ignore
+                and deletion_predictions[i].classification != target
+            ):
+                return i
+        return None
+
+
+def find_complete_prediction(
+    target: int,
+    target_confidence,
+    insertion_predictions: List[Prediction],
+    rounding=2,
+):
+    for i in range(0, len(insertion_predictions)):
+        p = insertion_predictions[i]
+        if (
+            p.classification == target
+            and round(p.confidence, rounding) == target_confidence
+        ):
+            return i
+    return None
+
+    # for i in range(0, len(sufficient)):
+    #     if (
+    #         round(sufficient[i].confidence, rounding)
+    #         == target_confidence
+    #     ):
+    #         complete_explanation_found = True
+    #         self.complete_mask = tt.logical_xor(
+    #             insertion_mask[i].detach().clone(),
+    #             self.necessity_mask.detach().clone(),
+    #         )
+
+
+# def find_matching_prediction(
+#     target: int, threshold: float, predictions: List[Prediction]
+# ):
+#     for i, p in enumerate(predictions):
+#         if p.classification == target and p.confidence >= threshold:  # type: ignore
+#             return i, p
+#
+#     return -1, None
+#
+#
+# def find_different_prediction(
+#     target: int, threshold: float, predictions: List[Prediction]
+# ):
+#     for i, p in enumerate(predictions):
+#         if p.classification != target and p.confidence >= threshold:  # type: ignore
+#             return i, p
+#
+#     return -1, None
+
+
 def match_resposnibility_style(s: str) -> ResponsibilityStyle:
     if s == "additive":
         return ResponsibilityStyle.Additive
@@ -30,11 +100,13 @@ def match_resposnibility_style(s: str) -> ResponsibilityStyle:
     raise ReXTomlError(f"{s} is an unknown responsibility style")
 
 
-def try_detach(t):
+def try_detach(t) -> np.ndarray:
     if isinstance(t, tt.Tensor):
         return t.detach().cpu().numpy()
-    else:
+    elif isinstance(t, np.ndarray):
         return t
+    else:
+        raise ReXDataError("trying to convert a non-array into a numpy array")
 
 
 def one_d_permute(tensor):
@@ -172,7 +244,7 @@ def set_boolean_mask_value(
         if mode == "voxel":
             h = coords[0]
             w = coords[1]
-            d = coords[2]
+            d = coords[2]  # type: ignore
         else:
             h = coords[0]
             w = coords[1]
@@ -199,7 +271,7 @@ def set_boolean_mask_value(
     # elif mode == "tabular":
 
     elif mode == "voxel":
-        tensor[h, w, d] = val
+        tensor[h, w, d] = val  # type: ignore
     else:
         raise ReXError("mode not recognised")
 

@@ -16,7 +16,7 @@ from torch import Tensor
 from rex_xai.input.config import CausalArgs
 from rex_xai.input.input_data import Data
 from rex_xai.responsibility.prediction import Prediction
-from rex_xai.utils._utils import add_boundaries
+from rex_xai.utils._utils import add_boundaries, try_detach
 from rex_xai.utils.logger import logger
 
 
@@ -284,17 +284,18 @@ def remove_background(data: Data, resp_map: np.ndarray) -> np.ndarray:
             data_m == data.background
         )  # Threshold for background voxels
         resp_map[background] = np.min(resp_map)
-    elif data.background is not None and data.background is tuple:
-        # Background is a range of values so (x , y) where x is the lower bound and y is the upper bound
-        background = np.where(
-            (data_m >= data.background[0]) & (data_m <= data.background[1])
-        )
-        resp_map[background] = np.min(resp_map)
-    elif data.background is not None:
-        logger.warn(
-            "Background is not set correctly, please check the value. "
-            "Background value must be an int, float or tuple defining the range of values for the background."
-        )
+
+    # elif data.background is not None and data.background is tuple:
+    #     # Background is a range of values so (x , y) where x is the lower bound and y is the upper bound
+    #     background = np.where(
+    #         (data_m >= data.background[0]) & (data_m <= data.background[1])
+    #     )
+    #     resp_map[background] = np.min(resp_map)
+    # elif data.background is not None:
+    #     logger.warning(
+    #         "Background is not set correctly, please check the value. "
+    #         "Background value must be an int, float or tuple defining the range of values for the background."
+    #     )
 
     return resp_map
 
@@ -316,13 +317,12 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
         data_m = data.data[0, :, :, :]
     else:
         data_m = data.data
-    if isinstance(resp_map, tt.Tensor):
-        resp_map = resp_map.squeeze().detach().cpu().numpy()
+    resp_map = try_detach(resp_map)  # type: ignore
 
-    if isinstance(data_m, tt.Tensor):
-        data_m = data_m.squeeze().detach().cpu().numpy()
-        tt.tensor(data_m, dtype=tt.float32)
-
+    # if isinstance(data_m, tt.Tensor):
+    #     data_m = data_m.squeeze().detach().cpu().numpy()
+    #     tt.tensor(data_m, dtype=tt.float32)
+    #
     maps: np.ndarray = resp_map
     resp_map = remove_background(data, maps)
 
@@ -586,11 +586,12 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
         z_slice.write_image(f"{path}_z_slice.png")
 
 
-def __transpose_mask(mask, mode):
+def __transpose_mask(mask: tt.Tensor | np.ndarray, mode: str) -> np.ndarray:
     if mode != "RGB":
         raise TypeError
-    if isinstance(mask, tt.Tensor):
-        mask = mask.detach().cpu().numpy()
+    mask = try_detach(mask)
+    # if isinstance(mask, tt.Tensor):
+    #     mask = mask.detach().cpu().numpy()
 
     if mask.shape[0] == 3:
         mask = mask.transpose((1, 2, 0))
@@ -663,8 +664,7 @@ def __save_multi(path, explanations_subset, data, img, colours_subset, args):
 
 
 def save_complete(explanation, data, args: CausalArgs, path=None):
-    rgb_colours = generate_colours(args.spotlights, args.heatmap_colours)
-    colours_subset = [rgb_colours[c] for c in range(0, 3)]
+    colours_subset = [0.222, 0.656, 1.0]
 
     explanations_subset = []
     explanations_subset.append(__transpose_mask(explanation.sufficiency_mask, "RGB"))
