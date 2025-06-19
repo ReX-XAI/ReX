@@ -58,13 +58,3 @@ def preprocess(path, shape, device) -> Data:
     data.input = original
 
     return data
-
-
-# def prediction_function(mutants, target=None, raw=False):
-#     with tt.no_grad(): # we don't use the grad and inference is faster without it
-#         tensor = model(mutants)
-#         if raw: # used when computing insertion/deletion curves
-#             return F.softmax(tensor, dim=1)
-#         # from_pytorch_tensor consumes a tensor and converts it to a Prediction object
-#         # you can  alternatively use your own function here
-#         return from_pytorch_tensor(tensor, target=target)
