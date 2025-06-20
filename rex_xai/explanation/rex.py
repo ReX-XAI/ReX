@@ -1,12 +1,13 @@
 #!/usr/bin/env python
-# from __future__ import annotations
+from __future__ import annotations
+
 """main logical entrypoint for ReX."""
 
 import copy
 import os
 import sys
 import time
-from typing import List, Tuple, Union
+from typing import Callable, Dict, List, Tuple, Union
 
 import numpy as np
 import torch as tt
@@ -252,7 +253,7 @@ def calculate_responsibility(
     return maps, run_stats
 
 
-def analyze(exp: Explanation, data_mode: str | None):
+def analyze(exp: Explanation, data_mode: str | None) -> Dict[str, float]:
     """Analyzes an Explanation.
 
     Analyzes the area ratio, entropy difference, insertion and deletion curves for an
@@ -299,10 +300,10 @@ def analyze(exp: Explanation, data_mode: str | None):
 def _explanation(
     args: CausalArgs,
     model_shape: Tuple[int],
-    prediction_func,
+    prediction_func: Callable,
     device: tt.device,
     db: Session | None = None,
-    path=None,
+    path: str | None = None,
 ):
     """Takes a CausalArgs object and model information and returns a Explanation.
 
@@ -508,7 +509,7 @@ def explanation(
 
     # directory of data to process
     if os.path.isdir(args.path):
-        explanations = []
+        explanations: List[Explanation] = []
         dir = args.path
         path = None
         for dir, _, files in os.walk(args.path):

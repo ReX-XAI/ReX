@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+from __future__ import annotations
+
 from enum import Enum
 from typing import Optional
 
@@ -33,7 +35,7 @@ class Data:
         process=False,
     ) -> None:
         self.input = input
-        self.mode = None
+        self.mode: str | None = None
         self.target: Optional[Prediction] = None
         self.device = device
         self.setup: Optional[Setup] = None

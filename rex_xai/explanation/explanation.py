@@ -542,7 +542,11 @@ class Explanation:
     def show(self, path=None):
         if self.data.mode in ("RGB", "voxel"):
             out = visualisation.save_image(
-                self.sufficiency_mask, self.data, self.args, path=path
+                self.sufficiency_mask,
+                self.data,
+                self.args,
+                path=path,
+                mask=self.sufficiency_mask,
             )
             return out
         else:
