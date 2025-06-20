@@ -55,6 +55,7 @@ docs/_build/
 
 # Icon must end with two \r
 Icon
+Icon*
 
 # Thumbnails
 ._*
