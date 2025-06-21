@@ -267,7 +267,7 @@ class Explanation:
             self.args.minimum_confidence_threshold * self.data.target.confidence  # type: ignore
         )
 
-        # self.sufficiency_confidence = None
+        self.sufficiency_confidence = None
         self.necessity_mask = None
         self.necessity_confidence = None
         self.contrastive_classification = None
@@ -344,7 +344,6 @@ class Explanation:
                     and self.args.complete
                     and self.args.minimum_confidence_threshold < 1.0
                 ):
-                    #     logger.info("setting confidence threshold to 1.0")
                     target_confidence = self.data.target.confidence  # type: ignore
 
                 position = find_required_prediction(
@@ -354,7 +353,7 @@ class Explanation:
                     contrastive,
                 )
 
-                # exit the loop as a contrastive has been found
+                # exit the loop as a contrastive mask has been found
                 if position is not None:
                     self.necessity_mask = insertion_mask[position].detach().clone()
                     self.necessity_confidence = sufficient[position].confidence
@@ -391,7 +390,7 @@ class Explanation:
                 )
                 self.complete_mask = self.necessity_mask
                 self.completeness_confidence = self.necessity_confidence
-                self.completeness_classification = self.data.target.classification
+                self.completeness_classification = self.data.target.classification  # type: ignore
                 return
 
             complete_explanation_found = False
@@ -401,6 +400,41 @@ class Explanation:
             ind = 1
             while not complete_explanation_found:
                 chunk = ranking[chunk_pointer - step : chunk_pointer]
+
+                # the complete mask is the entire image
+                if chunk == []:
+                    logger.info("the entire image is required for completeness")
+                    self.complete_mask = tt.logical_xor(
+                        tt.ones(mask_shape[1:], dtype=tt.bool).to(self.data.device),
+                        self.necessity_mask.detach().clone(),  # type: ignore
+                    )
+                    cp = self.prediction_func(
+                        _apply_to_data(self.complete_mask, self.data)
+                    )[0]
+                    self.completeness_classification = cp.classification
+                    self.completeness_confidence = cp.confidence
+                    diff = self.necessity_confidence - self.data.target.confidence  # type: ignore
+                    direction = "increases" if diff < 0 else "reduces"
+                    logger.info(
+                        (
+                            "found sufficient, necessary and complete explanation for class %d (original confidence %.3f) "
+                            + "where the sufficient and necessary explanation has confidence %.3f.\n"
+                            + "Removing the necessary pixels results in the contrastive class %d (confidence %.3f).\n"
+                            + "The complete explanation %s the sufficient and necessary confidence by %.3f and is class %d "
+                            + "(confidence %.3f) by itself."
+                        ),
+                        self.data.target.classification,  # type: ignore
+                        self.data.target.confidence,  # type: ignore
+                        self.necessity_confidence,  # type: ignore
+                        self.contrastive_classification,  # type: ignore
+                        self.contrastive_confidence,  # type: ignore
+                        direction,
+                        abs(diff),
+                        self.completeness_classification,
+                        self.completeness_confidence,
+                    )
+                    return
+
                 for _, loc in chunk:
                     set_boolean_mask_value(
                         insertion_mask[ind],
