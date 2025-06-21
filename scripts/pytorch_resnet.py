@@ -28,7 +28,7 @@ model = get_model("resnet50", weights="DEFAULT")
 model.eval()
 
 # you have to include this
-model_shape = ["N", 3, 224, 224]
+model_shape = ("N", 3, 224, 224)
 
 if platform.uname().system == "Darwin":
     model.to("mps")
