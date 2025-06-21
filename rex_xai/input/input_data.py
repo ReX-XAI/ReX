@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Optional
+from typing import List, Optional, Tuple
 
 import numpy as np
 import torch as tt
@@ -29,7 +29,7 @@ class Data:
     def __init__(
         self,
         input,
-        model_shape,
+        model_shape: Tuple | List,
         device: str | tt.device = "cpu",
         mode=None,
         process=False,
@@ -45,7 +45,7 @@ class Data:
         if mode is None:
             self.mode = _guess_mode(input)
 
-        self.model_shape = model_shape
+        self.model_shape = list(model_shape)
         height, width, channels, order, depth = self.__get_shape()
         self.model_height: Optional[int] = height
         self.model_width: Optional[int] = width
