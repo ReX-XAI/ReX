@@ -2,7 +2,12 @@ from types import ModuleType
 
 import pytest
 from rex_xai.utils._utils import Strategy
-from rex_xai.input.config import CausalArgs, cmdargs_parser, process_cmd_args, shared_args
+from rex_xai.input.config import (
+    CausalArgs,
+    cmdargs_parser,
+    process_cmd_args,
+    shared_args,
+)
 
 
 @pytest.fixture
@@ -87,6 +92,7 @@ def test_contrastive():
 
     assert args.strategy == Strategy.Contrastive
 
+
 def test_complete():
     cmd_args_list = ["filename.jpg", "--complete"]
     parser = cmdargs_parser()
@@ -96,6 +102,7 @@ def test_complete():
 
     assert args.strategy == Strategy.Contrastive
     assert args.complete == True
+
 
 def test_spectral():
     cmd_args_list = ["filename.jpg", "--spectral"]

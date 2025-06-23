@@ -26,21 +26,21 @@ from rex_xai.input.input_data import Data
 def snapshot_explanation(snapshot):
     return snapshot.with_defaults(
         exclude=props(
-                "obj_function", # pointer to function that will differ between runs
-                "spotlight_objective_function", # pointer to function that will differ between runs
-                "script", # path that differs between systems
-                "script_location", # path that differs between systems
-                "model",
-                "target_map", # large array
-                "final_mask", # large array
-                "explanation" # large array
-            ),
-            matcher=path_type(
-                types=(CausalArgs,),
-                replacer=lambda data, _: AmberDataSerializer.object_as_named_tuple( #type: ignore
-                    data
-                ),  # needed to allow exclude to work for custom classes
-            )
+            "obj_function",  # pointer to function that will differ between runs
+            "spotlight_objective_function",  # pointer to function that will differ between runs
+            "script",  # path that differs between systems
+            "script_location",  # path that differs between systems
+            "model",
+            "target_map",  # large array
+            "final_mask",  # large array
+            "explanation",  # large array
+        ),
+        matcher=path_type(
+            types=(CausalArgs,),
+            replacer=lambda data, _: AmberDataSerializer.object_as_named_tuple(  # type: ignore
+                data
+            ),  # needed to allow exclude to work for custom classes
+        ),
     )
 
 
@@ -206,20 +206,13 @@ def exp_multi(args_multi, data_multi, prediction_func):
 def data_3d():
     voxel = np.zeros((1, 64, 64, 64), dtype=np.float32)
     voxel[0:30, 20:30, 20:35] = 1
-    return Data(
-        input=voxel,
-        model_shape=[1, 64, 64, 64],
-        device="cpu",
-        mode="voxel"
-    )
+    return Data(input=voxel, model_shape=[1, 64, 64, 64], device="cpu", mode="voxel")
+
 
 @pytest.fixture
 def data_2d():
-    return Data(
-        input=np.arange(1, 64, 64),
-        model_shape=[1, 64, 64],
-        device="cpu"
-    )
+    return Data(input=np.arange(1, 64, 64), model_shape=[1, 64, 64], device="cpu")
+
 
 @pytest.fixture
 def box_3d():
@@ -234,6 +227,7 @@ def box_3d():
         distribution_args=None,
     )
 
+
 @pytest.fixture
 def box_2d():
     return initialise_tree(
@@ -245,9 +239,11 @@ def box_2d():
         distribution_args=None,
     )
 
+
 @pytest.fixture
 def resp_map_2d():
     return np.zeros((64, 64), dtype="float32")
+
 
 @pytest.fixture
 def resp_map_3d():

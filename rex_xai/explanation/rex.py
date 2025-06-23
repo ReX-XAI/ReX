@@ -125,13 +125,16 @@ def load_and_preprocess_data(
         data = try_preprocess(args, model_shape, device)
         if args.context_location is not None:
             logger.warning(
-                f"{args.context_location} is not gonna be used, since ReX doesn't know how to process")
+                f"{args.context_location} is not gonna be used, since ReX doesn't know how to process"
+            )
             args.context = False
-            args.mask_value = 0 # Setting it to a default value in this case
+            args.mask_value = 0  # Setting it to a default value in this case
     return data
 
 
-def predict_target(data: Data, args: CausalArgs, prediction_func) -> Prediction | list[Prediction]:
+def predict_target(
+    data: Data, args: CausalArgs, prediction_func
+) -> Prediction | list[Prediction]:
     """Predicts classification of input data, using given prediction function.
 
     Uses ``prediction_func`` to identify the classification of the input data and return

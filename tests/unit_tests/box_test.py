@@ -10,6 +10,7 @@ def test_data(data_3d, data_2d):
     assert data_2d.model_shape == [1, 64, 64]
     assert data_2d.mode == "spectral"
 
+
 def test_initialise_tree_3d(box_3d):
     assert box_3d.depth_start == 0
     assert box_3d.depth_stop == 64
@@ -17,8 +18,8 @@ def test_initialise_tree_3d(box_3d):
     assert box_dimensions(box_3d) == (0, 64, 0, 64, 0, 64)
 
     assert (
-            box_3d.__repr__()
-            == "Box < name: R, row_start: 0, row_stop: 64, col_start: 0, col_stop: 64, depth_start: 0, depth_stop: 64, volume: 262144"
+        box_3d.__repr__()
+        == "Box < name: R, row_start: 0, row_stop: 64, col_start: 0, col_stop: 64, depth_start: 0, depth_stop: 64, volume: 262144"
     )
 
     assert box_3d.shape() == (64, 64, 64)
@@ -45,6 +46,7 @@ def test_initialise_tree_2d(box_2d):
         box_2d.corners() == (0, 64, 0, 64)
     )  # TODO: Box_dimensions has the same functionality as corners, should we remove one of them.
 
+
 def test_spawn_children_3d(box_3d, resp_map_3d):
     # Set seed
     np.random.seed(24)
@@ -53,10 +55,10 @@ def test_spawn_children_3d(box_3d, resp_map_3d):
     assert children_3d[0].area() < 262144
 
     total_area_3d = (
-            children_3d[0].area()
-            + children_3d[1].area()
-            + children_3d[2].area()
-            + children_3d[3].area()
+        children_3d[0].area()
+        + children_3d[1].area()
+        + children_3d[2].area()
+        + children_3d[3].area()
     )
     assert total_area_3d == 262144
 
@@ -82,7 +84,6 @@ def test_spawn_children_3d(box_3d, resp_map_3d):
         assert children_3d[i].row_stop == row_stops[i]
         assert children_3d[i].col_start == col_starts[i]
         assert children_3d[i].col_stop == col_stops[i]
-
 
 
 def test_spawn_children_2d(box_2d, resp_map_2d):
@@ -118,5 +119,3 @@ def test_spawn_children_2d(box_2d, resp_map_2d):
         assert children_2d[i].row_stop == row_stops[i]
         assert children_2d[i].col_start == col_starts[i]
         assert children_2d[i].col_stop == col_stops[i]
-
-

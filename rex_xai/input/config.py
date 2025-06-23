@@ -5,6 +5,7 @@
 import argparse
 import importlib.util
 import os
+import pprint
 from os.path import exists, expanduser
 from types import ModuleType
 from typing import List, Optional, Union
@@ -48,8 +49,12 @@ class Args:
         self.processed = False
         # for custom occlusions through cmdline
         self.context = False
-        self.context_location: Optional[str] = None # Path to the file to use for occlusion
-        self.occlusion_noise: Optional[float] = None # Optional gaussian noise parameter for occlusion
+        self.context_location: Optional[str] = (
+            None  # Path to the file to use for occlusion
+        )
+        self.occlusion_noise: Optional[float] = (
+            None  # Optional gaussian noise parameter for occlusion
+        )
         # onnx processing
         self.means = None
         self.stds = None
@@ -101,27 +106,62 @@ class Args:
         self.normalise_curves = True
 
     def __repr__(self) -> str:
-        return (
-            f"Args <file: {self.path}, model: {self.model}, "
-            + f"gpu: {self.gpu}, "
-            + f"mode: {self.mode}, "
-            + f"progress_bar: {self.progress_bar}, "
-            + f"output_file: {self.output}, surface_plot: {self.surface}, "
-            + f"heatmap_plot: {self.heatmap}, "
-            + f"onnx_means: {self.means}, onnx_stds: {self.stds}, onnx_norm: {self.norm} "
-            + f"onnx_inter_op_threads: {self.inter_op_num_threads}, onnx_intra_op_threads: {self.intra_op_num_threads}, onnx_logger: {self.ort_logger} "
-            + f"explanation_strategy: {self.strategy}, "
-            + f"minimum confidence threshold: {self.minimum_confidence_threshold}, "
-            + f"chunk size: {self.chunk_size}, "
-            + f"spatial_radius: {self.spatial_initial_radius}, "
-            + f"spatial_eta: {self.spatial_radius_eta}, seed: {self.seed}, "
-            + f"db: {self.db}, "
-            + f"script: {self.script_location}, verbosity: {self.verbosity}, "
-            + f"spotlights: {self.spotlights}, spotlight_size: {self.spotlight_size}, "
-            + f"spotlight_eta: {self.spotlight_eta}, "
-            + f"no_expansions: {self.no_expansions}, "
-            + f"obj_function: {self.spotlight_objective_function}, "
-        )
+        args_str = {
+            "file": self.path,
+            "mode": self.mode,
+            "model": self.model,
+            "shape": self.shape,
+            "db": self.db,
+            "gpu": self.gpu,
+            "seed": self.seed,
+            "script": self.script,
+            "script_location": self.script_location,
+            "processed": self.processed,
+            "context": self.context,
+            "context_location": self.context_location,
+            "occlusion_noise": self.occlusion_noise,
+            "mean": self.means,
+            "std": self.stds,
+            "norm": self.norm,
+            "binary_threshold": self.binary_threshold,
+            "intra_op_num_threads": self.intra_op_num_threads,
+            "inter_op_num_threads": self.inter_op_num_threads,
+            "ort_logger": self.ort_logger,
+            "verbosity": self.verbosity,
+            "progress_bar": self.progress_bar,
+            "output": self.output,
+            "surface": self.surface,
+            "heatmap": self.heatmap,
+            "info": self.info,
+            "raw": self.raw,
+            "colour": self.colour,
+            "mark_segments": self.mark_segments,
+            "alpha": self.alpha,
+            "all": self.all,
+            "resize": self.resize,
+            "grid": self.grid,
+            "heatmap_colours": self.heatmap_colours,
+            "multi_style": self.multi_style,
+            "no_extract": self.no_extract,
+            "explanation strategy": self.strategy,
+            "complete": self.complete,
+            "chunk_size": self.chunk_size,
+            "minimum_confidence_threshold": self.minimum_confidence_threshold,
+            "batch_size": self.batch_size,
+            "spatial_initial_radius": self.spatial_initial_radius,
+            "spatial_radius_eta": self.spatial_radius_eta,
+            "spotlights": self.spotlights,
+            "spotlight_size": self.spotlight_size,
+            "spotlight_eta": self.spotlight_eta,
+            "spotlight_step": self.spotlight_step,
+            "spotlight_objective_function": self.spotlight_objective_function,
+            "max_spotlight_budget": self.max_spotlight_budget,
+            "permitted_overlap": self.permitted_overlap,
+            "analyse": self.analyse,
+            "insertion_step": self.insertion_step,
+            "normalise_curves": self.normalise_curves,
+        }
+        return "Args" + pprint.pformat(args_str, indent=4)
 
 
 class CausalArgs(Args):
@@ -710,7 +750,6 @@ def validate_args(args: CausalArgs):
     # make sure if provided with context path then path exists
     if args.context and not os.path.isfile(args.context_location):
         raise FileNotFoundError(f"Context file {args.context_location} does not exist")
-
 
     # values that must be between 0 and 1
     for arg in [

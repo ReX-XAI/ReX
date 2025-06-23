@@ -32,12 +32,6 @@ def yolo_result_to_pred(results, target):
         if len(boxes.cls) == 0:
             predictions.append(Prediction("NONE"))
             continue
-        elif len(boxes.cls) == 1:
-            label = result.names.get(boxes.cls.item())
-            confidence = boxes.conf.item()
-            box = boxes.xyxy
-            prediction = Prediction(label, confidence, box, target)
-            predictions.append(prediction)
         else:
             for i, box in enumerate(boxes):
                 label = result.names.get(box.cls.item())

@@ -177,4 +177,3 @@ class Mutant:
             plt.tight_layout()
             plt.savefig(name or f"{self.get_name()}.png")
             plt.close(fig)
-

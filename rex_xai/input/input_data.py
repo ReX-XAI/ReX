@@ -231,7 +231,9 @@ class Data:
             case "none":
                 self.mask_value = tt.nan
             case "context":
-                self.mask_value = lambda m, d: context_occlusion(m, d, self.context, self.context_noise)
+                self.mask_value = lambda m, d: context_occlusion(
+                    m, d, self.context, self.context_noise
+                )
             case _:
                 raise ValueError(
                     f"Invalid mask value {m}. Should be an integer, float, or one of 'min', 'mean', 'spectral'"

@@ -118,7 +118,9 @@ def causal_explanation(
 
     if args.use_bounding_box:
         assert data.target.bounding_box is not None
-        logger.info(f"Using bounding box bounding box for {data.target.classification} that has the bounding box {data.target.bounding_box}")
+        logger.info(
+            f"Using bounding box bounding box for {data.target.classification} that has the bounding box {data.target.bounding_box}"
+        )
         box = data.target.bounding_box
         search_tree = initialise_tree(
             int(box[3]),
