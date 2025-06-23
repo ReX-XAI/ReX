@@ -8,6 +8,8 @@ from numpy.typing import NDArray
 import torch as tt
 import numpy as np
 from skimage.segmentation import mark_boundaries
+
+from rex_xai.input.input_data import Data
 from rex_xai.utils.logger import logger
 from rex_xai.mutants.box import Box
 
@@ -184,6 +186,31 @@ def set_boolean_mask_value(
     else:
         raise ReXError("mode not recognised")
 
+def validate_shape(data: Data, model_shape: Tuple[int, ...]) -> Data:
+    new_shape = list(model_shape)
+    logger.info(f"Validating model shape {new_shape} and making sure it matches the data's shape, which has a WIDTH of {data.model_width}, "
+                f"HEIGHT of {data.model_height},{"Depth of"+str(data.model_depth) if data.model_depth is not None else ""}")
+    for i, input_shape in enumerate(model_shape):
+        if input_shape == "W":
+             new_shape[i] = data.model_width
+        elif input_shape == "H":
+            new_shape[i] = data.model_height
+        elif input_shape == "D":
+            new_shape[i] = data.model_depth
+    # Make sure the data dimensions match the model shape
+    if data.model_order == "first":
+        assert data.model_width == new_shape[1]
+        assert data.model_height == new_shape[2]
+        if data.model_depth:
+            assert data.model_width == new_shape[3]
+    else:
+        assert data.model_width == new_shape[0]
+        assert data.model_height == new_shape[1]
+        if data.model_depth:
+            assert data.model_width == new_shape[2]
+
+    data.model_shape = tuple(new_shape)
+    return data
 
 def ff(obj, fmt):
     """

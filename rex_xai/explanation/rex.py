@@ -26,7 +26,7 @@ from rex_xai.input.onnx import get_prediction_function
 from rex_xai.responsibility.resp_maps import ResponsibilityMaps
 from rex_xai.responsibility.responsibility import causal_explanation
 from rex_xai.responsibility.prediction import Prediction
-from rex_xai.utils._utils import Strategy, ReXScriptError
+from rex_xai.utils._utils import Strategy, ReXScriptError, validate_shape
 
 
 def try_preprocess(args: CausalArgs, model_shape: Tuple[int], device: tt.device):
@@ -328,9 +328,12 @@ def _explanation(
     """
     data = load_and_preprocess_data(model_shape, device, args)
     data.set_mask_value(args.mask_value)
+
     logger.debug(
         "args.mask_value is %s, data.mask_value is %s", args.mask_value, data.mask_value
     )
+
+    data = validate_shape(data, model_shape)
 
     data.target = predict_target(data, prediction_func)
 
