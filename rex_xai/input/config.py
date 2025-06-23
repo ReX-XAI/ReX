@@ -68,7 +68,6 @@ class Args:
         self.mark_segments = False
         self.alpha = 0.2
         self.all = False
-        self.resize = False
         self.grid = False
         self.heatmap_colours = "magma"
         self.multi_style = "composite"
@@ -487,7 +486,6 @@ def process_config_dict(config_file_args, args):
             "colour",
             "alpha",
             "raw",
-            "resize",
             "progress_bar",
             "grid",
             "mark_segments",
@@ -714,7 +712,6 @@ def validate_args(args: CausalArgs):
         "info",
         "progress_bar",
         "raw",
-        "resize",
         "grid",
         "mark_segments",
         "weighted",

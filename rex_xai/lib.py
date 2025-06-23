@@ -1,3 +1,8 @@
+from __future__ import annotations
+
+from typing import Callable, Dict, List, Tuple
+
+import torch as tt
 from PIL import Image
 
 from rex_xai.explanation.explanation import Explanation
@@ -6,32 +11,33 @@ from rex_xai.input.config import CausalArgs
 from rex_xai.input.input_data import Data
 from rex_xai.output import visualisation
 from rex_xai.responsibility.prediction import default_prediction_function
+from rex_xai.responsibility.resp_maps import ResponsibilityMaps
 
 
 class ReX:
     def __init__(
         self,
         model,
-        model_shape,
-        device,
-        mode,
-        prediction_function=None,
+        model_shape: List[int | str] | Tuple[int | str],
+        device: str | tt.device,
+        mode: str,
+        prediction_function: Callable | None = None,
     ) -> None:
-        self.args = CausalArgs()
+        self.args: CausalArgs = CausalArgs()
         self.model = model
-        self.model_shape = model_shape
-        self.device = device
-        self.mode = mode
+        self.model_shape: List[int | str] | Tuple[int | str] = model_shape
+        self.device: str | tt.device = device
+        self.mode: str = mode
         self.explanation = None
         self.prediction_function = prediction_function
         self.data = None
-        self.maps = None
-        self.stats = None
+        self.maps: ResponsibilityMaps | None = None
+        self.stats: Dict[str, float] | None = None
 
         if self.prediction_function is None:
             self.get_default_prediction_function()
 
-    def set_tabular_data(self, path, data=None):
+    def set_tabular_data(self, path: str, data=None):
         if self.mode == "spectral":
             self.args.path = path
             self.args.mode = "spectral"
@@ -44,7 +50,15 @@ class ReX:
                     process=True,
                 )
 
-    def set_rgb_image(self, path):
+    def set_input(self, input):
+        if self.data is not None:
+            self.data.input = input
+
+    def set_transformed_data(self, transformed_data: tt.Tensor):
+        if self.data is not None:
+            self.data.data = transformed_data
+
+    def set_rgb_image(self, path: str):
         if self.mode == "RGB":
             self.args.path = path
             self.args.mode = "RGB"
@@ -58,21 +72,18 @@ class ReX:
         else:
             print("a target has not yet been set")
 
-    def set_transformed_data(self, transformed_data):
-        if self.data is not None:
-            self.data.data = transformed_data
-
     def get_default_prediction_function(self):
         self.prediction_function = default_prediction_function(self.model)
 
     def set_target(self):
         if self.data is not None:
             self.data.target = predict_target(self.data, self.prediction_function)
+        return self
 
     def set_prediction_function(self, function):
         self.prediction_function = function
 
-    def calculate_responsibility(self, args=None):
+    def calculate_responsibility(self, args: CausalArgs | None = None):
         if args is None:
             args = self.args
         if self.data is not None:
@@ -83,16 +94,16 @@ class ReX:
             )
             self.maps = maps
             self.stats = stats
-            return maps, stats
+            return self
 
-    def get_explanation(self, maps=None, stats=None):
-        if maps is None:
-            maps = self.maps
-        if stats is None:
-            stats = self.stats
-        if self.data is not None:
+    def get_explanation(self):
+        if self.data is not None and self.maps is not None and self.stats is not None:
             self.explanation = Explanation(
-                maps, self.prediction_function, self.data, self.args, stats
+                self.maps,
+                self.prediction_function,
+                self.data,
+                self.args,
+                self.stats,
             )
 
     def extract(self):
@@ -105,10 +116,11 @@ class ReX:
         self.calculate_responsibility(args=new_args)
 
     def show(self):
-        if self.mode == "spectral":
-            visualisation.spectral_plot(
-                self.explanation.sufficiency_mask,
-                self.data,
-                self.maps.get(self.data.target.classification),
-                self.args.heatmap_colours,
-            )
+        if self.explanation is not None:
+            if self.mode == "spectral":
+                visualisation.spectral_plot(
+                    self.explanation.sufficiency_mask,
+                    self.data,  # type: ignore
+                    self.maps.get(self.data.target.classification),  # type: ignore
+                    self.args.heatmap_colours,
+                )

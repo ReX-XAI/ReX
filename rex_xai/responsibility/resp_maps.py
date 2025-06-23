@@ -61,7 +61,7 @@ class ResponsibilityMaps:
             if np.max(v) == 0:
                 pass
             if k in self.maps:
-                if self.style == "additive":
+                if self.style == ResponsibilityStyle.Additive:
                     self.maps[k] += v
                 else:
                     self.maps[k] *= v
@@ -131,14 +131,8 @@ class ResponsibilityMaps:
                 if box is not None and box.area() > 0:
                     index = np.uint(box_name[-1])
                     local_r = r[index]
-                    # print(box.depth)
                     if args.concentrate:
                         local_r *= box.depth
-                        # Don't delete this code just yet as this is an alternative (less brutal)
-                        # local_r *= 1.0 / box.area()
-                        # scaling strategy that needs further investigation
-                        # scale = depth - 1
-                        # local_r = 2**(local_r * scale)
 
                     if data.mode == "spectral":
                         section = resp_map[0, box.col_start : box.col_stop]

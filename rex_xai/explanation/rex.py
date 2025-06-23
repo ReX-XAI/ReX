@@ -433,6 +433,13 @@ def _explanation(
             logger.info("writing to database")
             update_database(db, exp, time_taken, analysis_results=results)
 
+    if data.device == "mps":
+        with tt.no_grad():
+            tt.mps.empty_cache()
+    elif data.device == "cuda":
+        with tt.no_grad():
+            tt.cuda.empty_cache()
+
     return exp
 
 

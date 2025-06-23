@@ -663,8 +663,31 @@ def __save_multi(path, explanations_subset, data, img, colours_subset, args):
             out.save(path)
 
 
+def save_contrastive(explanation, data, args: CausalArgs, path=None):
+    colours_subset = [0.222, 1.0]
+
+    explanations_subset = []
+    explanations_subset.append(__transpose_mask(explanation.sufficiency_mask, "RGB"))
+    explanations_subset.append(__transpose_mask(explanation.necessity_mask, "RGB"))
+
+    composite_mask = make_composite_mask(explanations_subset)
+
+    img = apply_boundaries_to_image(data.input, explanations_subset, colours_subset)
+
+    if composite_mask is not None:
+        cover = np.where(composite_mask, img, args.colour)
+        cover = Image.fromarray(cover, data.mode)
+        img = Image.fromarray(img, data.mode)
+        out = Image.blend(cover, img, args.alpha)
+
+        if path is None:
+            return out
+        else:
+            out.save(path)
+
+
 def save_complete(explanation, data, args: CausalArgs, path=None):
-    colours_subset = [0.222, 0.656, 1.0]
+    colours_subset = [0.222, 0.5, 1.0]
 
     explanations_subset = []
     explanations_subset.append(__transpose_mask(explanation.sufficiency_mask, "RGB"))
@@ -738,9 +761,6 @@ def save_image(explanation, data: Data, args: CausalArgs, path=None, mask=None):
 
                 if args.grid:
                     out = overlay_grid(out)
-
-                if args.resize:
-                    out = out.resize(data.input.size)
 
             if path is not None:
                 out.save(path)
