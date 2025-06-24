@@ -733,15 +733,15 @@ def save_multi_explanation(
                 __save_multi(path, explanations_subset, data, img, colours_subset, args)
 
 
-def save_image(explanation, data: Data, args: CausalArgs, path=None, mask=None):
+def save_image(mask: tt.Tensor | np.ndarray, data: Data, args: CausalArgs, path=None):
     if data.mode == "RGB":
         if len(data.input.size) == 4:
             data.input = data.input.squeeze(0)
         img = data.input
 
-        mask = __transpose_mask(mask, data.mode)
-
         if mask is not None:
+            mask = __transpose_mask(mask, data.mode)
+
             if args.raw:
                 out = np.where(mask, img, 0).squeeze(
                     0

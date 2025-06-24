@@ -358,7 +358,13 @@ class Explanation:
         return ind, chunk_pointer, False
 
     def __complete(
-        self, ranking, insertion_mask, insertion_memo, mask_shape, rounding=2
+        self,
+        ranking,
+        insertion_mask,
+        insertion_memo,
+        mask_shape,
+        starting_pointer,
+        rounding=2,
     ):
         target_confidence = self.data.target.confidence  # type: ignore
         step = self.args.chunk_size
@@ -373,6 +379,7 @@ class Explanation:
         complete_explanation_found = False
         insertion_mask = insertion_mask.zero_()
         insertion_mask[0] = self.necessity_mask.detach().clone()  # type: ignore
+        exhausted = False
 
         chunk_pointer = len(ranking)
         ind = 1
@@ -405,7 +412,13 @@ class Explanation:
             ind += 1
             chunk_pointer -= step
 
-            if ind == self.args.batch_size:
+            if chunk_pointer <= starting_pointer:
+                exhausted = True
+
+            if ind == self.args.batch_size or exhausted:
+                if exhausted:
+                    insertion_mask = insertion_mask[:ind]
+
                 complete_predictions = self.prediction_func(
                     _apply_to_data(insertion_mask, self.data)
                 )
@@ -428,10 +441,12 @@ class Explanation:
                     self.completeness_confidence = cp.confidence
                     complete_explanation_found = True
                     logger.info(
-                        "found complete explanation for class %d. The completeness mask is class %d with confidence %.2f",
+                        "found complete explanation for class %d. The completeness mask is class %d with confidence %.2f of size %d",
                         self.data.target.classification,  # type: ignore
                         self.completeness_classification,
                         self.completeness_confidence,
+                        tt.count_nonzero(self.complete_mask)  # type: ignore
+                        // self.data.model_channels,
                     )
                 else:
                     ind = 0
@@ -448,6 +463,7 @@ class Explanation:
         target_confidence: float = (
             self.args.minimum_confidence_threshold * self.data.target.confidence  # type: ignore
         )
+        contrastive_completeness_threshold: float = self.data.target.confidence  # type: ignore
 
         self.sufficiency_confidence = None
         self.necessity_mask = None
@@ -491,6 +507,7 @@ class Explanation:
                 positions: ReXPositions = find_required_prediction(
                     self.data.target.classification,  # type: ignore
                     target_confidence,
+                    contrastive_completeness_threshold,
                     sufficient,
                     contrastive,
                     rounding=rounding,
@@ -509,9 +526,11 @@ class Explanation:
                             positions.sufficient_position
                         ].confidence
                         logger.info(
-                            "a sufficient explanation for %d found with confidence %.4f",
+                            "a sufficient explanation for %d found with confidence %.4f of size %d",
                             self.data.target.classification,  # type: ignore
                             self.sufficiency_confidence,
+                            tt.count_nonzero(self.sufficiency_mask)  # type: ignore
+                            // self.data.model_channels,
                         )
 
                         if False not in tt.unique(self.sufficiency_mask):
@@ -539,10 +558,13 @@ class Explanation:
                     ].confidence
 
                     logger.info(
-                        "a contrastive explanation for %d found with confidence %.3f",
+                        "a contrastive explanation for %d found with confidence %.3f of size %d",
                         self.data.target.classification,  # type: ignore
                         self.necessity_confidence,
+                        tt.count_nonzero(self.necessity_mask)  # type: ignore
+                        // self.data.model_channels,
                     )
+
                     if tt.count_nonzero(self.sufficiency_mask) == tt.count_nonzero(  # type: ignore
                         self.necessity_mask
                     ):
@@ -550,9 +572,19 @@ class Explanation:
                             "there is no difference between sufficiency and necessity on this input"
                         )
 
+                    if False not in self.necessity_mask:
+                        logger.info(
+                            "the sufficient and necessery explanation is already complete"
+                        )
+                        self.args.complete = False
+
                     if self.args.complete:
                         return self.__complete(
-                            ranking, insertion_mask, insertion_memo, mask_shape
+                            ranking,
+                            insertion_mask,
+                            insertion_memo,
+                            mask_shape,
+                            chunk_pointer,
                         )
                     return
 
@@ -574,6 +606,7 @@ class Explanation:
                 #         contrastive_found = True
 
     def save(self, path, mask=None):
+        assert self.sufficiency_mask is not None
         if self.data.mode in ("RGB", "voxel") and mask is None:
             if self.args.complete:
                 visualisation.save_complete(self, self.data, self.args, path=path)
@@ -591,7 +624,6 @@ class Explanation:
                     self.data,
                     self.args,
                     path=path,
-                    mask=mask,
                 )
 
         if self.data.mode == "spectral":
@@ -647,13 +679,13 @@ class Explanation:
             return NotImplementedError
 
     def show(self, path=None):
+        assert self.sufficiency_mask is not None
         if self.data.mode in ("RGB", "voxel"):
             out = visualisation.save_image(
                 self.sufficiency_mask,
                 self.data,
                 self.args,
                 path=path,
-                mask=self.sufficiency_mask,
             )
             return out
         else:

@@ -37,10 +37,12 @@ class ReXPositions:
         sufficient_position=None,
         contrastive_position=None,
         sufficiency_found=False,
+        current_max_necessity=0.0,
     ) -> None:
         self.sufficient_position = sufficient_position
         self.contrastive_position = contrastive_position
         self.sufficiency_found = sufficiency_found
+        self.current_max_necessity = current_max_necessity
 
     def __repr__(self) -> str:
         return f"suff: {self.sufficient_position}, con: {self.contrastive_position}, suff_found: {self.sufficiency_found}"
@@ -49,9 +51,17 @@ class ReXPositions:
         return self.sufficient_position is None and self.contrastive_position is None
 
 
+def try_rounding(n, rounding: int | None) -> float:
+    if rounding is None:
+        return n
+    else:
+        return round(n, rounding)
+
+
 def find_required_prediction(
     target: int,
     threshold: float,
+    contrastive_completeness_threshold: float,
     insertion_predictions: List[Prediction],
     deletion_predictions: List[Prediction] | None = None,
     rounding=None,
@@ -60,21 +70,20 @@ def find_required_prediction(
     positions = ReXPositions(sufficiency_found=sufficiency_found)
     if deletion_predictions is None:
         for i, p in enumerate(insertion_predictions):
-            if rounding is not None:
-                local_confidence = round(p.confidence, rounding)  # type: ignore
-                threshold = round(threshold, rounding)
-            else:
-                local_confidence = p.confidence
+            local_confidence = try_rounding(p.confidence, rounding)
+            threshold = try_rounding(threshold, rounding)
             if p.classification == target and local_confidence >= threshold:  # type: ignore
                 positions.sufficient_position = i
                 return positions
     else:
         for i in range(0, len(insertion_predictions)):
-            if rounding is not None:
-                local_confidence = round(insertion_predictions[i].confidence, rounding)  # type: ignore
-                threshold = round(threshold, rounding)
-            else:
-                local_confidence = insertion_predictions[i].confidence
+            local_confidence = try_rounding(
+                insertion_predictions[i].confidence, rounding
+            )
+            threshold = try_rounding(threshold, rounding)
+            contrastive_completeness_threshold = try_rounding(
+                contrastive_completeness_threshold, rounding
+            )
 
             # check for a sufficiency
             if (
@@ -85,36 +94,14 @@ def find_required_prediction(
                 positions.sufficient_position = i
                 positions.sufficiency_found = True
 
+            # check for necessity above threshold
             if (
                 insertion_predictions[i].classification == target
-                and local_confidence >= threshold  # type :ignore
+                and local_confidence >= contrastive_completeness_threshold
                 and deletion_predictions[i].classification != target
             ):
                 positions.contrastive_position = i
-                # return positions
     return positions
-
-    #         return i, None
-    # return None
-    # else:
-    #     for i in range(0, len(insertion_predictions)):
-    #         if rounding is not None:
-    #             local_confidence = round(insertion_predictions[i].confidence, rounding)  # type: ignore
-    #         else:
-    #             local_confidence = insertion_predictions[i].confidence
-    #         if (
-    #             not sufficient_found
-    #             and insertion_predictions[i].classification == target
-    #             and insertion_predictions[i].confidence >= threshold  # type: ignore
-    #         ):
-    #             return i, True
-    #         elif (
-    #             insertion_predictions[i].classification == target
-    #             and local_confidence >= threshold  # type: ignore
-    #             and deletion_predictions[i].classification != target
-    #         ):
-    #             return i, None
-    #     return None, None
 
 
 def find_complete_prediction(

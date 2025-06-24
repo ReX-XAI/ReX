@@ -94,9 +94,14 @@ def update_database(
             inverse_classification = explanation.contrastive_classification
             inverse_confidence = explanation.contrastive_confidence
         if hasattr(explanation, "complete_mask"):
-            complete_mask = try_detach(explanation.complete_mask)
-            complete_confidence = explanation.completeness_confidence
-            complete_classification = explanation.completeness_classification
+            if explanation.complete_mask is None:
+                complete_mask = None
+                complete_confidence = None
+                complete_classification = None
+            else:
+                complete_mask = try_detach(explanation.complete_mask)
+                complete_confidence = explanation.completeness_confidence
+                complete_classification = explanation.completeness_classification
 
         explanation_confidence = explanation.sufficiency_confidence
 
@@ -126,9 +131,9 @@ def update_database(
             insertion_curve,
             deletion_curve,
             time_taken,
-            explanation.run_stats["total_passing"],
-            explanation.run_stats["total_failing"],
-            explanation.run_stats["max_depth_reached"],
+            int(explanation.run_stats["total_passing"]),
+            int(explanation.run_stats["total_failing"]),
+            int(explanation.run_stats["max_depth_reached"]),
             explanation.run_stats["avg_box_size"],
         )
 
@@ -164,9 +169,9 @@ def update_database(
                         insertion_curve,
                         deletion_curve,
                         time_taken,
-                        explanation.run_stats["total_passing"],
-                        explanation.run_stats["total_failing"],
-                        explanation.run_stats["max_depth_reached"],
+                        int(explanation.run_stats["total_passing"]),
+                        int(explanation.run_stats["total_failing"]),
+                        int(explanation.run_stats["max_depth_reached"]),
                         explanation.run_stats["avg_box_size"],
                         multi_no=c,
                     )
