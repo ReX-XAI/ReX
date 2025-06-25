@@ -90,6 +90,8 @@ class Explanation:
         self.blank()
         if self.args.strategy == Strategy.Global:
             self.__global()
+        if self.args.strategy == Strategy.Contrastive:
+            self.contrastive()
         if self.args.strategy == Strategy.Spatial:
             if self.data.mode == "spectral":
                 logger.warning(
@@ -507,8 +509,8 @@ class Explanation:
                 positions: ReXPositions = find_required_prediction(
                     self.data.target.classification,  # type: ignore
                     target_confidence,
-                    contrastive_completeness_threshold,
                     sufficient,
+                    contrastive_completeness_threshold,
                     contrastive,
                     rounding=rounding,
                     sufficiency_found=sufficient_found,

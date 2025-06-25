@@ -12,6 +12,7 @@ from rex_xai.input.input_data import Data
 from rex_xai.output import visualisation
 from rex_xai.responsibility.prediction import default_prediction_function
 from rex_xai.responsibility.resp_maps import ResponsibilityMaps
+from rex_xai.utils._utils import Strategy
 
 
 class ReX:
@@ -96,7 +97,7 @@ class ReX:
             self.stats = stats
             return self
 
-    def get_explanation(self):
+    def generate_explanation_object(self):
         if self.data is not None and self.maps is not None and self.stats is not None:
             self.explanation = Explanation(
                 self.maps,
@@ -105,18 +106,47 @@ class ReX:
                 self.args,
                 self.stats,
             )
+        return self
 
-    def extract(self):
+    def extract_sufficient_explanation(self):
         if self.explanation is not None:
             self.explanation.extract()
         else:
-            self.get_explanation
+            self.generate_explanation_object().explanation.extract()  # type: ignore
+
+    def extract_contrastive_explanation(self):
+        self.args.strategy = Strategy.Contrastive
+        self.args.complete = False
+        self.generate_explanation_object().explanation.extract()
+
+    def extract_complete_explanation(self):
+        self.args.strategy = Strategy.Contrastive
+        self.args.complete = True
+        self.generate_explanation_object().explanation.extract()
 
     def rerun_with(self, new_args: CausalArgs):
         self.calculate_responsibility(args=new_args)
 
     def show(self):
-        if self.explanation is not None:
+        if self.explanation is not None and self.data is not None:
+            if self.mode == "RGB":
+                if self.args.complete:
+                    return visualisation.save_complete(
+                        self.explanation, self.data, self.args
+                    )
+                if self.args.strategy == Strategy.Contrastive:
+                    return visualisation.save_contrastive(
+                        self.explanation, self.data, self.args
+                    )
+                elif self.args.strategy == Strategy.Global:
+                    return visualisation.save_image(
+                        self.explanation.sufficiency_mask,  # type: ignore
+                        self.data,
+                        self.args,  # type: ignore
+                    )
+                else:
+                    pass
+
             if self.mode == "spectral":
                 visualisation.spectral_plot(
                     self.explanation.sufficiency_mask,

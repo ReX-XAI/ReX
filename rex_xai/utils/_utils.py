@@ -61,8 +61,8 @@ def try_rounding(n, rounding: int | None) -> float:
 def find_required_prediction(
     target: int,
     threshold: float,
-    contrastive_completeness_threshold: float,
     insertion_predictions: List[Prediction],
+    contrastive_completeness_threshold: float = 0.0,
     deletion_predictions: List[Prediction] | None = None,
     rounding=None,
     sufficiency_found=False,
