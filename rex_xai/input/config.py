@@ -198,21 +198,26 @@ class CausalArgs(Args):
             self.chunk_size = self.min_box_size
 
     def __repr__(self) -> str:
-        return (
-            "Causal Args <"
-            + Args.__repr__(self)
-            + f"config_location: {self.config_location}, "
-            + f"mask_value: {self.mask_value}, "
-            + f"tree_depth: {self.tree_depth}, search_limit: {self.search_limit}, "
-            + f"min_box_size: {self.min_box_size}, weighted: {self.weighted}, "
-            + f"confidence_filter: {self.confidence_filter}, "
-            + f"negative_responsibility: {self.negative_responsibility}, "
-            + f"data_locations: {self.data_location}, distribution: {self.distribution}, "
-            + f"distribution_args: {self.distribution_args}, "
-            + f"queue_len: {self.queue_len}, queue_style {self.queue_style}, "
-            + f"concentrate: {self.concentrate}, responsibility style {self.responsibility_style}, "
-            + f"iterations: {self.iters}>"
-        )
+        causal_args_str = {
+            "config location": self.config_location,
+            "mask value": self.mask_value,
+            "tree depth": self.tree_depth,
+            "search limit": self.search_limit,
+            "minimum box size": self.min_box_size,
+            "weighted": self.weighted,
+            "confidence filter": self.confidence_filter,
+            "negative responsibility": self.negative_responsibility,
+            "use bounding box": self.use_bounding_box,
+            "data_location": self.data_location,
+            "distribution": self.distribution,
+            "distribution args": self.distribution_args,
+            "queue length": self.queue_len,
+            "queue style": self.queue_style,
+            "concentrate": self.concentrate,
+            "responsibility style": self.responsibility_style,
+            "iterations": self.iters,
+        }
+        return "CausalArgs" + pprint.pformat(causal_args_str, indent=4)
 
 
 def read_config_file(path):
