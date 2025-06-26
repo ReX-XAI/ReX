@@ -5,6 +5,7 @@ import re
 from typing import Dict
 
 import torch as tt
+from tqdm import tqdm
 
 from rex_xai.input.config import CausalArgs, Strategy
 from rex_xai.input.input_data import Data
@@ -101,9 +102,6 @@ class Explanation:
             else:
                 _ = self.__spatial()
 
-        # self.sufficiency_mask = try_detach(self.sufficiency_mask)
-        # self.target_map = try_detach(self.target_map)
-
     def blank(self):
         assert self.data.data is not None
         self.sufficiency_mask = tt.zeros(
@@ -159,56 +157,62 @@ class Explanation:
         sufficient_found = False
 
         # main loop
-        while not sufficient_found:
-            ind, chunk_pointer, exhausted = self.__build_insertion_mask(
-                ranking,
-                chunk_pointer,
-                ind,
-                insertion_mask,
-                insertion_memo,
-            )
-
-            if ind == self.args.batch_size or exhausted:
-                if exhausted:
-                    insertion_mask = insertion_mask[:ind]
-
-                sufficient = self.prediction_func(
-                    _apply_to_data(insertion_mask, self.data)
+        with tqdm(
+            total=len(ranking) // self.args.chunk_size,
+            desc="Extracting global explanation",
+        ) as pbar:
+            while not sufficient_found:
+                ind, chunk_pointer, exhausted = self.__build_insertion_mask(
+                    ranking,
+                    chunk_pointer,
+                    ind,
+                    insertion_mask,
+                    insertion_memo,
                 )
 
-                positions: ReXPositions = find_required_prediction(
-                    self.data.target.classification,  # type: ignore
-                    target_confidence,
-                    sufficient,
-                    rounding=rounding,
-                )
+                pbar.update(1)
 
-                if not positions.is_empty():
-                    if not sufficient_found:
-                        self.sufficiency_mask = (
-                            insertion_mask[positions.sufficient_position]
-                            .detach()
-                            .clone()
-                        )
-                        self.sufficiency_confidence = sufficient[
-                            positions.sufficient_position
-                        ].confidence
-                        sufficient_found = True
-                        logger.info(
-                            "a sufficient explanation for %d found with confidence %.3f",
-                            self.data.target.classification,  # type: ignore
-                            self.sufficiency_confidence,
-                        )
+                if ind == self.args.batch_size or exhausted:
+                    if exhausted:
+                        insertion_mask = insertion_mask[:ind]
 
-                        if False not in tt.unique(self.sufficiency_mask):
+                    sufficient = self.prediction_func(
+                        _apply_to_data(insertion_mask, self.data)
+                    )
+
+                    positions: ReXPositions = find_required_prediction(
+                        self.data.target.classification,  # type: ignore
+                        target_confidence,
+                        sufficient,
+                        rounding=rounding,
+                    )
+
+                    if not positions.is_empty():
+                        if not sufficient_found:
+                            self.sufficiency_mask = (
+                                insertion_mask[positions.sufficient_position]
+                                .detach()
+                                .clone()
+                            )
+                            self.sufficiency_confidence = sufficient[
+                                positions.sufficient_position
+                            ].confidence
+                            sufficient_found = True
                             logger.info(
-                                "the entire input was required to get sufficiency at %.4f confidence",
+                                "a sufficient explanation for %d found with confidence %.3f",
+                                self.data.target.classification,  # type: ignore
                                 self.sufficiency_confidence,
                             )
 
-                        return self.sufficiency_confidence
-                ind = 0
-                insertion_memo = insertion_mask[-1]
+                            if False not in tt.unique(self.sufficiency_mask):
+                                logger.info(
+                                    "the entire input was required to get sufficiency at %.4f confidence",
+                                    self.sufficiency_confidence,
+                                )
+
+                            return self.sufficiency_confidence
+                    ind = 0
+                    insertion_memo = insertion_mask[-1]
 
     def __generate_circle_coordinates(self, centre, radius: int):
         assert self.data.model_height is not None
@@ -385,73 +389,81 @@ class Explanation:
 
         chunk_pointer = len(ranking)
         ind = 1
-        while not complete_explanation_found:
-            chunk = ranking[chunk_pointer - step : chunk_pointer]
 
-            if chunk == []:
-                logger.info("the entire image is required for completeness")
-                self.complete_mask = tt.logical_xor(
-                    tt.ones(mask_shape[1:], dtype=tt.bool).to(self.data.device),
-                    self.necessity_mask.detach().clone(),  # type: ignore
-                )
-                return
+        with tqdm(
+            total=(len(ranking) - starting_pointer) // self.args.chunk_size,
+            desc="Completeness Explanation",
+        ) as pbar:
+            while not complete_explanation_found:
+                chunk = ranking[chunk_pointer - step : chunk_pointer]
 
-            for _, loc in chunk:
-                set_boolean_mask_value(
-                    insertion_mask[ind],
-                    self.data.mode,
-                    self.data.model_order,
-                    loc,
-                )
-
-            if ind == 0 and insertion_memo is not None:
-                insertion_mask[ind] = tt.logical_or(insertion_memo, insertion_mask[ind])
-            else:
-                insertion_mask[ind] = tt.logical_or(
-                    insertion_mask[ind - 1], insertion_mask[ind]
-                )
-
-            ind += 1
-            chunk_pointer -= step
-
-            if chunk_pointer <= starting_pointer:
-                exhausted = True
-
-            if ind == self.args.batch_size or exhausted:
-                if exhausted:
-                    insertion_mask = insertion_mask[:ind]
-
-                complete_predictions = self.prediction_func(
-                    _apply_to_data(insertion_mask, self.data)
-                )
-
-                position = find_complete_prediction(
-                    self.data.target.classification,  # type: ignore
-                    target_confidence,
-                    complete_predictions,
-                )
-
-                if position is not None:
+                if chunk == []:
+                    logger.info("the entire image is required for completeness")
                     self.complete_mask = tt.logical_xor(
-                        self.necessity_mask,  # type: ignore
-                        insertion_mask[position],  # type: ignore
+                        tt.ones(mask_shape[1:], dtype=tt.bool).to(self.data.device),
+                        self.necessity_mask.detach().clone(),  # type: ignore
                     )
-                    cp = self.prediction_func(
-                        _apply_to_data(self.complete_mask, self.data)
-                    )[0]
-                    self.completeness_classification = cp.classification
-                    self.completeness_confidence = cp.confidence
-                    complete_explanation_found = True
-                    logger.info(
-                        "found complete explanation for class %d. The completeness mask is class %d with confidence %.2f of size %d",
-                        self.data.target.classification,  # type: ignore
-                        self.completeness_classification,
-                        self.completeness_confidence,
-                        tt.count_nonzero(self.complete_mask)  # type: ignore
-                        // self.data.model_channels,
+                    return
+
+                for _, loc in chunk:
+                    set_boolean_mask_value(
+                        insertion_mask[ind],
+                        self.data.mode,
+                        self.data.model_order,
+                        loc,
+                    )
+
+                pbar.update(1)
+                if ind == 0 and insertion_memo is not None:
+                    insertion_mask[ind] = tt.logical_or(
+                        insertion_memo, insertion_mask[ind]
                     )
                 else:
-                    ind = 0
+                    insertion_mask[ind] = tt.logical_or(
+                        insertion_mask[ind - 1], insertion_mask[ind]
+                    )
+
+                ind += 1
+                chunk_pointer -= step
+
+                if chunk_pointer <= starting_pointer:
+                    exhausted = True
+
+                if ind == self.args.batch_size or exhausted:
+                    if exhausted:
+                        insertion_mask = insertion_mask[:ind]
+
+                    complete_predictions = self.prediction_func(
+                        _apply_to_data(insertion_mask, self.data)
+                    )
+
+                    position = find_complete_prediction(
+                        self.data.target.classification,  # type: ignore
+                        target_confidence,
+                        complete_predictions,
+                    )
+
+                    if position is not None:
+                        self.complete_mask = tt.logical_xor(
+                            self.necessity_mask,  # type: ignore
+                            insertion_mask[position],  # type: ignore
+                        )
+                        cp = self.prediction_func(
+                            _apply_to_data(self.complete_mask, self.data)
+                        )[0]
+                        self.completeness_classification = cp.classification
+                        self.completeness_confidence = cp.confidence
+                        complete_explanation_found = True
+                        logger.info(
+                            "found complete explanation for class %d. The completeness mask is class %d with confidence %.2f of size %d",
+                            self.data.target.classification,  # type: ignore
+                            self.completeness_classification,
+                            self.completeness_confidence,
+                            tt.count_nonzero(self.complete_mask)  # type: ignore
+                            // self.data.model_channels,
+                        )
+                    else:
+                        ind = 0
 
     def contrastive(self):
         rounding = 4
@@ -482,130 +494,124 @@ class Explanation:
         chunk_pointer = 0
         ind = 0
 
-        while not contrastive_found:
-            ind, chunk_pointer, exhausted = self.__build_contrastive_masks(
-                ranking,
-                ind,
-                chunk_pointer,
-                insertion_mask,
-                insertion_memo,
-                deletion_mask,
-                deletion_memo,
-            )
-
-            # we have filled insertion_mask and deletion_mask with test cases, now time to test
-            if ind == self.args.batch_size or exhausted:
-                if exhausted:
-                    insertion_mask = insertion_mask[:ind]
-                    deletion_mask = deletion_mask[:ind]
-
-                sufficient = self.prediction_func(
-                    _apply_to_data(insertion_mask, self.data)
-                )
-                contrastive = self.prediction_func(
-                    _apply_to_data(deletion_mask, self.data)
+        with tqdm(
+            total=len(ranking) // self.args.batch_size,
+            desc="Calculating Contrastive Explanation",
+        ) as pbar:
+            while not contrastive_found:
+                ind, chunk_pointer, exhausted = self.__build_contrastive_masks(
+                    ranking,
+                    ind,
+                    chunk_pointer,
+                    insertion_mask,
+                    insertion_memo,
+                    deletion_mask,
+                    deletion_memo,
                 )
 
-                positions: ReXPositions = find_required_prediction(
-                    self.data.target.classification,  # type: ignore
-                    target_confidence,
-                    sufficient,
-                    contrastive_completeness_threshold,
-                    contrastive,
-                    rounding=rounding,
-                    sufficiency_found=sufficient_found,
-                )
+                pbar.update(1)
+                # we have filled insertion_mask and deletion_mask with test cases, now time to test
+                if ind == self.args.batch_size or exhausted:
+                    if exhausted:
+                        insertion_mask = insertion_mask[:ind]
+                        deletion_mask = deletion_mask[:ind]
 
-                if positions.sufficient_position is not None:
-                    if not sufficient_found:
-                        sufficient_found = True
-                        self.sufficiency_mask = (
-                            insertion_mask[positions.sufficient_position]
+                    sufficient = self.prediction_func(
+                        _apply_to_data(insertion_mask, self.data)
+                    )
+                    contrastive = self.prediction_func(
+                        _apply_to_data(deletion_mask, self.data)
+                    )
+
+                    positions: ReXPositions = find_required_prediction(
+                        self.data.target.classification,  # type: ignore
+                        target_confidence,
+                        sufficient,
+                        contrastive_completeness_threshold,
+                        contrastive,
+                        rounding=rounding,
+                        sufficiency_found=sufficient_found,
+                    )
+
+                    if positions.sufficient_position is not None:
+                        if not sufficient_found:
+                            sufficient_found = True
+                            self.sufficiency_mask = (
+                                insertion_mask[positions.sufficient_position]
+                                .detach()
+                                .clone()
+                            )
+                            self.sufficiency_confidence = sufficient[
+                                positions.sufficient_position
+                            ].confidence
+                            logger.info(
+                                "a sufficient explanation for %d found with confidence %.4f of size %d",
+                                self.data.target.classification,  # type: ignore
+                                self.sufficiency_confidence,
+                                tt.count_nonzero(self.sufficiency_mask)  # type: ignore
+                                // self.data.model_channels,
+                            )
+
+                            if False not in tt.unique(self.sufficiency_mask):
+                                logger.info(
+                                    "the entire input was required to get sufficiency at %.4f confidence, so there is no independent necessity or completeness",
+                                    self.sufficiency_confidence,
+                                )
+                                self.args.strategy = Strategy.Global
+                                self.args.complete = False
+                                return
+
+                    if positions.contrastive_position is not None:
+                        contrastive_found = True
+                        self.necessity_mask = (
+                            insertion_mask[positions.contrastive_position]
                             .detach()
                             .clone()
                         )
-                        self.sufficiency_confidence = sufficient[
-                            positions.sufficient_position
+                        self.necessity_confidence = sufficient[
+                            positions.contrastive_position
                         ].confidence
+                        self.contrastive_classification = contrastive[
+                            positions.contrastive_position
+                        ].classification
+                        self.contrastive_confidence = contrastive[
+                            positions.contrastive_position
+                        ].confidence
+
                         logger.info(
-                            "a sufficient explanation for %d found with confidence %.4f of size %d",
+                            "a contrastive explanation for %d found with confidence %.3f of size %d",
                             self.data.target.classification,  # type: ignore
-                            self.sufficiency_confidence,
-                            tt.count_nonzero(self.sufficiency_mask)  # type: ignore
+                            self.necessity_confidence,
+                            tt.count_nonzero(self.necessity_mask)  # type: ignore
                             // self.data.model_channels,
                         )
 
-                        if False not in tt.unique(self.sufficiency_mask):
+                        if tt.count_nonzero(self.sufficiency_mask) == tt.count_nonzero(  # type: ignore
+                            self.necessity_mask
+                        ):
                             logger.info(
-                                "the entire input was required to get sufficiency at %.4f confidence, so there is no independent necessity or completeness",
-                                self.sufficiency_confidence,
+                                "there is no difference between sufficiency and necessity on this input"
                             )
-                            self.args.strategy = Strategy.Global
+
+                        if False not in self.necessity_mask:
+                            logger.info(
+                                "the sufficient and necessery explanation is already complete"
+                            )
                             self.args.complete = False
-                            return
 
-                if positions.contrastive_position is not None:
-                    contrastive_found = True
-                    self.necessity_mask = (
-                        insertion_mask[positions.contrastive_position].detach().clone()
-                    )
-                    self.necessity_confidence = sufficient[
-                        positions.contrastive_position
-                    ].confidence
-                    self.contrastive_classification = contrastive[
-                        positions.contrastive_position
-                    ].classification
-                    self.contrastive_confidence = contrastive[
-                        positions.contrastive_position
-                    ].confidence
+                        if self.args.complete:
+                            return self.__complete(
+                                ranking,
+                                insertion_mask,
+                                insertion_memo,
+                                mask_shape,
+                                chunk_pointer,
+                            )
+                        return
 
-                    logger.info(
-                        "a contrastive explanation for %d found with confidence %.3f of size %d",
-                        self.data.target.classification,  # type: ignore
-                        self.necessity_confidence,
-                        tt.count_nonzero(self.necessity_mask)  # type: ignore
-                        // self.data.model_channels,
-                    )
-
-                    if tt.count_nonzero(self.sufficiency_mask) == tt.count_nonzero(  # type: ignore
-                        self.necessity_mask
-                    ):
-                        logger.info(
-                            "there is no difference between sufficiency and necessity on this input"
-                        )
-
-                    if False not in self.necessity_mask:
-                        logger.info(
-                            "the sufficient and necessery explanation is already complete"
-                        )
-                        self.args.complete = False
-
-                    if self.args.complete:
-                        return self.__complete(
-                            ranking,
-                            insertion_mask,
-                            insertion_memo,
-                            mask_shape,
-                            chunk_pointer,
-                        )
-                    return
-
-                insertion_memo = insertion_mask[-1]
-                deletion_memo = deletion_mask[-1]
-                ind = 0
-
-                #     if (
-                #         self.args.complete
-                #         and self.necessity_confidence < self.data.target.confidence  # type: ignore
-                #     ):
-                #         target_confidence = self.data.target.confidence  # type: ignore
-                #         logger.info(
-                #             "trying to find a contrastive explanation of confidence at least %.3f",
-                #             target_confidence,
-                #         )
-                #     else:
-                #         # exit main loop as we have succeeded
-                #         contrastive_found = True
+                    insertion_memo = insertion_mask[-1]
+                    deletion_memo = deletion_mask[-1]
+                    ind = 0
 
     def save(self, path, mask=None):
         assert self.sufficiency_mask is not None

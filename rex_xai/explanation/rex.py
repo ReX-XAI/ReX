@@ -274,7 +274,10 @@ def analyze(exp: Explanation, data_mode: str | None) -> Dict[str, float]:
 
     """
     eval = Evaluation(exp)
+
     rat = eval.ratio()
+
+    good, bad = eval.robustness()
     ent = None
     max_ent = None
     if data_mode == "RGB":
@@ -289,6 +292,7 @@ def analyze(exp: Explanation, data_mode: str | None) -> Dict[str, float]:
     analysis_results = {
         "area": rat,
         "entropy": ent,
+        "robustness": good / (good + bad),
         "max_entropy": max_ent,
         "insertion_curve": iauc,
         "deletion_curve": dauc,
@@ -358,10 +362,7 @@ def _explanation(
     else:
         exp = Explanation(resp_object, prediction_func, data, args, run_stats)
         if not args.no_extract:
-            if args.strategy == Strategy.Contrastive:
-                exp.contrastive()
-            else:
-                exp.extract()
+            exp.extract()
 
     assert exp is not None
     results = None
@@ -383,14 +384,14 @@ def _explanation(
             else:
                 if args.analyse == "print":
                     print(
-                        f"INFO:ReX:path {args.path}, classification {exp.data.target.classification}, area {results['area']}, responsibility entropy {results['entropy']},",  # type: ignore
+                        f"INFO:ReX:path {args.path}, classification {exp.data.target.classification}, area {results['area']}, responsibility entropy {results['entropy']}, robustness {results['robustness']}",  # type: ignore
                         f"insertion curve {results['insertion_curve']}, deletion curve {results['deletion_curve']}, time {time_taken}",
                     )
                 else:
                     assert exp.data.target is not None
                     with open(args.analyse, "a") as out:
                         out.write(
-                            f"{args.path},{exp.data.target.classification},{results['area']},{results['entropy']},{results['insertion_curve']},{results['deletion_curve']},{time_taken}\n"
+                            f"{args.path},{exp.data.target.classification},{results['area']},{results['entropy']},{results['robustness']},{results['insertion_curve']},{results['deletion_curve']},{time_taken}\n"
                         )
 
     else:
