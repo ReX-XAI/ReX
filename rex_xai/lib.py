@@ -117,12 +117,12 @@ class ReX:
     def extract_contrastive_explanation(self):
         self.args.strategy = Strategy.Contrastive
         self.args.complete = False
-        self.generate_explanation_object().explanation.extract()
+        self.generate_explanation_object().explanation.extract()  # type: ignore
 
     def extract_complete_explanation(self):
         self.args.strategy = Strategy.Contrastive
         self.args.complete = True
-        self.generate_explanation_object().explanation.extract()
+        self.generate_explanation_object().explanation.extract()  # type: ignore
 
     def rerun_with(self, new_args: CausalArgs):
         self.calculate_responsibility(args=new_args)
