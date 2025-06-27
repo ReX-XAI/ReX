@@ -5,6 +5,7 @@
 import argparse
 import importlib.util
 import os
+from tabulate import tabulate
 import pprint
 from os.path import exists, expanduser
 from types import ModuleType
@@ -161,8 +162,8 @@ class Args:
             "insertion_step": self.insertion_step,
             "normalise_curves": self.normalise_curves,
         }
-        return "Args" + pprint.pformat(args_str, indent=4)
-
+        table = tabulate(causal_args_str.items(), headers=["Argument", "Value"], tablefmt="fancy_grid")
+        return f"Args:\n{table}"
 
 class CausalArgs(Args):
     """Creates a causal args object"""
@@ -217,7 +218,8 @@ class CausalArgs(Args):
             "responsibility style": self.responsibility_style,
             "iterations": self.iters,
         }
-        return "CausalArgs" + pprint.pformat(causal_args_str, indent=4)
+        table = tabulate(causal_args_str.items(), headers=["Argument", "Value"], tablefmt="fancy_grid")
+        return f"Args:\n{table}"
 
 
 def read_config_file(path):
