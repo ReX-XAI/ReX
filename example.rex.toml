@@ -1,10 +1,11 @@
 [rex]
 # masking value for mutations, can be either an integer, float or
-# one of the following built-in occlusions 'spectral', 'min', 'mean'
+# one of the following built-in occlusions 'spectral', 'min', 'mean', 'linear', 'random', 'context'
 # mask_value = 0
 
 # random seed, only set for reproducibility
 # seed = 0
+
 # whether to use gpu or not, defaults to true
 # gpu = true
 
