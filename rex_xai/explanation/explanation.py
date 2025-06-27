@@ -579,8 +579,9 @@ class Explanation:
                         ].confidence
 
                         logger.info(
-                            "a contrastive explanation for %d found with confidence %.3f of size %d",
+                            "a contrastive explanation for %d (now %d) found with confidence %.3f of size %d",
                             self.data.target.classification,  # type: ignore
+                            self.contrastive_classification,
                             self.necessity_confidence,
                             tt.count_nonzero(self.necessity_mask)  # type: ignore
                             // self.data.model_channels,
