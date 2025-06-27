@@ -666,14 +666,9 @@ def get_all_args():
 def validate_args(args: CausalArgs):
     """Validates a CausalArgs object.
 
-    Checks that ``args.path`` is not None, that boolean args are boolean, and that numeric args fall within correct bounds.
-
     Args:
         args: configuration values for ReX
     """
-
-    # if args.path is None:
-    #     raise FileNotFoundError("Input file path cannot be None")
 
     # values that must be between 0 and 1
     for arg in [
