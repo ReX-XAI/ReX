@@ -605,6 +605,7 @@ def process_cmd_args(cmd_args, args):
     if cmd_args.multi is not None:
         args.strategy = Strategy.MultiSpotlight
         args.spotlights = int(cmd_args.multi)
+        args.responsibility_style = "additive"
 
     if cmd_args.contrastive:
         args.strategy = Strategy.Contrastive

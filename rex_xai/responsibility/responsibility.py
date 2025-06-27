@@ -116,6 +116,17 @@ def causal_explanation(
         np.random.seed(args.seed + process)
         tt.manual_seed(args.seed + process)
 
+    if args.mask_value in ("random", "linear"):
+        lower = tt.min(data.data).item()  # type: ignore
+        upper = tt.max(data.data).item()  # type: ignore
+
+        if args.mask_value == "random":
+            data.mask_value = np.random.uniform(lower, upper)
+        else:
+            steps = np.linspace(lower, upper, args.iters)
+            data.mask_value = steps[process - 1]  # type: ignore
+        logger.info("using %.3f for process %d", data.mask_value, process)
+
     search_tree = initialise_tree(
         data.model_height,
         data.model_width,

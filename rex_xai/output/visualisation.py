@@ -205,6 +205,8 @@ def surface_plot(
         if ranking is not None:
             ax = fig.add_subplot(rows, cols, i + 1, projection="3d")
 
+            ax.zaxis.set_ticklabels([])  # type: ignore
+
             ax.plot_surface(  # type: ignore
                 _x, _y, np.atleast_2d(0), rstride=5, cstride=5, facecolors=img
             )

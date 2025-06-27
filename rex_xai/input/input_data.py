@@ -231,6 +231,10 @@ class Data:
                 )
             case "none":
                 self.mask_value = tt.nan
+            case "random":
+                self.mask_value = 0
+            case "linear":
+                self.mask_value = 0
             case "context":
                 if isinstance(self.context, tt.Tensor):
                     self.mask_value = lambda m, d: context_occlusion(m, d, self.context)  # type: ignore

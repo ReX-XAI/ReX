@@ -124,6 +124,9 @@ class ReX:
         self.args.complete = True
         self.generate_explanation_object().explanation.extract()  # type: ignore
 
+    def analyse(self):
+        pass
+
     def rerun_with(self, new_args: CausalArgs):
         self.calculate_responsibility(args=new_args)
 

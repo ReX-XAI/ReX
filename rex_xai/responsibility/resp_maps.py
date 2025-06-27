@@ -136,6 +136,7 @@ class ResponsibilityMaps:
 
                     if data.mode == "spectral":
                         section = resp_map[0, box.col_start : box.col_stop]
+
                     elif data.mode == "RGB":
                         section = resp_map[
                             box.row_start : box.row_stop,
@@ -151,6 +152,7 @@ class ResponsibilityMaps:
                         logger.warning("not yet implemented")
                         raise NotImplementedError
 
+                    # section *= local_r
                     section += local_r
             self.maps[k] = resp_map
 
