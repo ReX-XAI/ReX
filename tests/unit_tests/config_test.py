@@ -1,9 +1,10 @@
 import copy
 
 import pytest
-from rex_xai.utils._utils import Queue, Strategy
+
 from rex_xai.input.config import CausalArgs, process_config_dict, read_config_file
 from rex_xai.mutants.distributions import Distribution
+from rex_xai.utils._utils import Queue, ResponsibilityStyle, Strategy
 
 
 @pytest.fixture
@@ -24,7 +25,6 @@ def non_default_args():
     non_default_args.colour = 150
     non_default_args.alpha = 0.1
     non_default_args.raw = True
-    non_default_args.resize = True
     non_default_args.progress_bar = False
     non_default_args.grid = True
     non_default_args.mark_segments = True
@@ -40,6 +40,7 @@ def non_default_args():
     non_default_args.queue_style = Queue.Intersection
     non_default_args.queue_len = 2
     non_default_args.concentrate = True
+    non_default_args.responsibility_style = ResponsibilityStyle.Additive
     # causal.distribution
     non_default_args.distribution = Distribution.BetaBinomial
     non_default_args.blend = 0.5
@@ -78,6 +79,7 @@ def test_process_config_dict_empty():
     args = CausalArgs()
     config_dict = {}
     orig_args = copy.deepcopy(args)
+    orig_args.responsibility_style = ResponsibilityStyle.Multiplicative
 
     process_config_dict(config_dict, args)
 
@@ -182,7 +184,7 @@ def test_process_config_dict_strategy_invalid(caplog):
 
     process_config_dict(config_dict, args)
     assert (
-            caplog.records[0].message
-            == "Invalid strategy 'an-invalid-strategy', reverting to default value Strategy.Global"
-        )
+        caplog.records[0].message
+        == "Invalid strategy 'an-invalid-strategy', reverting to default value Strategy.Global"
+    )
     assert args.strategy == Strategy.Global
