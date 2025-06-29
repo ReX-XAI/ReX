@@ -68,4 +68,4 @@ def context_occlusion(mask: tt.Tensor, data: tt.Tensor, context: tt.Tensor, nois
         context = tt.tensor(gaussian_filter(context, sigma=noise), dtype=tt.float32).to(
             device
         )
-    return tt.where(mask == 0, context, data)
+    return tt.where(mask == False, context, data)

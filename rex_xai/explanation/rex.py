@@ -115,7 +115,7 @@ def load_and_preprocess_data(
             data = args.script.preprocess(args.path, model_shape, device)
             if args.context_location is not None:
                 data.context = args.script.preprocess(
-                    args.context_location, model_shape, device, mode=args.mode
+                    args.context_location, model_shape, device
                 ).data.to(device)
         else:
             raise ReXScriptError(

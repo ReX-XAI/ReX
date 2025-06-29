@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch as tt
 from PIL import Image, ImageDraw
+from matplotlib.figure import Figure
 from scipy.ndimage import center_of_mass
 from skimage.segmentation import slic
 from torch import Tensor
@@ -753,12 +754,17 @@ def save_image(mask: tt.Tensor | np.ndarray, data: Data, args: CausalArgs, path=
             out = np.where(mask, img, 0).squeeze(0)  # 0 used to mask image with black
             out = Image.fromarray(out, data.mode)
         elif args.mask_value == "context":
-            if path is not None:
-                plt.imshow(mask, cmap="gray")
-                plt.axis("off")
-                plt.savefig(path)
-                plt.close()
-            return mask
+            # Use preprocessed context and data as shape needs to match
+            if isinstance(data.context, tt.Tensor):
+                data.context = data.context.squeeze().detach().cpu().numpy()
+            if isinstance(data.data, tt.Tensor):
+                data.data = data.data.squeeze().detach().cpu().numpy()
+            context = __transpose_mask(data.context, data.mode)
+            img = __transpose_mask(data.data, data.mode)
+            fig = np.where(mask == False, context, img)
+            out, ax = plt.subplots()
+            ax.imshow(fig)
+            ax.axis("off")
         else:
             exp = np.where(mask, img, args.colour)
             exp = Image.fromarray(exp, "RGB")
@@ -774,7 +780,10 @@ def save_image(mask: tt.Tensor | np.ndarray, data: Data, args: CausalArgs, path=
                 out = overlay_grid(out)
 
         if path is not None:
-            out.save(path)
+            if isinstance(out, Figure):
+                out.savefig(path, dpi=300, pad_inches=0)
+            else:
+                out.save(path)
             logger.info(f"Saved explanation to {path}")
 
         return out
