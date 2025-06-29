@@ -106,63 +106,15 @@ class Args:
         self.insertion_step = 100
         self.normalise_curves = True
 
-    def __repr__(self) -> str:
-        args_str = {
-            "file": self.path,
-            "mode": self.mode,
-            "model": self.model,
-            "shape": self.shape,
-            "db": self.db,
-            "gpu": self.gpu,
-            "seed": self.seed,
-            "script": self.script,
-            "script_location": self.script_location,
-            "processed": self.processed,
-            "context": self.context,
-            "context_location": self.context_location,
-            "occlusion_noise": self.occlusion_noise,
-            "mean": self.means,
-            "std": self.stds,
-            "norm": self.norm,
-            "binary_threshold": self.binary_threshold,
-            "intra_op_num_threads": self.intra_op_num_threads,
-            "inter_op_num_threads": self.inter_op_num_threads,
-            "ort_logger": self.ort_logger,
-            "verbosity": self.verbosity,
-            "progress_bar": self.progress_bar,
-            "output": self.output,
-            "surface": self.surface,
-            "heatmap": self.heatmap,
-            "info": self.info,
-            "raw": self.raw,
-            "colour": self.colour,
-            "mark_segments": self.mark_segments,
-            "alpha": self.alpha,
-            "all": self.all,
-            "resize": self.resize,
-            "grid": self.grid,
-            "heatmap_colours": self.heatmap_colours,
-            "multi_style": self.multi_style,
-            "no_extract": self.no_extract,
-            "explanation strategy": self.strategy,
-            "complete": self.complete,
-            "chunk_size": self.chunk_size,
-            "minimum_confidence_threshold": self.minimum_confidence_threshold,
-            "batch_size": self.batch_size,
-            "spatial_initial_radius": self.spatial_initial_radius,
-            "spatial_radius_eta": self.spatial_radius_eta,
-            "spotlights": self.spotlights,
-            "spotlight_size": self.spotlight_size,
-            "spotlight_eta": self.spotlight_eta,
-            "spotlight_step": self.spotlight_step,
-            "spotlight_objective_function": self.spotlight_objective_function,
-            "max_spotlight_budget": self.max_spotlight_budget,
-            "permitted_overlap": self.permitted_overlap,
-            "analyse": self.analyse,
-            "insertion_step": self.insertion_step,
-            "normalise_curves": self.normalise_curves,
+    def get_dict_repr(self):
+        return {
+            k.replace("_", " "): v
+            for k, v in self.__dict__.items()
+            if not k.startswith("_") and not callable(v)
         }
-        table = tabulate(causal_args_str.items(), headers=["Argument", "Value"], tablefmt="fancy_grid")
+
+    def __repr__(self) -> str:
+        table = tabulate(self.get_dict_repr().items(), headers=["Argument", "Value"], tablefmt="fancy_grid")
         return f"Args:\n{table}"
 
 class CausalArgs(Args):
@@ -198,27 +150,15 @@ class CausalArgs(Args):
         if self.min_box_size is not None:
             self.chunk_size = self.min_box_size
 
-    def __repr__(self) -> str:
-        causal_args_str = {
-            "config location": self.config_location,
-            "mask value": self.mask_value,
-            "tree depth": self.tree_depth,
-            "search limit": self.search_limit,
-            "minimum box size": self.min_box_size,
-            "weighted": self.weighted,
-            "confidence filter": self.confidence_filter,
-            "negative responsibility": self.negative_responsibility,
-            "use bounding box": self.use_bounding_box,
-            "data_location": self.data_location,
-            "distribution": self.distribution,
-            "distribution args": self.distribution_args,
-            "queue length": self.queue_len,
-            "queue style": self.queue_style,
-            "concentrate": self.concentrate,
-            "responsibility style": self.responsibility_style,
-            "iterations": self.iters,
+    def get_dict_repr(self):
+        return {
+            k.replace("_", " "): v
+            for k, v in self.__dict__.items()
+            if not k.startswith("_") and not callable(v)
         }
-        table = tabulate(causal_args_str.items(), headers=["Argument", "Value"], tablefmt="fancy_grid")
+
+    def __repr__(self) -> str:
+        table = tabulate(self.get_dict_repr().items(), headers=["Argument", "Value"], tablefmt="fancy_grid")
         return f"Args:\n{table}"
 
 
