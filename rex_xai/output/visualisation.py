@@ -752,6 +752,7 @@ def save_image(explanation, data: Data, args: CausalArgs, path=None, mask=None):
 
             if path is not None:
                 out.save(path)
+                logger.info(f"Saved explanation to {path}")
 
             return out
 
@@ -782,6 +783,7 @@ def save_image(explanation, data: Data, args: CausalArgs, path=None, mask=None):
 
         if args.output is not None:
             plt.savefig(args.output)
+            logge
         else:
             plt.show()
 

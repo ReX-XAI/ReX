@@ -9,7 +9,7 @@ import numpy as np
 model = YOLO("yolo11n.pt")
 path = "tests/test_data/dog_hide.jpg" # Change this later
 
-def preprocess(path, shape, device, mode) -> Data:
+def preprocess(path, shape, device) -> Data:
     img = Image.open(path).convert("RGB")
     tensor = tt.tensor(np.asarray(img), dtype=tt.float32).to(device)
     data = Data(img, shape, device, mode=mode, process=False)
@@ -49,6 +49,5 @@ def prediction_function(mutants, target=None, raw=False, binary_threshold=None):
         tensor = model(mutants.cpu().numpy(), verbose=False)
         return yolo_result_to_pred(tensor, target)
 
-def model_shape():
-    img = Image.open(path)
-    return ["N", img.height, img.width, 3]
+img = Image.open(path)
+model_shape = ["N", img.height, img.width, 3]

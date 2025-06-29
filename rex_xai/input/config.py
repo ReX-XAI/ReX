@@ -89,6 +89,7 @@ class Args:
         self.chunk_size = 25
         self.minimum_confidence_threshold = 0.0
         self.batch_size: int = 1
+        self.multi_class: bool = False # whether to provide multi-class or single class explanations
         # args for spatial strategy
         self.spatial_initial_radius: int = 25
         self.spatial_radius_eta: float = 0.2
@@ -513,7 +514,7 @@ def process_config_dict(config_file_args, args):
             "use_bounding_box",
         ],
         "distribution": ["distribution", "blend", "distribution_args"],
-        "explanation": ["chunk_size", "minimum_confidence_threshold"],
+        "explanation": ["chunk_size", "minimum_confidence_threshold", "multi_class"],
         "spatial": ["spatial_initial_radius", "spatial_radius_eta", "no_expansions"],
         "multi": [
             "strategy",
@@ -743,6 +744,7 @@ def validate_args(args: CausalArgs):
         "concentrate",
         "normalise_curves",
         "use_bounding_box",
+        "multi_class",
     ]:
         val = getattr(args, arg)
         if val is not None:
