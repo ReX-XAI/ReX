@@ -16,13 +16,13 @@ except ImportError:
     from anytree.search import find
 
 
-from rex_xai.mutants.box import average_box_size, initialise_tree
 from rex_xai.input.config import CausalArgs, Queue
 from rex_xai.input.input_data import Data
-from rex_xai.utils.logger import logger
-from rex_xai.mutants.mutant import Mutant, get_combinations, _apply_to_data
-from rex_xai.responsibility.resp_maps import ResponsibilityMaps
+from rex_xai.mutants.box import average_box_size, initialise_tree
+from rex_xai.mutants.mutant import Mutant, _apply_to_data, get_combinations
 from rex_xai.responsibility.prediction import Prediction
+from rex_xai.responsibility.resp_maps import ResponsibilityMaps
+from rex_xai.utils.logger import logger
 
 
 def subbox(tree, name, max_depth, min_size, mode, r_map=None):
@@ -115,6 +115,17 @@ def causal_explanation(
     if args.seed is not None:
         np.random.seed(args.seed + process)
         tt.manual_seed(args.seed + process)
+
+    if args.mask_value in ("random", "linear"):
+        lower = tt.min(data.data).item()  # type: ignore
+        upper = tt.max(data.data).item()  # type: ignore
+
+        if args.mask_value == "random":
+            data.mask_value = np.random.uniform(lower, upper)
+        else:
+            steps = np.linspace(lower, upper, args.iters)
+            data.mask_value = steps[process - 1]  # type: ignore
+        logger.info("using %.3f for process %d", data.mask_value, process)
 
     if args.use_bounding_box:
         assert data.target.bounding_box is not None

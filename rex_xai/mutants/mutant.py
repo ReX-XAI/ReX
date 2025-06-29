@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import numbers
 from typing import List, Optional
+
 import numpy as np
 import torch as tt
 from PIL import Image  # type: ignore
@@ -11,11 +12,12 @@ except ImportError:
     from anytree.search import find
 
 import matplotlib.pyplot as plt
+
+from rex_xai.input.input_data import Data
 from rex_xai.mutants.box import Box
 from rex_xai.responsibility.prediction import Prediction
+from rex_xai.utils._utils import add_boundaries, set_boolean_mask_value, try_detach
 from rex_xai.utils.logger import logger
-from rex_xai.input.input_data import Data
-from rex_xai.utils._utils import add_boundaries, set_boolean_mask_value
 
 __combinations = [
     [
@@ -44,13 +46,12 @@ __combinations = [
 
 
 def _apply_to_data(mask, data: Data):
-    # def _apply_to_data(mask, data: Data, masking_func):
     if callable(data.mask_value):
         return data.mask_value(mask, data.data)
-        # return data.masking_func(mask, data.data)
     if isinstance(data.mask_value, numbers.Number):
-        return tt.where(mask, data.data, data.mask_value)
+        return tt.where(mask, data.data, data.mask_value)  # type: ignore
 
+    print(data.mask_value)
     logger.warning("applying default masking value of 0")
     return tt.where(mask, data.data, 0)  # type: ignore
 
@@ -118,20 +119,20 @@ class Mutant:
         set_boolean_mask_value(self.mask, self.mode, self.order, box)
 
     def apply_to_data(self, data: Data):
-        return _apply_to_data(self.mask, data, self.masking_func)
+        return _apply_to_data(self.mask, data)
 
     def save_mutant(self, data: Data, name=None, segs=None):
         if data.mode == "RGB":
-            # m = np.array(data.input)
             m = np.array(data.input)
-            mask = self.mask.squeeze().detach().cpu().numpy()
+            mask = try_detach(self.mask).squeeze()
+
             if data.transposed:
                 # if transposed, we have C * H * W, so change that to H * W * C
                 m = np.where(mask, m.transpose((2, 0, 1)), 0)
                 m = m.transpose((1, 2, 0))
             else:
-                # TODO m = m.transpose((0, 2, 1))
-                m = np.where(mask, m, 255)
+                mask = mask.transpose((1, 2, 0))
+                m = np.where(mask, m, 0)
             # draw on the segment_mask, if available
             if segs is not None:
                 m = add_boundaries(m, segs)

@@ -1,12 +1,7 @@
 import pytest
-from rex_xai.utils._utils import ReXTomlError
+
 from rex_xai.input.config import CausalArgs, validate_args
-
-
-def test_no_path(args):
-    args.path = None  #  type: ignore
-    with pytest.raises(FileNotFoundError):
-        validate_args(args)
+from rex_xai.utils._utils import ReXTomlError
 
 
 def test_blend_invalid(caplog):

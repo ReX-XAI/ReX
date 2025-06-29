@@ -78,7 +78,6 @@ class Args:
         self.mark_segments = False
         self.alpha = 0.2
         self.all = False
-        self.resize = False
         self.grid = False
         self.heatmap_colours = "magma"
         self.multi_style = "composite"
@@ -492,7 +491,6 @@ def process_config_dict(config_file_args, args):
             "colour",
             "alpha",
             "raw",
-            "resize",
             "progress_bar",
             "grid",
             "mark_segments",
@@ -613,6 +611,7 @@ def process_cmd_args(cmd_args, args):
     if cmd_args.multi is not None:
         args.strategy = Strategy.MultiSpotlight
         args.spotlights = int(cmd_args.multi)
+        args.responsibility_style = "additive"
 
     if cmd_args.contrastive:
         args.strategy = Strategy.Contrastive
@@ -682,14 +681,9 @@ def get_all_args():
 def validate_args(args: CausalArgs):
     """Validates a CausalArgs object.
 
-    Checks that ``args.path`` is not None, that boolean args are boolean, and that numeric args fall within correct bounds.
-
     Args:
         args: configuration values for ReX
     """
-
-    # if args.path is None:
-    #     raise FileNotFoundError("Input file path cannot be None")
 
     # makes sure file exists at path
     if not os.path.isfile(args.path):
@@ -737,7 +731,6 @@ def validate_args(args: CausalArgs):
         "info",
         "progress_bar",
         "raw",
-        "resize",
         "grid",
         "mark_segments",
         "weighted",

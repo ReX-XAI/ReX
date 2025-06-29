@@ -1,6 +1,8 @@
 #!/usr/bin/env python
+from __future__ import annotations
+
 from enum import Enum
-from typing import Optional
+from typing import List, Optional, Tuple
 
 import numpy as np
 import torch as tt
@@ -27,13 +29,13 @@ class Data:
     def __init__(
         self,
         input,
-        model_shape,
+        model_shape: Tuple | List,
         device: str | tt.device = "cpu",
         mode=None,
         process=False,
     ) -> None:
         self.input = input
-        self.mode = None
+        self.mode: str | None = None
         self.target: Optional[Prediction] = None
         self.device = device
         self.setup: Optional[Setup] = None
@@ -43,7 +45,7 @@ class Data:
         if mode is None:
             self.mode = _guess_mode(input)
 
-        self.model_shape = model_shape
+        self.model_shape = list(model_shape)
         height, width, channels, order, depth = self.__get_shape()
         self.model_height: Optional[int] = height
         self.model_width: Optional[int] = width
@@ -230,6 +232,10 @@ class Data:
                 )
             case "none":
                 self.mask_value = tt.nan
+            case "random":
+                self.mask_value = 0
+            case "linear":
+                self.mask_value = 0
             case "context":
                 self.mask_value = lambda m, d: context_occlusion(
                     m, d, self.context, self.context_noise

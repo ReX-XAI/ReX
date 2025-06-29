@@ -4,7 +4,7 @@ tmp/
 yolo/
 typings/
 results/
-scripts/
+# scripts/
 dist/
 ReX.egg-info/
 local/
@@ -45,9 +45,6 @@ rex_ai.egg-info/*
 .coverage
 
 docs/_build/
-.jupyter
-.ipynb_checkpoints/
-*.ipynb
 
 .DS_Store
 .AppleDouble
@@ -55,6 +52,7 @@ docs/_build/
 
 # Icon must end with two \r
 Icon
+Icon*
 
 # Thumbnails
 ._*

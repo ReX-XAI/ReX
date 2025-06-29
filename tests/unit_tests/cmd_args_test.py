@@ -1,13 +1,14 @@
 from types import ModuleType
 
 import pytest
-from rex_xai.utils._utils import Strategy
+
 from rex_xai.input.config import (
     CausalArgs,
     cmdargs_parser,
     process_cmd_args,
     shared_args,
 )
+from rex_xai.utils._utils import Strategy
 
 
 @pytest.fixture
@@ -39,6 +40,8 @@ def non_default_cmd_args():
         "--analyse",
         "--mode",
         "RGB",
+        "--confidence",
+        "1.0",
     ]
     parser = cmdargs_parser()
     cmd_args = parser.parse_args(args_list)
@@ -71,6 +74,7 @@ def test_process_shared_args(non_default_cmd_args):
     assert args.db == non_default_cmd_args.database
     assert args.mode == non_default_cmd_args.mode
     assert args.processed == non_default_cmd_args.processed
+    assert args.minimum_confidence_threshold == non_default_cmd_args.confidence
 
 
 def test_quiet_overrides_verbose():

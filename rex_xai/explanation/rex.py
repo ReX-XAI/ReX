@@ -1,12 +1,13 @@
 #!/usr/bin/env python
-# from __future__ import annotations
+from __future__ import annotations
+
 """main logical entrypoint for ReX."""
 
 import copy
 import os
 import sys
 import time
-from typing import List, Tuple, Union
+from typing import Callable, Dict, List, Tuple, Union
 
 import numpy as np
 import torch as tt
@@ -268,7 +269,7 @@ def calculate_responsibility(
     return maps, run_stats
 
 
-def analyze(exp: Explanation, data_mode: str | None):
+def analyze(exp: Explanation, data_mode: str | None) -> Dict[str, float]:
     """Analyzes an Explanation.
 
     Analyzes the area ratio, entropy difference, insertion and deletion curves for an
@@ -289,7 +290,10 @@ def analyze(exp: Explanation, data_mode: str | None):
 
     """
     eval = Evaluation(exp)
+
     rat = eval.ratio()
+
+    good, bad = eval.robustness()
     ent = None
     max_ent = None
     if data_mode == "RGB":
@@ -304,6 +308,7 @@ def analyze(exp: Explanation, data_mode: str | None):
     analysis_results = {
         "area": rat,
         "entropy": ent,
+        "robustness": good / (good + bad),
         "max_entropy": max_ent,
         "insertion_curve": iauc,
         "deletion_curve": dauc,
@@ -315,10 +320,10 @@ def analyze(exp: Explanation, data_mode: str | None):
 def _explanation(
     args: CausalArgs,
     model_shape: Tuple[int],
-    prediction_func,
+    prediction_func: Callable,
     device: tt.device,
     db: Session | None = None,
-    path=None,
+    path: str | None = None,
 ):
     """Takes a CausalArgs object and model information and returns a Explanation.
 
@@ -373,10 +378,7 @@ def _explanation(
     else:
         exp = Explanation(resp_object, prediction_func, data, args, run_stats)
         if not args.no_extract:
-            if args.strategy == Strategy.Contrastive:
-                exp.contrastive()
-            else:
-                exp.extract()
+            exp.extract()
 
     assert exp is not None
     results = None
@@ -398,14 +400,14 @@ def _explanation(
             else:
                 if args.analyse == "print":
                     print(
-                        f"INFO:ReX:path {args.path}, classification {exp.data.target.classification}, area {results['area']}, responsibility entropy {results['entropy']},",  # type: ignore
+                        f"INFO:ReX:path {args.path}, classification {exp.data.target.classification}, area {results['area']}, responsibility entropy {results['entropy']}, robustness {results['robustness']}",  # type: ignore
                         f"insertion curve {results['insertion_curve']}, deletion curve {results['deletion_curve']}, time {time_taken}",
                     )
                 else:
                     assert exp.data.target is not None
                     with open(args.analyse, "a") as out:
                         out.write(
-                            f"{args.path},{exp.data.target.classification},{results['area']},{results['entropy']},{results['insertion_curve']},{results['deletion_curve']},{time_taken}\n"
+                            f"{args.path},{exp.data.target.classification},{results['area']},{results['entropy']},{results['robustness']},{results['insertion_curve']},{results['deletion_curve']},{time_taken}\n"
                         )
 
     else:
@@ -449,6 +451,13 @@ def _explanation(
         else:
             logger.info("writing to database")
             update_database(db, exp, time_taken, analysis_results=results)
+
+    if data.device == "mps":
+        with tt.no_grad():
+            tt.mps.empty_cache()
+    elif data.device == "cuda":
+        with tt.no_grad():
+            tt.cuda.empty_cache()
 
     return exp
 
@@ -526,7 +535,7 @@ def explanation(
 
     # directory of data to process
     if os.path.isdir(args.path):
-        explanations = []
+        explanations: List[Explanation] = []
         dir = args.path
         path = None
         for dir, _, files in os.walk(args.path):

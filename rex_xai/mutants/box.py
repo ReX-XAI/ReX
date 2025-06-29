@@ -5,9 +5,10 @@ This occlusion is realised in the form of a mask over an image"""
 
 from __future__ import annotations
 
-from typing import List, Tuple, Dict
-from anytree import LevelOrderGroupIter, NodeMixin, RenderTree
+from typing import Dict, List, Tuple
+
 import numpy as np
+from anytree import LevelOrderGroupIter, NodeMixin, RenderTree
 
 from rex_xai.mutants.distributions import Distribution, random_coords
 from rex_xai.utils.logger import logger

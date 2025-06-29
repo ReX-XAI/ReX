@@ -1,5 +1,5 @@
 import pytest
-from rex_xai.input.config import validate_args
+
 from rex_xai.explanation.rex import (
     predict_target,
     try_preprocess,
@@ -19,12 +19,6 @@ def test_predict_target(data, prediction_func):
 
     assert target.classification == 207
     assert target.confidence == pytest.approx(0.253237, abs=2.5e-6)
-
-
-def test_validate_args(args):
-    args.path = None  #  type: ignore
-    with pytest.raises(FileNotFoundError):
-        validate_args(args)
 
 
 def test_preprocess_rgba(args, model_shape, prediction_func, cpu_device, caplog):

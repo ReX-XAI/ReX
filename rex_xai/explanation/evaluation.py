@@ -25,7 +25,7 @@ class Evaluation:
 
     def ratio(self) -> float:
         """Returns percentage of data required for sufficient explanation"""
-        if hasattr(self.explanation, "necessity_mask"):
+        if self.explanation.necessity_mask is not None:
             mask = try_detach(self.explanation.necessity_mask)
         else:
             mask = try_detach(self.explanation.sufficiency_mask)
@@ -58,6 +58,49 @@ class Evaluation:
     def responsibility_entropy(self):
         flat_map = try_detach(self.explanation.target_map).ravel()
         return entropy(flat_map, base=2)
+
+    def robustness(self, lower=None, upper=None, repeats=2):
+        if lower is None:
+            lower = tt.min(self.explanation.data.data).item()  # type: ignore
+        if upper is None:
+            upper = tt.max(self.explanation.data.data).item()  # type: ignore
+
+        mask_shape = self.explanation.sufficiency_mask.shape  # type: ignore
+
+        robustness_shape = (self.explanation.args.batch_size,) + mask_shape
+
+        good = 0
+        bad = 0
+
+        if self.explanation.necessity_mask is not None:
+            mask = self.explanation.necessity_mask
+        else:
+            mask = self.explanation.sufficiency_mask
+
+        for _ in (0, repeats):
+            test_tensor = (
+                tt.FloatTensor(*robustness_shape)
+                .uniform_(lower, upper)
+                .to(self.explanation.data.device)
+            )
+
+            assert mask is not None
+            for j in range(0, self.explanation.args.batch_size):
+                test_tensor[j] = tt.where(
+                    mask,
+                    self.explanation.data.data,  # type: ignore
+                    test_tensor[j],
+                )
+
+            result = self.explanation.prediction_func(test_tensor)
+
+            for p in result:
+                if p.classification == self.explanation.data.target.classification:  # type: ignore
+                    good += 1
+                else:
+                    bad += 1
+
+        return (good, bad)
 
     def insertion_deletion_curve(self, prediction_func, normalise=False):
         # keep pyright happy...

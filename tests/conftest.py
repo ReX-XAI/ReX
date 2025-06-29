@@ -1,11 +1,13 @@
 import numpy as np
-import torch as tt
 import pytest
+import torch as tt
 from cached_path import cached_path
-from rex_xai.utils._utils import get_device
-from rex_xai.mutants.box import initialise_tree
-from rex_xai.input.config import CausalArgs, process_custom_script, Strategy
-from rex_xai.mutants.distributions import Distribution
+from syrupy.extensions.amber.serializer import AmberDataSerializer
+from syrupy.filters import props
+from syrupy.matchers import path_type
+
+from rex_xai.explanation.explanation import Explanation
+from rex_xai.explanation.multi_explanation import MultiExplanation
 from rex_xai.explanation.rex import (
     calculate_responsibility,
     get_prediction_func_from_args,
@@ -13,13 +15,11 @@ from rex_xai.explanation.rex import (
     predict_target,
     try_preprocess,
 )
-from rex_xai.explanation.explanation import Explanation
-from rex_xai.explanation.multi_explanation import MultiExplanation
-from syrupy.extensions.amber.serializer import AmberDataSerializer
-from syrupy.filters import props
-from syrupy.matchers import path_type
-
+from rex_xai.input.config import CausalArgs, Strategy, process_custom_script
 from rex_xai.input.input_data import Data
+from rex_xai.mutants.box import initialise_tree
+from rex_xai.mutants.distributions import Distribution
+from rex_xai.utils._utils import get_device
 
 
 @pytest.fixture
@@ -187,7 +187,8 @@ def exp_onnx(args_onnx, cpu_device):
 
 @pytest.fixture
 def exp_extracted(exp_custom):
-    exp_custom.extract(Strategy.Global)
+    exp_custom.args.strategy = Strategy.Global
+    exp_custom.extract()
 
     return exp_custom
 
@@ -198,7 +199,8 @@ def exp_multi(args_multi, data_multi, prediction_func):
     multi_exp = MultiExplanation(
         maps, prediction_func, data_multi, args_multi, run_stats
     )
-    multi_exp.extract(args_multi.strategy)
+    multi_exp.args.strategy = Strategy.MultiSpotlight
+    multi_exp.extract()
     return multi_exp
 
 
@@ -250,3 +252,4 @@ def resp_map_3d():
     resp_map = tt.zeros((64, 64, 64), dtype=tt.float32)
     resp_map[0:10, 20:25, 20:35] = 1
     return resp_map
+

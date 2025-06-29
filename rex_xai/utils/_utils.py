@@ -23,26 +23,85 @@ SpatialSearch = Enum("SpatialSearch", ["NotFound", "Found"])
 ResponsibilityStyle = Enum("ResponsibilityStyle", ["Additive", "Multiplicative"])
 
 
+def update_mask_shape(batch_size: int, mask_shape) -> Tuple[int]:
+    if isinstance(mask_shape, tuple):
+        mask_shape = list(mask_shape)
+
+    mask_shape[0] = batch_size
+    return tuple(mask_shape)
+
+
+class ReXPositions:
+    def __init__(
+        self,
+        sufficient_position=None,
+        contrastive_position=None,
+        sufficiency_found=False,
+        current_max_necessity=0.0,
+    ) -> None:
+        self.sufficient_position = sufficient_position
+        self.contrastive_position = contrastive_position
+        self.sufficiency_found = sufficiency_found
+        self.current_max_necessity = current_max_necessity
+
+    def __repr__(self) -> str:
+        return f"suff: {self.sufficient_position}, con: {self.contrastive_position}, suff_found: {self.sufficiency_found}"
+
+    def is_empty(self):
+        return self.sufficient_position is None and self.contrastive_position is None
+
+
+def try_rounding(n, rounding: int | None) -> float:
+    if rounding is None:
+        return n
+    else:
+        return round(n, rounding)
+
+
 def find_required_prediction(
     target: int,
     threshold: float,
     insertion_predictions: List[Prediction],
+    contrastive_completeness_threshold: float = 0.0,
     deletion_predictions: List[Prediction] | None = None,
+    rounding=None,
+    sufficiency_found=False,
 ):
+    positions = ReXPositions(sufficiency_found=sufficiency_found)
     if deletion_predictions is None:
         for i, p in enumerate(insertion_predictions):
-            if p.classification == target and p.confidence >= threshold:  # type: ignore
-                return i
-        return None
+            local_confidence = try_rounding(p.confidence, rounding)
+            threshold = try_rounding(threshold, rounding)
+            if p.classification == target and local_confidence >= threshold:  # type: ignore
+                positions.sufficient_position = i
+                return positions
     else:
         for i in range(0, len(insertion_predictions)):
+            local_confidence = try_rounding(
+                insertion_predictions[i].confidence, rounding
+            )
+            threshold = try_rounding(threshold, rounding)
+            contrastive_completeness_threshold = try_rounding(
+                contrastive_completeness_threshold, rounding
+            )
+
+            # check for a sufficiency
             if (
                 insertion_predictions[i].classification == target
-                and insertion_predictions[i].confidence >= threshold  # type: ignore
+                and local_confidence >= threshold  # type: ignore
+                and not positions.sufficiency_found
+            ):
+                positions.sufficient_position = i
+                positions.sufficiency_found = True
+
+            # check for necessity above threshold
+            if (
+                insertion_predictions[i].classification == target
+                and local_confidence >= contrastive_completeness_threshold
                 and deletion_predictions[i].classification != target
             ):
-                return i
-        return None
+                positions.contrastive_position = i
+    return positions
 
 
 def find_complete_prediction(
@@ -55,7 +114,7 @@ def find_complete_prediction(
         p = insertion_predictions[i]
         if (
             p.classification == target
-            and round(p.confidence, rounding) == target_confidence  # type: ignore
+            and round(p.confidence, rounding) == round(target_confidence, rounding)  # type: ignore
         ):
             return i
     return None
@@ -226,19 +285,11 @@ def set_boolean_mask_value(
         # (H, W, C)
         else:
             tensor[h, w, :] = val
-    elif mode == "L":
-        if order == "first":
-            # (1, H, W)
-            tensor[0, h, w] = val
-        else:
-            tensor[h, w, :] = val
     elif mode in ("spectral", "tabular"):
         if len(tensor.shape) == 1:
             tensor[h:w] = val
         else:
             tensor[0, h:w] = val
-    # elif mode == "tabular":
-
     elif mode == "voxel":
         tensor[h, w, d] = val  # type: ignore
     else:
