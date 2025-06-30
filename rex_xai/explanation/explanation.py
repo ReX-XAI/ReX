@@ -199,15 +199,12 @@ class Explanation:
                             ].confidence
                             sufficient_found = True
                             logger.info(
-                                "a sufficient explanation for %d found with confidence %.3f",
-                                self.data.target.classification,  # type: ignore
-                                self.sufficiency_confidence,
+                                f"a sufficient explanation for {self.data.target.classification} found with confidence {self.sufficiency_confidence:.4f}"
                             )
 
                             if False not in tt.unique(self.sufficiency_mask):
                                 logger.info(
-                                    "the entire input was required to get sufficiency at %.4f confidence",
-                                    self.sufficiency_confidence,
+                                    f"the entire input was required to get sufficiency at {self.sufficiency_confidence:.4f} confidence",
                                 )
 
                             return self.sufficiency_confidence

@@ -159,13 +159,7 @@ def predict_target(
             )
             target = target[0]
 
-    if target is not None:
-        logger.info(
-            "image classified as %s with %f confidence",
-            target.classification,
-            target.confidence,
-        )
-    else:
+    if target is None:
         logger.warning("no target found")
         sys.exit(-1)
 
@@ -202,10 +196,16 @@ def calculate_responsibility(
         - dict: statistics for the call of this function that generated the ResponsibilityMaps object
     """
 
-    if data.target is None or data.target.classification is None:
-        raise ValueError(
-            "No target classification found. Please run `predict_target` before running `calculate_responsibility`."
-        )
+    if isinstance(data.target, list):
+        if any(t.classification is None for t in data.target):
+            raise ValueError(
+                "No target classification found in the list of targets. Please run `predict_target` before running `calculate_responsibility`."
+            )
+    else:
+        if data.target is None or data.target.classification is None:
+            raise ValueError(
+                "No target classification found. Please run `predict_target` before running `calculate_responsibility`."
+            )
 
     maps = ResponsibilityMaps(style=args.responsibility_style)
     if custom_height is not None and custom_width is not None:

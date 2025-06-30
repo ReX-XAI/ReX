@@ -36,7 +36,7 @@ class Data:
     ) -> None:
         self.input = input
         self.mode: str | None = None
-        self.target: Optional[Prediction] = None
+        self.target: Prediction | List[Prediction] | None = None
         self.device = device
         self.setup: Optional[Setup] = None
         self.transposed = False

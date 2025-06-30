@@ -12,7 +12,7 @@ path = "tests/test_data/dog_hide.jpg" # Change this later
 def preprocess(path, shape, device) -> Data:
     img = Image.open(path).convert("RGB")
     tensor = tt.tensor(np.asarray(img), dtype=tt.float32).to(device)
-    data = Data(img, shape, device, mode=mode, process=False)
+    data = Data(img, shape, device, process=False)
     data.data = tensor
     data.mode = "RGB"
     data.model_shape = shape
@@ -30,7 +30,7 @@ def yolo_result_to_pred(results, target):
     for result in results:
         boxes = result.boxes  # Boxes object for bounding box outputs
         if len(boxes.cls) == 0:
-            predictions.append(Prediction("NONE"))
+            predictions.append(Prediction("NONE", 0.0))
             continue
         else:
             for i, box in enumerate(boxes):
