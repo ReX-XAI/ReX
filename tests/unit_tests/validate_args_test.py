@@ -4,8 +4,7 @@ from rex_xai.input.config import CausalArgs, validate_args
 from rex_xai.utils._utils import ReXTomlError
 
 
-def test_blend_invalid(caplog):
-    args = CausalArgs()
+def test_blend_invalid(caplog, args):
     args.blend = 20
     with pytest.raises(ReXTomlError):
         validate_args(args)
@@ -15,8 +14,7 @@ def test_blend_invalid(caplog):
         )
 
 
-def test_permitted_overlap_invalid(caplog):
-    args = CausalArgs()
+def test_permitted_overlap_invalid(caplog, args):
     args.permitted_overlap = -5
     with pytest.raises(ReXTomlError):
         validate_args(args)
@@ -26,24 +24,21 @@ def test_permitted_overlap_invalid(caplog):
         )
 
 
-def test_iters_invalid(caplog):
-    args = CausalArgs()
+def test_iters_invalid(caplog, args):
     args.iters = 0
     with pytest.raises(ReXTomlError):
         validate_args(args)
         assert caplog.records[0].message == "Invalid value '0': must be more than 0.0"
 
 
-def test_raw_invalid(caplog):
-    args = CausalArgs()
+def test_raw_invalid(caplog, args):
     args.raw = 100  # type: ignore
     with pytest.raises(ReXTomlError):
         validate_args(args)
         assert caplog.records[0].message == "Invalid value '100': must be boolean"
 
 
-def test_multi_style_invalid(caplog):
-    args = CausalArgs()
+def test_multi_style_invalid(caplog, args):
     args.multi_style = "an-invalid-style"
     with pytest.raises(ReXTomlError):
         validate_args(args)
@@ -53,8 +48,7 @@ def test_multi_style_invalid(caplog):
         )
 
 
-def test_queue_len_invalid(caplog):
-    args = CausalArgs()
+def test_queue_len_invalid(caplog, args):
     args.queue_len = 7.5  # type: ignore
     with pytest.raises(ReXTomlError):
         validate_args(args)
@@ -64,8 +58,7 @@ def test_queue_len_invalid(caplog):
         )
 
 
-def test_distribution_args_invalid(caplog):
-    args = CausalArgs()
+def test_distribution_args_invalid(caplog, args):
     args.distribution_args = 1  # type: ignore
     with pytest.raises(ReXTomlError):
         validate_args(args)
@@ -80,8 +73,7 @@ def test_distribution_args_invalid(caplog):
         )
 
 
-def test_colour_map_invalid(caplog):
-    args = CausalArgs()
+def test_colour_map_invalid(caplog, args):
     args.heatmap_colours = "RedBlue"
     with pytest.raises(ReXTomlError):
         validate_args(args)

@@ -62,10 +62,10 @@ def test_spawn_children_3d(box_3d, resp_map_3d):
     )
     assert total_area_3d == 262144
 
-    volumes = [1536, 2560, 96768, 161280]
+    volumes = [18816, 67200, 38528, 137600]
 
     # Check splitting of boxes
-    row_split, col_split = 1, 24
+    row_split, col_split = 21, 14
 
     row_starts = [0, 0, row_split, row_split]
     row_stops = [row_split, row_split, 64, 64]

@@ -16,18 +16,20 @@ def test_multiexplanation(data_multi, args_multi, prediction_func, spotlights, c
     maps, run_stats = calculate_responsibility(data_multi, args_multi, prediction_func)
 
     exp = Explanation(maps, prediction_func, data_multi, args_multi, run_stats)
-    exp.extract(method=Strategy.Global)
+    args_multi.strategy = Strategy.Global
+    exp.extract()
 
     multi_exp = MultiExplanation(
         maps, prediction_func, data_multi, args_multi, run_stats
     )
     caplog.set_level(logging.INFO)
-    multi_exp.extract(Strategy.MultiSpotlight)
+    args_multi.strategy = Strategy.MultiSpotlight
+    multi_exp.extract()
 
     n_exp = 0
     for record in caplog.records:
         print(record)
-        if "found an explanation" in record.message:
+        if "found with" in record.message:
             n_exp += 1
 
     assert (

@@ -255,8 +255,6 @@ class BoxInternal:
             c1 = random_coords(
                 self.distribution,
                 space,
-                range1[0],
-                range1[1],
                 self.distribution_args,
                 map=map,
             )
@@ -268,8 +266,6 @@ class BoxInternal:
             c2 = random_coords(
                 self.distribution,
                 space,
-                range2[0],
-                range2[1],
                 self.distribution_args,
                 map=map,
             )
@@ -395,11 +391,8 @@ class BoxInternal:
         """returns the area of a box"""
 
         if self.depth_start is not None and self.depth_stop is not None:
-            return (
-                (self.row_stop - self.row_start)
-                * (self.col_stop - self.col_start)
-                * (self.depth_stop - self.depth_start)
-            )
+            return (self.row_stop - self.row_start)* (self.col_stop - self.col_start)* (self.depth_stop - self.depth_start)
+
         else:
             if self.row_start == 0 and self.row_stop == 0:
                 return self.col_stop - self.col_start
