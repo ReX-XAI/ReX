@@ -57,7 +57,9 @@ class Evaluation:
 
     def responsibility_entropy(self):
         flat_map = try_detach(self.explanation.target_map).ravel()
-        return entropy(flat_map, base=2)
+        uniform = np.ones(flat_map.shape)
+
+        return entropy(flat_map, uniform, base=2)
 
     def robustness(self, lower=None, upper=None, repeats=2):
         if lower is None:

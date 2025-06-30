@@ -75,7 +75,7 @@ class Args:
         self.no_extract = False
         self.strategy: Strategy = Strategy.Global
         self.complete = False
-        self.chunk_size = 25
+        self.chunk_size = 10
         self.minimum_confidence_threshold = 0.0
         self.batch_size: int = 1
         # args for spatial strategy
