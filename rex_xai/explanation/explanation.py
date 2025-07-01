@@ -612,6 +612,13 @@ class Explanation:
                     ind = 0
 
     def save(self, path, mask=None):
+        if mask is not None:
+            visualisation.save_image(
+                mask,
+                self.data,
+                self.args,
+                path=path,
+            )
         assert self.sufficiency_mask is not None
         if self.data.mode in ("RGB", "voxel") and mask is None:
             if self.args.complete:
