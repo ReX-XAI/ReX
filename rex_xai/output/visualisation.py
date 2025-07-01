@@ -189,6 +189,7 @@ def surface_plot(
     path=None,
 ):
     """plots a 3d surface plot"""
+    logger.info(f"Plotting surface plot for {target.classification} with shape {resp_map.shape} and image shape ({input.height}, {input.width})")
     img, _x, _y = plot_3d(input, resp_map, True)
     fig = plt.figure()
 

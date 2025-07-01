@@ -3,7 +3,7 @@ import os
 import torch as tt
 
 from rex_xai.input.config import CausalArgs
-
+from rex_xai.output.visualisation import save_image, voxel_plot
 
 def test_surface(exp_extracted, tmp_path):
     p = tmp_path / "surface.png"
@@ -44,7 +44,6 @@ def test_save_image_3d(data_3d):
 
 def test_voxel_plot(data_3d, resp_map_3d):
     args = CausalArgs()
-    print(data_3d)
     # Create a cube in data
     voxel_plot(args, resp_map_3d, data_3d, path="test.png")
     for i in ["x", "y", "z"]:

@@ -26,7 +26,7 @@ def test_update_database_no_target(exp_extracted, db, caplog):
 
 
 def test_update_database_no_exp(exp_extracted, db, caplog):
-    exp_extracted.final_mask = None
+    exp_extracted.sufficiency_mask = None
     update_database(db, exp_extracted, 1.5)
     assert (
         caplog.records[0].message == "unable to update database as explanation is empty"
@@ -38,7 +38,7 @@ def test_read_db(exp_extracted, tmp_path):
     db = initialise_rex_db(p)
     update_database(db, exp_extracted, 0.5)
     df = db_to_pandas(p)
-    assert df.shape == (1, 30)
+    assert df.shape == (1, 41)
 
 
 def test_no_multi(exp_extracted, caplog):
@@ -63,4 +63,4 @@ def test_read_database_multiexp(exp_multi, tmp_path):
     update_database(db, exp_multi, 1.5, multi=True)
 
     df = db_to_pandas(p)
-    assert df.shape == (len(exp_multi.explanations), 30)
+    assert df.shape == (len(exp_multi.explanations), 41)

@@ -39,12 +39,13 @@ def db_to_pandas(db, dtype=np.float32, table="rex", process=True):
             axis=1,
         )
 
-        df["explanation"] = df.apply(
-            lambda row: _to_numpy(
-                row["explanation"], literal_eval(row["explanation_shape"]), np.bool_
-            ),
-            axis=1,
-        )
+        # TODO: i guess this needs to be for the sufficiency mask, contrastive mask, and complete mask as no explanation column?
+        # df["explanation"] = df.apply(
+        #     lambda row: _to_numpy(
+        #         row["explanation"], literal_eval(row["explanation_shape"]), np.bool_
+        #     ),
+        #     axis=1,
+        # )
 
     return df
 
@@ -88,7 +89,7 @@ def update_database(
 
         sufficiency_mask = try_detach(explanation.sufficiency_mask)
 
-        if hasattr(explanation, "necessity_mask"):
+        if explanation.necessity_mask is not None:
             necessity_mask = try_detach(explanation.necessity_mask)
             necessity_confidence = explanation.necessity_confidence  # type: ignore
             inverse_classification = explanation.contrastive_classification

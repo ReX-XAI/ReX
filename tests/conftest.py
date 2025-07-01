@@ -208,7 +208,9 @@ def exp_multi(args_multi, data_multi, prediction_func):
 def data_3d():
     voxel = np.zeros((1, 64, 64, 64), dtype=np.float32)
     voxel[0:30, 20:30, 20:35] = 1
-    return Data(input=voxel, model_shape=[1, 64, 64, 64], device="cpu", mode="voxel")
+    data = Data(input=voxel, model_shape=[1, 64, 64, 64], device="cpu", mode="voxel")
+    data.data = voxel
+    return data
 
 
 @pytest.fixture
