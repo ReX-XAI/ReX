@@ -85,7 +85,7 @@ class Args:
         self.no_extract = False
         self.strategy: Strategy = Strategy.Global
         self.complete = False
-        self.chunk_size = 25
+        self.chunk_size = 10
         self.minimum_confidence_threshold = 0.0
         self.batch_size: int = 1
         self.multi_class: bool = False # whether to provide multi-class or single class explanations

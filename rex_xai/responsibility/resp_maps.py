@@ -152,7 +152,6 @@ class ResponsibilityMaps:
                         logger.warning("not yet implemented")
                         raise NotImplementedError
 
-                    # section *= local_r
                     section += local_r
             self.maps[k] = resp_map
 

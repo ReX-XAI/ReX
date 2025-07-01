@@ -1,3 +1,5 @@
+import platform
+
 import numpy as np
 import pytest
 import torch as tt
@@ -19,7 +21,7 @@ from rex_xai.input.config import CausalArgs, Strategy, process_custom_script
 from rex_xai.input.input_data import Data
 from rex_xai.mutants.box import initialise_tree
 from rex_xai.mutants.distributions import Distribution
-from rex_xai.utils._utils import get_device
+from rex_xai.utils._utils import ResponsibilityStyle, get_device
 
 
 @pytest.fixture
@@ -101,6 +103,7 @@ def args_multi(args_custom):
     args.path = "tests/test_data/peacock.jpg"
     args.iters = 5
     args.strategy = Strategy.MultiSpotlight
+    args.responsibility_style = ResponsibilityStyle.Additive
     args.spotlights = 5
 
     return args
@@ -108,28 +111,28 @@ def args_multi(args_custom):
 
 @pytest.fixture
 def model_shape(args_custom):
-    prediction_func, model_shape = get_prediction_func_from_args(args_custom)
+    _, model_shape = get_prediction_func_from_args(args_custom)
 
     return model_shape
 
 
 @pytest.fixture
 def prediction_func(args_custom):
-    prediction_func, model_shape = get_prediction_func_from_args(args_custom)
+    prediction_func, _ = get_prediction_func_from_args(args_custom)
 
     return prediction_func
 
 
 @pytest.fixture
 def model_shape_swin_v2_t(args_torch_swin_v2_t):
-    prediction_func, model_shape = get_prediction_func_from_args(args_torch_swin_v2_t)
+    _, model_shape = get_prediction_func_from_args(args_torch_swin_v2_t)
 
     return model_shape
 
 
 @pytest.fixture
 def prediction_func_swin_v2_t(args_torch_swin_v2_t):
-    prediction_func, model_shape = get_prediction_func_from_args(args_torch_swin_v2_t)
+    prediction_func, _ = get_prediction_func_from_args(args_torch_swin_v2_t)
 
     return prediction_func
 
@@ -157,7 +160,10 @@ def data_multi(args_multi, model_shape, prediction_func, cpu_device):
 
 @pytest.fixture(scope="session")
 def cpu_device():
-    device = get_device(gpu=False)
+    if platform.platform() == "Darwin":
+        device = tt.device("mps")
+    else:
+        device = get_device(gpu=False)
 
     return device
 

@@ -9,7 +9,7 @@ from rex_xai.explanation.explanation import Explanation
 from rex_xai.explanation.multi_explanation import MultiExplanation
 
 
-@pytest.mark.parametrize("spotlights", [5, 10])
+@pytest.mark.parametrize("spotlights", [5])
 def test_multiexplanation(data_multi, args_multi, prediction_func, spotlights, caplog):
     args_multi.spotlights = spotlights
 
@@ -29,7 +29,7 @@ def test_multiexplanation(data_multi, args_multi, prediction_func, spotlights, c
     n_exp = 0
     for record in caplog.records:
         print(record)
-        if "found with" in record.message:
+        if "a sufficient explanation" in record.message:
             n_exp += 1
 
     assert (

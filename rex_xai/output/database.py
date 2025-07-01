@@ -24,7 +24,29 @@ def _dataframe(db, table):
 
 
 def _to_numpy(buffer, shape, dtype):
+    if buffer is None:
+        return None
     return np.frombuffer(zlib.decompress(buffer), dtype=dtype).reshape(shape)
+
+
+def process_responsibility_column(df, dtype=np.float32):
+    df["responsibility"] = df.apply(
+        lambda row: _to_numpy(
+            row["responsibility"], literal_eval(row["responsibility_shape"]), dtype
+        ),
+        axis=1,
+    )
+
+
+def process_mask_column(df, column):
+    df[column] = df.apply(
+        lambda row: _to_numpy(
+            row[column],
+            literal_eval(row["mask_shape"]),
+            np.bool_,
+        ),
+        axis=1,
+    )
 
 
 def db_to_pandas(db, dtype=np.float32, table="rex", process=True):
@@ -32,17 +54,20 @@ def db_to_pandas(db, dtype=np.float32, table="rex", process=True):
     df = _dataframe(db, table=table)
 
     if process:
-        df["responsibility"] = df.apply(
-            lambda row: _to_numpy(
-                row["responsibility"], literal_eval(row["responsibility_shape"]), dtype
-            ),
-            axis=1,
-        )
-
-        # TODO: i guess this needs to be for the sufficiency mask, contrastive mask, and complete mask as no explanation column?
-        # df["explanation"] = df.apply(
+        process_responsibility_column(df, dtype=dtype)
+        # df["responsibility"] = df.apply(
         #     lambda row: _to_numpy(
-        #         row["explanation"], literal_eval(row["explanation_shape"]), np.bool_
+        #         row["responsibility"], literal_eval(row["responsibility_shape"]), dtype
+        #     ),
+        #     axis=1,
+        # )
+
+        process_mask_column(df, "sufficiency_mask")
+        # df["sufficiency_mask"] = df.apply(
+        #     lambda row: _to_numpy(
+        #         row["sufficiency_mask"],
+        #         literal_eval(row["mask_shape"]),
+        #         np.bool_,
         #     ),
         #     axis=1,
         # )
