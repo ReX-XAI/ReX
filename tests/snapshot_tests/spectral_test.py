@@ -33,4 +33,4 @@ def test__explanation_snapshot(
     exp = _explanation(args_spectral, model_shape, prediction_func, cpu_device, db=None)
 
     assert exp == snapshot_explanation
-    assert hash(tuple(exp.explanation.reshape(-1).tolist())) == snapshot_explanation
+    assert hash(tuple(exp.sufficiency_mask.reshape(-1).tolist())) == snapshot_explanation

@@ -8,12 +8,13 @@ def test__explanation_snapshot(args_onnx, cpu_device, snapshot_explanation):
     exp = _explanation(args_onnx, model_shape, prediction_func, cpu_device, db=None)
 
     assert exp == snapshot_explanation
-    assert hash(tuple(exp.explanation.reshape(-1).tolist())) == snapshot_explanation
+    assert hash(tuple(exp.sufficiency_mask.reshape(-1).tolist())) == snapshot_explanation
 
 
 @pytest.mark.parametrize("strategy", [Strategy.Global, Strategy.Spatial])
 def test_extract_analyze(exp_onnx, strategy, snapshot):
-    exp_onnx.extract(strategy)
+    exp_onnx.args.strategy = strategy
+    exp_onnx.extract()
     results = analyze(exp_onnx, "RGB")
     results_rounded = {k: round(v, 4) for k, v in results.items() if v is not None}
 
