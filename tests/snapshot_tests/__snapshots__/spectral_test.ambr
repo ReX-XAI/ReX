@@ -8,7 +8,7 @@
   	ResponsibilityMaps: {1: 1}
   	run statistics: {'total_passing': 42, 'total_failing': 0, 'max_depth_reached': 2, 'avg_box_size': 180.375} (5 dp)
   	sufficiency mask: tensor([[ True,  True,  True,  ...,  True,  True, False]])
-  	explanation confidence: 0.998168
+  	explanation confidence: 0.9982
 # ---
 # name: test__explanation_snapshot[1].1
   6149703305100586930
@@ -22,7 +22,7 @@
   	ResponsibilityMaps: {1: 1}
   	run statistics: {'total_passing': 42, 'total_failing': 0, 'max_depth_reached': 2, 'avg_box_size': 180.375} (5 dp)
   	sufficiency mask: tensor([[ True,  True,  True,  ...,  True,  True, False]])
-  	explanation confidence: 0.998164
+  	explanation confidence: 0.9982
 # ---
 # name: test__explanation_snapshot[64].1
   6149703305100586930
