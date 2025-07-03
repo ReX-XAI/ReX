@@ -1,4 +1,5 @@
 import pytest
+
 from rex_xai.explanation.rex import _explanation, analyze
 from rex_xai.utils._utils import Strategy
 
@@ -53,7 +54,7 @@ def test_extract_analyze(exp_custom, strategy, snapshot):
     results = analyze(exp_custom, "RGB")
     results_rounded = {k: round(v, 4) for k, v in results.items() if v is not None}
 
-    assert hash(tuple(exp_custom.final_mask.reshape(-1).tolist())) == snapshot
+    assert hash(tuple(exp_custom.sufficiency_mask.reshape(-1).tolist())) == snapshot
     assert results_rounded == snapshot
 
 

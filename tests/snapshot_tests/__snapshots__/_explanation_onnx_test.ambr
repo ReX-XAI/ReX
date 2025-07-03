@@ -30,8 +30,32 @@
            [False, False, False,  ..., False, False, False],
            [False, False, False,  ..., False, False, False],
            [False, False, False,  ..., False, False, False]]])
-  	explanation confidence: 0.121583
+  	explanation confidence: 0.1216
 # ---
 # name: test__explanation_snapshot.1
   976237796511694519
+# ---
+# name: test_extract_analyze[Strategy.Global]
+  976237796511694519
+# ---
+# name: test_extract_analyze[Strategy.Global].1
+  dict({
+    'area': 0.1654,
+    'deletion_curve': 0.0141,
+    'entropy': 0.2156,
+    'insertion_curve': 0.6175,
+    'robustness': 0.5,
+  })
+# ---
+# name: test_extract_analyze[Strategy.Spatial]
+  250330363344313757
+# ---
+# name: test_extract_analyze[Strategy.Spatial].1
+  dict({
+    'area': 0.3278,
+    'deletion_curve': 0.0141,
+    'entropy': 0.2156,
+    'insertion_curve': 0.6175,
+    'robustness': 1.0,
+  })
 # ---

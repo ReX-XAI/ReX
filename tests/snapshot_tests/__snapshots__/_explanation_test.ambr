@@ -30,7 +30,7 @@
            [False, False, False,  ..., False, False, False],
            [False, False, False,  ..., False, False, False],
            [False, False, False,  ..., False, False, False]]])
-  	explanation confidence: 0.015131
+  	explanation confidence: 0.0151
 # ---
 # name: test__explanation_snapshot[1].1
   -2185390445883109608
@@ -66,7 +66,7 @@
            [False, False, False,  ..., False, False, False],
            [False, False, False,  ..., False, False, False],
            [False, False, False,  ..., False, False, False]]])
-  	explanation confidence: 0.015131
+  	explanation confidence: 0.0151
 # ---
 # name: test__explanation_snapshot[64].1
   -2185390445883109608
@@ -102,7 +102,7 @@
            [False, False, False,  ..., False, False, False],
            [False, False, False,  ..., False, False, False],
            [False, False, False,  ..., False, False, False]]])
-  	explanation confidence: 0.008837
+  	explanation confidence: 0.0088
 # ---
 # name: test__explanation_snapshot_diff_model_shape[1].1
   -9005299901454543019
@@ -138,10 +138,34 @@
            [False, False, False,  ..., False, False, False],
            [False, False, False,  ..., False, False, False],
            [False, False, False,  ..., False, False, False]]])
-  	explanation confidence: 0.008837
+  	explanation confidence: 0.0088
 # ---
 # name: test__explanation_snapshot_diff_model_shape[64].1
   -9005299901454543019
+# ---
+# name: test_extract_analyze[Strategy.Global]
+  -2185390445883109608
+# ---
+# name: test_extract_analyze[Strategy.Global].1
+  dict({
+    'area': 0.0112,
+    'deletion_curve': 1.0215,
+    'entropy': 0.4423,
+    'insertion_curve': 1.2348,
+    'robustness': 0.0,
+  })
+# ---
+# name: test_extract_analyze[Strategy.Spatial]
+  -2185390445883109608
+# ---
+# name: test_extract_analyze[Strategy.Spatial].1
+  dict({
+    'area': 0.0112,
+    'deletion_curve': 1.0215,
+    'entropy': 0.4423,
+    'insertion_curve': 1.2348,
+    'robustness': 0.0,
+  })
 # ---
 # name: test_multiexplanation_snapshot
   MultiExplanation:
