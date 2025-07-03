@@ -163,7 +163,7 @@ class Evaluation:
             ).squeeze(0)
             j += 1
 
-            if j == self.explanation.args.batch_size - 1:
+            if j >= self.explanation.args.batch_size - 1:
                 insertion_update, deletion_update = self.__batch(
                     insertion_mutants, deletion_mutants, prediction_func
                 )
