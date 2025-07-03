@@ -40,6 +40,21 @@ pip install rex_xai
 ```
 
 This should install an executable `rex` in your path.
+To check that ReX is installed correctly, run:
+
+```bash
+ReX --help
+```
+
+To build from source, clone the repository and run:
+
+```bash
+git clone git@github.com:ReX-XAI/ReX.git
+cd ReX
+conda create -n rex python=3.13
+conda activate rex
+pip install .
+```
 
 > **Note:**
 >

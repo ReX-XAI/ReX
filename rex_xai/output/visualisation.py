@@ -2,21 +2,22 @@
 
 """image generation functions"""
 
-from PIL import Image, ImageDraw
 import os
 
-import torch as tt
-import numpy as np
-import matplotlib.pyplot as plt
 import matplotlib as mpl
+import matplotlib.pyplot as plt
+import numpy as np
+import torch as tt
+from PIL import Image, ImageDraw
+from matplotlib.figure import Figure
 from scipy.ndimage import center_of_mass
 from skimage.segmentation import slic
 from torch import Tensor
 
-from rex_xai.responsibility.prediction import Prediction
 from rex_xai.input.config import CausalArgs
 from rex_xai.input.input_data import Data
-from rex_xai.utils._utils import add_boundaries
+from rex_xai.responsibility.prediction import Prediction
+from rex_xai.utils._utils import add_boundaries, try_detach
 from rex_xai.utils.logger import logger
 
 
@@ -70,13 +71,14 @@ def plot_curve(curve, chunk_size, style="insertion", destination=None):
         plt.savefig(destination, bbox_inches="tight", dpi=300, pad_inches=0)
 
 
-def plot_3d(path, ranking, ogrid, norm=255.0):
+def plot_3d(input, ranking, ogrid, norm=255.0):
     """plots a 3d grid in matplotlib given an image <path>
     If <path> is greyscale or RGBA, it is converted to RGB for plotting.
     """
-    img = Image.open(path).convert("RGB")
-    img = img.resize((ranking.shape[0], ranking.shape[1]))
-    img = np.asarray(img)
+    # img = Image.open(path).convert("RGB")
+    # # TODO this is wrong
+    # img = img.resize((ranking.shape[0], ranking.shape[1]))
+    img = np.asarray(input)
 
     img = img / norm  # type: ignore
     if ogrid:
@@ -100,12 +102,16 @@ def _transparent_cmap(cmap, N=255):
 def heatmap_plot(data: Data, resp_map, colour, path=None):
     if data.mode == "RGB":
         mycmap = _transparent_cmap(mpl.colormaps[colour])
-        background = data.input.resize(
-            (data.model_height, data.model_width)
-        )  # TODO check these dimensions
+
         y, x = np.mgrid[0 : data.model_height, 0 : data.model_width]
-        fig, ax = plt.subplots(1, 1)
-        ax.imshow(background)
+        _, ax = plt.subplots(1, 1)
+        if isinstance(data.input, Image.Image):
+            input = np.asarray(data.input)
+        else:
+            input = try_detach(data.input)
+
+        resp_map = try_detach(resp_map)
+        ax.imshow(input)
         ax.contourf(x, y, resp_map, 15, cmap=mycmap)
         plt.axis("off")
         ax.get_xaxis().set_visible(False)
@@ -172,16 +178,21 @@ def spectral_plot(explanation, data: Data, ranking, colour, extra=True, path=Non
         plt.show()
     else:
         plt.savefig(path, dpi=300)
+    plt.close()
 
 
 def surface_plot(
+    input,
     args: CausalArgs,
     resp_map: np.ndarray,
     target: Prediction,
     path=None,
 ):
     """plots a 3d surface plot"""
-    img, _x, _y = plot_3d(args.path, resp_map, True)
+    logger.info(
+        f"Plotting surface plot for {target.classification} with shape {resp_map.shape} and image shape ({input.height}, {input.width})"
+    )
+    img, _x, _y = plot_3d(input, resp_map, True)
     fig = plt.figure()
 
     # TODO enable visualisation of sub-responsibility maps
@@ -199,6 +210,8 @@ def surface_plot(
         if ranking is not None:
             ax = fig.add_subplot(rows, cols, i + 1, projection="3d")
 
+            ax.zaxis.set_ticklabels([])  # type: ignore
+
             ax.plot_surface(  # type: ignore
                 _x, _y, np.atleast_2d(0), rstride=5, cstride=5, facecolors=img
             )
@@ -210,15 +223,7 @@ def surface_plot(
                 cmap=mpl.colormaps[args.heatmap_colours],
             )
             if args.info:
-                # confidence = 0.0
-                # if k == target.classification:
                 confidence = target.confidence
-                # else:
-                #     for p in args.extra_targets:
-                #         if p.pred == k:
-                #             confidence = p.conf
-                #             break
-
                 try:
                     x, y = center_of_mass(ranking)
                     x = int(round(x))  # type: ignore
@@ -249,6 +254,7 @@ def surface_plot(
             plt.show()
         else:
             plt.savefig(path, bbox_inches="tight", dpi=300)
+        plt.close()
 
 
 def overlay_grid(img, step_count=10):
@@ -289,17 +295,18 @@ def remove_background(data: Data, resp_map: np.ndarray) -> np.ndarray:
             data_m == data.background
         )  # Threshold for background voxels
         resp_map[background] = np.min(resp_map)
-    elif data.background is not None and data.background is tuple:
-        # Background is a range of values so (x , y) where x is the lower bound and y is the upper bound
-        background = np.where(
-            (data_m >= data.background[0]) & (data_m <= data.background[1])
-        )
-        resp_map[background] = np.min(resp_map)
-    elif data.background is not None:
-        logger.warn(
-            "Background is not set correctly, please check the value. "
-            "Background value must be an int, float or tuple defining the range of values for the background."
-        )
+
+    # elif data.background is not None and data.background is tuple:
+    #     # Background is a range of values so (x , y) where x is the lower bound and y is the upper bound
+    #     background = np.where(
+    #         (data_m >= data.background[0]) & (data_m <= data.background[1])
+    #     )
+    #     resp_map[background] = np.min(resp_map)
+    # elif data.background is not None:
+    #     logger.warning(
+    #         "Background is not set correctly, please check the value. "
+    #         "Background value must be an int, float or tuple defining the range of values for the background."
+    #     )
 
     return resp_map
 
@@ -312,7 +319,7 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
     """
     try:
         import plotly.graph_objs as go
-        from dash import Dash, dcc, html, Input, Output
+        from dash import Dash, Input, Output, dcc, html
     except ImportError as e:
         logger.error(f"Plotly failed to import caused by {e}.")
         return
@@ -321,13 +328,12 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
         data_m = data.data[0, :, :, :]
     else:
         data_m = data.data
-    if isinstance(resp_map, tt.Tensor):
-        resp_map = resp_map.squeeze().detach().cpu().numpy()
+    resp_map = try_detach(resp_map)  # type: ignore
 
-    if isinstance(data_m, tt.Tensor):
-        data_m = data_m.squeeze().detach().cpu().numpy()
-        tt.tensor(data_m, dtype=tt.float32)
-
+    # if isinstance(data_m, tt.Tensor):
+    #     data_m = data_m.squeeze().detach().cpu().numpy()
+    #     tt.tensor(data_m, dtype=tt.float32)
+    #
     maps: np.ndarray = resp_map
     resp_map = remove_background(data, maps)
 
@@ -336,13 +342,13 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
     resp_map = (resp_map - np.min(resp_map)) / (np.max(resp_map) - np.min(resp_map))
 
     # Check if both data and responsibility map have the same range of values
-    assert np.min(data_m) == np.min(resp_map) and np.max(data_m) == np.max(resp_map), (
-        "Data and Responsibility map must have the same range of values!"
-    )
+    assert np.min(data_m) == np.min(resp_map) and np.max(data_m) == np.max(
+        resp_map
+    ), "Data and Responsibility map must have the same range of values!"
 
-    assert data_m.shape == maps.shape, (
-        "Data and Responsibility map must have the same shape!"
-    )
+    assert (
+        data_m.shape == maps.shape
+    ), "Data and Responsibility map must have the same shape!"
 
     x_max, y_max, z_max = data_m.shape
 
@@ -591,16 +597,16 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
         z_slice.write_image(f"{path}_z_slice.png")
 
 
-def __transpose_mask(explanation, mode, transposed):
-    mask = None
-    if transposed:
-        if mode == "RGB":
-            mask = explanation.squeeze().detach().cpu().numpy().transpose((1, 2, 0))
-        elif mode == "L":
-            mask = explanation.squeeze(0).detach().cpu().numpy().transpose((2, 1, 0))
-            mask = np.repeat(mask, 3, axis=-1)
-    else:
-        mask = explanation.squeeze(0).detach().cpu().numpy()
+def __transpose_mask(mask: tt.Tensor | np.ndarray, mode: str) -> np.ndarray:
+    if mode != "RGB":
+        raise TypeError
+    mask = try_detach(mask)
+
+    if len(mask.shape) == 4:
+        mask = mask.squeeze(0)
+
+    if mask.shape[0] == 3:
+        mask = mask.transpose((1, 2, 0))
 
     return mask
 
@@ -634,6 +640,8 @@ def apply_boundaries_to_image(image, explanations, colours):
     """
     Draws the boundaries of the explanations on the image, using the provided colours.
     """
+    if isinstance(image, Image.Image):
+        image = np.array(image)
     for i in range(len(explanations)):
         explanation = explanations[i]
 
@@ -647,31 +655,93 @@ def apply_boundaries_to_image(image, explanations, colours):
     return image
 
 
-def get_img_as_array(data):
-    """
-    Return original input image as a numpy array, resized to match model size and converted to RGB if necessary.
-    """
-    if data.mode == "RGB" or data.mode == "L":
-        if data.mode == "L":
-            img = data.input.convert("RGB").resize(
-                (data.model_height, data.model_width)
-            )
-        else:
-            img = data.input.resize((data.model_height, data.model_width))
-    else:
-        raise NotImplementedError
+def subplot_multi_explanations(image, explanations, titles=None, alpha=0.5):
+    if isinstance(image, Image.Image):
+        image = np.array(image)
 
-    return np.array(img)
+    n = len(explanations)
+    cols = min(n, 3)  # max 3 per row
+    rows = (n + cols - 1) // cols
+
+    fig, axes = plt.subplots(rows, cols, figsize=(5 * cols, 5 * rows))
+    axes = np.array(axes).reshape(-1)
+
+    for idx, (ax, expl) in enumerate(zip(axes, explanations)):
+        if expl.ndim == 3:
+            # assume (C,H,W) or (H,W,C)
+            if expl.shape[0] in (1, 3):
+                expl = expl[0]
+            else:
+                expl = expl[..., 0]
+
+        ax.imshow(image)
+        ax.imshow(expl, alpha=alpha)
+        if titles:
+            ax.set_title(titles[idx])
+        ax.axis("off")
+
+    # hide any unused subplots
+    for ax in axes[n:]:
+        ax.axis("off")
+
+    plt.tight_layout()
+    plt.show()
 
 
 def __save_multi(path, explanations_subset, data, img, colours_subset, args):
     explanations_subset = [
-        __transpose_mask(explanation, data.mode, data.transposed)
-        for explanation in explanations_subset
+        __transpose_mask(explanation, data.mode) for explanation in explanations_subset
     ]
     composite_mask = make_composite_mask(explanations_subset)
 
     img = apply_boundaries_to_image(img, explanations_subset, colours_subset)
+
+    if composite_mask is not None:
+        cover = np.where(composite_mask, img, args.colour)
+        cover = Image.fromarray(cover, data.mode)
+        img = Image.fromarray(img, data.mode)
+        out = Image.blend(cover, img, args.alpha)
+
+        if path is None:
+            return out
+        else:
+            out.save(path)
+
+
+def save_contrastive(explanation, data, args: CausalArgs, path=None):
+    colours_subset = [0.222, 1.0]
+
+    explanations_subset = []
+    explanations_subset.append(__transpose_mask(explanation.sufficiency_mask, "RGB"))
+    explanations_subset.append(__transpose_mask(explanation.necessity_mask, "RGB"))
+
+    composite_mask = make_composite_mask(explanations_subset)
+
+    img = apply_boundaries_to_image(data.input, explanations_subset, colours_subset)
+
+    if composite_mask is not None:
+        cover = np.where(composite_mask, img, args.colour)
+        cover = Image.fromarray(cover, data.mode)
+        img = Image.fromarray(img, data.mode)
+        out = Image.blend(cover, img, args.alpha)
+
+        if path is None:
+            return out
+        else:
+            out.save(path)
+
+
+def save_complete(explanation, data, args: CausalArgs, path=None):
+    colours_subset = [0.222, 0.5, 1.0]
+
+    explanations_subset = []
+    explanations_subset.append(__transpose_mask(explanation.sufficiency_mask, "RGB"))
+    explanations_subset.append(__transpose_mask(explanation.necessity_mask, "RGB"))
+    explanations_subset.append(__transpose_mask(explanation.complete_mask, "RGB"))
+
+    composite_mask = make_composite_mask(explanations_subset)
+
+    img = apply_boundaries_to_image(data.input, explanations_subset, colours_subset)
 
     if composite_mask is not None:
         cover = np.where(composite_mask, img, args.colour)
@@ -692,7 +762,7 @@ def save_multi_explanation(
         logger.warning("we do not yet handle multiple explanations for non-images")
         raise NotImplementedError
 
-    img = get_img_as_array(data)
+    img = data.input
 
     if img is not None:
         rgb_colours = generate_colours(args.spotlights, args.heatmap_colours)
@@ -708,67 +778,71 @@ def save_multi_explanation(
                 __save_multi(path, explanations_subset, data, img, colours_subset, args)
 
 
-def save_image(explanation, data: Data, args: CausalArgs, path=None):
-    mask = None
+def save_image(mask: tt.Tensor | np.ndarray, data: Data, args: CausalArgs, path=None):
     if data.mode == "RGB":
         if len(data.input.size) == 4:
             data.input = data.input.squeeze(0)
         img = data.input
-        if explanation.shape[0] == 3:
-            resize = tuple(explanation.shape[1:])
+
+        mask = __transpose_mask(mask, data.mode)
+
+        if args.raw:
+            out = np.where(mask, img, 0).squeeze(0)  # 0 used to mask image with black
+            out = Image.fromarray(out, data.mode)
+        elif args.mask_value == "context":
+            # Use preprocessed context and data as shape needs to match
+            if isinstance(data.context, tt.Tensor):
+                data.context = data.context.squeeze().detach().cpu().numpy()
+            if isinstance(data.data, tt.Tensor):
+                data.data = data.data.squeeze().detach().cpu().numpy()
+            context = __transpose_mask(data.context, data.mode)
+            img = __transpose_mask(data.data, data.mode)
+            fig = np.where(mask == False, context, img)
+            out, ax = plt.subplots()
+            ax.imshow(fig)
+            ax.axis("off")
         else:
-            resize = tuple(explanation.shape[:2])
-        img = img.resize(resize)
+            exp = np.where(mask, img, args.colour)
+            exp = Image.fromarray(exp, "RGB")
+            out = Image.blend(exp, img, args.alpha)
 
-        mask = __transpose_mask(explanation, data.mode, data.transposed)
+            if args.mark_segments:
+                segs = slic(np.array(img))
+                m = add_boundaries(np.array(img), segs)
+                marked = Image.fromarray(m, data.mode)
+                out = Image.blend(out, marked, args.alpha)
 
-        if mask is not None:
-            if args.raw:
-                out = np.where(mask, img, 0).squeeze(
-                    0
-                )  # 0 used to mask image with black
-                out = Image.fromarray(out, data.mode)
+            if args.grid:
+                out = overlay_grid(out)
 
+        if path is not None:
+            if isinstance(out, Figure):
+                out.savefig(path, dpi=300, pad_inches=0)
             else:
-                exp = np.where(mask, img, args.colour)
-                exp = Image.fromarray(exp, "RGB")
-                out = Image.blend(exp, img, args.alpha)
-
-                if args.mark_segments:
-                    segs = slic(np.array(img))
-                    m = add_boundaries(np.array(img), segs)
-                    marked = Image.fromarray(m, data.mode)
-                    out = Image.blend(out, marked, args.alpha)
-
-                if args.grid:
-                    out = overlay_grid(out)
-
-                if args.resize:
-                    out = out.resize(data.input.size)
-
-            if path is not None:
                 out.save(path)
+            logger.info(f"Saved explanation to {path}")
 
-            return out
+        return out
+
     elif data.mode == "voxel":
         data_m: np.ndarray = data.data  # type:ignore
-        if isinstance(explanation, tt.Tensor):
-            explanation = explanation.squeeze().detach().cpu().numpy()
+        if isinstance(mask, tt.Tensor):
+            mask = mask.squeeze().detach().cpu().numpy()
         else:
-            explanation = explanation.squeeze()
+            mask = mask.squeeze()
         data_m = data_m[0, :, :, :]  # Remove batch dimension
 
-        explanation = remove_background(data, explanation)
+        mask = remove_background(data, mask)
 
         num_slices = 10
         _, axes = plt.subplots(3, num_slices, figsize=(15, 6))
 
-        for axis, _ in enumerate(explanation.shape):
+        for axis, _ in enumerate(mask.shape):
             slice_indices = np.linspace(0, axis - 1, num_slices, dtype=int)
             for i, slice_index in enumerate(slice_indices):
                 ax = axes[axis, i]
                 data_slice = np.take(data_m, slice_index, axis=axis)
-                resp_slice = np.take(explanation, slice_index, axis=axis)
+                resp_slice = np.take(mask, slice_index, axis=axis)
                 ax.imshow(data_slice, cmap="gray")
                 ax.imshow(resp_slice, cmap=args.heatmap_colours, alpha=0.4)
                 ax.axis("off")

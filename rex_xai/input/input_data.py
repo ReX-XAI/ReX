@@ -1,14 +1,16 @@
 #!/usr/bin/env python
-from typing import Optional
+from __future__ import annotations
+
+from enum import Enum
+from typing import List, Optional, Tuple
+
 import numpy as np
 import torch as tt
 
-from enum import Enum
-
-from rex_xai.mutants.occlusions import spectral_occlusion, context_occlusion
+from rex_xai.mutants.occlusions import context_occlusion, spectral_occlusion
 from rex_xai.responsibility.prediction import Prediction
-from rex_xai.utils.logger import logger
 from rex_xai.utils._utils import ReXDataError
+from rex_xai.utils.logger import logger
 
 Setup = Enum("Setup", ["ONNXMPS", "ONNX", "PYTORCH"])
 
@@ -25,11 +27,16 @@ def _guess_mode(input):
 
 class Data:
     def __init__(
-        self, input, model_shape, device="cpu", mode=None, process=True
+        self,
+        input,
+        model_shape: Tuple | List,
+        device: str | tt.device = "cpu",
+        mode=None,
+        process=False,
     ) -> None:
         self.input = input
-        self.mode = None
-        self.target: Optional[Prediction] = None
+        self.mode: str | None = None
+        self.target: Prediction | List[Prediction] | None = None
         self.device = device
         self.setup: Optional[Setup] = None
         self.transposed = False
@@ -38,7 +45,7 @@ class Data:
         if mode is None:
             self.mode = _guess_mode(input)
 
-        self.model_shape = model_shape
+        self.model_shape = list(model_shape)
         height, width, channels, order, depth = self.__get_shape()
         self.model_height: Optional[int] = height
         self.model_width: Optional[int] = width
@@ -48,6 +55,7 @@ class Data:
         self.mask_value = None
         self.background = None
         self.context = None
+        self.context_noise = 0.4
 
         if process:
             if self.mode == "RGB":
@@ -115,6 +123,7 @@ class Data:
         self.data = tt.from_numpy(self.data).to(self.device)
 
     def _normalise_rgb_data(self, means, stds, norm):
+        """used for onnx input data only"""
         assert self.data is not None
         if self.model_channels != 3:
             raise ReXDataError(
@@ -171,8 +180,6 @@ class Data:
         if self.mode == "RGB" and self.data is not None:
             self.data = self._normalise_rgb_data(means, stds, norm)
             self.try_unsqueeze()
-        if self.mode == "L":
-            self.data = self._normalise_rgb_data(means, stds, norm)
 
     def __get_shape(self):
         """returns height, width, channels, order, depth for the model"""
@@ -223,9 +230,16 @@ class Data:
                 self.mask_value = lambda m, d: spectral_occlusion(
                     m, d, device=self.device
                 )
+            case "none":
+                self.mask_value = tt.nan
+            case "random":
+                self.mask_value = 0
+            case "linear":
+                self.mask_value = 0
             case "context":
-                self.mask_value = lambda m, d: context_occlusion(m, d, self.context)
-                # TODO: Add args for noise and setting the context as currently only available through custom script
+                self.mask_value = lambda m, d: context_occlusion(
+                    m, d, self.context, self.context_noise
+                )
             case _:
                 raise ValueError(
                     f"Invalid mask value {m}. Should be an integer, float, or one of 'min', 'mean', 'spectral'"

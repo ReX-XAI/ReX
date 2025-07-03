@@ -18,8 +18,8 @@ extensions = [
     "sphinx.ext.autodoc.typehints",
     "sphinx.ext.napoleon",
     "sphinx.ext.intersphinx",
-    'sphinxarg.ext',
-    "myst_nb"
+    "sphinxarg.ext",
+    "myst_nb",
 ]
 
 templates_path = ["_templates"]
@@ -39,9 +39,7 @@ html_sidebars = {
     ]
 }
 html_static_path = ["_static"]
-html_theme_options = {
-   "logo": "rex_logo.png"
-}
+html_theme_options = {"logo": "rex_logo.png"}
 
 # -- AutoAPI -----------------------------------------------------------------
 # https://sphinx-autoapi.readthedocs.io/en/latest/
@@ -58,8 +56,6 @@ intersphinx_mapping = {
 
 # -- MyST --------------------------------------------------------------
 # https://myst-parser.readthedocs.io/en/latest/
-myst_enable_extensions = [
-    "attrs_inline"
-]
+myst_enable_extensions = ["attrs_inline"]
 
 nb_execution_timeout = 300

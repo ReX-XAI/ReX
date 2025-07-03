@@ -1,6 +1,8 @@
 #!/usr/bin/env python
-import torch as tt
+from __future__ import annotations
+
 import numpy as np
+import torch as tt
 from scipy.ndimage import gaussian_filter
 
 
@@ -10,7 +12,9 @@ def __split_groups(neg_mask):
     return np.split(neg_mask, np.where(np.diff(neg_mask) > 1)[0] + 1)
 
 
-def spectral_occlusion(mask: tt.Tensor, data: tt.Tensor, noise=0.02, device="cpu"):
+def spectral_occlusion(
+    mask: tt.Tensor, data: tt.Tensor, noise=0.02, device: str | tt.device = "cpu"
+):
     """Linear interpolated occlusion for spectral data, with optional added noise.
 
     @param mask: boolean valued NDArray
@@ -59,5 +63,9 @@ def context_occlusion(mask: tt.Tensor, data: tt.Tensor, context: tt.Tensor, nois
     @return torch.Tensor
     """
     if noise > 0.0:
-        context = tt.tensor(gaussian_filter(context, sigma=noise), dtype=tt.float32)
-    return tt.where(mask == 0, context, data)
+        device = data.device
+        context = context.to("cpu")  # As gaussian_filter expects cpu bound
+        context = tt.tensor(gaussian_filter(context, sigma=noise), dtype=tt.float32).to(
+            device
+        )
+    return tt.where(mask == False, context, data)

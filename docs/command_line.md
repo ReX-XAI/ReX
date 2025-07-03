@@ -17,7 +17,7 @@
 ReX natively understands onnx files. Train or download a model (e.g. [Resnet50](https://github.com/onnx/models/blob/main/validated/vision/classification/resnet/model/resnet50-v1-7.onnx)) and, from this directory, run:
 
 ```bash
-rex tests/test_data/dog.jpg --model resnet50-v1-7.onnx -vv --output dog_exp.jpg
+ReX tests/test_data/dog.jpg --model resnet50-v1-7.onnx -vv --output dog_exp.jpg
 ```
 
 ### Pytorch
@@ -26,7 +26,7 @@ ReX also works with PyTorch, but you will need to write some custom code to prov
 See the sample scripts in `scripts/`.
 
 ```bash
-rex tests/test_data/dog.jpg --script scripts/pytorch.py -vv --output dog_exp.jpg
+ReX tests/test_data/dog.jpg --script scripts/pytorch.py -vv --output dog_exp.jpg
 ```
 
 ## Saving output in a database
@@ -34,7 +34,7 @@ rex tests/test_data/dog.jpg --script scripts/pytorch.py -vv --output dog_exp.jpg
 To store all output in a sqlite database, use:
 
 ```bash
-rex <path_to_image> --model <path_to_model> -db <name_of_db_and_extension>
+ReX <path_to_image> --model <path_to_model> -db <name_of_db_and_extension>
 ```
 
 ReX will create the db if it does not already exist.
@@ -48,7 +48,7 @@ ReX looks for the config file `rex.toml` in the current working directory and th
 If you want to use a custom location, use:
 
 ```bash
-rex <path_to_image> --model <path_to_model> --config <path_to_config>
+ReX <path_to_image> --model <path_to_model> --config <path_to_config>
 ```
 
 An example config file is included in the repo as `example.rex.toml`.
@@ -60,7 +60,7 @@ Some options from the config file can be overridden at the command line when cal
 In particular, you can change the number of iterations of the algorithm:
 
 ```bash
-rex <path_to_image> --model <path_to_model> --iters 5
+ReX <path_to_image> --model <path_to_model> --iters 5
 ```
 
 ## Preprocessing
@@ -78,7 +78,7 @@ If you want more control over the conversion, you can do the conversion yourself
 <!-- If the image has already been resized appropriately for the model, then use the `--processed` flag:
 
 ```bash
-rex <path_to_image> --model <path_to_model> --processed
+ReX <path_to_image> --model <path_to_model> --processed
 ``` -->
 
 <!--### Preprocess Script-->

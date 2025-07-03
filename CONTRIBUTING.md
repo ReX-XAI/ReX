@@ -16,7 +16,7 @@ There are also some additional optional dependencies that are only required for 
 You can install these using `poetry install --extras 3D`.
 
 N.B. that poetry by default creates its own virtual environment for the project.
-However if you run `poetry install` in an activated virtual environment, it will detect and respect this.
+However, if you run `poetry install` in an activated virtual environment, it will detect and respect this.
 See the [poetry docs](https://python-poetry.org/docs/basic-usage/#using-your-virtual-environment) for more information.
 
 ## Testing

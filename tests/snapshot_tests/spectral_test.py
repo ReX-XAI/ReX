@@ -24,13 +24,15 @@ def args_spectral(args, DNA_model):
     return args
 
 
-@pytest.mark.parametrize(
-    "batch_size", [1, 64]
-)
-def test__explanation_snapshot(args_spectral, cpu_device, batch_size, snapshot_explanation):
+@pytest.mark.parametrize("batch_size", [1, 64])
+def test__explanation_snapshot(
+    args_spectral, cpu_device, batch_size, snapshot_explanation
+):
     args_spectral.batch_size = batch_size
     prediction_func, model_shape = get_prediction_func_from_args(args_spectral)
     exp = _explanation(args_spectral, model_shape, prediction_func, cpu_device, db=None)
 
     assert exp == snapshot_explanation
-    assert hash(tuple(exp.explanation.reshape(-1).tolist())) == snapshot_explanation
+    assert (
+        hash(tuple(exp.sufficiency_mask.reshape(-1).tolist())) == snapshot_explanation
+    )
