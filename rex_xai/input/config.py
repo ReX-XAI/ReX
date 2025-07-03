@@ -6,7 +6,6 @@ import argparse
 import importlib.util
 import os
 from tabulate import tabulate
-import pprint
 from os.path import exists, expanduser
 from types import ModuleType
 from typing import List, Optional, Union
@@ -88,7 +87,9 @@ class Args:
         self.chunk_size = 10
         self.minimum_confidence_threshold = 0.0
         self.batch_size: int = 1
-        self.multi_class: bool = False # whether to provide multi-class or single class explanations
+        self.multi_class: bool = (
+            False  # whether to provide multi-class or single class explanations
+        )
         # args for spatial strategy
         self.spatial_initial_radius: int = 25
         self.spatial_radius_eta: float = 0.2
@@ -114,8 +115,13 @@ class Args:
         }
 
     def __repr__(self) -> str:
-        table = tabulate(self.get_dict_repr().items(), headers=["Argument", "Value"], tablefmt="fancy_grid")
+        table = tabulate(
+            self.get_dict_repr().items(),
+            headers=["Argument", "Value"],
+            tablefmt="fancy_grid",
+        )
         return f"Args:\n{table}"
+
 
 class CausalArgs(Args):
     """Creates a causal args object"""
@@ -158,7 +164,11 @@ class CausalArgs(Args):
         }
 
     def __repr__(self) -> str:
-        table = tabulate(self.get_dict_repr().items(), headers=["Argument", "Value"], tablefmt="fancy_grid")
+        table = tabulate(
+            self.get_dict_repr().items(),
+            headers=["Argument", "Value"],
+            tablefmt="fancy_grid",
+        )
         return f"Args:\n{table}"
 
 

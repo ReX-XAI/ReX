@@ -189,7 +189,9 @@ def surface_plot(
     path=None,
 ):
     """plots a 3d surface plot"""
-    logger.info(f"Plotting surface plot for {target.classification} with shape {resp_map.shape} and image shape ({input.height}, {input.width})")
+    logger.info(
+        f"Plotting surface plot for {target.classification} with shape {resp_map.shape} and image shape ({input.height}, {input.width})"
+    )
     img, _x, _y = plot_3d(input, resp_map, True)
     fig = plt.figure()
 
@@ -340,13 +342,13 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
     resp_map = (resp_map - np.min(resp_map)) / (np.max(resp_map) - np.min(resp_map))
 
     # Check if both data and responsibility map have the same range of values
-    assert np.min(data_m) == np.min(resp_map) and np.max(data_m) == np.max(resp_map), (
-        "Data and Responsibility map must have the same range of values!"
-    )
+    assert np.min(data_m) == np.min(resp_map) and np.max(data_m) == np.max(
+        resp_map
+    ), "Data and Responsibility map must have the same range of values!"
 
-    assert data_m.shape == maps.shape, (
-        "Data and Responsibility map must have the same shape!"
-    )
+    assert (
+        data_m.shape == maps.shape
+    ), "Data and Responsibility map must have the same shape!"
 
     x_max, y_max, z_max = data_m.shape
 
@@ -651,6 +653,39 @@ def apply_boundaries_to_image(image, explanations, colours):
         image = add_boundaries(image, explanation, colour=colours[i])
 
     return image
+
+
+def subplot_multi_explanations(image, explanations, titles=None, alpha=0.5):
+    if isinstance(image, Image.Image):
+        image = np.array(image)
+
+    n = len(explanations)
+    cols = min(n, 3)  # max 3 per row
+    rows = (n + cols - 1) // cols
+
+    fig, axes = plt.subplots(rows, cols, figsize=(5 * cols, 5 * rows))
+    axes = np.array(axes).reshape(-1)
+
+    for idx, (ax, expl) in enumerate(zip(axes, explanations)):
+        if expl.ndim == 3:
+            # assume (C,H,W) or (H,W,C)
+            if expl.shape[0] in (1, 3):
+                expl = expl[0]
+            else:
+                expl = expl[..., 0]
+
+        ax.imshow(image)
+        ax.imshow(expl, alpha=alpha)
+        if titles:
+            ax.set_title(titles[idx])
+        ax.axis("off")
+
+    # hide any unused subplots
+    for ax in axes[n:]:
+        ax.axis("off")
+
+    plt.tight_layout()
+    plt.show()
 
 
 def __save_multi(path, explanations_subset, data, img, colours_subset, args):

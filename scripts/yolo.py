@@ -7,7 +7,8 @@ import numpy as np
 
 # Load a model
 model = YOLO("yolo11n.pt")
-path = "tests/test_data/dog_hide.jpg" # Change this later
+path = "tests/test_data/dog_hide.jpg"  # Change this later
+
 
 def preprocess(path, shape, device) -> Data:
     img = Image.open(path).convert("RGB")
@@ -24,6 +25,7 @@ def preprocess(path, shape, device) -> Data:
     data.mask_value = 0
     data.device = "cuda"
     return data
+
 
 def yolo_result_to_pred(results, target):
     predictions = []
@@ -48,6 +50,7 @@ def prediction_function(mutants, target=None, raw=False, binary_threshold=None):
             mutants = mutants.squeeze(0)
         tensor = model(mutants.cpu().numpy(), verbose=False)
         return yolo_result_to_pred(tensor, target)
+
 
 img = Image.open(path)
 model_shape = ["N", img.height, img.width, 3]

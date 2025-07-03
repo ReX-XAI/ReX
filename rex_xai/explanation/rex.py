@@ -210,9 +210,7 @@ def calculate_responsibility(
     maps = ResponsibilityMaps(style=args.responsibility_style)
     if custom_height is not None and custom_width is not None:
         maps.new_map(data.target.classification, custom_height, custom_width)
-    else:
-        maps.new_map(data.target.classification, data.model_height, data.model_width)
-    if data.model_height is not None:
+    elif data.model_height is not None:
         maps.new_map(
             data.target.classification,
             data.model_height,

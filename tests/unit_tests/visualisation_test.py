@@ -5,6 +5,7 @@ import torch as tt
 from rex_xai.input.config import CausalArgs
 from rex_xai.output.visualisation import save_image, voxel_plot
 
+
 def test_surface(exp_extracted, tmp_path):
     p = tmp_path / "surface.png"
     exp_extracted.surface_plot(path=p)
@@ -27,6 +28,7 @@ def test_save_exp(exp_extracted, tmp_path):
 
     assert os.path.exists(p)
     assert os.stat(p).st_size > 0
+
 
 def test_save_image_3d(data_3d):
     # Explanation mask for the voxel data - random values of 0s and 1s

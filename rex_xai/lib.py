@@ -78,7 +78,9 @@ class ReX:
 
     def set_target(self):
         if self.data is not None:
-            self.data.target = predict_target(self.data, self.args, self.prediction_function)
+            self.data.target = predict_target(
+                self.data, self.args, self.prediction_function
+            )
         return self
 
     def set_prediction_function(self, function):

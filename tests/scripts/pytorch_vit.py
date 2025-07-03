@@ -29,8 +29,8 @@ def preprocess(path, shape, device, mode) -> Data:
     )
     # open the image with mode "RGB"
     img = Image.open(path).convert("RGB")
-    # create a Data object
-    data = Data(img, shape, device, mode='RGB')
+    # create a Data object
+    data = Data(img, shape, device, mode="RGB")
     # manually set the data to the transformed image for model consumption
     data.data = transform(img).unsqueeze(0).to(device)  # type: ignore
 

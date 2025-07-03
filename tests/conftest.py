@@ -260,4 +260,3 @@ def resp_map_3d():
     resp_map = tt.zeros((64, 64, 64), dtype=tt.float32)
     resp_map[0:10, 20:25, 20:35] = 1
     return resp_map
-
