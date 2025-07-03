@@ -84,7 +84,7 @@ class Explanation:
         return (
             exp_text
             + f"\n\tsufficiency mask: {self.sufficiency_mask}"
-            + f"\n\texplanation confidence: {self.sufficiency_confidence}"
+            + f"\n\texplanation confidence: {self.sufficiency_confidence:.4f}"
         )
 
     def extract(self):

@@ -30,7 +30,7 @@
            [False, False, False,  ..., False, False, False],
            [False, False, False,  ..., False, False, False],
            [False, False, False,  ..., False, False, False]]])
-  	explanation confidence: 0.12158278375864029
+  	explanation confidence: 0.121583
 # ---
 # name: test__explanation_snapshot.1
   976237796511694519

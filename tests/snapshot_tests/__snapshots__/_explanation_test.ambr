@@ -30,7 +30,7 @@
            [False, False, False,  ..., False, False, False],
            [False, False, False,  ..., False, False, False],
            [False, False, False,  ..., False, False, False]]])
-  	explanation confidence: 0.015131008811295033
+  	explanation confidence: 0.015131
 # ---
 # name: test__explanation_snapshot[1].1
   -2185390445883109608
@@ -66,7 +66,7 @@
            [False, False, False,  ..., False, False, False],
            [False, False, False,  ..., False, False, False],
            [False, False, False,  ..., False, False, False]]])
-  	explanation confidence: 0.015131008811295033
+  	explanation confidence: 0.015131
 # ---
 # name: test__explanation_snapshot[64].1
   -2185390445883109608
@@ -102,7 +102,7 @@
            [False, False, False,  ..., False, False, False],
            [False, False, False,  ..., False, False, False],
            [False, False, False,  ..., False, False, False]]])
-  	explanation confidence: 0.008836681954562664
+  	explanation confidence: 0.008837
 # ---
 # name: test__explanation_snapshot_diff_model_shape[1].1
   -9005299901454543019
@@ -138,7 +138,7 @@
            [False, False, False,  ..., False, False, False],
            [False, False, False,  ..., False, False, False],
            [False, False, False,  ..., False, False, False]]])
-  	explanation confidence: 0.008836683817207813
+  	explanation confidence: 0.008837
 # ---
 # name: test__explanation_snapshot_diff_model_shape[64].1
   -9005299901454543019
