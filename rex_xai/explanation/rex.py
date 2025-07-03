@@ -152,14 +152,17 @@ def predict_target(
     target = prediction_func(data.data, None)
 
     if isinstance(target, list):
-        logger.info(f"Found {len(target)} targets, the targets found are: {target}")
-        if not args.multi_class:
-            logger.warning(
-                "multiple targets found, but args.multi_class is False, so using the first one"
-            )
-            target = target[0]
+        targets_str = ''.join(f"{t.classification}\n" for t in target)
+        logger.info(f"Found {len(target)} targets, the targets found are: \n{targets_str}")
+        target = target[0]
 
-    if target is None:
+    if target is not None:
+        logger.info(
+            "image classified as %s with %f confidence",
+            target.classification,
+            target.confidence,
+        )
+    else:
         logger.warning("no target found")
         sys.exit(-1)
 
