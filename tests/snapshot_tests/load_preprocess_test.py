@@ -3,7 +3,7 @@ from rex_xai.utils._utils import ReXDataError
 from rex_xai.explanation.rex import (
     load_and_preprocess_data,
     try_preprocess,
-    get_prediction_func_from_args
+    get_prediction_func_from_args,
 )
 
 
@@ -44,10 +44,10 @@ def test_preprocess_npy(args, DNA_model, cpu_device, snapshot, caplog):
     with pytest.raises(ReXDataError):
         try_preprocess(args, model_shape, device=cpu_device)
 
+
 def test_preprocess_incompatible_shapes(args, model_shape, cpu_device, caplog):
     args.path = "tests/test_data/DoublePeakClass 0 Mean.npy"
     args.mode = "tabular"
 
     with pytest.raises(ReXDataError):
         try_preprocess(args, model_shape, device=cpu_device)
-

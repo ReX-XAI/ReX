@@ -1,6 +1,6 @@
 [project]
 name = "rex-xai"
-version = "0.3.1"
+version = "0.4.0"
 description = "causal Responsibility-based eXplanations of black-box-classifiers"
 authors = [
     { name = "David Kelly", email = "dkellino@gmail.com" }
@@ -22,7 +22,8 @@ dependencies = [
     "scikit-image>=0.21.0",
     "pandas>=2.2.0",
     "pillow>=10.3.0",
-    "torch>=2.6.0"
+    "torch>=2.6.0",
+    "tabulate>=0.9.0"
     ]
 
 [project.optional-dependencies]

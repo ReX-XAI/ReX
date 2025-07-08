@@ -5,6 +5,7 @@
 import argparse
 import importlib.util
 import os
+from tabulate import tabulate
 from os.path import exists, expanduser
 from types import ModuleType
 from typing import List, Optional, Union
@@ -12,15 +13,16 @@ from typing import List, Optional, Union
 import matplotlib as mpl
 import toml  # type: ignore
 
+from rex_xai.mutants.distributions import Distribution, str2distribution
 from rex_xai.utils._utils import (
     Queue,
     ReXError,
     ReXPathError,
     ReXTomlError,
     Strategy,
+    match_resposnibility_style,
     version,
 )
-from rex_xai.mutants.distributions import Distribution, str2distribution
 from rex_xai.utils.logger import logger
 
 
@@ -45,6 +47,14 @@ class Args:
         self.script: Optional[ModuleType] = None
         self.script_location = None
         self.processed = False
+        # for custom occlusions through cmdline
+        self.context = False
+        self.context_location: Optional[str] = (
+            None  # Path to the file to use for occlusion
+        )
+        self.occlusion_noise: Optional[float] = (
+            None  # Optional gaussian noise parameter for occlusion
+        )
         # onnx processing
         self.means = None
         self.stds = None
@@ -67,16 +77,19 @@ class Args:
         self.mark_segments = False
         self.alpha = 0.2
         self.all = False
-        self.resize = False
         self.grid = False
         self.heatmap_colours = "magma"
         self.multi_style = "composite"
         # explanation production strategy
         self.no_extract = False
         self.strategy: Strategy = Strategy.Global
-        self.chunk_size = 25
+        self.complete = False
+        self.chunk_size = 10
         self.minimum_confidence_threshold = 0.0
         self.batch_size: int = 1
+        self.multi_class: bool = (
+            False  # whether to provide multi-class or single class explanations
+        )
         # args for spatial strategy
         self.spatial_initial_radius: int = 25
         self.spatial_radius_eta: float = 0.2
@@ -94,28 +107,20 @@ class Args:
         self.insertion_step = 100
         self.normalise_curves = True
 
+    def get_dict_repr(self):
+        return {
+            k.replace("_", " "): v
+            for k, v in self.__dict__.items()
+            if not k.startswith("_") and not callable(v)
+        }
+
     def __repr__(self) -> str:
-        return (
-            f"Args <file: {self.path}, model: {self.model}, "
-            + f"gpu: {self.gpu}, "
-            + f"mode: {self.mode}, "
-            + f"progress_bar: {self.progress_bar}, "
-            + f"output_file: {self.output}, surface_plot: {self.surface}, "
-            + f"heatmap_plot: {self.heatmap}, "
-            + f"onnx_means: {self.means}, onnx_stds: {self.stds}, onnx_norm: {self.norm} "
-            + f"onnx_inter_op_threads: {self.inter_op_num_threads}, onnx_intra_op_threads: {self.intra_op_num_threads}, onnx_logger: {self.ort_logger}"
-            + f"explanation_strategy: {self.strategy}, "
-            + f"min_confidence_scalar: {self.minimum_confidence_threshold}, "
-            + f"chunk size: {self.chunk_size}, "
-            + f"spatial_radius: {self.spatial_initial_radius}, "
-            + f"spatial_eta: {self.spatial_radius_eta}, seed: {self.seed}, "
-            + f"db: {self.db}, "
-            + f"script: {self.script_location}, verbosity: {self.verbosity}, "
-            + f"spotlights: {self.spotlights}, spotlight_size: {self.spotlight_size}, "
-            + f"spotlight_eta: {self.spotlight_eta}, "
-            + f"no_expansions: {self.no_expansions}, "
-            + f"obj_function: {self.spotlight_objective_function}, "
+        table = tabulate(
+            self.get_dict_repr().items(),
+            headers=["Argument", "Value"],
+            tablefmt="fancy_grid",
         )
+        return f"Args:\n{table}"
 
 
 class CausalArgs(Args):
@@ -141,29 +146,30 @@ class CausalArgs(Args):
         self.iters = 20
         self.concentrate = False
         self.negative_responsibility = False
+        self.use_bounding_box: bool = False
         # queue management
         self.queue_len = 1
         self.queue_style = Queue.Area
+        # responsibility
+        self.responsibility_style = "multiplicative"
 
         if self.min_box_size is not None:
             self.chunk_size = self.min_box_size
 
+    def get_dict_repr(self):
+        return {
+            k.replace("_", " "): v
+            for k, v in self.__dict__.items()
+            if not k.startswith("_") and not callable(v)
+        }
+
     def __repr__(self) -> str:
-        return (
-            "Causal Args <"
-            + Args.__repr__(self)
-            + f"config_location: {self.config_location}, "
-            + f"mask_value: {self.mask_value}, "
-            + f"tree_depth: {self.tree_depth}, search_limit: {self.search_limit}, "
-            + f"min_box_size: {self.min_box_size}, weighted: {self.weighted}, "
-            + f"confidence_filter: {self.confidence_filter}, "
-            + f"negative_responsibility: {self.negative_responsibility}, "
-            + f"data_locations: {self.data_location}, distribution: {self.distribution}, "
-            + f"distribution_args: {self.distribution_args}, "
-            + f"queue_len: {self.queue_len}, queue_style {self.queue_style}, "
-            + f"concentrate: {self.concentrate}, "
-            + f"iterations: {self.iters}>"
+        table = tabulate(
+            self.get_dict_repr().items(),
+            headers=["Argument", "Value"],
+            tablefmt="fancy_grid",
         )
+        return f"Args:\n{table}"
 
 
 def read_config_file(path):
@@ -242,9 +248,27 @@ def cmdargs_parser():
     )
 
     parser.add_argument(
+        "--confidence",
+        type=float,
+        help="minimum confidence threshold, overriding the setting in <rex.toml>",
+    )
+
+    parser.add_argument(
         "--script",
         type=str,
         help="custom loading and preprocessing script, mostly for use with pytorch models",
+    )
+
+    parser.add_argument(
+        "--context",
+        type=str,
+        help="custom occlusion path to be loaded and preprocessed, mostly for use with pytorch models",
+    )
+
+    parser.add_argument(
+        "--noise",
+        type=float,
+        help="noise level to be added to data used for context occlusion",
     )
 
     parser.add_argument(
@@ -299,10 +323,16 @@ def cmdargs_parser():
 
     parser.add_argument(
         "--contrastive",
-        nargs="?",
-        const=10,
-        help="a contrastive explanation, minimal, necessary and sufficient. Needs optional number <x> of floodlights, defaults to value in <rex.toml>, or 10 if undefined",
+        action="store_true",
+        help="a contrastive explanation: (approximately) minimal, necessary and sufficient",
     )
+
+    parser.add_argument(
+        "--complete",
+        action="store_true",
+        help="a complete explanation: (approximately) minimal, necessary, sufficient and having approximately the same confidence as the original image",
+    )
+
     parser.add_argument(
         "--iters",
         type=int,
@@ -407,6 +437,8 @@ def shared_args(cmd_args, args: CausalArgs):
         args.mode = cmd_args.mode
     if cmd_args.spectral:
         args.mode = "spectral"
+    if cmd_args.confidence:
+        args.minimum_confidence_threshold = cmd_args.confidence
 
     args.processed = cmd_args.processed
 
@@ -469,7 +501,6 @@ def process_config_dict(config_file_args, args):
             "colour",
             "alpha",
             "raw",
-            "resize",
             "progress_bar",
             "grid",
             "mark_segments",
@@ -487,9 +518,11 @@ def process_config_dict(config_file_args, args):
             "queue_style",
             "queue_len",
             "concentrate",
+            "responsibility_style",
+            "use_bounding_box",
         ],
         "distribution": ["distribution", "blend", "distribution_args"],
-        "explanation": ["chunk_size", "minimum_confidence_threshold"],
+        "explanation": ["chunk_size", "minimum_confidence_threshold", "multi_class"],
         "spatial": ["spatial_initial_radius", "spatial_radius_eta", "no_expansions"],
         "multi": [
             "strategy",
@@ -507,6 +540,7 @@ def process_config_dict(config_file_args, args):
     if "causal" in config_file_args.keys():
         causal_dict = config_file_args["causal"]
         apply_dict_to_args(causal_dict, args, expected_values["causal"])
+
         if "distribution" in causal_dict.keys():
             apply_dict_to_args(
                 causal_dict["distribution"], args, expected_values["distribution"]
@@ -540,6 +574,14 @@ def process_config_dict(config_file_args, args):
 
     if type(args.strategy) is str:
         args.strategy = match_strategy(args.strategy)
+
+    try:
+        args.responsibility_style = match_resposnibility_style(
+            args.responsibility_style
+        )
+    except ReXTomlError as e:
+        print(e)
+        exit()
 
 
 def process_custom_script(script, args):
@@ -579,10 +621,23 @@ def process_cmd_args(cmd_args, args):
     if cmd_args.multi is not None:
         args.strategy = Strategy.MultiSpotlight
         args.spotlights = int(cmd_args.multi)
+        args.responsibility_style = "additive"
 
-    if cmd_args.contrastive is not None:
+    if cmd_args.contrastive:
         args.strategy = Strategy.Contrastive
-        args.spotlights = int(cmd_args.contrastive)
+
+    if cmd_args.complete:
+        args.strategy = Strategy.Contrastive
+        args.complete = True
+
+    if cmd_args.context is not None:
+        args.context = True
+        if cmd_args.noise is None:
+            logger.warning("no noise specified for occlusion so will not be used")
+            args.occlusion_noise = 1
+        args.occlusion_noise = float(cmd_args.noise)
+        args.context_location = cmd_args.context
+        args.mask_value = "context"
 
 
 def load_config(config_path=None):
@@ -636,14 +691,17 @@ def get_all_args():
 def validate_args(args: CausalArgs):
     """Validates a CausalArgs object.
 
-    Checks that ``args.path`` is not None, that boolean args are boolean, and that numeric args fall within correct bounds.
-
     Args:
         args: configuration values for ReX
     """
 
-    if args.path is None:
-        raise FileNotFoundError("Input file path cannot be None")
+    # makes sure file exists at path
+    if not os.path.isfile(args.path):
+        raise FileNotFoundError(f"Input file {args.path} does not exist")
+
+    # make sure if provided with context path then path exists
+    if args.context and not os.path.isfile(args.context_location):
+        raise FileNotFoundError(f"Context file {args.context_location} does not exist")
 
     # values that must be between 0 and 1
     for arg in [
@@ -654,6 +712,7 @@ def validate_args(args: CausalArgs):
         "spatial_radius_eta",
         "spotlight_eta",
         "binary_threshold",
+        "minimum_confidence_threshold",
     ]:
         val = getattr(args, arg)
         if val is not None:
@@ -682,12 +741,13 @@ def validate_args(args: CausalArgs):
         "info",
         "progress_bar",
         "raw",
-        "resize",
         "grid",
         "mark_segments",
         "weighted",
         "concentrate",
         "normalise_curves",
+        "use_bounding_box",
+        "multi_class",
     ]:
         val = getattr(args, arg)
         if val is not None:

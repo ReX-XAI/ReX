@@ -16,13 +16,13 @@ except ImportError:
     from anytree.search import find
 
 
-from rex_xai.mutants.box import average_box_size, initialise_tree
 from rex_xai.input.config import CausalArgs, Queue
 from rex_xai.input.input_data import Data
-from rex_xai.utils.logger import logger
-from rex_xai.mutants.mutant import Mutant, get_combinations, _apply_to_data
-from rex_xai.responsibility.resp_maps import ResponsibilityMaps
+from rex_xai.mutants.box import average_box_size, initialise_tree
+from rex_xai.mutants.mutant import Mutant, _apply_to_data, get_combinations
 from rex_xai.responsibility.prediction import Prediction
+from rex_xai.responsibility.resp_maps import ResponsibilityMaps
+from rex_xai.utils.logger import logger
 
 
 def subbox(tree, name, max_depth, min_size, mode, r_map=None):
@@ -116,13 +116,40 @@ def causal_explanation(
         np.random.seed(args.seed + process)
         tt.manual_seed(args.seed + process)
 
-    search_tree = initialise_tree(
-        data.model_height,
-        data.model_width,
-        args.distribution,
-        args.distribution_args,
-        d_lim=data.model_depth,
-    )
+    if args.mask_value in ("random", "linear"):
+        lower = tt.min(data.data).item()  # type: ignore
+        upper = tt.max(data.data).item()  # type: ignore
+
+        if args.mask_value == "random":
+            data.mask_value = np.random.uniform(lower, upper)
+        else:
+            steps = np.linspace(lower, upper, args.iters)
+            data.mask_value = steps[process - 1]  # type: ignore
+        logger.info("using %.3f for process %d", data.mask_value, process)
+
+    if args.use_bounding_box:
+        assert data.target.bounding_box is not None
+        logger.info(
+            f"Using bounding box bounding box for {data.target.classification} that has the bounding box {data.target.bounding_box}"
+        )
+        box = data.target.bounding_box
+        search_tree = initialise_tree(
+            int(box[3]),
+            int(box[2]),
+            args.distribution,
+            args.distribution_args,
+            d_lim=data.model_depth,
+            r_start=int(box[1]),
+            c_start=int(box[0]),
+        )
+    else:
+        search_tree = initialise_tree(
+            data.model_height,
+            data.model_width,
+            args.distribution,
+            args.distribution_args,
+            d_lim=data.model_depth,
+        )
 
     total_work = 0
     total_passing = 0
@@ -133,7 +160,7 @@ def causal_explanation(
     # The <queue> is a list of strings in the form "R:x:y:...n"
     queue = deque(search_tree.name)
 
-    local_maps = ResponsibilityMaps()
+    local_maps = ResponsibilityMaps(args.responsibility_style)
 
     # a <job> is of the form "R:x:y:...n", where x,y...n are integers.
     # This is both the unique name for a passing mutant and the node name for
@@ -179,17 +206,13 @@ def causal_explanation(
 
                 work_done = len(mutants)
 
+                # TODO find out why this was added
                 def apply_mask(m):
-                    if args.mask_value == "context":
-                        return _apply_to_data(m.mask, data, data.mask_value)
-                    return tt.where(m.mask, data.data, data.mask_value)
+                    return _apply_to_data(m.mask, data)
 
                 if data.mode in ("spectral", "tabular"):
                     preds: List[Prediction] = [
-                        prediction_func(_apply_to_data(m.mask, data, data.mask_value))[
-                            0
-                        ]
-                        for m in mutants
+                        prediction_func(apply_mask(m))[0] for m in mutants
                     ]
                 else:
                     # TODO this needs testing
@@ -198,7 +221,6 @@ def causal_explanation(
                             prediction_func(
                                 apply_mask(m),  #  type: ignore
                                 data.target,
-                                binary_threshold=args.binary_threshold,
                             )[0]
                             for m in mutants
                         ]  # type: ignore
@@ -214,7 +236,6 @@ def causal_explanation(
                         preds: List[Prediction] = prediction_func(
                             tensors,
                             data.target,
-                            binary_threshold=args.binary_threshold,
                         )
 
                 for i, m in enumerate(mutants):

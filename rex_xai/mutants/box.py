@@ -5,9 +5,10 @@ This occlusion is realised in the form of a mask over an image"""
 
 from __future__ import annotations
 
-from typing import List, Tuple, Dict
-from anytree import LevelOrderGroupIter, NodeMixin, RenderTree
+from typing import Dict, List, Tuple
+
 import numpy as np
+from anytree import LevelOrderGroupIter, NodeMixin, RenderTree
 
 from rex_xai.mutants.distributions import Distribution, random_coords
 from rex_xai.utils.logger import logger
@@ -101,22 +102,18 @@ class BoxInternal:
             return (self.row_start, self.row_stop, self.col_start, self.col_stop)
 
     def __1d_parts(self):
-        c1 = random_coords(self.distribution, [self.col_stop - self.col_start])
-        if c1 is not None and isinstance(c1, np.ndarray):
-            c1 = c1[0] + self.col_start
-
-        c2 = random_coords(self.distribution, [self.col_stop - self.col_start])
-        if c2 is not None and isinstance(c2, np.ndarray):
-            c2 = c2[0] + self.col_start
-
-        c3 = random_coords(self.distribution, [self.col_stop - self.col_start])
-        if c3 is not None and isinstance(c3, np.ndarray):
-            c3 = c3[0] + self.col_start
-
-        if c1 is None or c2 is None or c3 is None:
+        if self.col_stop - self.col_start < 4:
             return None
 
-        ordered = sorted([c1, c2, c3])
+        width = self.col_stop - self.col_start
+        xs = random_coords(
+            self.distribution, width, 3, self.distribution_args, 1, width
+        )
+        if xs is None:
+            return None
+
+        xs = xs + self.col_start
+        ordered = sorted(xs)  # type: ignore
 
         b0 = Box(
             0,
@@ -172,7 +169,7 @@ class BoxInternal:
             w = int(self.col_stop - self.col_start)
             space: int = h * w
             pos = random_coords(
-                self.distribution, space, h, w, self.distribution_args, map=map
+                self.distribution, space, 1, self.distribution_args, h, w, map=map
             )
 
         if pos is None:
@@ -258,8 +255,6 @@ class BoxInternal:
             c1 = random_coords(
                 self.distribution,
                 space,
-                range1[0],
-                range1[1],
                 self.distribution_args,
                 map=map,
             )
@@ -271,8 +266,6 @@ class BoxInternal:
             c2 = random_coords(
                 self.distribution,
                 space,
-                range2[0],
-                range2[1],
                 self.distribution_args,
                 map=map,
             )
@@ -403,6 +396,7 @@ class BoxInternal:
                 * (self.col_stop - self.col_start)
                 * (self.depth_stop - self.depth_start)
             )
+
         else:
             if self.row_start == 0 and self.row_stop == 0:
                 return self.col_stop - self.col_start

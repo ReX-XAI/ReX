@@ -1,5 +1,7 @@
 #!/usr/bin/env python
+import numbers
 from typing import List, Optional
+
 import numpy as np
 import torch as tt
 from PIL import Image  # type: ignore
@@ -10,11 +12,12 @@ except ImportError:
     from anytree.search import find
 
 import matplotlib.pyplot as plt
+
+from rex_xai.input.input_data import Data
 from rex_xai.mutants.box import Box
 from rex_xai.responsibility.prediction import Prediction
+from rex_xai.utils._utils import add_boundaries, set_boolean_mask_value, try_detach
 from rex_xai.utils.logger import logger
-from rex_xai.input.input_data import Data
-from rex_xai.utils._utils import add_boundaries, set_boolean_mask_value
 
 __combinations = [
     [
@@ -42,13 +45,13 @@ __combinations = [
 ]
 
 
-def _apply_to_data(mask, data: Data, masking_func):
-    if isinstance(masking_func, (float, int)):
-        res = tt.where(mask, data.data, masking_func)  # type: ignore
-        return res
-    if callable(masking_func):
-        return masking_func(mask, data.data)
+def _apply_to_data(mask, data: Data):
+    if callable(data.mask_value):
+        return data.mask_value(mask, data.data)
+    if isinstance(data.mask_value, numbers.Number):
+        return tt.where(mask, data.data, data.mask_value)  # type: ignore
 
+    print(data.mask_value)
     logger.warning("applying default masking value of 0")
     return tt.where(mask, data.data, 0)  # type: ignore
 
@@ -116,19 +119,20 @@ class Mutant:
         set_boolean_mask_value(self.mask, self.mode, self.order, box)
 
     def apply_to_data(self, data: Data):
-        return _apply_to_data(self.mask, data, self.masking_func)
+        return _apply_to_data(self.mask, data)
 
     def save_mutant(self, data: Data, name=None, segs=None):
         if data.mode == "RGB":
-            m = np.array(data.input.resize((data.model_height, data.model_width)))
-            mask = self.mask.squeeze().detach().cpu().numpy()
+            m = np.array(data.input)
+            mask = try_detach(self.mask).squeeze()
+
             if data.transposed:
                 # if transposed, we have C * H * W, so change that to H * W * C
                 m = np.where(mask, m.transpose((2, 0, 1)), 0)
                 m = m.transpose((1, 2, 0))
             else:
-                # TODO m = m.transpose((0, 2, 1))
-                m = np.where(mask, m, 255)
+                mask = mask.transpose((1, 2, 0))
+                m = np.where(mask, m, 0)
             # draw on the segment_mask, if available
             if segs is not None:
                 m = add_boundaries(m, segs)
@@ -146,6 +150,31 @@ class Mutant:
             plt.savefig(f"{self.get_name()}.png")
         # 3d image
         if data.mode == "voxel":
-            # TODO
-            logger.info("saving 3d mutants is not yet implemented")
-            pass
+            volume = self.apply_to_data(data).squeeze().detach().cpu().numpy()
+            num_slices = min(volume.shape[0], 8)
+            slice_indices_x = np.linspace(0, volume.shape[0] - 1, num_slices, dtype=int)
+            slice_indices_y = np.linspace(0, volume.shape[1] - 1, num_slices, dtype=int)
+            slice_indices_z = np.linspace(0, volume.shape[2] - 1, num_slices, dtype=int)
+
+            fig, axes = plt.subplots(3, num_slices, figsize=(15, 6))
+            for i, idx in enumerate(slice_indices_x):
+                ax = axes[0, i]
+                ax.imshow(volume[idx, :, :], cmap="gray")
+                ax.set_title(f"X={idx}")
+                ax.axis("off")
+
+            for j, idy in enumerate(slice_indices_y):
+                ax = axes[1, j]
+                ax.imshow(volume[:, idy, :], cmap="gray")
+                ax.set_title(f"Y={idy}")
+                ax.axis("off")
+
+            for z, idz in enumerate(slice_indices_z):
+                ax = axes[2, z]
+                ax.imshow(volume[:, :, idz], cmap="gray")
+                ax.set_title(f"Z={idz}")
+                ax.axis("off")
+
+            plt.tight_layout()
+            plt.savefig(name or f"{self.get_name()}.png")
+            plt.close(fig)

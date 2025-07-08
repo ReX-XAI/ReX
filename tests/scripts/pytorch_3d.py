@@ -83,5 +83,4 @@ def prediction_function(mutants, target=None, raw=False, binary_threshold=None):
         return from_pytorch_tensor(tensor)
 
 
-def model_shape():
-    return ["N", 64, 64, 64]
+model_shape = ["N", 64, 64, 64]

@@ -39,9 +39,6 @@ alpha = 0.1
 # produce unvarnished image with actual masking value, defaults to false
 raw = true
 
-# resize the explanation to the size of the original image. This uses cubic interpolation and will not be as visually accurate as not resizing, defaults to false
-resize = true
-
 # whether to show progress bar in the terminal, defalts to true
 progress_bar = false
 
@@ -87,6 +84,8 @@ queue_len = 2
 
 # concentrate: weight responsibility by size and depth of passing partition. Defaults to false
 concentrate = true
+
+responsibility_style = "additive"
 
 [causal.distribution]
 # distribution for splitting the box, defaults to uniform. Possible choices are 'uniform' | 'binom' | 'betabinom' | 'adaptive'
