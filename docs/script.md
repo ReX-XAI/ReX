@@ -65,14 +65,13 @@ data.model_height = 224
 The prediction function is responsible for running inference on the model, processing and returning the output.
 
 ```python
-def prediction_function(mutants, target=None, raw=False, binary_threshold=None):
+def prediction_function(mutants, target=None, raw=False):
 ```
 
 **Parameters**:
-- `mutants` -> A list of mutants to run inference on?
+- `mutants` -> A list of mutants to run inference on if batch is more than 1, otherwise a single mutant
 - `target` -> The target class 
 - `raw` -> Whether to return the raw output (e.g. the probability of the classification) or not 
-- `binary_threshold` -> The threshold for binary classification e.g. 0.5
 
 **Returns**:
 - A list of Prediction objects or a float if raw is True
@@ -84,18 +83,23 @@ The Prediction object contains the following fields:
  - `target` -> The target class: Optional[int]
  - `target_confidence` -> The confidence of the target class: Optional[float]
 
-#### Model shape function
+#### Model shape variable
 
-The model shape function is responsible for returning the shape of the model input.
+The model shape variable defines the shape of the model input.
 
 ```python
-def model_shape() -> []:
+model_shape: List[Union[int, str]]
 ```
-**Example:**
+**Examples:**
 ```python
-def model_shape():
-    return ["N", 3, 224, 224]
+model_shape = ["N", 3, 224, 224]
 ```
+
+If the model takes in arbitrary height and width or depth, you can use "H", "W" or "D" respectively:
+```python
+model_shape = ["N", 3, "H", "W"]
+```
+This is useful for models that take in images of different sizes or volumes of different depths.
 
 ---
 Example scripts can be found in the `tests/scripts` and `scripts` directory.
