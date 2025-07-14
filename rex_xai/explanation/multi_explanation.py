@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-from __future__ import annotations
-
 """generate multiple explanations from a responsibility landscape <pixel_ranking>"""
 
 import os

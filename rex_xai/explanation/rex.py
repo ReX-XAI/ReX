@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-from __future__ import annotations
-
 """main logical entrypoint for ReX."""
 
 import copy

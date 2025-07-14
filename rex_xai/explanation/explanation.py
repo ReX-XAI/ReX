@@ -367,7 +367,7 @@ class Explanation:
         insertion_memo,
         mask_shape,
         starting_pointer,
-        rounding=2,
+        rounding=4,
     ):
         target_confidence = self.data.target.confidence  # type: ignore
         step = self.args.chunk_size
@@ -385,7 +385,7 @@ class Explanation:
         exhausted = False
 
         chunk_pointer = len(ranking)
-        ind = 1
+        ind = 0
 
         with tqdm(
             total=(len(ranking) - starting_pointer) // self.args.chunk_size,

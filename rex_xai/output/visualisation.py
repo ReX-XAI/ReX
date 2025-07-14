@@ -8,8 +8,8 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import torch as tt
-from PIL import Image, ImageDraw
 from matplotlib.figure import Figure
+from PIL import Image, ImageDraw
 from scipy.ndimage import center_of_mass
 from skimage.segmentation import slic
 from torch import Tensor
@@ -342,13 +342,13 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
     resp_map = (resp_map - np.min(resp_map)) / (np.max(resp_map) - np.min(resp_map))
 
     # Check if both data and responsibility map have the same range of values
-    assert np.min(data_m) == np.min(resp_map) and np.max(data_m) == np.max(
-        resp_map
-    ), "Data and Responsibility map must have the same range of values!"
+    assert np.min(data_m) == np.min(resp_map) and np.max(data_m) == np.max(resp_map), (
+        "Data and Responsibility map must have the same range of values!"
+    )
 
-    assert (
-        data_m.shape == maps.shape
-    ), "Data and Responsibility map must have the same shape!"
+    assert data_m.shape == maps.shape, (
+        "Data and Responsibility map must have the same shape!"
+    )
 
     x_max, y_max, z_max = data_m.shape
 
@@ -797,7 +797,7 @@ def save_image(mask: tt.Tensor | np.ndarray, data: Data, args: CausalArgs, path=
                 data.data = data.data.squeeze().detach().cpu().numpy()
             context = __transpose_mask(data.context, data.mode)
             img = __transpose_mask(data.data, data.mode)
-            fig = np.where(mask == False, context, img)
+            fig = np.where(not mask, context, img)
             out, ax = plt.subplots()
             ax.imshow(fig)
             ax.axis("off")
