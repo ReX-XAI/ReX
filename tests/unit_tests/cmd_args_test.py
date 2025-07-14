@@ -105,7 +105,7 @@ def test_complete():
     process_cmd_args(cmd_args, args)
 
     assert args.strategy == Strategy.Contrastive
-    assert args.complete == True
+    assert args.complete
 
 
 def test_spectral():
