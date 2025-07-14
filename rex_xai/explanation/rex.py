@@ -152,8 +152,10 @@ def predict_target(
     target = prediction_func(data.data, None)
 
     if isinstance(target, list):
-        targets_str = ''.join(f"{t.classification}\n" for t in target)
-        logger.info(f"Found {len(target)} targets, the targets found are: \n{targets_str}")
+        targets_str = "".join(f"{t.classification}\n" for t in target)
+        logger.info(
+            f"Found {len(target)} targets, the targets found are: \n{targets_str}"
+        )
         target = target[0]
 
     if target is not None:
@@ -210,18 +212,20 @@ def calculate_responsibility(
                 "No target classification found. Please run `predict_target` before running `calculate_responsibility`."
             )
 
-    maps = ResponsibilityMaps(style=args.responsibility_style)
-    if custom_height is not None and custom_width is not None:
-        maps.new_map(data.target.classification, custom_height, custom_width)
-    elif data.model_height is not None:
-        maps.new_map(
-            data.target.classification,
-            data.model_height,
-            data.model_width,
-            data.model_depth,
-        )
-    else:
-        maps.new_map(data.target.classification, data.model_height, data.model_width)
+    maps = ResponsibilityMaps(
+        args.responsibility_style, data.model_height, data.model_width, data.model_depth
+    )
+    # if custom_height is not None and custom_width is not None:
+    #     maps.new_map(data.target.classification, custom_height, custom_width)
+    # elif data.model_height is not None:
+    #     maps.new_map(
+    #         data.target.classification,
+    #         data.model_height,
+    #         data.model_width,
+    #         data.model_depth,
+    #     )
+    # else:
+    #     maps.new_map(data.target.classification, data.model_height, data.model_width)
 
     total_passing: int = 0
     total_failing: int = 0
@@ -396,13 +400,13 @@ def _explanation(
 
             if data.mode == "spectral":
                 print(
-                    f"INFO:ReX:classification {exp.data.target.classification}, area {results['area']}, responsibility entropy {results['entropy']},",  # type: ignore
+                    f"INFO:ReX:classification {exp.data.target.classification}, area {results['area']}, KL divergence {results['entropy']},",  # type: ignore
                     f"max entropy {results['max_entropy']}",
                 )
             else:
                 if args.analyse == "print":
                     print(
-                        f"INFO:ReX:path {args.path}, classification {exp.data.target.classification}, area {results['area']}, responsibility entropy {results['entropy']}, robustness {results['robustness']}",  # type: ignore
+                        f"INFO:ReX:path {args.path}, classification {exp.data.target.classification}, area {results['area']}, KL divergence {results['entropy']}, robustness {results['robustness']}",  # type: ignore
                         f"insertion curve {results['insertion_curve']}, deletion curve {results['deletion_curve']}, time {time_taken}",
                     )
                 else:

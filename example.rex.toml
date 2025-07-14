@@ -1,6 +1,6 @@
 [rex]
 # masking value for mutations, can be either an integer, float or
-# one of the following built-in occlusions 'spectral', 'min', 'mean', 'linear', 'random', 'context'
+# one of the following built-in occlusions 'spectral', 'min', 'mean', 'random', 'linear'
 # mask_value = 0
 
 # random seed, only set for reproducibility
@@ -33,7 +33,7 @@
 
 [rex.visual]
 # whether to show progress bar in the terminal, defaults to true
-# progress_bar = false
+# progress_bar = true
 
 # include classification and confidence information in title of plot, defaults to true
 # info = false
@@ -51,10 +51,10 @@
 # alpha = 0.2
 
 # overlay a 10*10 grid on an explanation, defaults to false
-# grid = true
+# grid = false
 
 # mark quickshift segmentation on image
-# mark_segments = false
+# mark_segments = true
 
 # multi_style explanations, either <composite> or <separate>
 # multi_style = "composite"
@@ -96,12 +96,6 @@
 # aggregate responsibility either by adding or multiplying. Possible values <"additive", "multiplicative". Default <multiplicative>
 # responsibility_style = "additive"
 
-# use bounding box: enables the splitting of boxes to occur on the bounding box of the target(s) found. Defaults to false
-# use_bounding_box = true
-
-# multi_class: whethher there is a single target class or multiple target classes to consider. Defaults to false
-# multi_class = true
-
 [causal.distribution]
 # distribution for splitting the box, defaults to uniform. Possible choices are 'uniform' | 'betabinom' | 'adaptive'
 # distribution = 'uniform'
@@ -113,7 +107,7 @@
 
 [explanation]
 # iterate through pixel ranking in chunks, defaults to causal.min_box_size
-# chunk_size = 10
+# chunk_size = 5
 
 # causal explanations are minimal by definition, but very small explanations might have very low confidence. ReX will keep 
 # looking for an explanation of confidence greater than or equal to the model confidence on <entire image * minimum_confidence_threshold>. 
@@ -129,7 +123,7 @@
 # radius_eta = 0.2
 
 # number of times to expand before quitting, defaults to 10
-# no_expansions = 4
+# no_expansions = 10
 
 [explanation.multi]
 # multi method (just spotlight so far)
@@ -141,15 +135,17 @@
 # default size of spotlight
 # spotlight_size = 24
 
-# decrease spotlight by this amount
+# increase spotlight by this amount
 # spotlight_eta = 0.2
 
 # maximum number of random steps that a spotlight can make before quitting
 # max_spotlight_budget = 40
 
 # objective function for spotlight search. Possible options 'mean' | 'max' | "none"
-# spotlight_objective_function = 'mean'
+# spotlight_objective_function = 'none'
 
+# how much overlap should we allow for multiple explanations. By default, this is 0, meaning
+# each explanation must be completely separate from the others.
 # permitted_overlap = 0.0
 
 [explanation.evaluation]
@@ -158,6 +154,7 @@
 # normalise_curves = true
 
 # insertion/deletion curve step size
-# insertion_step = 500
+# insertion_step = 100
+
 
 

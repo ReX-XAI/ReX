@@ -5,13 +5,13 @@
 import argparse
 import importlib.util
 import os
-from tabulate import tabulate
 from os.path import exists, expanduser
 from types import ModuleType
 from typing import List, Optional, Union
 
 import matplotlib as mpl
 import toml  # type: ignore
+from tabulate import tabulate
 
 from rex_xai.mutants.distributions import Distribution, str2distribution
 from rex_xai.utils._utils import (
@@ -621,7 +621,6 @@ def process_cmd_args(cmd_args, args):
     if cmd_args.multi is not None:
         args.strategy = Strategy.MultiSpotlight
         args.spotlights = int(cmd_args.multi)
-        args.responsibility_style = "additive"
 
     if cmd_args.contrastive:
         args.strategy = Strategy.Contrastive

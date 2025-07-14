@@ -86,6 +86,13 @@ Binary model confidence threshold.
 Anything >= threshold will be classified as 1, otherwise 0.
 Default: None.
 
+`intra_op_num_threads = 4`
+`inter_op_num_threads = 4`
+`ort_logger = 3`
+
+Settings for the onnx inference engine. These will be system dependent.
+
+
 ### [rex.visual] section
 
 This section is for options that control the appearance of the progress bar and output data visualisations.
@@ -94,13 +101,6 @@ This section is for options that control the appearance of the progress bar and 
 
 Whether to show progress bar in the terminal.
 Defaults: true.
-
-`resize = true`
-
-Resize the explanation to the size of the original image, rather than the size used for the model.
-This uses cubic interpolation and will not be as visually accurate as not resizing.
-Used with option `--output`.
-Default: false.
 
 `raw = false`
 
@@ -144,6 +144,11 @@ Matplotlib colourscheme for responsibility map plotting.
 Used with option `--heatmap` and `--surface`.
 Default: 'magma'.
 See the [Matplotlib documentation](https://matplotlib.org/stable/users/explain/colors/colormaps.html) for a list of all possible colourmaps.
+
+`multi_style = 'composite'`
+
+Whether to plot all multiple explanations on the same image, or to plot them on separate images 
+with `multi_style = 'separate'`.
 
 ## [causal] section
 
@@ -227,6 +232,12 @@ ReX is a tool based on actual causality, so it iteratively refines only on the t
 Many of the mutations it creates will not have the target classification. 
 With `negative_responsibility` set to true, the calculated responsibility for a *non-passing* mutation is subtracted from the target's responsibility map. 
 This can, especially coupled with `concentrate = true`, lead to less noisy responsibility landscapes.
+
+`responsibility_style = 'multiplicative`
+
+An advanced setting. The different responsibility maps produced by each internal iteration can be merged either 
+by multiplying them together, or adding them. The two different approaches produce visually different 
+responsibility maps, though have a limited effect on the explanations.
 
 ### [causal.distribution] section
 
