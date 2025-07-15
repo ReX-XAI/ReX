@@ -130,10 +130,11 @@ def load_and_preprocess_data(
             args.mask_value = 0  # Setting it to a default value in this case
     return data
 
-def validate_shape(data: Data, model_shape: Tuple[int, ...]) -> Data:
+def validate_shape(data: Data, model_shape: List[int, ...]) -> Data:
     new_shape = list(model_shape)
+    depth_str = ", Depth of " + str(data.model_depth) if data.model_depth is not None else ""
     logger.info(f"Validating model shape {new_shape} and making sure it matches the data's shape, which has a WIDTH of {data.model_width}, "
-                f"HEIGHT of {data.model_height},{"Depth of "+str(data.model_depth) if data.model_depth is not None else ""}")
+                f"HEIGHT of {data.model_height}{depth_str}.")
     for i, input_shape in enumerate(model_shape):
         if input_shape == "W":
              new_shape[i] = data.model_width
@@ -153,7 +154,7 @@ def validate_shape(data: Data, model_shape: Tuple[int, ...]) -> Data:
         if data.model_depth:
             assert data.model_depth == new_shape[3]
 
-    data.model_shape = tuple(new_shape)
+    data.model_shape = new_shape
     return data
 
 def predict_target(
