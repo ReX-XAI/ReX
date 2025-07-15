@@ -48,6 +48,6 @@ def test_voxel_plot(data_3d, resp_map_3d):
     args = CausalArgs()
     # Create a cube in data
     voxel_plot(args, resp_map_3d, data_3d, path="test.png")
-    assert os.path.exists(f"test.png")
-    assert os.path.getsize(f"test.png") > 0
-    os.remove(f"test.png")
+    assert os.path.exists("test.png")
+    assert os.path.getsize("test.png") > 0
+    os.remove("test.png")
