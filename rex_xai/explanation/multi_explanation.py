@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-from __future__ import annotations
-
 """generate multiple explanations from a responsibility landscape <pixel_ranking>"""
 
 import os
@@ -244,6 +242,7 @@ class MultiExplanation(Explanation):
         return np.unravel_index(origin, (self.data.model_height, self.data.model_width))  # type: ignore
 
     def spotlight_search(self, origin=None):
+        already_tried = set()
         if origin is None:
             centre = self.__random_location()
         else:
@@ -256,19 +255,28 @@ class MultiExplanation(Explanation):
         steps = 0
         while ret == SpatialSearch.NotFound and steps < self.args.max_spotlight_budget:
             if self.args.spotlight_objective_function == "none":
-                centre = self.__random_location()
+                while True:
+                    centre = self.__random_location()
+                    if centre not in already_tried:
+                        already_tried.add(centre)
+                        break
+
                 ret, resp, conf = self._Explanation__spatial(  # type: ignore
                     centre=centre, expansion_limit=self.args.no_expansions
                 )
             else:
                 new_resp = 0.0
                 while new_resp < resp:
-                    centre = self.__random_step_from(
-                        centre,
-                        self.data.model_height,
-                        self.data.model_width,
-                        step=self.args.spotlight_step,
-                    )
+                    while True:
+                        centre = self.__random_step_from(
+                            centre,
+                            self.data.model_height,
+                            self.data.model_width,
+                            step=self.args.spotlight_step,
+                        )
+                        if centre not in already_tried:
+                            already_tried.add(centre)
+                            break
                     ret, new_resp, conf = self._Explanation__spatial(  # type: ignore
                         centre=centre, expansion_limit=self.args.no_expansions
                     )

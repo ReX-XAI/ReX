@@ -6,7 +6,7 @@ A normal explanation from ReX is only sufficient.
 From the command line, the basic call is
 
 ```bash
-rex <image> --script pytorch.py --contrastive
+ReX <image> --script <script.py> --contrastive
 ```
 
 ## Example
@@ -22,7 +22,7 @@ This image is a tandem bike
 If we run
 
 ```bash
-rex tandem.jpg --script ../tests/scripts/pytorch_resnet50.py --vv --output tandem_exp.png
+ReX tandem.jpg --script ../tests/scripts/pytorch_resnet50.py --vv --output tandem_exp.png
 ```
 
 we get
@@ -42,7 +42,7 @@ to get `tandem`, but they aren't *necessary*. There must be at least one more, i
 We can try to find other sufficient explanations using `--multi`. 
 
 ```bash
-rex tandem.jpg --script ../tests/scripts/pytorch_resnet50.py --multi --vv --output tandem_exp.png
+ReX tandem.jpg --script ../tests/scripts/pytorch_resnet50.py --multi --vv --output tandem_exp.png
 ```
 ![tandem1](../assets/tandem_multi_1.png)
 ![tandem2](../assets/tandem_multi_2.png)
