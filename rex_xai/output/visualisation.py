@@ -10,8 +10,8 @@ from matplotlib.cm import ScalarMappable
 from matplotlib.colors import Normalize
 import numpy as np
 import torch as tt
-from PIL import Image, ImageDraw
 from matplotlib.figure import Figure
+from PIL import Image, ImageDraw
 from scipy.ndimage import center_of_mass
 from skimage.segmentation import slic
 from torch import Tensor
@@ -569,7 +569,7 @@ def save_image(mask: tt.Tensor | np.ndarray, data: Data, args: CausalArgs, path=
                 data.data = data.data.squeeze().detach().cpu().numpy()
             context = __transpose_mask(data.context, data.mode)
             img = __transpose_mask(data.data, data.mode)
-            fig = np.where(mask == False, context, img)
+            fig = np.where(not mask, context, img)
             out, ax = plt.subplots()
             ax.imshow(fig)
             ax.axis("off")

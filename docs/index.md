@@ -142,4 +142,6 @@ notebooks/intro
 config.md
 multiple.md
 contrastive.md
+complete.md
+evaluation.md
 ```

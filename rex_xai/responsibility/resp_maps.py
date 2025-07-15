@@ -17,10 +17,13 @@ from rex_xai.utils.logger import logger
 
 
 class ResponsibilityMaps:
-    def __init__(self, style) -> None:
+    def __init__(self, style, height, width, depth=None) -> None:
         self.maps = {}
         self.counts = {}
         self.style = style
+        self.height = height
+        self.width = width
+        self.depth = depth
 
     def __repr__(self) -> str:
         return str(self.counts)
@@ -33,18 +36,22 @@ class ResponsibilityMaps:
         except KeyError:
             return
 
-    def new_map(self, k: int, height, width, depth=None):
-        if depth is not None:
+    def new_map(self, k: int):
+        if self.depth is not None:
             if self.style == ResponsibilityStyle.Additive:
-                self.maps[k] = np.zeros((height, width, depth), dtype="float32")
+                self.maps[k] = np.zeros(
+                    (self.height, self.width, self.depth), dtype="float32"
+                )
             else:
-                self.maps[k] = np.ones((height, width, depth), dtype="float32")
+                self.maps[k] = np.ones(
+                    (self.height, self.width, self.depth), dtype="float32"
+                )
             self.counts[k] = 1
         else:
-            if self.style == "additive":
-                self.maps[k] = np.zeros((height, width), dtype="float32")
+            if self.style == ResponsibilityStyle.Additive:
+                self.maps[k] = np.zeros((self.height, self.width), dtype="float32")
             else:
-                self.maps[k] = np.ones((height, width), dtype="float32")
+                self.maps[k] = np.ones((self.height, self.width), dtype="float32")
             self.counts[k] = 1
 
     def items(self):
@@ -56,17 +63,22 @@ class ResponsibilityMaps:
     def len(self):
         return len(self.maps)
 
+    def __local_update(self, k, v):
+        if self.style == ResponsibilityStyle.Additive:
+            self.maps[k] += v
+        else:
+            self.maps[k] *= v
+            self.maps[k] /= np.max(self.maps[k])  # type: ignore
+
     def merge(self, maps):
         for k, v in maps.items():
             if np.max(v) == 0:
                 pass
             if k in self.maps:
-                if self.style == ResponsibilityStyle.Additive:
-                    self.maps[k] += v
-                else:
-                    self.maps[k] *= v
+                self.__local_update(k, v)
             else:
-                self.maps[k] = v
+                self.new_map(k)
+                self.__local_update(k, v)
 
     def negative_responsibility(self, target):
         for k, v in self.maps.items():
@@ -116,7 +128,7 @@ class ResponsibilityMaps:
                 raise ReXMapError("the provided mutant has no known classification")
             # check if k has been seen before and has a map. If k is new, make a new map
             if k not in self.maps:
-                self.new_map(k, data.model_height, data.model_width, data.model_depth)
+                self.new_map(k)
 
             # get the responsibility map for k
             resp_map = self.get(k, increment=True)

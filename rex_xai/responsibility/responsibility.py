@@ -160,7 +160,12 @@ def causal_explanation(
     # The <queue> is a list of strings in the form "R:x:y:...n"
     queue = deque(search_tree.name)
 
-    local_maps = ResponsibilityMaps(args.responsibility_style)
+    local_maps = ResponsibilityMaps(
+        args.responsibility_style,
+        data.model_height,
+        data.model_width,
+        data.model_depth,
+    )
 
     # a <job> is of the form "R:x:y:...n", where x,y...n are integers.
     # This is both the unique name for a passing mutant and the node name for

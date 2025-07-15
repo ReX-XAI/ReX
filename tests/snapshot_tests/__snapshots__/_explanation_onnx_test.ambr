@@ -42,7 +42,7 @@
   dict({
     'area': 0.1654,
     'deletion_curve': 0.0141,
-    'entropy': 0.2156,
+    'entropy': 0.309,
     'insertion_curve': 0.6175,
     'robustness': 0.5,
   })
@@ -54,7 +54,7 @@
   dict({
     'area': 0.3278,
     'deletion_curve': 0.0141,
-    'entropy': 0.2156,
+    'entropy': 0.309,
     'insertion_curve': 0.6175,
     'robustness': 1.0,
   })
