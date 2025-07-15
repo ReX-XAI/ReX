@@ -4,7 +4,7 @@ ReX can take in scripts that define the model behaviour, the preprocessing for t
 As outlined in the [command line section](command_line.md), the user can pass in the script using the `--script` argument.
 
 ```bash
-rex imgs/dog.jpg --script scripts/pytorch.py -vv --output dog_exp.jpg 
+ReX imgs/dog.jpg --script scripts/pytorch.py -vv --output dog_exp.jpg 
 ```
 
 ### Contents of the python script

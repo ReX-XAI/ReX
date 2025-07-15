@@ -25,19 +25,19 @@ ReX requires as input an image and a model.
 ReX natively understands onnx files. Train or download a model (e.g. [Resnet50](https://github.com/onnx/models/blob/main/validated/vision/classification/resnet/model/resnet50-v1-7.onnx)) and, from this directory, run:
 
 ```bash
-rex tests/test_data/dog.jpg --model resnet50-v1-7.onnx -vv --output dog_exp.jpg
+ReX tests/test_data/dog.jpg --model resnet50-v1-7.onnx -vv --output dog_exp.jpg
 ```
 
 To view an interactive plot for the responsibility map, run::
 
 ```bash
-rex tests/test_data/dog.jpg --model resnet50-v1-7.onnx -vv --surface
+ReX tests/test_data/dog.jpg --model resnet50-v1-7.onnx -vv --surface
 ```
 
 To save the extracted explanation to a file:
 
 ```bash
-rex tests/test_data/dog.jpg --model resnet50-v1-7.onnx --output dog_exp.jpg
+ReX tests/test_data/dog.jpg --model resnet50-v1-7.onnx --output dog_exp.jpg
 ```
 
 ReX also works with PyTorch, but you will need to write some custom code to provide ReX with the prediction function and model shape, as well as preprocess the input data.
@@ -51,16 +51,16 @@ Other options:
 
 ```bash
 # with spatial search rather than the default global search
-rex <path_to_image> --model <path_to_model> --strategy spatial
+ReX <path_to_image> --model <path_to_model> --strategy spatial
 
 # to run multiple explanations
-rex <path_to_image> --model <path_to_model> --multi
+ReX <path_to_image> --model <path_to_model> --multi
 
 # to view a responsibility landscape heatmap
-rex <path_to_image> --model <path_to_model>  --heatmap
+ReX <path_to_image> --model <path_to_model>  --heatmap
 
 # to save a responsibility landscape surface plot
-rex <path_to_image> --model <path_to_model>  --surface <path_and_extension>
+ReX <path_to_image> --model <path_to_model>  --surface <path_and_extension>
 ```
 
 ReX configuration is mainly handled via a config file; some options can also be set on the command line.
@@ -69,7 +69,7 @@ ReX looks for the config file `rex.toml` in the current working directory and th
 If you want to use a custom location, use:
 
 ```bash
-rex <path_to_image> --model <path_to_model> --config <path_to_config>
+ReX <path_to_image> --model <path_to_model> --config <path_to_config>
 ```
 
 An example config file is included in the repo as `example.rex.toml`.
@@ -98,7 +98,7 @@ Setting `raw = true` in `rex.toml` produces the image which was actually classif
 ### Multiple Explanations
 
 ```bash
-rex tests/test_data/peacock.jpg --model resnet50-v1-7.onnx --strategy multi --output peacock.png
+ReX tests/test_data/peacock.jpg --model resnet50-v1-7.onnx --strategy multi --output peacock.png
 ```
 
 The number of explanations found depends on the model and some of the settings in `rex.toml`.
@@ -116,7 +116,7 @@ The number of explanations found depends on the model and some of the settings i
 ### Explanation Quality
 
 ```bash
-rex tests/test_data/ladybird.jpg --script tests/scripts/pytorch_resnet50.py --analyse
+ReX tests/test_data/ladybird.jpg --script tests/scripts/pytorch_resnet50.py --analyse
 
 INFO:ReX:area 0.000399, entropy difference 6.751189, insertion curve 0.964960, deletion curve 0.046096
 ```

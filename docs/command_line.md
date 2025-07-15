@@ -72,7 +72,7 @@ You can also write a script to load an `onnx` model as well if you have custom p
 
 Otherwise, ReX tries to make reasonable guesses for image preprocessing.
 This includes resizing the image to match that needed for the model, converting it to a PyTorch tensor, and normalising the data. This can be controlled in `rex.toml`.
-In the event the the model input is multi-channel and the image is greyscale, then ReX will convert the image to pseudo-RGB.
+In the event the model input is multi-channel and the image is greyscale, then ReX will convert the image to pseudo-RGB.
 If you want more control over the conversion, you can do the conversion yourself and pass in the converted image.
 
 <!-- If the image has already been resized appropriately for the model, then use the `--processed` flag:
@@ -90,3 +90,28 @@ ReX <path_to_image> --model <path_to_model> --processed
 <!--```-->
 <!---->
 <!--An example `preprocess` function is included in `tests/scripts/pytorch_resnet50.py`.-->
+
+
+## Occlusion Strategy  
+  
+ReX supports a number of occlusion strategies, which can be set in the config file or overridden at the command line.  
+The **default occlusion value** is `0`, which could mean a number of things, depending on the input data type, the most common being a black square.  
+  
+There are the following occlusion strategies:  
+-  `<value>`, which any integer or float value that is within the range of the input data type using the flag `--mask_value <value>`.  
+  For example, for an image, this could be `0`, `255`, or `1.0`.  
+- `min`, which will use the minimum of the input data using the flag `--mask_value min`.  
+  For example, for an image data with minimum value `0.01` in the image, this could be `0`.  
+- `mean`, which will use the mean of the input data using the `mask_value mean`.  
+- `spectral`, which is a special occlusion strategy that uses linear interpolation for spectral data with some additional noise that can be added.   
+    This is useful for spectral data and can be set using the `--mask_value spectral` flag and be in the mode `--mode spectral`.  
+- `none`, which will use the `tt.nan` value for the occlusion. The flag `--mask_value none` will set the occlusion to `tt.nan`.  
+  This is useful for models that can handle missing data, such as some neural networks.  
+- `random`, which will use a random value from the input data using the flag `--mask_value random`.   
+- `linear`, which will choose a value incrementing from the minimum to the maximum of the input data using the flag `--mask_value linear`.  
+- `context`, A context data is the same shape as the input, which will be used to superimposed with the mask. This will use the context data to fill in the occluded area.  
+  The context data's path needs to be provided using the `--context` flag and provide noise value using the `--noise` flag. The context data will be preprocessed the same way as the input. 
+Example usage:
+```bash  
+ ReX tests/test_data/dog_hide.jpg --script scripts/pytorch.py -v --context tests/test_data/park.jpg --noise 5 --output exp_context_dog.png
+ ```
