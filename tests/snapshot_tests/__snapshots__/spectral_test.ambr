@@ -2,7 +2,7 @@
 # name: test__explanation_snapshot[1]
   Explanation:
   	CausalArgs: <class 'rex_xai.input.config.CausalArgs'>
-  	Data: Data: spectral, ('batch_size', 1, 1356), 1, 1356, 1, None
+  	Data: Data: spectral, [1, 1, 1356], 1, 1356, 1, None
   	 Target:FOUND_CLASS: 1, FOUND_CONF: 0.99817, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
   	prediction function: <function OnnxRunner.gen_prediction_function.<locals>.<lambda> >
   	ResponsibilityMaps: {1: 1}
@@ -16,7 +16,7 @@
 # name: test__explanation_snapshot[64]
   Explanation:
   	CausalArgs: <class 'rex_xai.input.config.CausalArgs'>
-  	Data: Data: spectral, ('batch_size', 1, 1356), 1, 1356, 1, None
+  	Data: Data: spectral, [64, 1, 1356], 1, 1356, 1, None
   	 Target:FOUND_CLASS: 1, FOUND_CONF: 0.99817, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
   	prediction function: <function OnnxRunner.gen_prediction_function.<locals>.<lambda> >
   	ResponsibilityMaps: {1: 1}
