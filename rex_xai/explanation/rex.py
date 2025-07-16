@@ -154,7 +154,7 @@ def validate_shape(data: Data, model_shape) -> Data:
         if data.model_depth:
             assert data.model_depth == new_shape[3]
 
-    data.model_shape = tuple(new_shape)
+    data.model_shape = new_shape
     return data
 
 def predict_target(
