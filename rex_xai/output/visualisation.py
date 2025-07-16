@@ -6,6 +6,8 @@ import os
 
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+from matplotlib.cm import ScalarMappable
+from matplotlib.colors import Normalize
 import numpy as np
 import torch as tt
 from matplotlib.figure import Figure
@@ -317,284 +319,54 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
     - Assumes the data is greyscale
     Produces an interactive 3D plot of the data and the responsibility map.
     """
-    try:
-        import plotly.graph_objs as go
-        from dash import Dash, Input, Output, dcc, html
-    except ImportError as e:
-        logger.error(f"Plotly failed to import caused by {e}.")
-        return
-
     if len(data.data.shape) == 4:
         data_m = data.data[0, :, :, :]
     else:
         data_m = data.data
     resp_map = try_detach(resp_map)  # type: ignore
 
-    # if isinstance(data_m, tt.Tensor):
-    #     data_m = data_m.squeeze().detach().cpu().numpy()
-    #     tt.tensor(data_m, dtype=tt.float32)
-    #
     maps: np.ndarray = resp_map
     resp_map = remove_background(data, maps)
+    data_m = try_detach(data_m)
 
     # Normalize the data
-    data_m = (data_m - np.min(data_m)) / (np.max(data_m) - np.min(data_m))
-    resp_map = (resp_map - np.min(resp_map)) / (np.max(resp_map) - np.min(resp_map))
+    data_m = data_m / np.max(data_m)
+    maps = resp_map / np.max(resp_map)
 
-    # Check if both data and responsibility map have the same range of values
-    assert np.min(data_m) == np.min(resp_map) and np.max(data_m) == np.max(resp_map), (
-        "Data and Responsibility map must have the same range of values!"
-    )
+    assert (
+        data_m.shape == maps.shape
+    ), f"Data and Responsibility map must have the same shape! Data shape: {data_m.shape}, Responsibility map shape: {maps.shape}"
 
-    assert data_m.shape == maps.shape, (
-        "Data and Responsibility map must have the same shape!"
-    )
+    num_slices = 10
+    _, axes = plt.subplots(4, num_slices, figsize=(15, 6))
 
-    x_max, y_max, z_max = data_m.shape
+    for axis in range(3):
+        slice_indices = np.linspace(0, data_m.shape[axis] - 1, num_slices, dtype=int)
+        for i, slice_index in enumerate(slice_indices):
+            ax = axes[axis, i]
+            data_slice = np.take(data_m, slice_index, axis=axis)
+            resp_slice = np.take(maps, slice_index, axis=axis)
 
-    colourscales = list(mpl.colormaps.keys())
+            ax.imshow(data_slice, cmap='gray', vmin=np.min(data_m), vmax= np.max(data_m))
+            ax.imshow(resp_slice, cmap=args.heatmap_colours, vmin=np.min(maps), vmax=np.max(maps), alpha=0.4)
 
-    app = Dash(__name__)
-    x_slice = go.Figure()
-    y_slice = go.Figure()
-    z_slice = go.Figure()
+            ax.set_title(f"Axis {axis}, Slice {slice_index}")
+            ax.axis("off")
 
-    app.layout = html.Div(
-        [
-            html.Div(
-                [
-                    # X Slice
-                    html.Div(
-                        [
-                            html.Label(
-                                "X Slice",
-                                style={"font-weight": "bold", "margin-bottom": "10px"},
-                            ),
-                            dcc.Graph(
-                                id="x-slice",
-                                style={
-                                    "width": "100%",
-                                    "height": "auto",
-                                    "max-width": "400px",
-                                },
-                            ),
-                            dcc.Slider(
-                                0,
-                                x_max - 1,
-                                1,
-                                value=x_max // 2,
-                                id="x-slider",
-                                marks={0: "0", x_max - 1: str(x_max - 1)},
-                                vertical=True,
-                                tooltip={"always_visible": True},
-                            ),
-                        ],
-                        style={
-                            "display": "flex",
-                            "align-items": "center",
-                            "gap": "20px",
-                            "flex": "1",
-                        },
-                    ),
-                    # Y Slice
-                    html.Div(
-                        [
-                            html.Label(
-                                "Y Slice",
-                                style={"font-weight": "bold", "margin-bottom": "10px"},
-                            ),
-                            dcc.Graph(
-                                id="y-slice",
-                                style={
-                                    "width": "100%",
-                                    "height": "auto",
-                                    "max-width": "400px",
-                                },
-                            ),
-                            dcc.Slider(
-                                0,
-                                y_max - 1,
-                                1,
-                                value=y_max // 2,
-                                id="y-slider",
-                                marks={0: "0", y_max - 1: str(y_max - 1)},
-                                vertical=True,
-                                tooltip={"always_visible": True},
-                            ),
-                        ],
-                        style={
-                            "display": "flex",
-                            "align-items": "center",
-                            "gap": "20px",
-                            "flex": "1",
-                        },
-                    ),
-                ],
-                style={"display": "flex", "justify-content": "center", "gap": "40px"},
-            ),
-            # Z Slice
-            html.Div(
-                [
-                    html.Label(
-                        "Z Slice",
-                        style={"font-weight": "bold", "margin-bottom": "10px"},
-                    ),
-                    dcc.Graph(
-                        id="z-slice",
-                        style={"width": "100%", "height": "auto", "max-width": "400px"},
-                    ),
-                    dcc.Slider(
-                        0,
-                        z_max - 1,
-                        1,
-                        value=z_max // 2,
-                        id="z-slider",
-                        marks={0: "0", z_max - 1: str(z_max - 1)},
-                        vertical=True,
-                        tooltip={"always_visible": True},
-                    ),
-                ],
-                style={
-                    "display": "flex",
-                    "align-items": "center",
-                    "gap": "20px",
-                    "margin-top": "40px",
-                },
-            ),
-            # Opacity Slider
-            html.Div(
-                [
-                    html.Label("Opacity"),
-                    dcc.Slider(
-                        0,
-                        1,
-                        0.1,
-                        value=0.5,
-                        id="opacity-slider",
-                        tooltip={"always_visible": True},
-                        marks={0: "0", 1: "1"},
-                        vertical=True,
-                    ),
-                    html.Label("Heatmap Colours"),
-                    dcc.Dropdown(
-                        id="heatmap-colours",
-                        options=colourscales,
-                        value=args.heatmap_colours,
-                    ),
-                ],
-                style={
-                    "position": "absolute",
-                    "top": "10%",
-                    "right": "10%",
-                    "width": "100px",
-                    "outline": "1px solid grey",
-                },
-            ),
-        ],
-        style={
-            "width": "3000x",
-            "height": "20px",
-            "margin": "auto",
-            "padding": "20px",
-            "display": "flex",
-            "flex-direction": "column",
-            "gap": "40px",
-            "outline": "1px solid grey",
-        },
-    )
-
-    @app.callback(
-        Output("x-slice", "figure"),
-        Output("y-slice", "figure"),
-        Output("z-slice", "figure"),
-        Input("x-slider", "value"),
-        Input("y-slider", "value"),
-        Input("z-slider", "value"),
-        Input("opacity-slider", "value"),
-        Input("heatmap-colours", "value"),
-    )
-    def update_slices(
-        x_idx, y_idx, z_idx, opacity, heatmap_colours=args.heatmap_colours
-    ):
-        # X-Slice (YZ plane)
-        x_slice.add_trace(
-            go.Heatmap(
-                z=data_m[x_idx, :, :],
-                colorscale="gray_r",
-                name="Data",
-                zmin=0,
-                zmax=1,
-                showscale=False,
-            )
-        )
-        x_slice.add_trace(
-            go.Heatmap(
-                z=resp_map[x_idx, :, :],
-                colorscale=heatmap_colours,
-                opacity=opacity,
-                name="Resp Map",
-                zmin=0,
-                zmax=1,
-            )
-        )
-        x_slice.update_layout(title=f"YZ Plane at {x_idx}")
-
-        # Y-Slice (XZ plane)
-        y_slice.add_trace(
-            go.Heatmap(
-                z=data_m[:, y_idx, :],
-                colorscale="gray_r",
-                name="Data",
-                zmin=0,
-                zmax=1,
-                showscale=False,
-            )
-        )
-        y_slice.add_trace(
-            go.Heatmap(
-                z=resp_map[:, y_idx, :],
-                colorscale=heatmap_colours,
-                opacity=opacity,
-                name="Resp Map",
-                zmin=0,
-                zmax=1,
-            )
-        )
-        y_slice.update_layout(title=f"XZ Plane at {y_idx}")
-
-        # Z-Slice (XY plane)
-        z_slice.add_trace(
-            go.Heatmap(
-                z=data_m[:, :, z_idx],
-                colorscale="gray_r",
-                name="Data",
-                zmin=0,
-                zmax=1,
-                showscale=False,
-            )
-        )
-        z_slice.add_trace(
-            go.Heatmap(
-                z=resp_map[:, :, z_idx],
-                colorscale=heatmap_colours,
-                opacity=opacity,
-                name="Resp Map",
-                zmin=0,
-                zmax=1,
-            )
-        )
-        z_slice.update_layout(title=f"XY Plane at {z_idx}")
-
-        return x_slice, y_slice, z_slice
-
-    if path is None:
-        app.run_server(debug=False, use_reloader=False)
+    plt.tight_layout()
+    if path is not None:
+        # last row  axis off:
+        for ax in axes[3, :]:
+            ax.axis("off")
+        cax = plt.axes([0.45, 0.05, 0.25, 0.02])  # [left, bottom, width, height]
+        norm = Normalize(vmin=np.min(maps), vmax=np.max(maps))
+        sm = ScalarMappable(cmap=args.heatmap_colours, norm=norm)
+        plt.colorbar(mappable=sm, cax=cax, orientation='horizontal')
+        plt.savefig(path)
     else:
-        # Create a sub figure for each slice and save it for now
-        path = path.split(".")[0]
-        x_slice.write_image(f"{path}_x_slice.png")
-        y_slice.write_image(f"{path}_y_slice.png")
-        z_slice.write_image(f"{path}_z_slice.png")
+        plt.show()
+
+
 
 
 def __transpose_mask(mask: tt.Tensor | np.ndarray, mode: str) -> np.ndarray:
@@ -830,21 +602,31 @@ def save_image(mask: tt.Tensor | np.ndarray, data: Data, args: CausalArgs, path=
             mask = mask.squeeze().detach().cpu().numpy()
         else:
             mask = mask.squeeze()
-        data_m = data_m[0, :, :, :]  # Remove batch dimension
+
+        if isinstance(data_m, tt.Tensor):
+            data_m = data_m.squeeze().cpu().numpy()
+        else:
+            data_m = data_m.squeeze()
+
+        if len(data_m.shape) == 4:
+            data_m = data_m[0, :, :, :]  # Remove batch dimension
 
         mask = remove_background(data, mask)
 
         num_slices = 10
         _, axes = plt.subplots(3, num_slices, figsize=(15, 6))
 
-        for axis, _ in enumerate(mask.shape):
-            slice_indices = np.linspace(0, axis - 1, num_slices, dtype=int)
+        for axis in range(3):
+            slice_indices = np.linspace(0, data_m.shape[axis] - 1, num_slices, dtype=int)
             for i, slice_index in enumerate(slice_indices):
                 ax = axes[axis, i]
                 data_slice = np.take(data_m, slice_index, axis=axis)
                 resp_slice = np.take(mask, slice_index, axis=axis)
-                ax.imshow(data_slice, cmap="gray")
+
+                ax.imshow(data_slice, cmap='gray', vmin=np.min(data_m), vmax=np.max(data_m))
                 ax.imshow(resp_slice, cmap=args.heatmap_colours, alpha=0.4)
+
+                ax.set_title(f"Axis {axis}, Slice {slice_index}")
                 ax.axis("off")
 
         plt.tight_layout()
