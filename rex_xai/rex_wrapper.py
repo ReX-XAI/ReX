@@ -26,11 +26,12 @@ def main():
 
     if args.directory:
         logger.info("Processing directory: %s", args.path)
-        files = os.listdir(args.path)
+        directory_path = args.path
+        files = os.listdir(directory_path)
         for file in files:
-            args.path = os.path.join(args.path, file)
+            args.path = os.path.join(directory_path, file)
+            logger.info("Running ReX on file: %s", args.path)
             if os.path.isfile(args.path):
-                logger.info("Running ReX on file: %s", args.path)
                 explanation(args, device, db)
     else:
         explanation(args, device, db)
