@@ -453,7 +453,12 @@ def _explanation(
         elif args.surface == "show":
             path = None
         else:
-            path = args.surface
+            # if directory is processed
+            if args.directory:
+                name, ext = os.path.splitext(os.path.basename(args.path))
+                path = f"{name}_{args.surface}{ext}"
+            else:
+                path = args.surface
         logger.info(f"Surface plot is saved at {path}")
         exp.surface_plot(path)
 
@@ -461,16 +466,25 @@ def _explanation(
         if args.heatmap == "show":
             path = None
         else:
-            path = args.heatmap
+            if args.directory:
+                name, ext = os.path.splitext(os.path.basename(args.path))
+                path = f"{name}_{args.heatmap}{ext}"
+            else:
+                path = args.heatmap
+
         logger.info(f"Heatmap plot is saved at {path}")
         exp.heatmap_plot(path)
 
     if args.output is not None:
-        if path is None:
-            if args.output == "show":
-                path = None
+        if args.output == "show":
+            path = None
+        else:
+            if args.directory:
+                name, ext = os.path.splitext(os.path.basename(args.path))
+                path = f"{name}_{args.output}{ext}"
             else:
                 path = args.output
+
         if args.strategy == Strategy.MultiSpotlight:
             exp.save(path, clauses=clauses)  # type: ignore
         else:
