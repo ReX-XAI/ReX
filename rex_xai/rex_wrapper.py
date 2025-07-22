@@ -1,4 +1,5 @@
 """main entry point to ReX"""
+import os
 
 from rex_xai.utils._utils import get_device
 from rex_xai.input.config import get_all_args
@@ -23,4 +24,13 @@ def main():
     if args.db is not None:
         db = initialise_rex_db(args.db)
 
-    explanation(args, device, db)
+    if args.directory:
+        logger.info("Processing directory: %s", args.path)
+        files = os.listdir(args.path)
+        for file in files:
+            args.path = os.path.join(args.path, file)
+            if os.path.isfile(args.path):
+                logger.info("Running ReX on file: %s", args.path)
+                explanation(args, device, db)
+    else:
+        explanation(args, device, db)
