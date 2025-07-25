@@ -1,4 +1,5 @@
 """main entry point to ReX"""
+
 import os
 
 from rex_xai.utils._utils import get_device
