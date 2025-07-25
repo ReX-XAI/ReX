@@ -455,8 +455,8 @@ def _explanation(
         else:
             # if directory is processed
             if args.directory:
-                name, ext = os.path.splitext(os.path.basename(args.path))
-                path = f"{name}_{args.surface}{ext}"
+                name, _ = os.path.splitext(os.path.basename(args.path))
+                path = f"{name}_{args.surface}"
             else:
                 path = args.surface
         logger.info(f"Surface plot is saved at {path}")
@@ -467,8 +467,8 @@ def _explanation(
             path = None
         else:
             if args.directory:
-                name, ext = os.path.splitext(os.path.basename(args.path))
-                path = f"{name}_{args.heatmap}{ext}"
+                name, _ = os.path.splitext(os.path.basename(args.path))
+                path = f"{name}_{args.heatmap}"
             else:
                 path = args.heatmap
 
@@ -480,8 +480,8 @@ def _explanation(
             path = None
         else:
             if args.directory:
-                name, ext = os.path.splitext(os.path.basename(args.path))
-                path = f"{name}_{args.output}{ext}"
+                name, _ = os.path.splitext(os.path.basename(args.path))
+                path = f"{name}_{args.output}"
             else:
                 path = args.output
 
