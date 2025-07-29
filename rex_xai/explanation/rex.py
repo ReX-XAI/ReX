@@ -398,7 +398,7 @@ def _explanation(
 
             if data.mode == "spectral":
                 print(
-                    f"INFO:ReX:classification {exp.data.target.classification}, area {results['area']}, KL divergence {results['entropy']},",  # type: ignore
+                    f"INFO:ReX:classification {exp.data.target.classification}, area {results['area']}, spectral entropy {results['entropy']},",  # type: ignore
                     f"max entropy {results['max_entropy']}",
                 )
             else:
