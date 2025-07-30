@@ -8,7 +8,7 @@ import numpy as np
 import torch as tt
 
 from rex_xai.mutants.occlusions import context_occlusion, spectral_occlusion
-from rex_xai.responsibility.prediction import Prediction
+from rex_xai.responsibility.prediction import Prediction, Predictions
 from rex_xai.utils._utils import ReXDataError
 from rex_xai.utils.logger import logger
 
@@ -36,7 +36,8 @@ class Data:
     ) -> None:
         self.input = input
         self.mode: str | None = None
-        self.target: Prediction | List[Prediction] | None = None
+        self.targets: Predictions | None = None
+        self.target: Optional[Prediction] = None # Useful for focusing on a single target
         self.device = device
         self.setup: Optional[Setup] = None
         self.transposed = False

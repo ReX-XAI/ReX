@@ -20,7 +20,7 @@ from rex_xai.input.config import CausalArgs, Queue
 from rex_xai.input.input_data import Data
 from rex_xai.mutants.box import average_box_size, initialise_tree
 from rex_xai.mutants.mutant import Mutant, _apply_to_data, get_combinations
-from rex_xai.responsibility.prediction import Prediction
+from rex_xai.responsibility.prediction import Prediction, Predictions
 from rex_xai.responsibility.resp_maps import ResponsibilityMaps
 from rex_xai.utils.logger import logger
 
@@ -110,7 +110,7 @@ def causal_explanation(
         function that calls a model and return a Prediction object
     """
 
-    assert data.target is not None
+    assert data.targets is not None
 
     if args.seed is not None:
         np.random.seed(args.seed + process)
@@ -127,29 +127,13 @@ def causal_explanation(
             data.mask_value = steps[process - 1]  # type: ignore
         logger.info("using %.3f for process %d", data.mask_value, process)
 
-    if args.use_bounding_box:
-        assert data.target.bounding_box is not None
-        logger.info(
-            f"Using bounding box bounding box for {data.target.classification} that has the bounding box {data.target.bounding_box}"
-        )
-        box = data.target.bounding_box
-        search_tree = initialise_tree(
-            int(box[3]),
-            int(box[2]),
-            args.distribution,
-            args.distribution_args,
-            d_lim=data.model_depth,
-            r_start=int(box[1]),
-            c_start=int(box[0]),
-        )
-    else:
-        search_tree = initialise_tree(
-            data.model_height,
-            data.model_width,
-            args.distribution,
-            args.distribution_args,
-            d_lim=data.model_depth,
-        )
+    search_tree = initialise_tree(
+        data.model_height,
+        data.model_width,
+        args.distribution,
+        args.distribution_args,
+        d_lim=data.model_depth,
+    )
 
     total_work = 0
     total_passing = 0
@@ -211,47 +195,45 @@ def causal_explanation(
 
                 work_done = len(mutants)
 
-                # TODO find out why this was added
-                def apply_mask(m):
-                    return _apply_to_data(m.mask, data)
-
                 if data.mode in ("spectral", "tabular"):
                     preds: List[Prediction] = [
-                        prediction_func(apply_mask(m))[0] for m in mutants
+                        prediction_func(_apply_to_data(m.mask, data))[0] for m in mutants
                     ]
                 else:
                     # TODO this needs testing
                     if args.batch_size == 1:
                         preds = [
                             prediction_func(
-                                apply_mask(m),  #  type: ignore
+                                _apply_to_data(m.mask, data),  #  type: ignore
                                 data.target,
-                            )[0]
+                            )
                             for m in mutants
                         ]  # type: ignore
                     else:
                         tensors = tt.stack(
                             [
-                                apply_mask(m)  #  type: ignore
+                                _apply_to_data(m.mask, data)  #  type: ignore
                                 for m in mutants
                             ]
                         )  # type: ignore
                         if len(tensors.shape) > len(data.model_shape):
                             tensors = tensors.squeeze(1)
-                        preds: List[Prediction] = prediction_func(
+                        preds: Predictions = prediction_func(
                             tensors,
-                            data.target,
+                            data.targets,
                         )
-
                 for i, m in enumerate(mutants):
                     m.prediction = preds[i]
-                    m.update_status(data.target)
+                    m.update_status(data.targets)
 
                 passing: List[Mutant] = list(
                     filter(
                         lambda m: m.passing
-                        and m.prediction.confidence
-                        >= (data.target.confidence * args.confidence_filter),  # type: ignore
+                        and any(
+                            conf
+                            >= (min(data.targets.confidences) * args.confidence_filter) # max or min better?
+                            for conf in m.prediction.confidences
+                        ),  # type: ignore
                         mutants,
                     )
                 )
@@ -261,7 +243,7 @@ def causal_explanation(
                     for m in mutants:
                         m.save_mutant(
                             data,
-                            f"{process}_{m.depth}_{n}_{m.prediction.confidence}_{m.passing}.png",
+                            f"{process}_{m.depth}_{n}_{m.prediction.confidences}_{m.passing}.png",
                         )
                         n += 1
 

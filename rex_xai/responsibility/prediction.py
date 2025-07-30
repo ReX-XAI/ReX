@@ -6,6 +6,37 @@ import torch as tt
 import torch.nn.functional as F
 from numpy.typing import NDArray
 
+class Predictions(List[Optional['Prediction']]):
+    """
+    A wrapper for a list of Prediction objects.
+    This class provides easy access to the classifications, confidences and bounding boxes.
+
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._predictions = args[0] if args else []
+        self.classifications = [
+            p.classification if p is not None else None for p in self._predictions
+        ]
+        self.confidences = [
+            p.confidence if p is not None else None for p in self._predictions
+        ]
+        self.bounding_boxes = [
+            p.bounding_box if p is not None else None for p in self._predictions
+        ]
+
+    def __repr__(self) -> str:
+        return f"Predictions({self._predictions})"
+
+    def __getitem__(self, index):
+        return self._predictions[index]
+
+    def __setitem__(self, index, value):
+        self._predictions[index] = value
+
+    def __len__(self):
+        return len(self._predictions)
+
 
 class Prediction:
     def __init__(

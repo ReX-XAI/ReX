@@ -122,50 +122,67 @@ class ResponsibilityMaps:
             k = None
             # check that there is a prediction value
             if mutant.prediction is not None:
-                k = mutant.prediction.classification
+                k = mutant.prediction.classifications
             # if there's no prediction value, raise an exception
             if k is None:
                 raise ReXMapError("the provided mutant has no known classification")
-            # check if k has been seen before and has a map. If k is new, make a new map
-            if k not in self.maps:
-                self.new_map(k)
 
-            # get the responsibility map for k
-            resp_map = self.get(k, increment=True)
-            if resp_map is None:
-                raise ValueError(
-                    f"unable to open or generate a responsibility map for classification {k}"
-                )
+            # if k is a list, then we need to iterate over it
+            if isinstance(k, list):
+                for i, classification in enumerate(k):
+                    # check if k has been seen before and has a map. If k is new, make a new map
+                    if classification not in self.maps:
+                        self.new_map(classification)
 
-            # we only increment responsibility for active boxes, not static boxes
-            for box_name in mutant.get_active_boxes():
-                box: Optional[Box] = find(search_tree, lambda n: n.name == box_name)
-                if box is not None and box.area() > 0:
-                    index = np.uint(box_name[-1])
-                    local_r = r[index]
-                    if args.concentrate:
-                        local_r *= box.depth
+                    self._update_single_map(mutant, args, data, search_tree, classification)
+            else:
+                # check if k has been seen before and has a map. If k is new, make a new map
+                if k not in self.maps:
+                    self.new_map(k)
+                # update the responsibility map for this mutant
+                self._update_single_map(mutant, args, data, search_tree, k)
 
-                    if data.mode == "spectral":
-                        section = resp_map[0, box.col_start : box.col_stop]
 
-                    elif data.mode == "RGB":
-                        section = resp_map[
-                            box.row_start : box.row_stop,
-                            box.col_start : box.col_stop,
-                        ]
-                    elif data.mode == "voxel":
-                        section = resp_map[
-                            box.row_start : box.row_stop,
-                            box.col_start : box.col_stop,
-                            box.depth_start : box.depth_stop,
-                        ]
-                    else:
-                        logger.warning("not yet implemented")
-                        raise NotImplementedError
+    def _update_single_map(self, mutant: Mutant, args: CausalArgs, data: Data, search_tree, k):
+        """Update a single responsibility map for a mutant"""
+        r = self.responsibility(mutant, args)
 
-                    section += local_r
-            self.maps[k] = resp_map
+        # get the responsibility map for k
+        resp_map = self.get(k, increment=True)
+        if resp_map is None:
+            raise ValueError(
+                f"unable to open or generate a responsibility map for classification {k}"
+            )
+
+        # we only increment responsibility for active boxes, not static boxes
+        for box_name in mutant.get_active_boxes():
+            box: Optional[Box] = find(search_tree, lambda n: n.name == box_name)
+            if box is not None and box.area() > 0:
+                index = np.uint(box_name[-1])
+                local_r = r[index]
+                if args.concentrate:
+                    local_r *= box.depth
+
+                if data.mode == "spectral":
+                    section = resp_map[0, box.col_start: box.col_stop]
+
+                elif data.mode == "RGB":
+                    section = resp_map[
+                        box.row_start: box.row_stop,
+                        box.col_start: box.col_stop,
+                    ]
+                elif data.mode == "voxel":
+                    section = resp_map[
+                        box.row_start: box.row_stop,
+                        box.col_start: box.col_stop,
+                        box.depth_start: box.depth_stop,
+                    ]
+                else:
+                    logger.warning("not yet implemented")
+                    raise NotImplementedError
+
+                section += local_r
+        self.maps[k] = resp_map
 
     def subset(self, id):
         m = self.maps.get(id)

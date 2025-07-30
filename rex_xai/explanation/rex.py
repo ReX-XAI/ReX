@@ -21,7 +21,7 @@ from rex_xai.input.config import CausalArgs
 from rex_xai.input.input_data import Data
 from rex_xai.input.onnx import get_prediction_function
 from rex_xai.output.database import update_database
-from rex_xai.responsibility.prediction import Prediction, default_prediction_function
+from rex_xai.responsibility.prediction import Prediction, Predictions, default_prediction_function
 from rex_xai.responsibility.resp_maps import ResponsibilityMaps
 from rex_xai.responsibility.responsibility import causal_explanation
 from rex_xai.utils._utils import ReXDataError, ReXScriptError, Strategy
@@ -157,9 +157,7 @@ def validate_shape(data: Data, model_shape) -> Data:
     data.model_shape = new_shape
     return data
 
-def predict_target(
-    data: Data, args: CausalArgs, prediction_func
-) -> Prediction | list[Prediction]:
+def predict_target(data: Data, prediction_func) -> Predictions:
     """Predicts classification of input data, using given prediction function.
 
     Uses ``prediction_func`` to identify the classification of the input data and return
@@ -167,11 +165,10 @@ def predict_target(
 
     Args:
         data: processed input data object
-        args: configuration values for ReX
         prediction_func: prediction function for the model
 
     Returns:
-        Prediction: the predicted target classification and confidence
+        Predictions: the predicted targets' classification and confidence
     """
     target = prediction_func(data.data, None)
 
@@ -180,13 +177,19 @@ def predict_target(
         logger.info(
             f"Found {len(target)} targets, the targets found are: \n{targets_str}"
         )
-        target = target[0]
-
-    if target is not None:
+        target = Predictions(target)
+    elif isinstance(target, Prediction):
         logger.info(
-            "image classified as %s with %f confidence",
+            "Found 1 target, the target found is: %s with confidence %f",
             target.classification,
             target.confidence,
+        )
+        target = Predictions([target])
+
+    if target is not None:
+        targets_str = "".join(f" {t.classification} with an confidence of {t.confidence}," for t in target)
+        logger.info(
+            f"image classified as {targets_str} with a total of {len(target)} targets found",
         )
     else:
         logger.warning("no target found")
@@ -199,9 +202,6 @@ def calculate_responsibility(
     data: Data,
     args: CausalArgs,
     prediction_func,
-    # keep_all_maps=False,
-    custom_height=None,
-    custom_width=None,
 ) -> tuple[ResponsibilityMaps, dict]:
     """Calculates ResponsibilityMaps for input data using given args.
 
@@ -224,32 +224,14 @@ def calculate_responsibility(
         - ResponsibilityMaps: ResponsibilityMaps for the given data, prediction function, and args.
         - dict: statistics for the call of this function that generated the ResponsibilityMaps object
     """
-
-    if isinstance(data.target, list):
-        if any(t.classification is None for t in data.target):
-            raise ValueError(
-                "No target classification found in the list of targets. Please run `predict_target` before running `calculate_responsibility`."
-            )
-    else:
-        if data.target is None or data.target.classification is None:
-            raise ValueError(
-                "No target classification found. Please run `predict_target` before running `calculate_responsibility`."
-            )
+    if data.targets is None or data.targets.classifications == []:
+        raise ValueError(
+            "No target classification found. Please run `predict_target` before running `calculate_responsibility`."
+        )
 
     maps = ResponsibilityMaps(
         args.responsibility_style, data.model_height, data.model_width, data.model_depth
     )
-    # if custom_height is not None and custom_width is not None:
-    #     maps.new_map(data.target.classification, custom_height, custom_width)
-    # elif data.model_height is not None:
-    #     maps.new_map(
-    #         data.target.classification,
-    #         data.model_height,
-    #         data.model_width,
-    #         data.model_depth,
-    #     )
-    # else:
-    #     maps.new_map(data.target.classification, data.model_height, data.model_width)
 
     total_passing: int = 0
     total_failing: int = 0
@@ -269,7 +251,7 @@ def calculate_responsibility(
                 data,
                 args,
                 prediction_func,
-                current_map=maps.get(data.target.classification),
+                current_map=maps.get(data.targets.classifications[0]),
             )
 
             total_passing += passing
@@ -382,7 +364,7 @@ def _explanation(
 
     data = validate_shape(data, model_shape)
 
-    data.target = predict_target(data, args, prediction_func)
+    data.targets = predict_target(data, prediction_func)
 
     time_taken = 0
     start = time.time()

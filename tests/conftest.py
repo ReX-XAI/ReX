@@ -154,7 +154,7 @@ def data_custom(args_custom, model_shape, cpu_device):
 def data_multi(args_multi, model_shape, prediction_func, cpu_device):
     data = load_and_preprocess_data(model_shape, cpu_device, args_multi)
     data.set_mask_value(args_multi.mask_value)
-    data.target = predict_target(data, args_multi, prediction_func)
+    data.target = predict_target(data, prediction_func)
     return data
 
 
@@ -170,7 +170,7 @@ def cpu_device():
 
 @pytest.fixture
 def exp_custom(data_custom, args_custom, prediction_func):
-    data_custom.target = predict_target(data_custom, args_custom, prediction_func)
+    data_custom.target = predict_target(data_custom, prediction_func)
     maps, run_stats = calculate_responsibility(
         data_custom, args_custom, prediction_func
     )
@@ -184,7 +184,7 @@ def exp_onnx(args_onnx, cpu_device):
     prediction_func, model_shape = get_prediction_func_from_args(args_onnx)
     data = load_and_preprocess_data(model_shape, cpu_device, args_onnx)
     data.set_mask_value(args_onnx.mask_value)
-    data.target = predict_target(data, args_onnx, prediction_func)
+    data.target = predict_target(data, prediction_func)
     maps, run_stats = calculate_responsibility(data, args_onnx, prediction_func)
     exp = Explanation(maps, prediction_func, data, args_onnx, run_stats)
 

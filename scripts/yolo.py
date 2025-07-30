@@ -2,13 +2,12 @@ from PIL import Image
 from ultralytics import YOLO
 import torch as tt
 from rex_xai.input.input_data import Data
-from rex_xai.responsibility.prediction import Prediction
+from rex_xai.responsibility.prediction import Prediction, Predictions
 import numpy as np
 
 # Load a model
 model = YOLO("yolo11n.pt")
-path = "tests/test_data/dog_hide.jpg"  # Change this later
-
+model.eval()
 
 def preprocess(path, shape, device) -> Data:
     img = Image.open(path).convert("RGB")
@@ -41,7 +40,7 @@ def yolo_result_to_pred(results, target):
                 box = box.xyxy.cpu().numpy()[0]
                 prediction = Prediction(label, confidence, box, target)
                 predictions.append(prediction)
-    return predictions
+    return Predictions(predictions)
 
 
 def prediction_function(mutants, target=None, raw=False, binary_threshold=None):
@@ -52,4 +51,4 @@ def prediction_function(mutants, target=None, raw=False, binary_threshold=None):
         return yolo_result_to_pred(tensor, target)
 
 
-model_shape = ["N", "H", "W", 3]
+model_shape = [1, "H", "W", 3]

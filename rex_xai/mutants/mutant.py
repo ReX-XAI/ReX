@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 
 from rex_xai.input.input_data import Data
 from rex_xai.mutants.box import Box
-from rex_xai.responsibility.prediction import Prediction
+from rex_xai.responsibility.prediction import Prediction, Predictions
 from rex_xai.utils._utils import add_boundaries, set_boolean_mask_value, try_detach
 from rex_xai.utils.logger import logger
 
@@ -73,7 +73,7 @@ class Mutant:
         self.mask = tt.zeros(self.shape, dtype=tt.bool, device=data.device)
         self.static = static
         self.active = active
-        self.prediction: Optional[Prediction] = None
+        self.prediction: Optional[Predictions] = None
         self.passing = False
         self.masking_func = masking_func
         self.depth = 0
@@ -84,10 +84,13 @@ class Mutant:
     def get_name(self):
         return self.active
 
-    def update_status(self, target):
+    def update_status(self, targets: Predictions):
         if self.prediction is not None:
-            if target.classification == self.prediction.classification:
-                self.passing = True
+            # check if any of the predictions match the targets' classifications
+            self.passing = any(
+                target.classification in self.prediction.classifications
+                for target in targets
+            ) # can be stricter and require all targets to match
 
     def get_length(self):
         return len(self.active.split("_"))
