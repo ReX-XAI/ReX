@@ -88,6 +88,15 @@ class Data:
     def set_classification(self, cl):
         self.classification = cl
 
+    def get_classification(self):
+        if self.target is None:
+            return None
+            # raise ReXDataError("no target available")
+        if isinstance(self.target, List):
+            pass
+        else:
+            return self.target.classification
+
     def match_data_to_model_shape(self):
         """
         a PIL image has the from H * W * C, so

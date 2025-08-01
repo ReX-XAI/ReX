@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import numpy as np
 
@@ -19,19 +19,23 @@ from rex_xai.utils.logger import logger
 class ResponsibilityMaps:
     def __init__(self, style, height, width, depth=None) -> None:
         self.maps = {}
-        self.counts = {}
+        self.counts: Dict[int, int] = {}
         self.style = style
         self.height = height
         self.width = width
         self.depth = depth
 
     def __repr__(self) -> str:
-        return str(self.counts)
+        counts = dict(
+            sorted(self.counts.items(), key=lambda item: item[1], reverse=True)
+        )
+        return str(counts)
 
     def get(self, k, increment=False):
         try:
             if increment:
                 self.counts[k] += 1  # type: ignore
+                # print(self.counts)
             return self.maps[k]
         except KeyError:
             return
@@ -79,6 +83,7 @@ class ResponsibilityMaps:
             else:
                 self.new_map(k)
                 self.__local_update(k, v)
+            self.counts[k] += maps.counts[k]
 
     def negative_responsibility(self, target):
         for k, v in self.maps.items():
@@ -132,6 +137,7 @@ class ResponsibilityMaps:
 
             # get the responsibility map for k
             resp_map = self.get(k, increment=True)
+
             if resp_map is None:
                 raise ValueError(
                     f"unable to open or generate a responsibility map for classification {k}"
@@ -171,4 +177,4 @@ class ResponsibilityMaps:
         m = self.maps.get(id)
         c = self.counts.get(id)
         self.maps = {id: m}
-        self.counts = {id: c}
+        self.counts[id] = c

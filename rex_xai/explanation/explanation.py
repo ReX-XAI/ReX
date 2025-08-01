@@ -149,16 +149,6 @@ class Explanation:
         insertion_mask = tt.zeros(mask_shape, dtype=tt.bool).to(self.data.device)
         insertion_memo = None
 
-        local_shape = update_mask_shape(1, self.data.model_shape)
-        baseline = tt.zeros(local_shape, dtype=tt.bool).to(self.data.device)
-        baseline = tt.argsort(
-            self.prediction_func(_apply_to_data(baseline, self.data), raw=True)
-        )
-        if self.data.target.classification in baseline[0][0:10]:
-            logger.warning(
-                "the masking value chosen is very close to the required target prediction. This might give poor results"
-            )
-
         target_confidence: float = round(
             self.data.target.confidence * self.args.minimum_confidence_threshold,  # type: ignore
             rounding,
