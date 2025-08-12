@@ -34,7 +34,7 @@ class Explanation:
         run_stats: Dict[str, float],
         keep_all_maps=False,
     ) -> None:
-        if data.target is None or data.target.classification is None:
+        if data.targets is None or data.targets.classifications is None:
             raise (
                 ValueError(
                     "Data must have `target` defined to create an Explanation object!"
@@ -44,15 +44,18 @@ class Explanation:
         if keep_all_maps:
             self.maps = maps
         else:
-            maps.subset(data.target.classification)
+            maps.subset(data.targets.classifications)
             self.maps = maps
 
-        self.target_map: tt.Tensor | None = tt.from_numpy(
-            maps.get(data.target.classification)
-        ).to(data.device)
+        self.target_map: list[tt.Tensor] | None = [
+            tt.from_numpy(
+                maps.get(target.classification)
+            ).to(data.device) for target in data.targets
+        ]
+
         if self.target_map is None:
             raise ValueError(
-                f"No responsibility map found for target {data.target.classification}!"
+                f"No responsibility map found for any of the target(s): {data.targets.classifications}!"
             )
 
         self.sufficiency_mask: tt.Tensor | None = None
@@ -89,18 +92,24 @@ class Explanation:
 
     def extract(self):
         self.blank()
-        if self.args.strategy == Strategy.Global:
-            self.__global()
-        if self.args.strategy == Strategy.Contrastive:
-            self.contrastive()
-        if self.args.strategy == Strategy.Spatial:
-            if self.data.mode == "spectral":
-                logger.warning(
-                    "spatial search not yet implemented for spectral data, so defaulting to global search"
-                )
-                _ = self.__global()
-            else:
-                _ = self.__spatial()
+        for i, target in enumerate(self.data.targets):
+            self.data.target = target
+            map = self.target_map[i] if isinstance(self.target_map, list) else self.target_map
+            logger.info(
+                f"Extracting explanation for target {self.data.target.classification} with confidence {self.data.target.confidence:.4f}"
+            )
+            if self.args.strategy == Strategy.Global:
+                self.__global(map)
+            if self.args.strategy == Strategy.Contrastive:
+                self.contrastive()
+            if self.args.strategy == Strategy.Spatial:
+                if self.data.mode == "spectral":
+                    logger.warning(
+                        "spatial search not yet implemented for spectral data, so defaulting to global search"
+                    )
+                    _ = self.__global()
+                else:
+                    _ = self.__spatial()
 
     def blank(self):
         assert self.data.data is not None

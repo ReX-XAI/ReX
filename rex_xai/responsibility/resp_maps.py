@@ -185,7 +185,18 @@ class ResponsibilityMaps:
         self.maps[k] = resp_map
 
     def subset(self, id):
-        m = self.maps.get(id)
-        c = self.counts.get(id)
-        self.maps = {id: m}
-        self.counts = {id: c}
+        """Subset the maps and counts to only include the given set of ids."""#
+        maps = {}
+        counts = {}
+        for i in id:
+            if i not in self.maps:
+                raise ReXMapError(f"map for id {i} not found in responsibility maps")
+            m = self.maps.get(i)
+            c = self.counts.get(i)
+            if m is None or c is None:
+                raise ReXMapError(f"map or count for id {i} not found in responsibility maps")
+            maps[i] = m
+            counts[i] = c
+
+        self.maps = maps
+        self.counts = counts
