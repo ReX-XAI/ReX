@@ -5,7 +5,7 @@
   	Data: Data: spectral, [1, 1, 1356], 1, 1356, 1, None
   	 Target:FOUND_CLASS: 1, FOUND_CONF: 0.99817, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
   	prediction function: <function OnnxRunner.gen_prediction_function.<locals>.<lambda> >
-  	ResponsibilityMaps: {1: 1}
+  	ResponsibilityMaps: {1: 45}
   	run statistics: {'total_passing': 42, 'total_failing': 0, 'max_depth_reached': 2, 'avg_box_size': 180.375} (5 dp)
   	sufficiency mask: tensor([[ True,  True,  True,  ...,  True,  True, False]])
   	explanation confidence: 0.9982
@@ -19,7 +19,7 @@
   	Data: Data: spectral, [64, 1, 1356], 1, 1356, 1, None
   	 Target:FOUND_CLASS: 1, FOUND_CONF: 0.99817, TARGET_CLASS: n/a, TARGET_CONFIDENCE: n/a
   	prediction function: <function OnnxRunner.gen_prediction_function.<locals>.<lambda> >
-  	ResponsibilityMaps: {1: 1}
+  	ResponsibilityMaps: {1: 45}
   	run statistics: {'total_passing': 42, 'total_failing': 0, 'max_depth_reached': 2, 'avg_box_size': 180.375} (5 dp)
   	sufficiency mask: tensor([[ True,  True,  True,  ...,  True,  True, False]])
   	explanation confidence: 0.9982
