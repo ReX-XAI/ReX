@@ -35,7 +35,6 @@ class ResponsibilityMaps:
         try:
             if increment:
                 self.counts[k] += 1  # type: ignore
-                # print(self.counts)
             return self.maps[k]
         except KeyError:
             return

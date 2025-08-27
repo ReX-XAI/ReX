@@ -157,10 +157,10 @@ def predict_target(
     target = prediction_func(data.data, None)
 
     if isinstance(target, list):
-        targets_str = "".join(f"{t.classification}\n" for t in target)
-        logger.info(
-            f"Found {len(target)} targets, the targets found are: \n{targets_str}"
-        )
+        # targets_str = "".join(f"{t.classification}\n" for t in target)
+        # logger.info(
+        #     f"Found {len(target)} targets, the targets found are: \n{targets_str}"
+        # )
         target = target[0]
 
     if target is not None:
@@ -354,15 +354,20 @@ def _explanation(
     data.target = predict_target(data, args, prediction_func)
 
     local_shape = update_mask_shape(1, data.model_shape)
-    baseline = tt.zeros(local_shape, dtype=tt.bool).to(data.device)
-    baseline = tt.argsort(prediction_func(_apply_to_data(baseline, data), raw=True))
-    to_consider = ceil(len(baseline[0]) * too_close)
-    # print(baseline[0][0:to_consider])
-    # print(data.get_classification())
-    if data.get_classification() in baseline[0][0:to_consider]:
-        logger.warning(
-            "the masking value chosen is very close to the required target prediction. This might give poor results"
-        )
+
+    # check the class of just the baseline value, as long as it is not a function
+    if not isinstance(data.mask_value, Callable):
+        baseline = tt.zeros(local_shape, dtype=tt.bool).to(data.device)
+        ps = prediction_func(_apply_to_data(baseline, data), raw=True)[0]
+        if isinstance(ps, np.ndarray):
+            baseline = np.argsort(ps)[::-1]
+        else:
+            baseline = tt.argsort(ps, descending=True)
+        to_consider = ceil(len(baseline) * too_close)
+        if data.get_classification() in baseline[0:to_consider]:
+            logger.warning(
+                "the masking value chosen is very close to the required target prediction. This might give poor results"
+            )
 
     time_taken = 0
     start = time.time()

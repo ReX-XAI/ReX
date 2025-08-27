@@ -49,11 +49,15 @@ def _apply_to_data(mask, data: Data):
     if callable(data.mask_value):
         return data.mask_value(mask, data.data)
     if isinstance(data.mask_value, numbers.Number):
-        return tt.where(mask, data.data, data.mask_value)  # type: ignore
+        if isinstance(mask, np.ndarray) or isinstance(data.data, np.ndarray):
+            mask = try_detach(mask)
+            d = try_detach(data.data)
+            return np.where(mask, d, data.mask_value)
+        else:
+            return tt.where(mask, data.data, data.mask_value)
 
-    print(data.mask_value)
     logger.warning("applying default masking value of 0")
-    return tt.where(mask, data.data, 0)  # type: ignore
+    return tt.where(mask, data.data, 0)
 
 
 def get_combinations():

@@ -2,19 +2,18 @@
 
 """onnx model management"""
 
-from typing import Optional, Union, List
-import sys
-import os
-import torch as tt
 import platform
-from scipy.special import softmax
+import sys
+from typing import List, Optional, Union
+
 import numpy as np
-
 import onnxruntime as ort
+import torch as tt
 from onnxruntime import InferenceSession
-from rex_xai.responsibility.prediction import Prediction, from_pytorch_tensor
-from rex_xai.input.input_data import Setup
+from scipy.special import softmax
 
+from rex_xai.input.input_data import Setup
+from rex_xai.responsibility.prediction import Prediction, from_pytorch_tensor
 from rex_xai.utils.logger import logger
 
 
@@ -181,7 +180,7 @@ def get_prediction_function(args):
             sess_options.intra_op_num_threads = args.intra_op_num_threads
             sess_options.inter_op_num_threads = args.inter_op_num_threads
             device = "mps"
-            _, ext = os.path.splitext(os.path.basename(args.model))
+            # _, ext = os.path.splitext(os.path.basename(args.model))
             # for the moment, onnx does not seem to support data copying on mps, so we fall back to
             # copying data to the cpu for inference
             setup = Setup.ONNXMPS
