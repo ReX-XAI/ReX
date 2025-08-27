@@ -10,6 +10,7 @@ import torch as tt
 from numpy.typing import NDArray
 from skimage.segmentation import mark_boundaries
 
+
 from rex_xai.mutants.box import Box
 from rex_xai.responsibility.prediction import Prediction
 from rex_xai.utils.logger import logger

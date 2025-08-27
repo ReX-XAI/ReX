@@ -52,5 +52,4 @@ def prediction_function(mutants, target=None, raw=False, binary_threshold=None):
         return yolo_result_to_pred(tensor, target)
 
 
-img = Image.open(path)
-model_shape = ["N", img.height, img.width, 3]
+model_shape = ["N", "H", "W", 3]

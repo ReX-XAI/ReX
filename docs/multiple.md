@@ -28,7 +28,7 @@ as a guide. How many spotlights are launched is a parameter (by default: 10) and
 integer argument.
 
 ```bash
-rex peacock.jpg --script ../tests/scripts/pytorch_resnet50.py --multi 5 --vv --output peacock_exp.png
+ReX peacock.jpg --script ../tests/scripts/pytorch_resnet50.py --multi 5 -vv --output peacock_exp.png
 ```
 we get
 
@@ -50,7 +50,7 @@ of the explanations.
 If we set `permitted_overlap = 0.5`
 
 ```bash
-rex peacock.jpg --script ../tests/scripts/pytorch_resnet50.py --multi 10 --vv --output peacock_exp.png
+ReX peacock.jpg --script ../tests/scripts/pytorch_resnet50.py --multi 10 -vv --output peacock_exp.png
 ```
 
 ```{image} ../assets/peacock_05.png
