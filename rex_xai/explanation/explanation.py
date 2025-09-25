@@ -147,7 +147,7 @@ class Explanation:
         ind += 1
         return ind, chunk_pointer, False
 
-    def __global(self, map=None, rounding=4):
+    def __global(self, map=None, rounding=4, use_bbox=False):
         # get responsibility map and ranking
         if map is None:
             map = self.target_map
@@ -190,10 +190,11 @@ class Explanation:
                     )
 
                     positions: ReXPositions = find_required_prediction(
-                        self.data.target.classification,  # type: ignore
+                        self.data.target,
                         target_confidence,
                         sufficient,
                         rounding=rounding,
+                        bounding_box=use_bbox,
                     )
 
                     if not positions.is_empty():
@@ -530,7 +531,7 @@ class Explanation:
                     )
 
                     positions: ReXPositions = find_required_prediction(
-                        self.data.target.classification,  # type: ignore
+                        self.data.target,
                         target_confidence,
                         sufficient,
                         contrastive_completeness_threshold,

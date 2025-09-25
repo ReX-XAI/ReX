@@ -16,7 +16,7 @@ from tqdm import trange  # type: ignore
 
 from rex_xai.explanation.evaluation import Evaluation
 from rex_xai.explanation.explanation import Explanation
-from rex_xai.explanation.multi_explanation import MultiExplanation
+from rex_xai.explanation.multi_explanation import MultiExplanation, MultiClassExplanation
 from rex_xai.input.config import CausalArgs
 from rex_xai.input.input_data import Data
 from rex_xai.input.onnx import get_prediction_function
@@ -389,6 +389,11 @@ def _explanation(
 
             logger.info(f"keeping only {clauses[0]}")
             clauses = clauses[0]
+    elif args.multi_class and len(data.targets.classifications) > 1:
+        exp = MultiClassExplanation(resp_object, prediction_func, data, args, run_stats)
+        if not args.no_extract:
+            exp.extract()
+            logger.info(f"found the following sets of explanations for the classes {list(exp.class_explanations.keys())} with a confidence of {list(exp.class_explanation_confidences)}")
     else:
         exp = Explanation(resp_object, prediction_func, data, args, run_stats)
         if not args.no_extract:
@@ -398,6 +403,9 @@ def _explanation(
     results = None
     if args.analyse is not None:
         if args.strategy == Strategy.MultiSpotlight:
+            logger.warning("still to write")
+            pass
+        elif args.multi_class and len(data.targets.classifications) > 1:
             logger.warning("still to write")
             pass
         else:
@@ -455,6 +463,8 @@ def _explanation(
                 path = args.output
         if args.strategy == Strategy.MultiSpotlight:
             exp.save(path, clauses=clauses)  # type: ignore
+        elif args.multi_class and len(data.targets.classifications) > 1:
+            exp.save(path, multi_style=args.multi_style)
         else:
             exp.save(path)  # type: ignore
 

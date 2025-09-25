@@ -60,20 +60,24 @@ def try_rounding(n, rounding: int | None) -> float:
 
 
 def find_required_prediction(
-    target: int,
+    target: Prediction,
     threshold: float,
     insertion_predictions: List[Prediction],
     contrastive_completeness_threshold: float = 0.0,
     deletion_predictions: List[Prediction] | None = None,
     rounding=None,
     sufficiency_found=False,
+    bounding_box=False,
 ):
     positions = ReXPositions(sufficiency_found=sufficiency_found)
     if deletion_predictions is None:
         for i, p in enumerate(insertion_predictions):
             local_confidence = try_rounding(p.confidence, rounding)
             threshold = try_rounding(threshold, rounding)
-            if p.classification == target and local_confidence >= threshold:  # type: ignore
+            if p.classification == target.classification and local_confidence >= threshold:  # type: ignore
+                iou, overlap = p.check_overlap(target, local_confidence)
+                if bounding_box and not overlap:
+                    continue
                 positions.sufficient_position = i
                 return positions
     else:
@@ -85,21 +89,23 @@ def find_required_prediction(
             contrastive_completeness_threshold = try_rounding(
                 contrastive_completeness_threshold, rounding
             )
+            iou, overlap = insertion_predictions[i].check_overlap(target, local_confidence)
 
             # check for a sufficiency
             if (
-                insertion_predictions[i].classification == target
+                insertion_predictions[i].classification == target.classification
                 and local_confidence >= threshold  # type: ignore
                 and not positions.sufficiency_found
+                and ((bounding_box and overlap) or not bounding_box)
             ):
                 positions.sufficient_position = i
                 positions.sufficiency_found = True
 
             # check for necessity above threshold
             if (
-                insertion_predictions[i].classification == target
+                insertion_predictions[i].classification == target.classification
                 and local_confidence >= contrastive_completeness_threshold
-                and deletion_predictions[i].classification != target
+                and deletion_predictions[i].classification != target.classification
             ):
                 positions.contrastive_position = i
     return positions

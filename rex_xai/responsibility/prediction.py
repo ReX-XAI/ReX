@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import torch as tt
 import torch.nn.functional as F
 from numpy.typing import NDArray
+import numpy as np
 
 class Predictions(List[Optional['Prediction']]):
     """
@@ -76,6 +77,49 @@ class Prediction:
     def is_passing(self):
         return self.target == self.classification
 
+    def check_overlap(self, prediction: 'Prediction', percentage: float = 0.5) -> Tuple[float, bool]:
+        """
+        Compute IoU between this.prediction.bounding_box and another `prediction.bounding_box`.
+        Accepts boxes in either (x1, y1, x2, y2) or (x, y, w, h) format.
+        `percentage` can be a fraction in [0,1] (e.g. 0.5) or a percent in (0,100) (e.g. 50).
+        Returns: (iou, iou >= threshold)
+        """
+        if self.bounding_box is None or prediction.bounding_box is None:
+            return 0.0, False
+
+        boxA = np.array(self.bounding_box, dtype=float)
+        boxB = np.array(prediction.bounding_box, dtype=float)
+
+        if percentage > 1:
+            threshold = percentage / 100.0
+        else:
+            threshold = float(percentage)
+
+        a = to_xyxy(boxA)
+        b = to_xyxy(boxB)
+
+        # intersection
+        ix1 = max(a[0], b[0])
+        iy1 = max(a[1], b[1])
+        ix2 = min(a[2], b[2])
+        iy2 = min(a[3], b[3])
+
+        inter_w = max(0.0, ix2 - ix1)
+        inter_h = max(0.0, iy2 - iy1)
+        inter_area = inter_w * inter_h
+
+        area_a = max(0.0, (a[2] - a[0])) * max(0.0, (a[3] - a[1]))
+        area_b = max(0.0, (b[2] - b[0])) * max(0.0, (b[3] - b[1]))
+
+        union_area = area_a + area_b - inter_area
+        if union_area <= 0:
+            iou = 0.0
+        else:
+            iou = inter_area / union_area
+
+        return float(iou), (iou >= threshold)
+
+
 
 def from_pytorch_tensor(tensor, target=None) -> List[Prediction]:
     softmax_tensor = F.softmax(tensor, dim=1)
@@ -100,3 +144,12 @@ def default_prediction_function(model):
             return from_pytorch_tensor(tensor, target=target)
 
     return inner
+
+def to_xyxy(box: np.ndarray) -> np.ndarray:
+    if box.size != 4:
+        raise ValueError("Bounding box must be length 4.")
+    x0, y0, x1, y1 = box
+    if (x1 <= x0) or (y1 <= y0):
+        x, y, w, h = box
+        return np.array([x, y, x + w, y + h], dtype=float)
+    return np.array([x0, y0, x1, y1], dtype=float)

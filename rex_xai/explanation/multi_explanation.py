@@ -287,3 +287,75 @@ class MultiExplanation(Explanation):
                 )
             steps += 1
         return conf
+
+
+class MultiClassExplanation(Explanation):
+    def __init__(self, maps, prediction_func, data, args, run_stats):
+        super().__init__(maps, prediction_func, data, args, run_stats)
+        self.class_explanations = dict()
+        self.class_explanation_confidences = dict()
+        self.current_class = None
+
+    def extract(self):
+        """
+        Extract explanations for each class in a multi-class classification setting.#
+        Go through each class, set it as the current class, and extract explanations using args.strategy
+
+        If target has bounding boxes, we focus use the bounding boxes as well as class labels.
+        """
+
+        if self.data.target is None or self.data.target.classification is None:
+            raise ValueError("MultiClassExplanation requires a target with class labels")
+
+        unique_classes = set()
+        if isinstance(self.data.target.classification, (list, tuple)):
+            unique_classes = set(self.data.target.classification)
+        else:
+            unique_classes.add(self.data.target.classification)
+
+        logger.info(f"found {len(unique_classes)} unique classes in target: {unique_classes}")
+
+        for i, target in enumerate(self.data.targets):
+            self.blank()
+            map = self.target_map[i]
+            logger.info(
+                f"Extracting explanation for target {self.data.target.classification} with confidence {self.data.target.confidence:.4f}"
+            )
+            self.current_class = target.classification
+            if self.args.strategy == "global":
+                logger.info("using global strategy to extract explanation")
+                self.__global(map, use_bbox=(target.bounding_box is not None))
+                if self.sufficiency_mask is not None:
+                    self.class_explanations[self.current_class] = [self.sufficiency_mask]
+                    self.class_explanation_confidences[self.current_class] = [self.sufficiency_confidence]
+            else:
+                logger.warning(
+                    "strategy for multi class explanation not implemented, use global instead"
+                )
+
+    # TODO: update saving and showing functions to handle multiple classes
+
+    def save(self, path: str, mask=None, multi_style: str | None = None):
+        logger.info("saving multi-class explanations")
+        name, ext = os.path.splitext(path)
+
+        if multi_style is None:
+            multi_style = "separate"
+
+        if multi_style == "separate":
+            logger.info("saving explanations for the multi-class prediction in multiple different files")
+            for cls, exps in self.class_explanations.items():
+                for i, mask in enumerate(exps):
+                    exp_path = f"{name}_class{cls}_{i}{ext}"
+                    super().save(exp_path, mask=mask)
+        if multi_style == "composite":
+            logger.info("using composite style to save explanations")
+            for cls, exps in self.class_explanations.items():
+                clause = range(0, len(exps))
+                exp_path = f"{name}_class{cls}{ext}"
+                save_multi_explanation(
+                    exps, self.data, self.args, clause=clause, path=exp_path
+                )
+
+    def show(self, multi_style=None):
+        pass
