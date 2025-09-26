@@ -510,7 +510,15 @@ def dump_to_dataframe(args: CausalArgs, df: pd.DataFrame, exp: Explanation, time
         "total_failing": exp.run_stats["total_failing"],
         "max_depth_reached": exp.run_stats["max_depth_reached"],
         "avg_box_size": exp.run_stats["avg_box_size"],
-        "time": time_taken
+        "time": time_taken,
+        "iterations": args.iters,
+        "chunk_size": args.chunk_size,
+        "mask_value": args.mask_value,
+        "output_path": args.output,
+        "seed": args.seed,
+        "tree_depth": args.tree_depth,
+        "search_limit": args.search_limit,
+        "min_box_size": args.min_box_size,
     }
     df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
     df.to_pickle(args.dump + ".pkl")

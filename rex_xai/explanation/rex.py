@@ -485,7 +485,7 @@ def _explanation(
             dump_to_dataframe(args, df_existing, exp, time_taken, save_as=save_as)
         else:
             dump_to_dataframe(args, pd.DataFrame(), exp, time_taken, save_as=save_as)
-        logger.info("dumped database to {}", args.dump)
+        logger.info(f"dumped database to {args.dump}")
 
     if data.device == "mps":
         with tt.no_grad():
