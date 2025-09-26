@@ -476,15 +476,15 @@ def _explanation(
             logger.info("writing to database")
             update_database(db, exp, time_taken, analysis_results=results)
 
-        if args.dump is not None:
-            import pandas as pd
-            save_as = "json" if args.dump.endswith(".json") else "csv"
-            if os.path.exists(args.dump):
-                df_existing = pd.read_csv(args.dump)
-                dump_to_dataframe(args, df_existing, exp, time_taken, save_as=save_as)
-            else:
-                dump_to_dataframe(args, pd.DataFrame(), exp, time_taken, save_as=save_as)
-            logger.info("dumped database to {}", args.dump)
+    if args.dump is not None:
+        import pandas as pd
+        save_as = "json" if args.dump.endswith(".json") else "csv"
+        if os.path.exists(args.dump):
+            df_existing = pd.read_csv(args.dump)
+            dump_to_dataframe(args, df_existing, exp, time_taken, save_as=save_as)
+        else:
+            dump_to_dataframe(args, pd.DataFrame(), exp, time_taken, save_as=save_as)
+        logger.info("dumped database to {}", args.dump)
 
     if data.device == "mps":
         with tt.no_grad():
