@@ -476,6 +476,28 @@ def _explanation(
             logger.info("writing to database")
             update_database(db, exp, time_taken, analysis_results=results)
 
+        if args.dump is not None and args.dump.endswith(".csv"):
+            import pandas as pd
+            df = pd.read_sql_table("explanations", db.bind)
+            if os.path.exists(args.dump):
+                df_existing = pd.read_csv(args.dump)
+                df = pd.concat([df_existing, df], ignore_index=True)
+                df.to_csv(args.dump, index=False)
+            else:
+                df.to_csv(args.dump, index=False)
+            logger.info("dumped database to {}", args.dump)
+
+        elif args.dump is not None and args.dump.endswith(".json"):
+            import pandas as pd
+            df = pd.read_sql_table("explanations", db.bind)
+            if os.path.exists(args.dump):
+                df_existing = pd.read_json(args.dump)
+                df = pd.concat([df_existing, df], ignore_index=True)
+                df.to_json(args.dump, orient="records", lines=False)
+            else:
+                df.to_json(args.dump, orient="records", lines=False)
+            logger.info("dumped database to {}", args.dump)
+
     if data.device == "mps":
         with tt.no_grad():
             tt.mps.empty_cache()

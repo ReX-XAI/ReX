@@ -39,6 +39,7 @@ class Args:
         self.mode: Optional[str] = None
         self.shape: None = None
         self.db: Optional[str] = None
+        self.dump: Optional[str] = None
         # gpu support
         self.gpu: bool = True
         # for reproducability
