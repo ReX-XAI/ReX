@@ -503,6 +503,7 @@ def dump_to_dataframe(args: CausalArgs, df: pd.DataFrame, exp: Explanation, time
         "path": path,
         "target": classification,
         "confidence": confidence,
+        "bounding_box": str(target.bounding_box.tolist() if target.bounding_box is not None else None),
         "responsibility": responsibility,
         "sufficiency_mask": sufficiency_mask,
         "sufficiency_confidence": explanation_confidence,
