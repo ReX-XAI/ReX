@@ -20,7 +20,7 @@ from rex_xai.explanation.multi_explanation import MultiExplanation, MultiClassEx
 from rex_xai.input.config import CausalArgs
 from rex_xai.input.input_data import Data
 from rex_xai.input.onnx import get_prediction_function
-from rex_xai.output.database import update_database
+from rex_xai.output.database import update_database, dump_to_dataframe
 from rex_xai.responsibility.prediction import Prediction, Predictions, default_prediction_function
 from rex_xai.responsibility.resp_maps import ResponsibilityMaps
 from rex_xai.responsibility.responsibility import causal_explanation
@@ -476,26 +476,14 @@ def _explanation(
             logger.info("writing to database")
             update_database(db, exp, time_taken, analysis_results=results)
 
-        if args.dump is not None and args.dump.endswith(".csv"):
+        if args.dump is not None:
             import pandas as pd
-            df = pd.read_sql_table("explanations", db.bind)
+            save_as = "json" if args.dump.endswith(".json") else "csv"
             if os.path.exists(args.dump):
                 df_existing = pd.read_csv(args.dump)
-                df = pd.concat([df_existing, df], ignore_index=True)
-                df.to_csv(args.dump, index=False)
+                dump_to_dataframe(args, df_existing, exp, time_taken, save_as=save_as)
             else:
-                df.to_csv(args.dump, index=False)
-            logger.info("dumped database to {}", args.dump)
-
-        elif args.dump is not None and args.dump.endswith(".json"):
-            import pandas as pd
-            df = pd.read_sql_table("explanations", db.bind)
-            if os.path.exists(args.dump):
-                df_existing = pd.read_json(args.dump)
-                df = pd.concat([df_existing, df], ignore_index=True)
-                df.to_json(args.dump, orient="records", lines=False)
-            else:
-                df.to_json(args.dump, orient="records", lines=False)
+                dump_to_dataframe(args, pd.DataFrame(), exp, time_taken, save_as=save_as)
             logger.info("dumped database to {}", args.dump)
 
     if data.device == "mps":

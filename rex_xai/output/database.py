@@ -472,3 +472,53 @@ def initialise_rex_db(name, echo=False):
     Session = sessionmaker(bind=engine)
     s = Session()
     return s
+
+def dump_to_dataframe(args: CausalArgs, df: pd.DataFrame, exp: Explanation, time_taken, save_as="csv"):
+    path = args.path
+    target = exp.data.target
+    if target is None:
+        logger.warning("unable to dump to dataframe as target is None")
+        return df
+    classification = target.classification
+    confidence = target.confidence
+
+    if exp.sufficiency_mask is None:
+        logger.warning("unable to dump to dataframe as explanation is empty")
+        return df
+
+    sufficiency_mask = try_detach(exp.sufficiency_mask)
+    responsibility = try_detach(exp.target_map)
+    explanation_confidence = exp.sufficiency_confidence
+
+    analysis_results=None
+    if analysis_results is not None:
+        area = analysis_results["area"]
+        entropy = analysis_results["entropy"]
+        insertion_curve = analysis_results["insertion_curve"]
+        deletion_curve = analysis_results["deletion_curve"]
+
+    new_row = {
+        "path": path,
+        "target": classification,
+        "confidence": confidence,
+        "responsibility": responsibility,
+        "responsibility_shape": str(responsibility.shape),
+        "sufficiency_mask": sufficiency_mask,
+        "mask_shape": str(sufficiency_mask.shape),
+        "sufficiency_confidence": explanation_confidence,
+        "total_passing": exp.run_stats["total_passing"],
+        "total_failing": exp.run_stats["total_failing"],
+        "max_depth_reached": exp.run_stats["max_depth_reached"],
+        "avg_box_size": exp.run_stats["avg_box_size"],
+        "time": time_taken
+    }
+    df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+    df.to_pickle(args.dump + ".pkl")
+    if save_as == "csv":
+        df.to_csv(f"{args.dump}.csv", index=False)
+    elif save_as == "json":
+        df.to_json(f"{args.dump}.json", orient="records", lines=True)
+    else:
+        logger.warning("Unsupported save_as format. Supported formats are 'csv' and 'json'.")
+    return df
+
