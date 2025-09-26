@@ -316,6 +316,12 @@ def cmdargs_parser():
     )
 
     parser.add_argument(
+        "--dump",
+        type=str,
+        help="dump the results to a csv or json file depending on the extension provided",
+    )
+
+    parser.add_argument(
         "--multi",
         nargs="?",
         const=10,
