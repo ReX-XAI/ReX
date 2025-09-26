@@ -92,7 +92,7 @@ def update_database(
     if target is None:
         logger.warning("unable to update database as target is None")
         return
-    classification = int(target.classification)  # type: ignore
+    classification = str(target.classification)
 
     # potentially enmpty fields in the database
     necessity_mask = None
@@ -117,7 +117,7 @@ def update_database(
         if explanation.necessity_mask is not None:
             necessity_mask = try_detach(explanation.necessity_mask)
             necessity_confidence = explanation.necessity_confidence  # type: ignore
-            inverse_classification = explanation.contrastive_classification
+            inverse_classification = str(explanation.contrastive_classification)
             inverse_confidence = explanation.contrastive_confidence
         if hasattr(explanation, "complete_mask"):
             if explanation.complete_mask is None:
@@ -127,7 +127,7 @@ def update_database(
             else:
                 complete_mask = try_detach(explanation.complete_mask)
                 complete_confidence = explanation.completeness_confidence
-                complete_classification = explanation.completeness_classification
+                complete_classification = str(explanation.completeness_classification)
 
         explanation_confidence = explanation.sufficiency_confidence
 
@@ -216,10 +216,10 @@ def add_to_database(
     sufficiency_confidence: float | None,
     contrastive_mask,
     contrastive_confidence: float | None,
-    inverse_classification: int | None,
+    inverse_classification: str | None,
     inverse_confidence: float | None,
     complete_mask,
-    complete_classification: int | None,
+    complete_classification: str | None,
     complete_confidence,
     area: float | None,
     entropy: float | None,
@@ -261,9 +261,9 @@ def add_to_database(
         contrastive_mask=contrastive_mask,
         contrastive_confidence=contrastive_confidence,
         complete_mask=complete_mask,
-        complete_classification=complete_classification,
+        complete_classification=str(complete_classification),
         complete_confidence=complete_confidence,
-        inverse_classification=inverse_classification,
+        inverse_classification=str(inverse_classification),
         inverse_confidence=inverse_confidence,
         depth_reached=depth_reached,
         avg_box_size=avg_box_size,
@@ -331,12 +331,12 @@ class DataBaseEntry(Base):
     contrastive_mask = Column(NumpyType)
     contrastive_confidence = Column(Float)
 
-    inverse_classification = Column(Integer)
+    inverse_classification = Column(String)
     inverse_confidence = Column(Float)
 
     # complete mask
     complete_mask = Column(NumpyType)
-    complete_classification = Column(Integer)
+    complete_classification = Column(String)
     complete_confidence = Column(Float)
 
     # analysis results, if available
