@@ -474,7 +474,7 @@ def initialise_rex_db(name, echo=False):
     return s
 
 def dump_to_dataframe(args: CausalArgs, df: pd.DataFrame, exp: Explanation, time_taken, save_as="csv"):
-    path = args.path
+    name, ext = args.dump.split(".")
     target = exp.data.target
     if target is None:
         logger.warning("unable to dump to dataframe as target is None")
@@ -492,6 +492,7 @@ def dump_to_dataframe(args: CausalArgs, df: pd.DataFrame, exp: Explanation, time
         responsibility = responsibility.detach().cpu().numpy()
     explanation_confidence = exp.sufficiency_confidence
 
+    #don't care for now
     analysis_results=None
     if analysis_results is not None:
         area = analysis_results["area"]
@@ -500,7 +501,7 @@ def dump_to_dataframe(args: CausalArgs, df: pd.DataFrame, exp: Explanation, time
         deletion_curve = analysis_results["deletion_curve"]
 
     new_row = {
-        "path": path,
+        "path": args.path,
         "target": classification,
         "confidence": confidence,
         "bounding_box": str(target.bounding_box.tolist() if target.bounding_box is not None else None),
@@ -522,11 +523,11 @@ def dump_to_dataframe(args: CausalArgs, df: pd.DataFrame, exp: Explanation, time
         "min_box_size": args.min_box_size,
     }
     df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-    df.to_pickle(args.dump + ".pkl")
+    df.to_pickle(name + ".pkl")
     if save_as == "csv":
-        df.to_csv(f"{args.dump}.csv", index=False)
+        df.to_csv(f"{name}.csv", index=False)
     elif save_as == "json":
-        df.to_json(f"{args.dump}.json", orient="records", lines=True)
+        df.to_json(f"{name}.json", orient="records", lines=True)
     else:
         logger.warning("Unsupported save_as format. Supported formats are 'csv' and 'json'.")
     return df
