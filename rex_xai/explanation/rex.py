@@ -477,6 +477,7 @@ def _explanation(
             update_database(db, exp, time_taken, analysis_results=results)
 
     if args.dump is not None:
+        logger.info(f"dumping results to {args.dump}")
         import pandas as pd
         save_as = "json" if args.dump.endswith(".json") else "csv"
         if os.path.exists(args.dump):

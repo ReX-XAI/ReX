@@ -317,6 +317,7 @@ def cmdargs_parser():
 
     parser.add_argument(
         "--dump",
+        "-d",
         type=str,
         help="dump the results to a csv or json file depending on the extension provided",
     )
@@ -440,6 +441,8 @@ def shared_args(cmd_args, args: CausalArgs):
         args.no_extract = True
     if cmd_args.database is not None:
         args.db = cmd_args.database
+    if cmd_args.dump is not None:
+        args.dump = cmd_args.dump
     if cmd_args.mode is not None:
         args.mode = cmd_args.mode
     if cmd_args.spectral:
