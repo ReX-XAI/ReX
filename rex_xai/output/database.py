@@ -487,7 +487,9 @@ def dump_to_dataframe(args: CausalArgs, df: pd.DataFrame, exp: Explanation, time
         return df
 
     sufficiency_mask = try_detach(exp.sufficiency_mask)
-    responsibility = try_detach(exp.target_map)
+    responsibility =  exp.target_map
+    if isinstance(responsibility, tt.Tensor):
+        responsibility = responsibility.detach().cpu().numpy()
     explanation_confidence = exp.sufficiency_confidence
 
     analysis_results=None
@@ -502,9 +504,7 @@ def dump_to_dataframe(args: CausalArgs, df: pd.DataFrame, exp: Explanation, time
         "target": classification,
         "confidence": confidence,
         "responsibility": responsibility,
-        "responsibility_shape": str(responsibility.shape),
         "sufficiency_mask": sufficiency_mask,
-        "mask_shape": str(sufficiency_mask.shape),
         "sufficiency_confidence": explanation_confidence,
         "total_passing": exp.run_stats["total_passing"],
         "total_failing": exp.run_stats["total_failing"],
