@@ -364,7 +364,14 @@ def _explanation(
 
     data = validate_shape(data, model_shape)
 
-    data.targets = predict_target(data, prediction_func)
+    if args.custom_target:
+        data.target = Prediction(args.custom_target, 1.0)  # type: ignore
+        data.targets = Predictions([data.target])  # type: ignore
+        logger.info(
+            f"Using custom target {data.target.classification} with confidence {data.target.confidence}"
+        )
+    else:
+        data.targets = predict_target(data, prediction_func)
 
     time_taken = 0
     start = time.time()

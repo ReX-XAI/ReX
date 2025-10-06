@@ -48,6 +48,7 @@ class Args:
         self.script: Optional[ModuleType] = None
         self.script_location = None
         self.processed = False
+        self.custom_target = None  # custom target class for explanation
         # for custom occlusions through cmdline
         self.context = False
         self.context_location: Optional[str] = (
@@ -270,6 +271,12 @@ def cmdargs_parser():
         "--noise",
         type=float,
         help="noise level to be added to data used for context occlusion",
+    )
+
+    # custom target - set own class for explanation , need take an input
+    parser.add_argument(
+        "--custom_target",
+        help="custom target class for explanation and responsibility map extraction",
     )
 
     parser.add_argument(
@@ -648,6 +655,9 @@ def process_cmd_args(cmd_args, args):
         args.context_location = cmd_args.context
         args.mask_value = "context"
 
+    if cmd_args.custom_target is not None:
+        args.custom_target = cmd_args.custom_target
+
 
 def load_config(config_path=None):
     if config_path is None:
@@ -795,3 +805,5 @@ def validate_args(args: CausalArgs):
         raise ReXTomlError(
             f"Invalid colourmap '{args.heatmap_colours}', must be a valid matplotlib colourmap"
         )
+
+    #TODO: add valid target class if custom target is provided -> depends on model though
