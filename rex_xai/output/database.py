@@ -4,6 +4,7 @@ from __future__ import annotations
 import zlib
 from ast import literal_eval
 from datetime import datetime
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -475,6 +476,7 @@ def initialise_rex_db(name, echo=False):
 
 def dump_to_dataframe(args: CausalArgs, df: pd.DataFrame, exp: Explanation, time_taken, save_as="csv"):
     name, ext = args.dump.split(".")
+    img_name = Path(args.dump).stem
     target = exp.data.target
     if target is None:
         logger.warning("unable to dump to dataframe as target is None")
@@ -490,6 +492,8 @@ def dump_to_dataframe(args: CausalArgs, df: pd.DataFrame, exp: Explanation, time
     responsibility =  exp.target_map
     if isinstance(responsibility, tt.Tensor):
         responsibility = responsibility.detach().cpu().numpy()
+    if isinstance(sufficiency_mask, tt.Tensor):
+        sufficiency_mask = sufficiency_mask.detach().cpu().numpy()
     explanation_confidence = exp.sufficiency_confidence
 
     #don't care for now
@@ -500,14 +504,17 @@ def dump_to_dataframe(args: CausalArgs, df: pd.DataFrame, exp: Explanation, time
         insertion_curve = analysis_results["insertion_curve"]
         deletion_curve = analysis_results["deletion_curve"]
 
+    # save the explanation and responsibility as npy files
+    np.save(f"{name}_explanation.npy", sufficiency_mask)
+    np.save(f"{name}_responsibility.npy", responsibility)
     new_row = {
         "path": args.path,
         "target": classification,
         "confidence": confidence,
         "bounding_box": str(target.bounding_box.tolist() if target.bounding_box is not None else None),
-        "responsibility": responsibility,
-        "sufficiency_mask": sufficiency_mask,
+        "responsibility": f"{name}_responsibility.npy",
         "sufficiency_confidence": explanation_confidence,
+        "sufficient_explanation": f"{name}_explanation.npy",
         "total_passing": exp.run_stats["total_passing"],
         "total_failing": exp.run_stats["total_failing"],
         "max_depth_reached": exp.run_stats["max_depth_reached"],
