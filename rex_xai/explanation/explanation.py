@@ -139,6 +139,7 @@ class Explanation:
         return ind, chunk_pointer, False
 
     def __global(self, map=None, rounding=4):
+        assert self.data.target is not None
         # get responsibility map and ranking
         if map is None:
             map = self.target_map

@@ -5,6 +5,7 @@ import copy
 import os
 import sys
 import time
+from math import ceil
 from typing import Callable, Dict, List, Tuple, Union
 
 import numpy as np
@@ -20,11 +21,17 @@ from rex_xai.explanation.multi_explanation import MultiExplanation
 from rex_xai.input.config import CausalArgs
 from rex_xai.input.input_data import Data
 from rex_xai.input.onnx import get_prediction_function
+from rex_xai.mutants.mutant import _apply_to_data
 from rex_xai.output.database import update_database
 from rex_xai.responsibility.prediction import Prediction, default_prediction_function
 from rex_xai.responsibility.resp_maps import ResponsibilityMaps
 from rex_xai.responsibility.responsibility import causal_explanation
-from rex_xai.utils._utils import ReXDataError, ReXScriptError, Strategy
+from rex_xai.utils._utils import (
+    ReXDataError,
+    ReXScriptError,
+    Strategy,
+    update_mask_shape,
+)
 from rex_xai.utils.logger import logger
 
 
@@ -176,10 +183,10 @@ def predict_target(
     target = prediction_func(data.data, None)
 
     if isinstance(target, list):
-        targets_str = "".join(f"{t.classification}\n" for t in target)
-        logger.info(
-            f"Found {len(target)} targets, the targets found are: \n{targets_str}"
-        )
+        # targets_str = "".join(f"{t.classification}\n" for t in target)
+        # logger.info(
+        #     f"Found {len(target)} targets, the targets found are: \n{targets_str}"
+        # )
         target = target[0]
 
     if target is not None:
@@ -231,7 +238,7 @@ def calculate_responsibility(
                 "No target classification found in the list of targets. Please run `predict_target` before running `calculate_responsibility`."
             )
     else:
-        if data.target is None or data.target.classification is None:
+        if data.get_classification() is None:
             raise ValueError(
                 "No target classification found. Please run `predict_target` before running `calculate_responsibility`."
             )
@@ -239,17 +246,6 @@ def calculate_responsibility(
     maps = ResponsibilityMaps(
         args.responsibility_style, data.model_height, data.model_width, data.model_depth
     )
-    # if custom_height is not None and custom_width is not None:
-    #     maps.new_map(data.target.classification, custom_height, custom_width)
-    # elif data.model_height is not None:
-    #     maps.new_map(
-    #         data.target.classification,
-    #         data.model_height,
-    #         data.model_width,
-    #         data.model_depth,
-    #     )
-    # else:
-    #     maps.new_map(data.target.classification, data.model_height, data.model_width)
 
     total_passing: int = 0
     total_failing: int = 0
@@ -269,7 +265,7 @@ def calculate_responsibility(
                 data,
                 args,
                 prediction_func,
-                current_map=maps.get(data.target.classification),
+                current_map=maps.get(data.get_classification()),
             )
 
             total_passing += passing
@@ -353,6 +349,7 @@ def _explanation(
     device: tt.device,
     db: Session | None = None,
     path: str | None = None,
+    too_close=0.01,
 ):
     """Takes a CausalArgs object and model information and returns a Explanation.
 
@@ -384,13 +381,29 @@ def _explanation(
 
     data.target = predict_target(data, args, prediction_func)
 
+    local_shape = update_mask_shape(1, data.model_shape)
+
+    # check the class of just the baseline value, as long as it is not a function
+    if not isinstance(data.mask_value, Callable):
+        baseline = tt.zeros(local_shape, dtype=tt.bool).to(data.device)
+        ps = prediction_func(_apply_to_data(baseline, data), raw=True)[0]
+        if isinstance(ps, np.ndarray):
+            baseline = np.argsort(ps)[::-1]
+        else:
+            baseline = tt.argsort(ps, descending=True)
+        to_consider = ceil(len(baseline) * too_close)
+        if data.get_classification() in baseline[0:to_consider]:
+            logger.warning(
+                "the masking value chosen is very close to the required target prediction. This might give poor results"
+            )
+
     time_taken = 0
     start = time.time()
 
     logger.info("Calculating responsibility map")
     resp_object, run_stats = calculate_responsibility(data, args, prediction_func)
     if args.negative_responsibility:
-        resp_object.negative_responsibility(data.target.classification)
+        resp_object.negative_responsibility(data.get_classification())
     mid = time.time()
     logger.info(f"Finished building responsibility map after {mid - start} seconds")
 
@@ -426,7 +439,7 @@ def _explanation(
 
             if data.mode == "spectral":
                 print(
-                    f"INFO:ReX:classification {exp.data.target.classification}, area {results['area']}, KL divergence {results['entropy']},",  # type: ignore
+                    f"INFO:ReX:classification {exp.data.get_classification()}, area {results['area']}, spectral entropy {results['entropy']},",  # type: ignore
                     f"max entropy {results['max_entropy']}",
                 )
             else:
@@ -439,7 +452,7 @@ def _explanation(
                     assert exp.data.target is not None
                     with open(args.analyse, "a") as out:
                         out.write(
-                            f"{args.path},{exp.data.target.classification},{results['area']},{results['entropy']},{results['robustness']},{results['insertion_curve']},{results['deletion_curve']},{time_taken}\n"
+                            f"{args.path},{exp.data.get_classification()},{results['area']},{results['entropy']},{results['robustness']},{results['insertion_curve']},{results['deletion_curve']},{time_taken}\n"
                         )
 
     else:
