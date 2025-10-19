@@ -485,19 +485,11 @@ def dump_to_dataframe(args: CausalArgs, df: pd.DataFrame, exp: Explanation, time
     classification = target.classification
     confidence = target.confidence
 
-    if exp.sufficiency_mask is None:
-        logger.warning("unable to dump to dataframe as explanation is empty")
-        return df
-
-    sufficiency_mask = try_detach(exp.sufficiency_mask)
     responsibility =  exp.target_map
     if isinstance(responsibility, tt.Tensor):
         responsibility = responsibility.detach().cpu().numpy()
     elif isinstance(responsibility, list) and isinstance(responsibility[0], tt.Tensor):
         responsibility = responsibility[0].detach().cpu().numpy()
-    if isinstance(sufficiency_mask, list) and isinstance(sufficiency_mask[0], tt.Tensor):
-        sufficiency_mask = sufficiency_mask[0].cpu().numpy()
-    explanation_confidence = exp.sufficiency_confidence
 
     #don't care for now
     analysis_results=None
@@ -507,7 +499,6 @@ def dump_to_dataframe(args: CausalArgs, df: pd.DataFrame, exp: Explanation, time
         insertion_curve = analysis_results["insertion_curve"]
         deletion_curve = analysis_results["deletion_curve"]
     # save the explanation and responsibility as npy files
-    np.save(f"{img_name}_explanation.npy", sufficiency_mask)
     np.save(f"{img_name}_responsibility.npy", responsibility)
     print(f"Saving to {img_name}_responsibility.npy")
     new_row = {
@@ -516,8 +507,6 @@ def dump_to_dataframe(args: CausalArgs, df: pd.DataFrame, exp: Explanation, time
         "confidence": confidence,
         "bounding_box": str(target.bounding_box.tolist() if target.bounding_box is not None else None),
         "responsibility": f"{img_name}_responsibility.npy",
-        "sufficiency_mask": f"{img_name}_explanation.npy",
-        "sufficiency_confidence": explanation_confidence,
         "total_passing": exp.run_stats["total_passing"],
         "total_failing": exp.run_stats["total_failing"],
         "max_depth_reached": exp.run_stats["max_depth_reached"],
@@ -532,6 +521,34 @@ def dump_to_dataframe(args: CausalArgs, df: pd.DataFrame, exp: Explanation, time
         "search_limit": args.search_limit,
         "min_box_size": args.min_box_size,
     }
+
+    if exp.sufficiency_mask is not None:
+        sufficiency_mask = try_detach(exp.sufficiency_mask)
+        if isinstance(sufficiency_mask, list) and isinstance(sufficiency_mask[0], tt.Tensor):
+            sufficiency_mask = sufficiency_mask[0].cpu().numpy()
+        explanation_confidence = exp.sufficiency_confidence
+        np.save(f"{img_name}_explanation.npy", sufficiency_mask)
+        new_row["explanation"] = f"{img_name}_explanation.npy"
+        new_row["explanation_confidence"] = explanation_confidence
+
+    if exp.sufficiency_mask is not None:
+        necessity_mask = try_detach(exp.necessity_mask)
+        if isinstance(necessity_mask, list) and isinstance(necessity_mask[0], tt.Tensor):
+            necessity_mask = necessity_mask[0].cpu().numpy()
+        necessity_confidence = exp.necessity_confidence
+        np.save(f"{img_name}_necessity.npy", necessity_mask)
+        new_row["necessity_mask"] = f"{img_name}_necessity.npy"
+        new_row["necessity_confidence"] = necessity_confidence
+
+    if exp.complete_mask is not None:
+        complete_mask = try_detach(exp.complete_mask)
+        if isinstance(complete_mask, list) and isinstance(complete_mask[0], tt.Tensor):
+            complete_mask = complete_mask[0].cpu().numpy()
+        completeness_confidence = exp.completeness_confidence
+        np.save(f"{img_name}_complete.npy", complete_mask)
+        new_row["complete_mask"] = f"{img_name}_complete.npy"
+        new_row["completeness_confidence"] = completeness_confidence
+
     df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
     df.to_pickle(name + ".pkl")
     if save_as == "csv":
