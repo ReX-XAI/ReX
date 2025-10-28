@@ -505,7 +505,7 @@ def dump_to_dataframe(args: CausalArgs, df: pd.DataFrame, exp: Explanation, time
         "path": args.path,
         "target": classification,
         "confidence": confidence,
-        "bounding_box": str(target.bounding_box.tolist() if target.bounding_box is not None else None),
+        "bounding_box": str(target.bounding_box if target.bounding_box is not None else None),
         "responsibility": f"{img_name}_responsibility.npy",
         "total_passing": exp.run_stats["total_passing"],
         "total_failing": exp.run_stats["total_failing"],
@@ -531,7 +531,7 @@ def dump_to_dataframe(args: CausalArgs, df: pd.DataFrame, exp: Explanation, time
         new_row["explanation"] = f"{img_name}_explanation.npy"
         new_row["explanation_confidence"] = explanation_confidence
 
-    if exp.sufficiency_mask is not None:
+    if exp.necessity_mask is not None:
         necessity_mask = try_detach(exp.necessity_mask)
         if isinstance(necessity_mask, list) and isinstance(necessity_mask[0], tt.Tensor):
             necessity_mask = necessity_mask[0].cpu().numpy()
