@@ -6,7 +6,7 @@ from rex_xai.responsibility.prediction import Prediction, Predictions
 import numpy as np
 
 # Load a model
-model = RTDETR("rtdetr-l.pt")
+model = RTDETR("rtdetr-l.pt").to("cuda")
 model.eval()
 
 def preprocess(path, shape, device) -> Data:
