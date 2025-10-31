@@ -44,7 +44,7 @@ def faster_rcnn_result_to_pred(results, target):
             prediction = Prediction(label, confidence, box, target)
             predictions.append(prediction)
         return Predictions(predictions)
-    return Predictions(predictions)
+    return Predictions((Prediction("NONE", 0.0))
 
 
 def prediction_function(mutants, target=None, raw=False, binary_threshold=None):
