@@ -6,14 +6,14 @@ from rex_xai.responsibility.prediction import Prediction, Predictions
 import torchvision.transforms.functional as F
 
 # Load a model
-model = fasterrcnn_resnet50_fpn_v2(pretrained=True)
+model = fasterrcnn_resnet50_fpn_v2(pretrained=True).to("cuda")
 model.eval()
 weights = FasterRCNN_ResNet50_FPN_V2_Weights.DEFAULT
 
 
 def preprocess(path, shape, device) -> Data:
     img = Image.open(path).convert("RGB")
-    tensor = F.to_tensor(img)
+    tensor = F.to_tensor(img).to(device)
     data = Data(img, shape, device, process=False)
     data.data = tensor
     data.mode = "RGB"
