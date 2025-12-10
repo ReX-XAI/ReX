@@ -26,3 +26,9 @@ ReX works on the assumption that if we can intervene on the inputs to a model an
 4. [Explanations for Occluded Images](http://www.hanachockler.com/iccv2021/). In ICCV’21. This paper introduces causality for image classifier explanations. Note: the tool is called DC-Causal in this paper.
 5. [Explaining Image Classifiers using Statistical Fault Localization](http://www.hanachockler.com/eccv/). In ECCV’20. The first paper on ReX. Note: the tool is called DeepCover in this paper.
 6. [Explaining Negative Classifications of AI Models in Tumor Diagnosis](https://kclpure.kcl.ac.uk/ws/portalfiles/portal/338736242/Explanations_of_absence.pdf). In UAI 2025. This uses ReX explanations in its algorithm.
+7. [I am Big, You are Little; I am Right, You are Wrong](https://openaccess.thecvf.com/content/ICCV2025/papers/Kelly_I_Am_Big_You_Are_Little_I_Am_Right_You_ICCV_2025_paper.pdf). In ICCV'25. This paper uses ReX to look at the information requirements of different image classifiers.
+8. [MRxaI: Black-Box Explainability for Image Classifiers in a Medical Setting](https://ceur-ws.org/Vol-4059/paper9.pdf) in EXPLIMED'25. The paper compares ReX against other XAI tools on medical (MRI) data.
+9. [Evaluation of Black-Box XAI Approaches for Predictors of Values of Boolean Formulae](https://arxiv.org/pdf/2509.09982?) presented at EXAI@ECAI'25. ReX for boolean function satisfiability. 
+10. [Causal Identification of Sufficient, Contrastive and Complete Feature Sets in Image Classification](https://arxiv.org/abs/2507.23497). Under review. Sufficient, necessary and complete pixel sets for image classifiers.
+11. [Out-of-the-box: Black-box Causal Attacks on Object Detectors](https://arxiv.org/pdf/2512.03730). Under review. Adversarial causal attacks on object detectors. 
+12. [SpecReX: Explainable AI for Raman Spectroscopy](https://arxiv.org/pdf/2503.14567) presented at 9th International Workshop on Health Intelligence (W3PHIAI-25). ReX for Raman Spectroscopy.

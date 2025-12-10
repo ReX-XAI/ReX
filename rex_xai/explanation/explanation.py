@@ -199,6 +199,11 @@ class Explanation:
                                 positions.sufficient_position
                             ].confidence
                             sufficient_found = True
+                            # print(
+                            #     tt.unique(
+                            #         tt.where(self.sufficiency_mask, self.data.data, -20)
+                            #     )[1:]
+                            # )
                             logger.info(
                                 f"a sufficient explanation for {self.data.target.classification} found with confidence {self.sufficiency_confidence:.4f}"
                             )
@@ -566,6 +571,13 @@ class Explanation:
                             .detach()
                             .clone()
                         )
+
+                        # print(
+                        #     tt.unique(
+                        #         tt.where(self.necessity_mask, self.data.data, -20)
+                        #     )[1:]
+                        # )
+
                         self.necessity_confidence = sufficient[
                             positions.contrastive_position
                         ].confidence
