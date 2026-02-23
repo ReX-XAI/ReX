@@ -19,7 +19,7 @@ except ImportError:
 from rex_xai.input.config import CausalArgs, Queue
 from rex_xai.input.input_data import Data
 from rex_xai.mutants.box import average_box_size, initialise_tree
-from rex_xai.mutants.mutant import Mutant, _apply_to_data, get_combinations
+from rex_xai.mutants.mutant import Mutant, _apply_to_data, get_combinations, filter_passing_mutants
 from rex_xai.responsibility.prediction import Prediction, Predictions
 from rex_xai.responsibility.resp_maps import ResponsibilityMaps
 from rex_xai.utils.logger import logger
@@ -54,7 +54,7 @@ def update_depth_reached(depth_reached, passing):
     @return int
     """
     mp = [m.depth for m in passing]
-    if mp == []:
+    if len(mp) == 0:
         mp = 0
     else:
         mp = max(mp)
@@ -68,7 +68,7 @@ def prune(mutants: List[Mutant], technique=Queue.Intersection, keep=None):
     @param technique: a Queue enum
     @param keep=None: how many items to keep in the queue, all if keep is None
 
-    @return a list of mutants of length <= keep
+    @return a list of mutants that are a length <= keep
     """
     # we use "none" when we are looking for multiple explanations. It has a tendency
     # to produce flatter landscapes than intersection
@@ -156,6 +156,7 @@ def causal_explanation(
     # the node in <search_tree>
     while True:
         passing = []
+        # TODO: Initialise ai and todo outside the loop
         while len(queue) != 0:
             job = queue.popleft()
             sub_jobs = job.split("_")
@@ -177,18 +178,13 @@ def causal_explanation(
                     logger.debug("no children, breaking")
                     break
 
-                mutants = np.empty(14, dtype=np.object_)
+                mutants: List[Mutant] = [Mutant(data, static=static, active="", masking_func=data.mask_value) for _ in range(0, len(get_combinations()))]
                 if child_boxes is not None:
                     for j, combination in enumerate(get_combinations()):
                         nps = [child_boxes[i] for i in combination]
                         current = "_".join([b.name for b in nps])
-
-                        m = Mutant(
-                            data,
-                            static=static,
-                            active=current,
-                            masking_func=data.mask_value,
-                        )
+                        m = mutants[j]
+                        m.active = current
                         m.set_active_mask_regions(nps)
                         m.set_static_mask_regions(static, search_tree)
                         mutants[j] = m
@@ -196,19 +192,20 @@ def causal_explanation(
                 work_done = len(mutants)
 
                 if data.mode in ("spectral", "tabular"):
-                    preds: List[Prediction] = [
-                        prediction_func(_apply_to_data(m.mask, data))[0] for m in mutants
+                    preds: List[Predictions] = [
+                        prediction_func(_apply_to_data(m.mask, data)) for m in mutants
                     ]
                 else:
                     # TODO this needs testing
                     if args.batch_size == 1:
-                        preds = [
+                        preds: List[Predictions] = [
                             prediction_func(
                                 _apply_to_data(m.mask, data),  #  type: ignore
                                 data.target,
                             )
                             for m in mutants
-                        ]  # type: ignore
+                        ]
+                        #print("batch 1: type: ", type(preds[0]), " preds: ", preds[0], "")
                     else:
                         tensors = tt.stack(
                             [
@@ -218,32 +215,28 @@ def causal_explanation(
                         )  # type: ignore
                         if len(tensors.shape) > len(data.model_shape):
                             tensors = tensors.squeeze(1)
-                        preds: Predictions = prediction_func(
+                        preds: List[Predictions] = prediction_func(
                             tensors,
                             data.targets,
                         )
+                        #print("god knows what is happening here")
+                        #print(f"batch {args.batch_size}: type: ", type(preds), " preds: ", preds, "")
+                
                 for i, m in enumerate(mutants):
-                    m.prediction = preds[i]
+                    # Update the prediction object for this mutant
+                    m.predictions = preds[i]
                     m.update_status(data.targets)
 
-                passing: List[Mutant] = list(
-                    filter(
-                        lambda m: m.passing
-                        and any(
-                            conf
-                            >= (min(data.targets.confidences) * args.confidence_filter) # max or min better?
-                            for conf in m.prediction.confidences
-                        ),  # type: ignore
-                        mutants,
-                    )
-                )
+                # Filter out passing mutants based on a confidence threshold
+                passing: List[Mutant] = filter_passing_mutants(mutants, data.targets, args.confidence_filter)
+                logger.debug("found %d passing mutants", len(passing))
 
                 if args.verbosity > 3:
                     n = 0
                     for m in mutants:
                         m.save_mutant(
                             data,
-                            f"{process}_{m.depth}_{n}_{m.prediction.confidences}_{m.passing}.png",
+                            f"{process}_{m.depth}_{n}_{m.predictions.confidences}_{m.passing}.png",
                         )
                         n += 1
 
@@ -258,7 +251,6 @@ def causal_explanation(
                             "there are no passing mutants at %d, so quitting here",
                             depth_reached,
                         )
-                        # logger.debug(global_queue)
                         break
 
                 # something passed...
@@ -274,7 +266,7 @@ def causal_explanation(
                 depth_reached = update_depth_reached(depth_reached, passing)
 
         # if we are too deep into the tree, break from the loop
-        if depth_reached > args.tree_depth and ai == todo:  # type: ignore
+        if depth_reached > args.tree_depth and ai == todo:
             logger.info("breaking at %s as max tree depth reached", depth_reached)
             break
 
@@ -286,7 +278,7 @@ def causal_explanation(
             update = list(set([m.get_name() for m in passing] + list(queue)))
         else:
             update = [m.get_name() for m in passing]
-        if update == []:
+        if len(update) == 0:
             logger.debug("nothing left in the queue")
             break
 

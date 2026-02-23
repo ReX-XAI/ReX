@@ -96,8 +96,8 @@ class ResponsibilityMaps:
             i = np.uint(p[-1])
             if (
                 args.weighted
-                and mutant.prediction is not None
-                and mutant.prediction.confidence is not None
+                and mutant.predictions is not None
+                and mutant.predictions.confidences is not None
             ):
                 responsibility[i] += r * mutant.prediction.confidence
             else:
@@ -121,8 +121,8 @@ class ResponsibilityMaps:
 
             k = None
             # check that there is a prediction value
-            if mutant.prediction is not None:
-                k = mutant.prediction.classifications
+            if mutant.predictions is not None:
+                k = mutant.predictions.classifications
             # if there's no prediction value, raise an exception
             if k is None:
                 raise ReXMapError("the provided mutant has no known classification")

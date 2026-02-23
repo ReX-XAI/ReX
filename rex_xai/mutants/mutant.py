@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 from rex_xai.input.input_data import Data
 from rex_xai.mutants.box import Box
 from rex_xai.responsibility.prediction import Prediction, Predictions
-from rex_xai.utils._utils import add_boundaries, set_boolean_mask_value, try_detach
+from rex_xai.utils._utils import add_boundaries, set_boolean_mask_value, try_detach, try_rounding
 from rex_xai.utils.logger import logger
 
 __combinations = [
@@ -61,10 +61,14 @@ def get_combinations():
 
 
 class Mutant:
-    def __init__(self, data: Data, static, active, masking_func) -> None:
-        self.shape = tuple(
-            data.model_shape[1:]
-        )  # the first element of shape is the batch information, so we drop that
+    def __init__(self, data: Data, static, active, masking_func, shape=None) -> None:
+        self.matches = None
+        if shape is not None:
+            self.shape = shape
+        else:
+            self.shape = tuple(
+                data.model_shape[1:]
+            )  # the first element of shape is the batch information, so we drop that
         self.mode = data.mode
         self.channels: int = (
             data.model_channels if data.model_channels is not None else 1
@@ -73,24 +77,49 @@ class Mutant:
         self.mask = tt.zeros(self.shape, dtype=tt.bool, device=data.device)
         self.static = static
         self.active = active
-        self.prediction: Optional[Predictions] = None
+        self.predictions: Optional[Predictions] = None
         self.passing = False
         self.masking_func = masking_func
         self.depth = 0
 
     def __repr__(self) -> str:
-        return f"ACTIVE: {self.active}, PREDICTION: {self.prediction}, PASSING: {self.passing}"
+        return f"ACTIVE: {self.active}, PREDICTION: {self.predictions}, PASSING: {self.passing}"
 
     def get_name(self):
         return self.active
 
-    def update_status(self, targets: Predictions):
-        if self.prediction is not None:
-            # check if any of the predictions match the targets' classifications
-            self.passing = any(
-                target.classification in self.prediction.classifications
-                for target in targets
-            ) # can be stricter and require all targets to match
+    def update_status(self, targets: Predictions, iou_threshold: float = 0.5, conf_threshold: float = None, strict: bool = False):
+        """Update the mutant's prediction and passing status based on the provided targets."""
+        # update the mutant's prediction and passing status
+        if self.predictions is not None:
+            all_matching = []
+            matches = []
+            for target in targets:
+                for pred in self.predictions:
+                    if pred is not None and target is not None:
+                        if conf_threshold is not None:
+                            pred_conf = try_rounding(pred.confidence, 4) # TODO: use args instead of hardcoding
+                            target_conf = try_rounding(conf_threshold, 4)
+                            if pred_conf < target_conf:
+                                continue
+                        if pred.classification == target.classification:
+                            iou, is_matching = pred.check_overlap(target, iou_threshold) # if no boxes, is_matching is True
+                            if not is_matching:
+                                continue
+                            logger.debug(
+                                f"Mutant {self.get_name()} prediction {pred} matches target {target} with IoU {iou:.3f}"
+                            )
+                            matches.append((pred, target, iou))
+                            all_matching.append(True)
+                        else:
+                            all_matching.append(False)
+            self.matches = matches
+            if strict:
+                self.passing = all(all_matching) # requires each target found to be matched with the original prediction
+            else:
+                self.passing = any(all_matching) # requires at least one target to be matched with the original prediction
+        else:
+            self.passing = False
 
     def get_length(self):
         return len(self.active.split("_"))
@@ -169,3 +198,24 @@ class Mutant:
 
             plt.tight_layout()
             plt.savefig(name or f"{self.get_name()}.png")
+
+def filter_passing_mutants(mutants: List[Mutant], targets: Predictions,  confidence_filter) -> List[Mutant]:
+    """Filter and return only the passing mutants from the provided list."""
+
+    def passed_confidence(m: Mutant) -> bool:
+        # if it didn't pass, discard immediately
+        if not m.passing:
+            return False
+
+        # if there is exactly one prediction and one target, easy case
+        if len(m.matches) == 1 and len(m.predictions) == 1 and len(targets) == 1:
+            return m.predictions[0].confidence >= targets[0].confidence * confidence_filter
+
+        # multiple case: check only matched pairs
+        for pred, target, iou in m.matches:
+            if pred.confidence < target.confidence * confidence_filter:
+                return False
+
+        return True
+
+    return [m for m in mutants if passed_confidence(m)]

@@ -12,7 +12,7 @@ import numpy as np
 
 import onnxruntime as ort
 from onnxruntime import InferenceSession
-from rex_xai.responsibility.prediction import Prediction, from_pytorch_tensor
+from rex_xai.responsibility.prediction import Prediction, from_pytorch_tensor, Predictions
 from rex_xai.input.input_data import Setup
 
 from rex_xai.utils.logger import logger
@@ -79,7 +79,7 @@ class OnnxRunner:
                     )
                 )
 
-            return preds
+            return Predictions(preds)
         except Exception as e:
             logger.fatal(e)
             sys.exit(-1)

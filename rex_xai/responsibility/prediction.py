@@ -1,42 +1,11 @@
 #!/usr/bin/env python3
-
-from typing import List, Optional, Tuple
+import logging
+from typing import List, Optional, Tuple, Iterator
 
 import torch as tt
 import torch.nn.functional as F
 from numpy.typing import NDArray
 import numpy as np
-
-class Predictions(List[Optional['Prediction']]):
-    """
-    A wrapper for a list of Prediction objects.
-    This class provides easy access to the classifications, confidences and bounding boxes.
-
-    """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._predictions = args[0] if args else []
-        self.classifications = [
-            p.classification if p is not None else None for p in self._predictions
-        ]
-        self.confidences = [
-            p.confidence if p is not None else None for p in self._predictions
-        ]
-        self.bounding_boxes = [
-            p.bounding_box if p is not None else None for p in self._predictions
-        ]
-
-    def __repr__(self) -> str:
-        return f"Predictions({self._predictions})"
-
-    def __getitem__(self, index):
-        return self._predictions[index]
-
-    def __setitem__(self, index, value):
-        self._predictions[index] = value
-
-    def __len__(self):
-        return len(self._predictions)
 
 
 class Prediction:
@@ -85,7 +54,7 @@ class Prediction:
         Returns: (iou, iou >= threshold)
         """
         if self.bounding_box is None or prediction.bounding_box is None:
-            return 0.0, False
+            return 0.0, True # no boxes to compare, consider as passing
 
         boxA = np.array(self.bounding_box, dtype=float)
         boxB = np.array(prediction.bounding_box, dtype=float)
@@ -120,19 +89,68 @@ class Prediction:
         return float(iou), (iou >= threshold)
 
 
+class Predictions(List[Optional[Prediction]]):
+    """
+    A wrapper for a list of Prediction objects.
+    This class provides easy access to the classifications, confidences and bounding boxes.
 
-def from_pytorch_tensor(tensor, target=None) -> List[Prediction]:
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if args[0] is not None and isinstance(args[0], list) and type(args[0][0]) is Prediction:
+            self._predictions: List[Prediction] = args[0]
+            self.classifications = [
+                p.classification if p is not None else None for p in self._predictions
+            ]
+            self.confidences = [
+                p.confidence if p is not None else None for p in self._predictions
+            ]
+            self.bounding_boxes = [
+                p.bounding_box if p is not None else None for p in self._predictions
+            ]
+        else:
+            logging.warn("Predictions initialized without a list of Prediction objects.")
+            self._predictions: List[Prediction] = []
+            self.classifications: List[Optional[int]] = []
+            self.confidences: List[Optional[float]] = []
+            self.bounding_boxes: List[Optional[NDArray]] = []
+
+    def __repr__(self) -> str:
+        return f"Predictions({self._predictions})"
+
+    def __getitem__(self, index) -> Prediction|None:
+        return self._predictions[index]
+
+    def __setitem__(self, index, value) -> None:
+        self._predictions[index] = value
+
+    def __len__(self) -> int:
+        return len(self._predictions)
+
+    def __iter__(self) -> Iterator[Prediction]:
+        return iter(self._predictions)
+
+    def append(self, value: Prediction):
+        self._predictions.append(value)
+        self.classifications.append(value.classification)
+        self.confidences.append(value.confidence)
+        self.bounding_boxes.append(value.bounding_box)
+        return self
+
+
+
+def from_pytorch_tensor(tensor, target=None) -> Predictions:
     softmax_tensor = F.softmax(tensor, dim=1)
     prediction_scores, pred_labels = tt.topk(softmax_tensor, 1)
-    predictions = []
+    prediction = []
+    batch_size = tensor.shape[0]
     for i, (ps, pl) in enumerate(zip(prediction_scores, pred_labels)):
         p = Prediction(pl.item(), ps.item())
         if target is not None:
             p.target = target
-            p.target_confidence = softmax_tensor[i, target.classification].item()
-        predictions.append(p)
-
-    return predictions
+            p.target_confidence = softmax_tensor[i, target[0].classification].item()
+        prediction.append(p)
+    return Predictions(prediction)
 
 
 def default_prediction_function(model):

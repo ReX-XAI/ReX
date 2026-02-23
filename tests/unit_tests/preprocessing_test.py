@@ -15,10 +15,11 @@ def test_preprocess_nii_notimplemented(args, model_shape, cpu_device, caplog):
 
 
 def test_predict_target(data, prediction_func, args):
-    target = predict_target(data, prediction_func)
+    targets = predict_target(data, prediction_func)
 
-    assert target.classification == 207
-    assert target.confidence == pytest.approx(0.253237, abs=2.5e-6)
+    assert len(targets) == 1
+    assert targets[0].classification == 207
+    assert targets[0].confidence == pytest.approx(0.253237, abs=2.5e-6)
 
 
 def test_preprocess_rgba(args, model_shape, prediction_func, cpu_device, caplog):

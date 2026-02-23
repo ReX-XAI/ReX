@@ -34,6 +34,7 @@ class Data:
         mode=None,
         process=False,
     ) -> None:
+        self.classification = None
         self.input = input
         self.mode: str | None = None
         self.targets: Predictions | None = None

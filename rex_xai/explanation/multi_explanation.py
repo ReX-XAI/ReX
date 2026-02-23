@@ -293,6 +293,7 @@ class MultiClassExplanation(Explanation):
     def __init__(self, maps, prediction_func, data, args, run_stats):
         super().__init__(maps, prediction_func, data, args, run_stats)
         self.class_explanations = dict()
+        self.target_maps = dict()
         self.class_explanation_confidences = dict()
         self.current_class = None
 
@@ -304,34 +305,27 @@ class MultiClassExplanation(Explanation):
         If target has bounding boxes, we focus use the bounding boxes as well as class labels.
         """
 
-        if self.data.target is None or self.data.target.classification is None:
-            raise ValueError("MultiClassExplanation requires a target with class labels")
-
-        unique_classes = set()
-        if isinstance(self.data.target.classification, (list, tuple)):
-            unique_classes = set(self.data.target.classification)
-        else:
-            unique_classes.add(self.data.target.classification)
+        unique_classes = set(self.data.targets.classifications)
 
         logger.info(f"found {len(unique_classes)} unique classes in target: {unique_classes}")
 
         for i, target in enumerate(self.data.targets):
             self.blank()
-            map = self.target_map[i]
+            self.data.target = target
+            self.target_map = tt.from_numpy(self.maps.get(target.classification)).to(self.data.device)
+
             logger.info(
-                f"Extracting explanation for target {self.data.target.classification} with confidence {self.data.target.confidence:.4f}"
+                f"Extracting explanation for target {target.classification} with confidence {target.confidence:.4f}"
             )
-            self.current_class = target.classification
-            if self.args.strategy == "global":
-                logger.info("using global strategy to extract explanation")
-                self.__global(map, use_bbox=(target.bounding_box is not None))
-                if self.sufficiency_mask is not None:
-                    self.class_explanations[self.current_class] = [self.sufficiency_mask]
-                    self.class_explanation_confidences[self.current_class] = [self.sufficiency_confidence]
-            else:
-                logger.warning(
-                    "strategy for multi class explanation not implemented, use global instead"
-                )
+            self.current_class = f"{target.classification}_{target.confidence:.4f}"
+            self.target_maps[self.current_class] = self.target_map
+
+            logger.info("using global strategy to extract explanation")
+            self._Explanation__global(self.target_map, use_bbox=(target.bounding_box is not None))
+            if self.sufficiency_mask is not None:
+                self.class_explanations[self.current_class] = [self.sufficiency_mask]
+                self.class_explanation_confidences[self.current_class] = [self.sufficiency_confidence]
+
 
     # TODO: update saving and showing functions to handle multiple classes
 

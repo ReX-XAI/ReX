@@ -170,24 +170,25 @@ def predict_target(data: Data, prediction_func) -> Predictions:
     Returns:
         Predictions: the predicted targets' classification and confidence
     """
-    target = prediction_func(data.data, None)
-
-    if isinstance(target, list):
-        targets_str = "".join(f"{t.classification}\n" for t in target)
+    target = prediction_func(data.data, None) # target returned as a list of Predictions objects or a single Prediction object
+    targets_str = ""
+    if isinstance(target, list) and isinstance(target[0], Predictions):
+        assert len(target) == 1, "Expected a single Predictions object in the list, this could be a result handling batch inputs"
+        targets_str = f"{target[0].classifications}\n"
         logger.info(
             f"Found {len(target)} targets, the targets found are: \n{targets_str}"
         )
-        target = Predictions(target)
+        target = target[0]
     elif isinstance(target, Prediction):
+        targets_str = f"{target.classification}\n"
         logger.info(
             "Found 1 target, the target found is: %s with confidence %f",
-            target.classification,
+            targets_str,
             target.confidence,
         )
-        target = Predictions([target])
+        target = Predictions([target]) # wrap in Predictions object
 
     if target is not None:
-        targets_str = "".join(f" {t.classification} with an confidence of {t.confidence}," for t in target)
         logger.info(
             f"image classified as {targets_str} with a total of {len(target)} targets found",
         )
@@ -365,8 +366,8 @@ def _explanation(
     data = validate_shape(data, model_shape)
 
     if args.custom_target:
-        data.target = Prediction(args.custom_target, 1.0)  # type: ignore
-        data.targets = Predictions([data.target])  # type: ignore
+        data.target = Prediction(args.custom_target, 1.0)
+        data.targets = Predictions([data.target])
         logger.info(
             f"Using custom target {data.target.classification} with confidence {data.target.confidence}"
         )
@@ -396,7 +397,7 @@ def _explanation(
 
             logger.info(f"keeping only {clauses[0]}")
             clauses = clauses[0]
-    elif args.multi_class and len(data.targets.classifications) > 1:
+    elif len(data.targets.classifications) > 1:
         exp = MultiClassExplanation(resp_object, prediction_func, data, args, run_stats)
         if not args.no_extract:
             exp.extract()

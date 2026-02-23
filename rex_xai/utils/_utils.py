@@ -12,7 +12,7 @@ from skimage.segmentation import mark_boundaries
 
 
 from rex_xai.mutants.box import Box
-from rex_xai.responsibility.prediction import Prediction
+from rex_xai.responsibility.prediction import Prediction, Predictions
 from rex_xai.utils.logger import logger
 
 Strategy = Enum("Strategy", ["Global", "Spatial", "MultiSpotlight", "Contrastive"])
@@ -62,9 +62,9 @@ def try_rounding(n, rounding: int | None) -> float:
 def find_required_prediction(
     target: Prediction,
     threshold: float,
-    insertion_predictions: List[Prediction],
+    insertion_predictions: List[Predictions],
     contrastive_completeness_threshold: float = 0.0,
-    deletion_predictions: List[Prediction] | None = None,
+    deletion_predictions: List[Predictions] | None = None,
     rounding=None,
     sufficiency_found=False,
     bounding_box=False,
@@ -72,6 +72,17 @@ def find_required_prediction(
     positions = ReXPositions(sufficiency_found=sufficiency_found)
     if deletion_predictions is None:
         for i, p in enumerate(insertion_predictions):
+            if isinstance(p, list) and isinstance(p[0], Prediction):
+                if len(p) == 1:
+                    p = p[0]
+                else:
+                    # dealing with multiple predictions, find the one that matches the target best
+                    best_iou = -1.0
+                    for pred in p:
+                        iou, _ = pred.check_overlap(target)
+                        if iou > best_iou:
+                            best_iou = iou
+                            p = pred
             local_confidence = try_rounding(p.confidence, rounding)
             threshold = try_rounding(threshold, rounding)
             if p.classification == target.classification and local_confidence >= threshold:  # type: ignore
@@ -82,18 +93,40 @@ def find_required_prediction(
                 return positions
     else:
         for i in range(0, len(insertion_predictions)):
+            if isinstance(insertion_predictions[i], list) and isinstance(insertion_predictions[i][0], Prediction):
+                if len(insertion_predictions[i]) == 1 and len(deletion_predictions[i]) == 1:
+                    insertion_pred = insertion_predictions[i][0]
+                    deletion_pred = deletion_predictions[i][0]
+                else:
+                    # dealing with multiple predictions, find the one that matches the target best
+                    insertion_pred = None
+                    best_iou = -1.0
+                    for pred in insertion_predictions[i]:
+                        iou, _ = pred.check_overlap(target)
+                        if iou > best_iou:
+                            best_iou = iou
+                            insertion_pred = pred
+
+                    deletion_pred = None
+                    best_iou = -1.0
+                    for pred in deletion_predictions[i]:
+                        iou, _ = pred.check_overlap(target)
+                        if iou > best_iou:
+                            best_iou = iou
+                            deletion_pred = pred
+
             local_confidence = try_rounding(
-                insertion_predictions[i].confidence, rounding
+                insertion_pred.confidence, rounding
             )
             threshold = try_rounding(threshold, rounding)
             contrastive_completeness_threshold = try_rounding(
                 contrastive_completeness_threshold, rounding
             )
-            iou, overlap = insertion_predictions[i].check_overlap(target, local_confidence)
+            iou, overlap = insertion_pred.check_overlap(target, local_confidence)
 
             # check for a sufficiency
             if (
-                insertion_predictions[i].classification == target.classification
+                insertion_pred.classification == target.classification
                 and local_confidence >= threshold  # type: ignore
                 and not positions.sufficiency_found
                 and ((bounding_box and overlap) or not bounding_box)
@@ -101,11 +134,11 @@ def find_required_prediction(
                 positions.sufficient_position = i
                 positions.sufficiency_found = True
 
-            # check for necessity above threshold
+            # check for necessity above a threshold
             if (
-                insertion_predictions[i].classification == target.classification
+                insertion_pred.classification == target.classification
                 and local_confidence >= contrastive_completeness_threshold
-                and deletion_predictions[i].classification != target.classification
+                and deletion_pred.classification != target.classification
             ):
                 positions.contrastive_position = i
     return positions
@@ -140,6 +173,12 @@ def try_detach(t) -> np.ndarray:
         return t.detach().cpu().numpy()
     elif isinstance(t, np.ndarray):
         return t
+    elif isinstance(t, list) and isinstance(t[0], tt.Tensor) and len(t) == 1:
+        return t[0].detach().cpu().numpy()
+    elif isinstance(t, list) and isinstance(t[0], np.ndarray) and len(t) == 1:
+        return t[0]
+    elif isinstance(t, list) and len(t) >= 1 and isinstance(t[0], tt.Tensor):
+        return np.array([ti.detach().cpu().numpy() for ti in t])
     else:
         raise ReXDataError("trying to convert a non-array into a numpy array")
 
@@ -248,8 +287,7 @@ def get_device(gpu: bool):
 
 
 def get_map_locations(map, reverse=True):
-    if isinstance(map, tt.Tensor):
-        map = map.detach().cpu().numpy()
+    map = try_detach(map)
     coords = []
     for i, r in enumerate(np.nditer(map)):
         coords.append((r, np.unravel_index(i, map.shape)))
