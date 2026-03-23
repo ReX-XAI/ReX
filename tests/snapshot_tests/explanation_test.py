@@ -21,6 +21,6 @@ def test_calculate_responsibility(
         args_custom.distribution_args = dist_args
     data_custom.targets = predict_target(data_custom, prediction_func)
     maps, _ = calculate_responsibility(data_custom, args_custom, prediction_func)
-    target_map = maps.get(data_custom.target.classification)
+    target_map = maps.get(data_custom.targets[0].classification)
 
     assert hash(tuple(target_map.reshape(-1))) == snapshot

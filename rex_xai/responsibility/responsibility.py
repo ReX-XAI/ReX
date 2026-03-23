@@ -190,37 +190,27 @@ def causal_explanation(
                         mutants[j] = m
 
                 work_done = len(mutants)
-
-                if data.mode in ("spectral", "tabular"):
+                if args.batch_size == 1:
                     preds: List[Predictions] = [
-                        prediction_func(_apply_to_data(m.mask, data)) for m in mutants
+                        prediction_func(
+                            _apply_to_data(m.mask, data),  #  type: ignore
+                            data.target,
+                        )
+                        for m in mutants
                     ]
                 else:
-                    # TODO this needs testing
-                    if args.batch_size == 1:
-                        preds: List[Predictions] = [
-                            prediction_func(
-                                _apply_to_data(m.mask, data),  #  type: ignore
-                                data.target,
-                            )
+                    tensors = tt.stack(
+                        [
+                            _apply_to_data(m.mask, data)  #  type: ignore
                             for m in mutants
                         ]
-                        #print("batch 1: type: ", type(preds[0]), " preds: ", preds[0], "")
-                    else:
-                        tensors = tt.stack(
-                            [
-                                _apply_to_data(m.mask, data)  #  type: ignore
-                                for m in mutants
-                            ]
-                        )  # type: ignore
-                        if len(tensors.shape) > len(data.model_shape):
-                            tensors = tensors.squeeze(1)
-                        preds: List[Predictions] = prediction_func(
-                            tensors,
-                            data.targets,
-                        )
-                        #print("god knows what is happening here")
-                        #print(f"batch {args.batch_size}: type: ", type(preds), " preds: ", preds, "")
+                    )  # type: ignore
+                    if len(tensors.shape) > len(data.model_shape):
+                        tensors = tensors.squeeze(1)
+                    preds: List[Predictions] = prediction_func(
+                        tensors,
+                        data.targets,
+                    )
                 
                 for i, m in enumerate(mutants):
                     # Update the prediction object for this mutant

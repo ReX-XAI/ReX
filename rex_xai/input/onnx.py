@@ -48,20 +48,16 @@ class OnnxRunner:
             tensors = np.stack([t.detach().cpu().numpy() for t in tensors])  # type: ignore
 
         preds = []
-
         try:
             prediction = self.session.run(None, {self.input_name: tensors})[0]
-            for i in range(0, prediction.shape[0]):
-                confidences = softmax(prediction[i])
+            if tensor_size == 1:
+                confidences = softmax(prediction[0])
                 if raw:
                     for i in range(len(self.output_shape) - len(confidences.shape)):
                         confidences = np.expand_dims(confidences, axis=0)
                     return confidences
                 if binary_threshold is not None:
-                    if confidences[0] >= binary_threshold:
-                        classification = 1
-                    else:
-                        classification = 0
+                    classification = 1 if confidences[0] >= binary_threshold else 0
                     tc = confidences[0]
                 else:
                     classification = np.argmax(confidences)
@@ -78,8 +74,37 @@ class OnnxRunner:
                         target_confidence=tc,
                     )
                 )
+                return Predictions(preds)
+            else:
+                preds = []
+                for i in range(prediction.shape[0]):
+                    confidences = softmax(prediction[i])
+                    if raw:
+                        for j in range(len(self.output_shape) - len(confidences.shape)):
+                            confidences = np.expand_dims(confidences, axis=0)
+                        preds.append(confidences)
+                    else:
+                        if binary_threshold is not None:
+                            classification = 1 if confidences[0] >= binary_threshold else 0
+                            tc = confidences[0]
+                        else:
+                            classification = np.argmax(confidences)
+                            if target is not None:
+                                tc = confidences[target.classifications[0]]
+                            else:
+                                tc = None
+                        pred = Predictions(
+                            [Prediction(
+                                classification,
+                                confidences[classification],
+                                None,
+                                target=None,
+                                target_confidence=tc,
+                            )]
+                        )
+                        preds.append(pred)
+            return preds
 
-            return Predictions(preds)
         except Exception as e:
             logger.fatal(e)
             sys.exit(-1)

@@ -318,12 +318,12 @@ def analyze(exp: Explanation, data_mode: str | None) -> Dict[str, float]:
     )
 
     analysis_results = {
-        "area": rat,
-        "entropy": ent,
-        "robustness": good / (good + bad),
-        "max_entropy": max_ent,
-        "insertion_curve": iauc,
-        "deletion_curve": dauc,
+        "area": float(rat) if rat is not None else None,
+        "entropy": float(ent) if ent is not None else None,
+        "robustness": float(good / (good + bad)) if (good + bad) > 0 else None,
+        "max_entropy": float(max_ent) if max_ent is not None else None,
+        "insertion_curve": float(iauc) if iauc is not None else None,
+        "deletion_curve": float(dauc) if dauc is not None else None,
     }
 
     return analysis_results
