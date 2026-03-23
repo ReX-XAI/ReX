@@ -134,6 +134,9 @@ class MultiExplanation(Explanation):
         self.blank()
         # we start with the global max explanation
         logger.info("spotlight number 1 (global max)")
+        assert self.data.targets is not None
+        assert len(self.data.targets) == 1, "Something went wrong, multiple targets found"
+        self.data.target = self.data.targets[0]
         conf = self._Explanation__global()  # type: ignore
         if self.sufficiency_mask is not None:
             self.explanations.append(self.sufficiency_mask)

@@ -275,7 +275,7 @@ def calculate_responsibility(
         "total_passing": total_passing,
         "total_failing": total_failing,
         "max_depth_reached": max_depth_reached,
-        "avg_box_size": avg_box_size,
+        "avg_box_size": float(avg_box_size),
     }
 
     return maps, run_stats

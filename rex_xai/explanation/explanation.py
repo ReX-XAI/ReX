@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import re
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 import torch as tt
 from tqdm import tqdm
@@ -11,6 +11,7 @@ from rex_xai.input.config import CausalArgs, Strategy
 from rex_xai.input.input_data import Data
 from rex_xai.mutants.mutant import _apply_to_data, Mutant
 from rex_xai.output import visualisation
+from rex_xai.responsibility.prediction import Predictions
 from rex_xai.responsibility.resp_maps import ResponsibilityMaps
 from rex_xai.utils._utils import (
     ReXPositions,
@@ -31,14 +32,15 @@ class Explanation:
 
     Base class for generating explanations using different strategies used when only a single target is provided.
     """
+
     def __init__(
-        self,
-        maps: ResponsibilityMaps,
-        prediction_func,
-        data: Data,
-        args: CausalArgs,
-        run_stats: Dict[str, float],
-        keep_all_maps=False,
+            self,
+            maps: ResponsibilityMaps,
+            prediction_func,
+            data: Data,
+            args: CausalArgs,
+            run_stats: Dict[str, float],
+            keep_all_maps=False,
     ) -> None:
         if data.targets is None or data.targets.classifications is None:
             raise (
@@ -54,7 +56,6 @@ class Explanation:
             self.maps = maps
 
         self.target_map: tt.Tensor = tt.from_numpy(maps.get(data.targets[0].classification)).to(data.device)
-
 
         if self.target_map is None:
             raise ValueError(
@@ -79,18 +80,18 @@ class Explanation:
         run_stats = {k: round(v, 5) for k, v in self.run_stats.items()}
 
         exp_text = (
-            "Explanation:"
-            + f"\n\tCausalArgs: {type(self.args)}"
-            + f"\n\tData: {self.data}"
-            + f"\n\tprediction function: {pred_func}"
-            + f"\n\tResponsibilityMaps: {self.maps}"
-            + f"\n\trun statistics: {run_stats} (5 dp)"
+                "Explanation:"
+                + f"\n\tCausalArgs: {type(self.args)}"
+                + f"\n\tData: {self.data}"
+                + f"\n\tprediction function: {pred_func}"
+                + f"\n\tResponsibilityMaps: {self.maps}"
+                + f"\n\trun statistics: {run_stats} (5 dp)"
         )
 
         return (
-            exp_text
-            + f"\n\tsufficiency mask: {self.sufficiency_mask}"
-            + f"\n\texplanation confidence: {self.sufficiency_confidence:.4f}"
+                exp_text
+                + f"\n\tsufficiency mask: {self.sufficiency_mask}"
+                + f"\n\texplanation confidence: {self.sufficiency_confidence:.4f}"
         )
 
     def extract(self):
@@ -115,7 +116,6 @@ class Explanation:
             else:
                 _ = self.__spatial(map=map)
 
-
     def blank(self):
         assert self.data.data is not None
         self.sufficiency_mask = tt.zeros(
@@ -129,7 +129,7 @@ class Explanation:
             )
 
     def __build_insertion_mask(self, ranking, chunk_pointer, ind, mask: Mutant, mask_memo):
-        chunk = ranking[chunk_pointer : chunk_pointer + self.args.chunk_size]
+        chunk = ranking[chunk_pointer: chunk_pointer + self.args.chunk_size]
 
         if chunk == []:
             return ind, chunk_pointer, True
@@ -173,8 +173,8 @@ class Explanation:
 
         # main loop
         with tqdm(
-            total=len(ranking) // self.args.chunk_size,
-            desc="Extracting global explanation",
+                total=len(ranking) // self.args.chunk_size,
+                desc="Extracting global explanation",
         ) as pbar:
             while not sufficient_found:
                 ind, chunk_pointer, exhausted = self.__build_insertion_mask(
@@ -191,10 +191,22 @@ class Explanation:
                     if exhausted:
                         insertion_mask.mask = insertion_mask.mask[:ind]
 
-                    sufficient = self.prediction_func(
+                    sufficient: Predictions|List[Predictions]= self.prediction_func(
                         _apply_to_data(insertion_mask.mask, self.data)
                     )
-                    insertion_mask.update_status(sufficient, conf_threshold=target_confidence)
+                    index = 0
+                    if self.args.batch_size > 1:
+                        for i in range(len(sufficient)):
+                            pred = sufficient[i]
+                            insertion_mask.predictions = pred
+                            insertion_mask.update_status(self.data.targets, conf_threshold=target_confidence)
+                            if insertion_mask.passing:
+                                sufficient = pred
+                                index = i
+                                break
+                    else:
+                        insertion_mask.predictions = sufficient
+                        insertion_mask.update_status(self.data.targets, conf_threshold=target_confidence)
 
                     positions = ReXPositions(sufficiency_found=False)
                     if insertion_mask.passing:
@@ -203,17 +215,16 @@ class Explanation:
                     if not positions.is_empty():
                         if not sufficient_found:
                             self.sufficiency_mask = (
-                                insertion_mask.mask[:positions.sufficient_position][0] # again, TODO: so for batching this won't work change 0
+                                insertion_mask.mask[:positions.sufficient_position][index]
                                 .detach()
                                 .clone()
                             )
                             self.sufficiency_confidence = sufficient[
                                 0
-                            ].confidence # TODO: so for batching this won't work
+                            ].confidence
                             logger.info(
                                 f"a sufficient explanation for {self.data.target.classification} found with confidence {self.sufficiency_confidence:.4f}"
                             )
-
                             if False not in tt.unique(self.sufficiency_mask):
                                 logger.info(
                                     f"the entire input was required to get sufficiency at {self.sufficiency_confidence:.4f} confidence",
@@ -302,7 +313,7 @@ class Explanation:
 
         expansions = 0
         cutoff = (
-            self.data.model_width * self.data.model_height * self.data.model_channels  # type: ignore
+                self.data.model_width * self.data.model_height * self.data.model_channels  # type: ignore
         )
         while tt.count_nonzero(mask) < cutoff:
             if expansion_limit is not None:
@@ -314,9 +325,9 @@ class Explanation:
             d = _apply_to_data(mask, self.data)
             p = self.prediction_func(d)[0]
             if (
-                p.classification == self.data.target.classification  # type: ignore
-                and p.confidence
-                >= self.data.target.confidence * self.args.minimum_confidence_threshold  # type: ignore
+                    p.classification == self.data.target.classification  # type: ignore
+                    and p.confidence
+                    >= self.data.target.confidence * self.args.minimum_confidence_threshold  # type: ignore
             ):
                 conf = self.__global(map=tt.where(circle, map, 0))  # type: ignore
                 return SpatialSearch.Found, masked_responsibility, conf
@@ -329,16 +340,16 @@ class Explanation:
             expansions += 1
 
     def __build_contrastive_masks(
-        self,
-        ranking,
-        ind,
-        chunk_pointer,
-        insertion_mask,
-        insertion_memo,
-        deletion_mask,
-        deletion_memo,
+            self,
+            ranking,
+            ind,
+            chunk_pointer,
+            insertion_mask,
+            insertion_memo,
+            deletion_mask,
+            deletion_memo,
     ):
-        chunk = ranking[chunk_pointer : chunk_pointer + self.args.chunk_size]
+        chunk = ranking[chunk_pointer: chunk_pointer + self.args.chunk_size]
 
         if chunk == []:
             return ind, chunk_pointer, True
@@ -375,13 +386,13 @@ class Explanation:
         return ind, chunk_pointer, False
 
     def __complete(
-        self,
-        ranking,
-        insertion_mask,
-        insertion_memo,
-        mask_shape,
-        starting_pointer,
-        rounding=4,
+            self,
+            ranking,
+            insertion_mask,
+            insertion_memo,
+            mask_shape,
+            starting_pointer,
+            rounding=4,
     ):
         target_confidence = self.data.target.confidence  # type: ignore
         step = self.args.chunk_size
@@ -402,11 +413,11 @@ class Explanation:
         ind = 0
 
         with tqdm(
-            total=(len(ranking) - starting_pointer) // self.args.chunk_size,
-            desc="Completeness Explanation",
+                total=(len(ranking) - starting_pointer) // self.args.chunk_size,
+                desc="Completeness Explanation",
         ) as pbar:
             while not complete_explanation_found:
-                chunk = ranking[chunk_pointer - step : chunk_pointer]
+                chunk = ranking[chunk_pointer - step: chunk_pointer]
 
                 if chunk == []:
                     logger.info("the entire image is required for completeness")
@@ -488,7 +499,7 @@ class Explanation:
         ranking = get_map_locations(map=map)
 
         target_confidence: float = (
-            self.args.minimum_confidence_threshold * self.data.target.confidence  # type: ignore
+                self.args.minimum_confidence_threshold * self.data.target.confidence  # type: ignore
         )
         contrastive_completeness_threshold: float = self.data.target.confidence  # type: ignore
 
@@ -508,8 +519,8 @@ class Explanation:
         ind = 0
 
         with tqdm(
-            total=len(ranking) // self.args.batch_size,
-            desc="Calculating Contrastive Explanation",
+                total=len(ranking) // self.args.batch_size,
+                desc="Calculating Contrastive Explanation",
         ) as pbar:
             while not contrastive_found:
                 ind, chunk_pointer, exhausted = self.__build_contrastive_masks(
@@ -601,7 +612,7 @@ class Explanation:
                         )
 
                         if tt.count_nonzero(self.sufficiency_mask) == tt.count_nonzero(  # type: ignore
-                            self.necessity_mask
+                                self.necessity_mask
                         ):
                             logger.info(
                                 "there is no difference between sufficiency and necessity on this input"
@@ -691,7 +702,7 @@ class Explanation:
                 self.data.input,
                 self.args,
                 self.target_map,  # type: ignore
-                self.data.target,  #  type: ignore
+                self.data.target,  # type: ignore
                 path=path,
             )
         elif self.data.mode == "voxel":

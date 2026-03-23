@@ -139,18 +139,33 @@ class Predictions(List[Optional[Prediction]]):
 
 
 
-def from_pytorch_tensor(tensor, target=None) -> Predictions:
+def from_pytorch_tensor(tensor, target=None) -> Predictions|List[Predictions]:
+    """Convert a PyTorch tensor to a list of Predictions. If the batch size is 1, returns a single Predictions object.
+    If the batch size is greater than 1, returns a list of Predictions objects."""
     softmax_tensor = F.softmax(tensor, dim=1)
     prediction_scores, pred_labels = tt.topk(softmax_tensor, 1)
-    prediction = []
+    prediction: List[Prediction] = []
     batch_size = tensor.shape[0]
-    for i, (ps, pl) in enumerate(zip(prediction_scores, pred_labels)):
-        p = Prediction(pl.item(), ps.item())
-        if target is not None:
-            p.target = target
-            p.target_confidence = softmax_tensor[i, target[0].classification].item()
-        prediction.append(p)
-    return Predictions(prediction)
+    if batch_size == 1:
+        for i, (ps, pl) in enumerate(zip(prediction_scores, pred_labels)):
+            p = Prediction(pl.item(), ps.item())
+            if target is not None:
+                p.target = target
+                p.target_confidence = softmax_tensor[i, target[0].classification].item()
+            prediction.append(p)
+        return Predictions(prediction)
+    else:
+        # more than one batch
+        predictions: List[Predictions] = []
+        for i in range(batch_size):
+            batch_pred = []
+            p = Prediction(pred_labels[i].item(), prediction_scores[i].item())
+            if target is not None:
+                p.target = target
+                p.target_confidence = softmax_tensor[i, target[0].classification].item()
+            batch_pred.append(p)
+            predictions.append(Predictions(batch_pred))
+        return predictions
 
 
 def default_prediction_function(model):
