@@ -109,7 +109,7 @@ class Predictions(List[Optional[Prediction]]):
                 p.bounding_box if p is not None else None for p in self._predictions
             ]
         else:
-            logging.warn("Predictions initialized without a list of Prediction objects.")
+            logging.warning("Predictions initialized without a list of Prediction objects.")
             self._predictions: List[Prediction] = []
             self.classifications: List[Optional[int]] = []
             self.confidences: List[Optional[float]] = []

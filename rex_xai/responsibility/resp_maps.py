@@ -117,8 +117,6 @@ class ResponsibilityMaps:
         """
 
         for mutant in mutants:
-            r = self.responsibility(mutant, args)
-
             k = None
             # check that there is a prediction value
             if mutant.predictions is not None:
@@ -130,10 +128,9 @@ class ResponsibilityMaps:
             # if k is a list, then we need to iterate over it
             if isinstance(k, list):
                 for i, classification in enumerate(k):
-                    # check if k has been seen before and has a map. If k is new, make a new map
+                    classification = int(classification) if isinstance(classification, np.generic) else classification
                     if classification not in self.maps:
                         self.new_map(classification)
-
                     self._update_single_map(mutant, args, data, search_tree, classification)
             else:
                 # check if k has been seen before and has a map. If k is new, make a new map
@@ -189,6 +186,7 @@ class ResponsibilityMaps:
         maps = {}
         counts = {}
         for i in id:
+            i = int(i) if isinstance(i, np.generic) else i
             if i not in self.maps:
                 raise ReXMapError(f"map for id {i} not found in responsibility maps")
             m = self.maps.get(i)
