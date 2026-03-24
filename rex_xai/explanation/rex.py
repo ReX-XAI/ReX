@@ -137,25 +137,30 @@ def load_and_preprocess_data(
             args.mask_value = 0  # Setting it to a default value in this case
     return data
 
+
 def validate_shape(data: Data, model_shape) -> Data:
     new_shape = list(model_shape)
-    depth_str = ", Depth of " + str(data.model_depth) if data.model_depth is not None else ""
-    logger.info(f"Validating model shape {model_shape} and making sure it matches the data's shape, which has a WIDTH of {data.model_width}, "
-                f"HEIGHT of {data.model_height}{depth_str}.")
+    depth_str = (
+        ", Depth of " + str(data.model_depth) if data.model_depth is not None else ""
+    )
+    logger.info(
+        f"Validating model shape {model_shape} and making sure it matches the data's shape, which has a WIDTH of {data.model_width}, "
+        f"HEIGHT of {data.model_height}{depth_str}."
+    )
     for i, input_shape in enumerate(model_shape):
         if input_shape == "W":
-             new_shape[i] = data.model_width
+            new_shape[i] = data.model_width
         elif input_shape == "H":
             new_shape[i] = data.model_height
         elif input_shape == "D":
             new_shape[i] = data.model_depth
     # Make sure the data dimensions match the model shape
-    if data.model_order == "first": # model shape is (B, C, H, W) or (B, C, H, W, D)
+    if data.model_order == "first":  # model shape is (B, C, H, W) or (B, C, H, W, D)
         assert data.model_height == new_shape[2]
         assert data.model_width == new_shape[3]
         if data.model_depth:
             assert data.model_depth == new_shape[3]
-    else: # model shape is (B, H, W, C) or (B, H, W, D, C)
+    else:  # model shape is (B, H, W, C) or (B, H, W, D, C)
         assert data.model_height == new_shape[1]
         assert data.model_width == new_shape[2]
         if data.model_depth:
@@ -163,6 +168,7 @@ def validate_shape(data: Data, model_shape) -> Data:
 
     data.model_shape = new_shape
     return data
+
 
 def predict_target(
     data: Data, args: CausalArgs, prediction_func

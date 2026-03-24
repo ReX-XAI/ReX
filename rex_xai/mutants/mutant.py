@@ -159,12 +159,14 @@ class Mutant:
             _, axes = plt.subplots(3, num_slices, figsize=(15, 6))
 
             for axis in range(3):  # 0=D, 1=H, 2=W
-                slice_indices = np.linspace(0, volume.shape[axis] - 1, num_slices, dtype=int)
+                slice_indices = np.linspace(
+                    0, volume.shape[axis] - 1, num_slices, dtype=int
+                )
                 for i, slice_index in enumerate(slice_indices):
                     ax = axes[axis, i]
                     data_slice = np.take(volume, slice_index, axis=axis)
 
-                    ax.imshow(data_slice, cmap='gray', vmin=0, vmax=1)
+                    ax.imshow(data_slice, cmap="gray", vmin=0, vmax=1)
                     ax.set_title(f"Axis {axis}, Slice {slice_index}")
                     ax.axis("off")
 
