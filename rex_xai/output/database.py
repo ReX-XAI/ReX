@@ -14,7 +14,10 @@ from sqlalchemy import Boolean, Column, Float, Integer, String, Unicode, create_
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from rex_xai.explanation.explanation import Explanation
-from rex_xai.explanation.multi_explanation import MultiExplanation, MultiClassExplanation
+from rex_xai.explanation.multi_explanation import (
+    MultiExplanation,
+    MultiClassExplanation,
+)
 from rex_xai.input.config import CausalArgs, Strategy
 from rex_xai.utils._utils import try_detach
 from rex_xai.utils.logger import logger
@@ -474,11 +477,14 @@ def initialise_rex_db(name, echo=False):
     s = Session()
     return s
 
-def dump_to_dataframe(args: CausalArgs, df: pd.DataFrame, exp: Explanation, time_taken, save_as="csv"):
+
+def dump_to_dataframe(
+    args: CausalArgs, df: pd.DataFrame, exp: Explanation, time_taken, save_as="csv"
+):
     name, ext = args.dump.split(".")
     p = Path(args.path)
     img_name = str(Path(args.dump).parent / p.stem)
-    if type(exp) == MultiClassExplanation:
+    if isinstance(exp, MultiClassExplanation):
         logger.info("attempting to dump multi-class explanation")
         targets = exp.data.targets
         confidences = targets.confidences
@@ -487,7 +493,9 @@ def dump_to_dataframe(args: CausalArgs, df: pd.DataFrame, exp: Explanation, time
             "path": args.path,
             "target": classifications,
             "confidence": confidences,
-            "bounding_box": str(targets.bounding_boxes if targets.bounding_boxes is not None else None),
+            "bounding_box": str(
+                targets.bounding_boxes if targets.bounding_boxes is not None else None
+            ),
             "total_passing": exp.run_stats["total_passing"],
             "total_failing": exp.run_stats["total_failing"],
             "max_depth_reached": exp.run_stats["max_depth_reached"],
@@ -498,7 +506,7 @@ def dump_to_dataframe(args: CausalArgs, df: pd.DataFrame, exp: Explanation, time
             "mask_value": args.mask_value,
             "output_path": args.output,
         }
-        responsibilitys = exp.target_maps #dict of responsibility maps
+        responsibilitys = exp.target_maps  # dict of responsibility maps
         resp_paths = []
         for key, responsibility in responsibilitys.items():
             responsibility = responsibility.detach().cpu().numpy()
@@ -511,7 +519,9 @@ def dump_to_dataframe(args: CausalArgs, df: pd.DataFrame, exp: Explanation, time
         exp_paths = []
         for key, explanation in exp.class_explanations.items():
             sufficiency_mask = try_detach(explanation)
-            if isinstance(sufficiency_mask, list) and isinstance(sufficiency_mask[0], tt.Tensor):
+            if isinstance(sufficiency_mask, list) and isinstance(
+                sufficiency_mask[0], tt.Tensor
+            ):
                 sufficiency_mask = sufficiency_mask[0].cpu().numpy()
             explanation_confidence = exp.class_explanation_confidences[key]
             np.save(f"{img_name}_explanation_{key}.npy", sufficiency_mask)
@@ -530,19 +540,14 @@ def dump_to_dataframe(args: CausalArgs, df: pd.DataFrame, exp: Explanation, time
         classification = target.classification
         confidence = target.confidence
 
-        responsibility =  exp.target_map
+        responsibility = exp.target_map
         if isinstance(responsibility, tt.Tensor):
             responsibility = responsibility.detach().cpu().numpy()
-        elif isinstance(responsibility, list) and isinstance(responsibility[0], tt.Tensor):
+        elif isinstance(responsibility, list) and isinstance(
+            responsibility[0], tt.Tensor
+        ):
             responsibility = responsibility[0].detach().cpu().numpy()
 
-        #don't care for now
-        analysis_results=None
-        if analysis_results is not None:
-            area = analysis_results["area"]
-            entropy = analysis_results["entropy"]
-            insertion_curve = analysis_results["insertion_curve"]
-            deletion_curve = analysis_results["deletion_curve"]
         # save the explanation and responsibility as npy files
         np.save(f"{img_name}_responsibility.npy", responsibility)
         print(f"Saving to {img_name}_responsibility.npy")
@@ -550,7 +555,9 @@ def dump_to_dataframe(args: CausalArgs, df: pd.DataFrame, exp: Explanation, time
             "path": args.path,
             "target": classification,
             "confidence": confidence,
-            "bounding_box": str(target.bounding_box if target.bounding_box is not None else None),
+            "bounding_box": str(
+                target.bounding_box if target.bounding_box is not None else None
+            ),
             "responsibility": f"{img_name}_responsibility.npy",
             "total_passing": exp.run_stats["total_passing"],
             "total_failing": exp.run_stats["total_failing"],
@@ -567,9 +574,16 @@ def dump_to_dataframe(args: CausalArgs, df: pd.DataFrame, exp: Explanation, time
             "min_box_size": args.min_box_size,
         }
 
+        analysis_results = exp.run_stats
+        if analysis_results is not None:
+            for k, v in analysis_results.items():
+                new_row[k] = v
+
         if exp.sufficiency_mask is not None:
             sufficiency_mask = try_detach(exp.sufficiency_mask)
-            if isinstance(sufficiency_mask, list) and isinstance(sufficiency_mask[0], tt.Tensor):
+            if isinstance(sufficiency_mask, list) and isinstance(
+                sufficiency_mask[0], tt.Tensor
+            ):
                 sufficiency_mask = sufficiency_mask[0].cpu().numpy()
             explanation_confidence = exp.sufficiency_confidence
             np.save(f"{img_name}_explanation.npy", sufficiency_mask)
@@ -578,7 +592,9 @@ def dump_to_dataframe(args: CausalArgs, df: pd.DataFrame, exp: Explanation, time
 
         if exp.necessity_mask is not None:
             necessity_mask = try_detach(exp.necessity_mask)
-            if isinstance(necessity_mask, list) and isinstance(necessity_mask[0], tt.Tensor):
+            if isinstance(necessity_mask, list) and isinstance(
+                necessity_mask[0], tt.Tensor
+            ):
                 necessity_mask = necessity_mask[0].cpu().numpy()
             necessity_confidence = exp.necessity_confidence
             np.save(f"{img_name}_necessity.npy", necessity_mask)
@@ -587,7 +603,9 @@ def dump_to_dataframe(args: CausalArgs, df: pd.DataFrame, exp: Explanation, time
 
         if exp.complete_mask is not None:
             complete_mask = try_detach(exp.complete_mask)
-            if isinstance(complete_mask, list) and isinstance(complete_mask[0], tt.Tensor):
+            if isinstance(complete_mask, list) and isinstance(
+                complete_mask[0], tt.Tensor
+            ):
                 complete_mask = complete_mask[0].cpu().numpy()
             completeness_confidence = exp.completeness_confidence
             np.save(f"{img_name}_complete.npy", complete_mask)
@@ -601,5 +619,7 @@ def dump_to_dataframe(args: CausalArgs, df: pd.DataFrame, exp: Explanation, time
     elif save_as == "json":
         df.to_json(f"{name}.json", orient="records", lines=True)
     else:
-        logger.warning("Unsupported save_as format. Supported formats are 'csv' and 'json'.")
+        logger.warning(
+            "Unsupported save_as format. Supported formats are 'csv' and 'json'."
+        )
     return df

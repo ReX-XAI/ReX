@@ -135,7 +135,9 @@ class MultiExplanation(Explanation):
         # we start with the global max explanation
         logger.info("spotlight number 1 (global max)")
         assert self.data.targets is not None
-        assert len(self.data.targets) == 1, "Something went wrong, multiple targets found"
+        assert (
+            len(self.data.targets) == 1
+        ), "Something went wrong, multiple targets found"
         self.data.target = self.data.targets[0]
         conf = self._Explanation__global()  # type: ignore
         if self.sufficiency_mask is not None:
@@ -310,12 +312,16 @@ class MultiClassExplanation(Explanation):
 
         unique_classes = set(self.data.targets.classifications)
 
-        logger.info(f"found {len(unique_classes)} unique classes in target: {unique_classes}")
+        logger.info(
+            f"found {len(unique_classes)} unique classes in target: {unique_classes}"
+        )
 
         for i, target in enumerate(self.data.targets):
             self.blank()
             self.data.target = target
-            self.target_map = tt.from_numpy(self.maps.get(target.classification)).to(self.data.device)
+            self.target_map = tt.from_numpy(self.maps.get(target.classification)).to(
+                self.data.device
+            )
 
             logger.info(
                 f"Extracting explanation for target {target.classification} with confidence {target.confidence:.4f}"
@@ -324,11 +330,14 @@ class MultiClassExplanation(Explanation):
             self.target_maps[self.current_class] = self.target_map
 
             logger.info("using global strategy to extract explanation")
-            self._Explanation__global(self.target_map, use_bbox=(target.bounding_box is not None))
+            self._Explanation__global(
+                self.target_map, use_bbox=(target.bounding_box is not None)
+            )
             if self.sufficiency_mask is not None:
                 self.class_explanations[self.current_class] = [self.sufficiency_mask]
-                self.class_explanation_confidences[self.current_class] = [self.sufficiency_confidence]
-
+                self.class_explanation_confidences[self.current_class] = [
+                    self.sufficiency_confidence
+                ]
 
     # TODO: update saving and showing functions to handle multiple classes
 
@@ -340,7 +349,9 @@ class MultiClassExplanation(Explanation):
             multi_style = "separate"
 
         if multi_style == "separate":
-            logger.info("saving explanations for the multi-class prediction in multiple different files")
+            logger.info(
+                "saving explanations for the multi-class prediction in multiple different files"
+            )
             for cls, exps in self.class_explanations.items():
                 for i, mask in enumerate(exps):
                     exp_path = f"{name}_class{cls}_{i}{ext}"

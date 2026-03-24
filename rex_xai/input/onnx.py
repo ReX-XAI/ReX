@@ -12,7 +12,11 @@ import numpy as np
 
 import onnxruntime as ort
 from onnxruntime import InferenceSession
-from rex_xai.responsibility.prediction import Prediction, from_pytorch_tensor, Predictions
+from rex_xai.responsibility.prediction import (
+    Prediction,
+    from_pytorch_tensor,
+    Predictions,
+)
 from rex_xai.input.input_data import Setup
 
 from rex_xai.utils.logger import logger
@@ -85,7 +89,9 @@ class OnnxRunner:
                         preds.append(confidences)
                     else:
                         if binary_threshold is not None:
-                            classification = 1 if confidences[0] >= binary_threshold else 0
+                            classification = (
+                                1 if confidences[0] >= binary_threshold else 0
+                            )
                             tc = confidences[0]
                         else:
                             classification = np.argmax(confidences)
@@ -94,13 +100,15 @@ class OnnxRunner:
                             else:
                                 tc = None
                         pred = Predictions(
-                            [Prediction(
-                                classification,
-                                confidences[classification],
-                                None,
-                                target=None,
-                                target_confidence=tc,
-                            )]
+                            [
+                                Prediction(
+                                    classification,
+                                    confidences[classification],
+                                    None,
+                                    target=None,
+                                    target_confidence=tc,
+                                )
+                            ]
                         )
                         preds.append(pred)
             return preds

@@ -806,4 +806,4 @@ def validate_args(args: CausalArgs):
             f"Invalid colourmap '{args.heatmap_colours}', must be a valid matplotlib colourmap"
         )
 
-    #TODO: add valid target class if custom target is provided -> depends on model though
+    # TODO: add valid target class if custom target is provided -> depends on model though

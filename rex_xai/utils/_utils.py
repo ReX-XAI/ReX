@@ -85,7 +85,10 @@ def find_required_prediction(
                             p = pred
             local_confidence = try_rounding(p.confidence, rounding)
             threshold = try_rounding(threshold, rounding)
-            if p.classification == target.classification and local_confidence >= threshold:  # type: ignore
+            if (
+                p.classification == target.classification
+                and local_confidence >= threshold
+            ):  # type: ignore
                 iou, overlap = p.check_overlap(target, local_confidence)
                 if bounding_box and not overlap:
                     continue
@@ -93,8 +96,13 @@ def find_required_prediction(
                 return positions
     else:
         for i in range(0, len(insertion_predictions)):
-            if isinstance(insertion_predictions[i], list) and isinstance(insertion_predictions[i][0], Prediction):
-                if len(insertion_predictions[i]) == 1 and len(deletion_predictions[i]) == 1:
+            if isinstance(insertion_predictions[i], list) and isinstance(
+                insertion_predictions[i][0], Prediction
+            ):
+                if (
+                    len(insertion_predictions[i]) == 1
+                    and len(deletion_predictions[i]) == 1
+                ):
                     insertion_pred = insertion_predictions[i][0]
                     deletion_pred = deletion_predictions[i][0]
                 else:
@@ -115,9 +123,7 @@ def find_required_prediction(
                             best_iou = iou
                             deletion_pred = pred
 
-            local_confidence = try_rounding(
-                insertion_pred.confidence, rounding
-            )
+            local_confidence = try_rounding(insertion_pred.confidence, rounding)
             threshold = try_rounding(threshold, rounding)
             contrastive_completeness_threshold = try_rounding(
                 contrastive_completeness_threshold, rounding

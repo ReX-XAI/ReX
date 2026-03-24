@@ -128,10 +128,16 @@ class ResponsibilityMaps:
             # if k is a list, then we need to iterate over it
             if isinstance(k, list):
                 for i, classification in enumerate(k):
-                    classification = int(classification) if isinstance(classification, np.generic) else classification
+                    classification = (
+                        int(classification)
+                        if isinstance(classification, np.generic)
+                        else classification
+                    )
                     if classification not in self.maps:
                         self.new_map(classification)
-                    self._update_single_map(mutant, args, data, search_tree, classification)
+                    self._update_single_map(
+                        mutant, args, data, search_tree, classification
+                    )
             else:
                 # check if k has been seen before and has a map. If k is new, make a new map
                 if k not in self.maps:
@@ -139,8 +145,9 @@ class ResponsibilityMaps:
                 # update the responsibility map for this mutant
                 self._update_single_map(mutant, args, data, search_tree, k)
 
-
-    def _update_single_map(self, mutant: Mutant, args: CausalArgs, data: Data, search_tree, k):
+    def _update_single_map(
+        self, mutant: Mutant, args: CausalArgs, data: Data, search_tree, k
+    ):
         """Update a single responsibility map for a mutant"""
         r = self.responsibility(mutant, args)
 
@@ -161,18 +168,18 @@ class ResponsibilityMaps:
                     local_r *= box.depth
 
                 if data.mode == "spectral":
-                    section = resp_map[0, box.col_start: box.col_stop]
+                    section = resp_map[0, box.col_start : box.col_stop]
 
                 elif data.mode == "RGB":
                     section = resp_map[
-                        box.row_start: box.row_stop,
-                        box.col_start: box.col_stop,
+                        box.row_start : box.row_stop,
+                        box.col_start : box.col_stop,
                     ]
                 elif data.mode == "voxel":
                     section = resp_map[
-                        box.row_start: box.row_stop,
-                        box.col_start: box.col_stop,
-                        box.depth_start: box.depth_stop,
+                        box.row_start : box.row_stop,
+                        box.col_start : box.col_stop,
+                        box.depth_start : box.depth_stop,
                     ]
                 else:
                     logger.warning("not yet implemented")
@@ -182,7 +189,7 @@ class ResponsibilityMaps:
         self.maps[k] = resp_map
 
     def subset(self, id):
-        """Subset the maps and counts to only include the given set of ids."""#
+        """Subset the maps and counts to only include the given set of ids."""  #
         maps = {}
         counts = {}
         for i in id:
@@ -192,7 +199,9 @@ class ResponsibilityMaps:
             m = self.maps.get(i)
             c = self.counts.get(i)
             if m is None or c is None:
-                raise ReXMapError(f"map or count for id {i} not found in responsibility maps")
+                raise ReXMapError(
+                    f"map or count for id {i} not found in responsibility maps"
+                )
             maps[i] = m
             counts[i] = c
 

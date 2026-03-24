@@ -16,12 +16,19 @@ from tqdm import trange  # type: ignore
 
 from rex_xai.explanation.evaluation import Evaluation
 from rex_xai.explanation.explanation import Explanation
-from rex_xai.explanation.multi_explanation import MultiExplanation, MultiClassExplanation
+from rex_xai.explanation.multi_explanation import (
+    MultiExplanation,
+    MultiClassExplanation,
+)
 from rex_xai.input.config import CausalArgs
 from rex_xai.input.input_data import Data
 from rex_xai.input.onnx import get_prediction_function
 from rex_xai.output.database import update_database, dump_to_dataframe
-from rex_xai.responsibility.prediction import Prediction, Predictions, default_prediction_function
+from rex_xai.responsibility.prediction import (
+    Prediction,
+    Predictions,
+    default_prediction_function,
+)
 from rex_xai.responsibility.resp_maps import ResponsibilityMaps
 from rex_xai.responsibility.responsibility import causal_explanation
 from rex_xai.utils._utils import ReXDataError, ReXScriptError, Strategy
@@ -130,25 +137,30 @@ def load_and_preprocess_data(
             args.mask_value = 0  # Setting it to a default value in this case
     return data
 
+
 def validate_shape(data: Data, model_shape) -> Data:
     new_shape = list(model_shape)
-    depth_str = ", Depth of " + str(data.model_depth) if data.model_depth is not None else ""
-    logger.info(f"Validating model shape {model_shape} and making sure it matches the data's shape, which has a WIDTH of {data.model_width}, "
-                f"HEIGHT of {data.model_height}{depth_str}.")
+    depth_str = (
+        ", Depth of " + str(data.model_depth) if data.model_depth is not None else ""
+    )
+    logger.info(
+        f"Validating model shape {model_shape} and making sure it matches the data's shape, which has a WIDTH of {data.model_width}, "
+        f"HEIGHT of {data.model_height}{depth_str}."
+    )
     for i, input_shape in enumerate(model_shape):
         if input_shape == "W":
-             new_shape[i] = data.model_width
+            new_shape[i] = data.model_width
         elif input_shape == "H":
             new_shape[i] = data.model_height
         elif input_shape == "D":
             new_shape[i] = data.model_depth
     # Make sure the data dimensions match the model shape
-    if data.model_order == "first": # model shape is (B, C, H, W) or (B, C, H, W, D)
+    if data.model_order == "first":  # model shape is (B, C, H, W) or (B, C, H, W, D)
         assert data.model_height == new_shape[2]
         assert data.model_width == new_shape[3]
         if data.model_depth:
             assert data.model_depth == new_shape[3]
-    else: # model shape is (B, H, W, C) or (B, H, W, D, C)
+    else:  # model shape is (B, H, W, C) or (B, H, W, D, C)
         assert data.model_height == new_shape[1]
         assert data.model_width == new_shape[2]
         if data.model_depth:
@@ -156,6 +168,7 @@ def validate_shape(data: Data, model_shape) -> Data:
 
     data.model_shape = new_shape
     return data
+
 
 def predict_target(data: Data, prediction_func) -> Predictions:
     """Predicts classification of input data, using given prediction function.
@@ -170,10 +183,14 @@ def predict_target(data: Data, prediction_func) -> Predictions:
     Returns:
         Predictions: the predicted targets' classification and confidence
     """
-    target = prediction_func(data.data, None) # target returned as a list of Predictions objects or a single Prediction object
+    target = prediction_func(
+        data.data, None
+    )  # target returned as a list of Predictions objects or a single Prediction object
     targets_str = ""
     if isinstance(target, list) and isinstance(target[0], Predictions):
-        assert len(target) == 1, "Expected a single Predictions object in the list, this could be a result handling batch inputs"
+        assert (
+            len(target) == 1
+        ), "Expected a single Predictions object in the list, this could be a result handling batch inputs"
         targets_str = f"{target[0].classifications}\n"
         logger.info(
             f"Found {len(target)} targets, the targets found are: \n{targets_str}"
@@ -186,7 +203,7 @@ def predict_target(data: Data, prediction_func) -> Predictions:
             targets_str,
             target.confidence,
         )
-        target = Predictions([target]) # wrap in Predictions object
+        target = Predictions([target])  # wrap in Predictions object
 
     if target is not None:
         logger.info(
@@ -401,7 +418,9 @@ def _explanation(
         exp = MultiClassExplanation(resp_object, prediction_func, data, args, run_stats)
         if not args.no_extract:
             exp.extract()
-            logger.info(f"found the following sets of explanations for the classes {list(exp.class_explanations.keys())} with a confidence of {list(exp.class_explanation_confidences)}")
+            logger.info(
+                f"found the following sets of explanations for the classes {list(exp.class_explanations.keys())} with a confidence of {list(exp.class_explanation_confidences)}"
+            )
     else:
         exp = Explanation(resp_object, prediction_func, data, args, run_stats)
         if not args.no_extract:
@@ -487,6 +506,7 @@ def _explanation(
     if args.dump is not None:
         logger.info(f"dumping results to {args.dump}")
         import pandas as pd
+
         save_as = "json" if args.dump.endswith(".json") else "csv"
         if os.path.exists(args.dump):
             df_existing = pd.read_csv(args.dump)

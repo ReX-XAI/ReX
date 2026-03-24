@@ -46,7 +46,9 @@ class Prediction:
     def is_passing(self):
         return self.target == self.classification
 
-    def check_overlap(self, prediction: 'Prediction', percentage: float = 0.5) -> Tuple[float, bool]:
+    def check_overlap(
+        self, prediction: "Prediction", percentage: float = 0.5
+    ) -> Tuple[float, bool]:
         """
         Compute IoU between this.prediction.bounding_box and another `prediction.bounding_box`.
         Accepts boxes in either (x1, y1, x2, y2) or (x, y, w, h) format.
@@ -54,7 +56,7 @@ class Prediction:
         Returns: (iou, iou >= threshold)
         """
         if self.bounding_box is None or prediction.bounding_box is None:
-            return 0.0, True # no boxes to compare, consider as passing
+            return 0.0, True  # no boxes to compare, consider as passing
 
         boxA = np.array(self.bounding_box, dtype=float)
         boxB = np.array(prediction.bounding_box, dtype=float)
@@ -95,9 +97,14 @@ class Predictions(List[Optional[Prediction]]):
     This class provides easy access to the classifications, confidences and bounding boxes.
 
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        if args[0] is not None and isinstance(args[0], list) and type(args[0][0]) is Prediction:
+        if (
+            args[0] is not None
+            and isinstance(args[0], list)
+            and type(args[0][0]) is Prediction
+        ):
             self._predictions: List[Prediction] = args[0]
             self.classifications = [
                 p.classification if p is not None else None for p in self._predictions
@@ -109,7 +116,9 @@ class Predictions(List[Optional[Prediction]]):
                 p.bounding_box if p is not None else None for p in self._predictions
             ]
         else:
-            logging.warning("Predictions initialized without a list of Prediction objects.")
+            logging.warning(
+                "Predictions initialized without a list of Prediction objects."
+            )
             self._predictions: List[Prediction] = []
             self.classifications: List[Optional[int]] = []
             self.confidences: List[Optional[float]] = []
@@ -118,7 +127,7 @@ class Predictions(List[Optional[Prediction]]):
     def __repr__(self) -> str:
         return f"Predictions({self._predictions})"
 
-    def __getitem__(self, index) -> Prediction|None:
+    def __getitem__(self, index) -> Prediction | None:
         return self._predictions[index]
 
     def __setitem__(self, index, value) -> None:
@@ -138,8 +147,7 @@ class Predictions(List[Optional[Prediction]]):
         return self
 
 
-
-def from_pytorch_tensor(tensor, target=None) -> Predictions|List[Predictions]:
+def from_pytorch_tensor(tensor, target=None) -> Predictions | List[Predictions]:
     """Convert a PyTorch tensor to a list of Predictions. If the batch size is 1, returns a single Predictions object.
     If the batch size is greater than 1, returns a list of Predictions objects."""
     softmax_tensor = F.softmax(tensor, dim=1)
@@ -177,6 +185,7 @@ def default_prediction_function(model):
             return from_pytorch_tensor(tensor, target=target)
 
     return inner
+
 
 def to_xyxy(box: np.ndarray) -> np.ndarray:
     if box.size != 4:

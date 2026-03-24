@@ -347,8 +347,14 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
             data_slice = np.take(data_m, slice_index, axis=axis)
             resp_slice = np.take(maps, slice_index, axis=axis)
 
-            ax.imshow(data_slice, cmap='gray', vmin=np.min(data_m), vmax= np.max(data_m))
-            ax.imshow(resp_slice, cmap=args.heatmap_colours, vmin=np.min(maps), vmax=np.max(maps), alpha=0.4)
+            ax.imshow(data_slice, cmap="gray", vmin=np.min(data_m), vmax=np.max(data_m))
+            ax.imshow(
+                resp_slice,
+                cmap=args.heatmap_colours,
+                vmin=np.min(maps),
+                vmax=np.max(maps),
+                alpha=0.4,
+            )
 
             ax.set_title(f"Axis {axis}, Slice {slice_index}")
             ax.axis("off")
@@ -361,12 +367,10 @@ def voxel_plot(args: CausalArgs, resp_map: Tensor, data: Data, path=None):
         cax = plt.axes([0.45, 0.05, 0.25, 0.02])  # [left, bottom, width, height]
         norm = Normalize(vmin=np.min(maps), vmax=np.max(maps))
         sm = ScalarMappable(cmap=args.heatmap_colours, norm=norm)
-        plt.colorbar(mappable=sm, cax=cax, orientation='horizontal')
+        plt.colorbar(mappable=sm, cax=cax, orientation="horizontal")
         plt.savefig(path)
     else:
         plt.show()
-
-
 
 
 def __transpose_mask(mask: tt.Tensor | np.ndarray, mode: str) -> np.ndarray:
@@ -617,13 +621,17 @@ def save_image(mask: tt.Tensor | np.ndarray, data: Data, args: CausalArgs, path=
         _, axes = plt.subplots(3, num_slices, figsize=(15, 6))
 
         for axis in range(3):
-            slice_indices = np.linspace(0, data_m.shape[axis] - 1, num_slices, dtype=int)
+            slice_indices = np.linspace(
+                0, data_m.shape[axis] - 1, num_slices, dtype=int
+            )
             for i, slice_index in enumerate(slice_indices):
                 ax = axes[axis, i]
                 data_slice = np.take(data_m, slice_index, axis=axis)
                 resp_slice = np.take(mask, slice_index, axis=axis)
 
-                ax.imshow(data_slice, cmap='gray', vmin=np.min(data_m), vmax=np.max(data_m))
+                ax.imshow(
+                    data_slice, cmap="gray", vmin=np.min(data_m), vmax=np.max(data_m)
+                )
                 ax.imshow(resp_slice, cmap=args.heatmap_colours, alpha=0.4)
 
                 ax.set_title(f"Axis {axis}, Slice {slice_index}")

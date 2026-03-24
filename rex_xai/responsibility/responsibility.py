@@ -19,8 +19,13 @@ except ImportError:
 from rex_xai.input.config import CausalArgs, Queue
 from rex_xai.input.input_data import Data
 from rex_xai.mutants.box import average_box_size, initialise_tree
-from rex_xai.mutants.mutant import Mutant, _apply_to_data, get_combinations, filter_passing_mutants
-from rex_xai.responsibility.prediction import Prediction, Predictions
+from rex_xai.mutants.mutant import (
+    Mutant,
+    _apply_to_data,
+    get_combinations,
+    filter_passing_mutants,
+)
+from rex_xai.responsibility.prediction import Predictions
 from rex_xai.responsibility.resp_maps import ResponsibilityMaps
 from rex_xai.utils.logger import logger
 
@@ -178,7 +183,10 @@ def causal_explanation(
                     logger.debug("no children, breaking")
                     break
 
-                mutants: List[Mutant] = [Mutant(data, static=static, active="", masking_func=data.mask_value) for _ in range(0, len(get_combinations()))]
+                mutants: List[Mutant] = [
+                    Mutant(data, static=static, active="", masking_func=data.mask_value)
+                    for _ in range(0, len(get_combinations()))
+                ]
                 if child_boxes is not None:
                     for j, combination in enumerate(get_combinations()):
                         nps = [child_boxes[i] for i in combination]
@@ -211,14 +219,16 @@ def causal_explanation(
                         tensors,
                         data.targets,
                     )
-                
+
                 for i, m in enumerate(mutants):
                     # Update the prediction object for this mutant
                     m.predictions = preds[i]
                     m.update_status(data.targets)
 
                 # Filter out passing mutants based on a confidence threshold
-                passing: List[Mutant] = filter_passing_mutants(mutants, data.targets, args.confidence_filter)
+                passing: List[Mutant] = filter_passing_mutants(
+                    mutants, data.targets, args.confidence_filter
+                )
                 logger.debug("found %d passing mutants", len(passing))
 
                 if args.verbosity > 3:

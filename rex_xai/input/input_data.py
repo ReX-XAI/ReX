@@ -38,7 +38,9 @@ class Data:
         self.input = input
         self.mode: str | None = None
         self.targets: Predictions | None = None
-        self.target: Optional[Prediction] = None # Useful for focusing on a single target
+        self.target: Optional[Prediction] = (
+            None  # Useful for focusing on a single target
+        )
         self.device = device
         self.setup: Optional[Setup] = None
         self.transposed = False

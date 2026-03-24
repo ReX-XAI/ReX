@@ -1,5 +1,8 @@
 from PIL import Image
-from torchvision.models.detection import fasterrcnn_resnet50_fpn_v2, FasterRCNN_ResNet50_FPN_V2_Weights
+from torchvision.models.detection import (
+    fasterrcnn_resnet50_fpn_v2,
+    FasterRCNN_ResNet50_FPN_V2_Weights,
+)
 import torch as tt
 from rex_xai.input.input_data import Data
 from rex_xai.responsibility.prediction import Prediction, Predictions

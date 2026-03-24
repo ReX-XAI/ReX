@@ -9,6 +9,7 @@ import numpy as np
 model = RTDETR("rtdetr-l.pt").to("cuda")
 model.eval()
 
+
 def preprocess(path, shape, device) -> Data:
     img = Image.open(path).convert("RGB")
     tensor = tt.tensor(np.asarray(img), dtype=tt.float32).to(device)

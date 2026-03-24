@@ -15,8 +15,13 @@ import matplotlib.pyplot as plt
 
 from rex_xai.input.input_data import Data
 from rex_xai.mutants.box import Box
-from rex_xai.responsibility.prediction import Prediction, Predictions
-from rex_xai.utils._utils import add_boundaries, set_boolean_mask_value, try_detach, try_rounding
+from rex_xai.responsibility.prediction import Predictions
+from rex_xai.utils._utils import (
+    add_boundaries,
+    set_boolean_mask_value,
+    try_detach,
+    try_rounding,
+)
 from rex_xai.utils.logger import logger
 
 __combinations = [
@@ -88,7 +93,13 @@ class Mutant:
     def get_name(self):
         return self.active
 
-    def update_status(self, targets: Predictions, iou_threshold: float = 0.5, conf_threshold: float = None, strict: bool = False):
+    def update_status(
+        self,
+        targets: Predictions,
+        iou_threshold: float = 0.5,
+        conf_threshold: float = None,
+        strict: bool = False,
+    ):
         """Update the mutant's prediction and passing status based on the provided targets."""
         # update the mutant's prediction and passing status
         if self.predictions is not None:
@@ -98,12 +109,16 @@ class Mutant:
                 for pred in self.predictions:
                     if pred is not None and target is not None:
                         if conf_threshold is not None:
-                            pred_conf = try_rounding(pred.confidence, 4) # TODO: use args instead of hardcoding
+                            pred_conf = try_rounding(
+                                pred.confidence, 4
+                            )  # TODO: use args instead of hardcoding
                             target_conf = try_rounding(conf_threshold, 4)
                             if pred_conf < target_conf:
                                 continue
                         if pred.classification == target.classification:
-                            iou, is_matching = pred.check_overlap(target, iou_threshold) # if no boxes, is_matching is True
+                            iou, is_matching = pred.check_overlap(
+                                target, iou_threshold
+                            )  # if no boxes, is_matching is True
                             if not is_matching:
                                 continue
                             logger.debug(
@@ -115,9 +130,13 @@ class Mutant:
                             all_matching.append(False)
             self.matches = matches
             if strict:
-                self.passing = all(all_matching) # requires each target found to be matched with the original prediction
+                self.passing = all(
+                    all_matching
+                )  # requires each target found to be matched with the original prediction
             else:
-                self.passing = any(all_matching) # requires at least one target to be matched with the original prediction
+                self.passing = any(
+                    all_matching
+                )  # requires at least one target to be matched with the original prediction
         else:
             self.passing = False
 
@@ -187,19 +206,24 @@ class Mutant:
             _, axes = plt.subplots(3, num_slices, figsize=(15, 6))
 
             for axis in range(3):  # 0=D, 1=H, 2=W
-                slice_indices = np.linspace(0, volume.shape[axis] - 1, num_slices, dtype=int)
+                slice_indices = np.linspace(
+                    0, volume.shape[axis] - 1, num_slices, dtype=int
+                )
                 for i, slice_index in enumerate(slice_indices):
                     ax = axes[axis, i]
                     data_slice = np.take(volume, slice_index, axis=axis)
 
-                    ax.imshow(data_slice, cmap='gray', vmin=0, vmax=1)
+                    ax.imshow(data_slice, cmap="gray", vmin=0, vmax=1)
                     ax.set_title(f"Axis {axis}, Slice {slice_index}")
                     ax.axis("off")
 
             plt.tight_layout()
             plt.savefig(name or f"{self.get_name()}.png")
 
-def filter_passing_mutants(mutants: List[Mutant], targets: Predictions,  confidence_filter) -> List[Mutant]:
+
+def filter_passing_mutants(
+    mutants: List[Mutant], targets: Predictions, confidence_filter
+) -> List[Mutant]:
     """Filter and return only the passing mutants from the provided list."""
 
     def passed_confidence(m: Mutant) -> bool:
@@ -209,7 +233,9 @@ def filter_passing_mutants(mutants: List[Mutant], targets: Predictions,  confide
 
         # if there is exactly one prediction and one target, easy case
         if len(m.matches) == 1 and len(m.predictions) == 1 and len(targets) == 1:
-            return m.predictions[0].confidence >= targets[0].confidence * confidence_filter
+            return (
+                m.predictions[0].confidence >= targets[0].confidence * confidence_filter
+            )
 
         # multiple case: check only matched pairs
         for pred, target, iou in m.matches:
