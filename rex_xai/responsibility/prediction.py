@@ -4,6 +4,10 @@ from typing import List, Optional, Tuple, Iterator
 
 import torch as tt
 import torch.nn.functional as F
+# from torchmetrics.image.fid import FrechetInceptionDistance
+# from torchmetrics.image.kid import KernelInceptionDistance
+# from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
+
 from numpy.typing import NDArray
 import numpy as np
 
@@ -195,3 +199,160 @@ def to_xyxy(box: np.ndarray) -> np.ndarray:
         x, y, w, h = box
         return np.array([x, y, x + w, y + h], dtype=float)
     return np.array([x0, y0, x1, y1], dtype=float)
+
+# GAN's Prediction Class:
+
+DISTANCE_LIMITS = {
+    # (lower, upper, ideal) - ideal is the cutoff value we would say that the image is "real" or "synthetic""
+    "FID": (0, 100, 1), # lower is better, 0 is ideal
+    "KID": (0, 0.1, 0.001), # lower is better
+    "LPIPS": (0, 1, 0.1), # lower is better
+    "L2": (0, 1, 0.1),
+}
+
+class GANPrediction(Prediction):
+    """
+    A Prediction object specifically for GANs, which includes the generated image and the target image (if available).
+    It also includes distance metrics and distances between the generated image and the target image.
+    """
+    def __init__(self, *args, **kwargs):
+        self.image: tt.Tensor = args[0] # Generated image
+        self.target: Optional[int] = args[1] if len(args) > 1 else None
+        self.target_image: tt.Tensor|None = None if self.target is None else self.target.images[0]
+        self.target_confidence: Optional[float] = None if self.target is None else self.target.confidences[0]
+        self.distance_metrics: List[str] = ["L2"]
+        self.distances: List[float] = [] # Distances between images
+        if self.target_image is not None:
+            self.diff_mask: tt.Tensor = self.image - self.target_image # Difference between images
+            self.calculate_distances(self.distance_metrics)
+            self.calculate_classifications()
+        else:
+            # no target image, so we ASSUME this is the Original image generated
+            self.diff_mask = None
+            self.classification = "closer" # In fact the closest
+            self.confidence = 1.0
+
+        # wont be used, but we need to initialize it to None
+        self.bounding_box = None
+
+    def __repr__(self) -> str:
+        return (f"GANPrediction({self.classification}, {self.confidence}, {self.bounding_box}, {self.target}, {self.target_confidence}, "
+                f"distance_metrics={self.distance_metrics}, distances={self.distances})")
+
+    def get_distance_metrics(self):
+        return self.distance_metrics
+
+    def get_distances(self):
+        return self.distances
+
+    def get_diff_mask(self):
+        return self.diff_mask
+
+    def calculate_distances(self, distance_metrics: List[str] | None = None):
+        """
+        Runs the distance metrics on the generated image and the target image.
+        e.G. "fid", "L2" ETC.
+        """
+        if distance_metrics is None:
+            distance_metrics = ["L2"]
+        elif distance_metrics is not None:
+            self.distance_metrics = distance_metrics
+        for metric in distance_metrics:
+            # if metric == "fid":
+            #     FID = FrechetInceptionDistance()
+            #     print(f"Types: {self.image.dtype}, {self.target_image.dtype}")
+            #     self.distances.append(FID.update(self.image, self.target_image).compute())
+            # elif metric == "kid":
+            #     KID = KernelInceptionDistance()
+            #     self.distances.append(KID.update(self.image, self.target_image).compute())
+            # elif metric == "lpips":
+            #     LPIPS = LearnedPerceptualImagePatchSimilarity()
+            #     self.distances.append(LPIPS.update(self.image, self.target_image).compute())
+            if metric == "L2":
+                l2 = tt.norm(self.image - self.target_image, p=2).item()
+                # normalise
+                self.distances.append(l2 / tt.norm(self.target_image, p=2).item())
+            else:
+                raise NotImplementedError(f"Distance metric {metric} not supported.")
+
+    def calculate_classifications(self):
+        """
+        Either image is closer to the target image or not.
+        Indicated by "closer" or "further" classification, and the
+        confidence is the distance between the images.
+        """
+        classifications = []
+        confidences = []
+        for metric in self.distance_metrics:
+            distance = self.distances[self.distance_metrics.index(metric)]
+            lower, upper, ideal = DISTANCE_LIMITS[metric]
+            if distance <= ideal:
+                classifications.append("closer")
+                confidences.append(1 - (distance / ideal))
+            else:
+                classifications.append("further")
+                confidences.append(max(0.0, 1 - ((distance - ideal) / (upper - ideal))))
+        # for simplicity, we take the average classification and confidence across all metrics
+        if classifications.count("closer") > classifications.count("further"):
+            self.classification = "closer"
+            self.confidence = sum(confidences) / len(confidences)
+        else:
+            self.classification = "further"
+            self.confidence = sum(confidences) / len(confidences)
+
+
+
+class GANPredictions(GANPrediction):
+    """
+    A Predictions object specifically for GANs, which includes a list of GANPrediction objects.
+
+    """
+    def __init__(self, *args, **kwargs):
+        if (
+                args[0] is not None
+                and isinstance(args[0], list)
+                and type(args[0][0]) is GANPrediction
+        ):
+            self._predictions: List[GANPrediction] = args[0]
+            self.classifications = [
+                p.classification if p is not None else None for p in self._predictions
+            ]
+            self.confidences = [
+                p.confidence if p is not None else None for p in self._predictions
+            ]
+            self.images = [
+                p.image if p is not None else None for p in self._predictions
+            ]
+            self.classification = self.classifications[0] if self.classifications else None
+            self.confidence = self.confidences[0] if self.confidences else None
+        else:
+            logging.warning(
+                "GANPredictions initialized without a list of GANPrediction objects."
+            )
+            self._predictions: List[GANPrediction] = []
+            self.classifications: List[Optional[str]] = []
+            self.confidences: List[Optional[float]] = []
+            self.images: List[Optional[tt.Tensor]] = []
+
+    def __repr__(self) -> str:
+        return f"GANPredictions({self._predictions})"
+
+    def __getitem__(self, index) -> GANPrediction | None:
+        return self._predictions[index]
+
+    def __setitem__(self, index, value) -> None:
+        self._predictions[index] = value
+
+    def __len__(self) -> int:
+        return len(self._predictions)
+
+    def __iter__(self) -> Iterator[GANPrediction]:
+        return iter(self._predictions)
+
+    def append(self, value: GANPrediction):
+        self._predictions.append(value)
+        self.classifications.append(value.classification)
+        self.confidences.append(value.confidence)
+        self.images.append(value.image)
+        return self
+

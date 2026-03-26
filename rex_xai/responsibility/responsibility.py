@@ -202,7 +202,7 @@ def causal_explanation(
                     preds: List[Predictions] = [
                         prediction_func(
                             _apply_to_data(m.mask, data),  #  type: ignore
-                            data.target,
+                            data.targets,
                         )
                         for m in mutants
                     ]
@@ -223,6 +223,7 @@ def causal_explanation(
                 for i, m in enumerate(mutants):
                     # Update the prediction object for this mutant
                     m.predictions = preds[i]
+                    print(f"pred type {m.predictions[0].distances} for {m.predictions.classifications}")
                     m.update_status(data.targets)
 
                 # Filter out passing mutants based on a confidence threshold
@@ -234,6 +235,8 @@ def causal_explanation(
                 if args.verbosity > 3:
                     n = 0
                     for m in mutants:
+                        if m.passing & args.dump is not None:
+                            m.dump_mask(data, f"{process}_{m.depth}_{n}_{m.passing}")
                         m.save_mutant(
                             data,
                             f"{process}_{m.depth}_{n}_{m.predictions.confidences}_{m.passing}.png",

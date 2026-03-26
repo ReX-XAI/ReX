@@ -27,7 +27,7 @@ from rex_xai.output.database import update_database, dump_to_dataframe
 from rex_xai.responsibility.prediction import (
     Prediction,
     Predictions,
-    default_prediction_function,
+    default_prediction_function, GANPredictions, GANPrediction,
 )
 from rex_xai.responsibility.resp_maps import ResponsibilityMaps
 from rex_xai.responsibility.responsibility import causal_explanation
@@ -155,16 +155,17 @@ def validate_shape(data: Data, model_shape) -> Data:
         elif input_shape == "D":
             new_shape[i] = data.model_depth
     # Make sure the data dimensions match the model shape
-    if data.model_order == "first":  # model shape is (B, C, H, W) or (B, C, H, W, D)
-        assert data.model_height == new_shape[2]
-        assert data.model_width == new_shape[3]
-        if data.model_depth:
-            assert data.model_depth == new_shape[3]
-    else:  # model shape is (B, H, W, C) or (B, H, W, D, C)
-        assert data.model_height == new_shape[1]
-        assert data.model_width == new_shape[2]
-        if data.model_depth:
-            assert data.model_depth == new_shape[3]
+    if data.mode == "RGB" or data.mode == "voxel":
+        if data.model_order == "first":  # model shape is (B, C, H, W) or (B, C, H, W, D)
+            assert data.model_height == new_shape[2]
+            assert data.model_width == new_shape[3]
+            if data.model_depth:
+                assert data.model_depth == new_shape[3]
+        else:  # model shape is (B, H, W, C) or (B, H, W, D, C)
+            assert data.model_height == new_shape[1]
+            assert data.model_width == new_shape[2]
+            if data.model_depth:
+                assert data.model_depth == new_shape[3]
 
     data.model_shape = new_shape
     return data
@@ -187,7 +188,7 @@ def predict_target(data: Data, prediction_func) -> Predictions:
         data.data, None
     )  # target returned as a list of Predictions objects or a single Prediction object
     targets_str = ""
-    if isinstance(target, list) and isinstance(target[0], Predictions):
+    if isinstance(target, list) and (isinstance(target[0], Predictions) or isinstance(target[0], GANPredictions)):
         assert (
             len(target) == 1
         ), "Expected a single Predictions object in the list, this could be a result handling batch inputs"
@@ -196,14 +197,22 @@ def predict_target(data: Data, prediction_func) -> Predictions:
             f"Found {len(target)} targets, the targets found are: \n{targets_str}"
         )
         target = target[0]
-    elif isinstance(target, Prediction):
+    elif  isinstance(target, GANPredictions) or isinstance(target, Predictions):
+        targets_str = f"{target.classifications}\n"
+        logger.info(
+            f"Found {len(target)} targets, the targets found are: \n{targets_str}"
+        )
+    elif isinstance(target, Prediction) or isinstance(target, GANPrediction):
         targets_str = f"{target.classification}\n"
         logger.info(
             "Found 1 target, the target found is: %s with confidence %f",
             targets_str,
             target.confidence,
         )
-        target = Predictions([target])  # wrap in Predictions object
+        if isinstance(target, GANPrediction):
+            target = GANPredictions([target])
+        else:
+            target = Predictions([target])  # wrap in Predictions object
 
     if target is not None:
         logger.info(

@@ -172,6 +172,20 @@ class Mutant:
     def apply_to_data(self, data: Data):
         return _apply_to_data(self.mask, data)
 
+    def dump_mask(self, data: Data, path=None):
+        # Save mask + mask applied to input to .npy
+        mask_np = self.mask.cpu().numpy()
+        if path is not None:
+            np.save(f"{path}_mask.npy", mask_np)
+        else:
+            np.save(f"{self.get_name()}_mask.npy", mask_np)
+        # applied
+        applied_np = _apply_to_data(self.mask, data=data).cpu().numpy()
+        if path is not None:
+            np.save(f"{path}_applied.npy", applied_np)
+        else:
+            np.save(f"{self.get_name()}_applied.npy", applied_np)
+
     def save_mutant(self, data: Data, name=None, segs=None):
         if data.mode == "RGB":
             m = np.array(data.input)

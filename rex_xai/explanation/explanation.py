@@ -206,7 +206,8 @@ class Explanation:
                         insertion_mask.mask = insertion_mask.mask[:ind]
 
                     sufficient: Predictions | List[Predictions] = self.prediction_func(
-                        _apply_to_data(insertion_mask.mask, self.data)
+                        _apply_to_data(insertion_mask.mask, self.data),
+                        self.data.targets,
                     )
                     index = 0
                     if self.args.batch_size > 1:
