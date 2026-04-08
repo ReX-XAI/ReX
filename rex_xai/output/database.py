@@ -506,9 +506,9 @@ def dump_to_dataframe(
         resp_paths = []
         for key, responsibility in responsibilitys.items():
             responsibility = responsibility.detach().cpu().numpy()
-            np.save(f"{img_name}/{img_name}_responsibility_{key}.npy", responsibility)
-            resp_paths.append(f"{img_name}/{img_name}_responsibility_{key}.npy")
-            print(f"Saving to {img_name}/{img_name}_responsibility_{key}.npy")
+            np.save(f"{img_name}_responsibility_{key}.npy", responsibility)
+            resp_paths.append(f"{img_name}_responsibility_{key}.npy")
+            print(f"Saving to {img_name}_responsibility_{key}.npy")
 
         new_row["responsibility"] = resp_paths
 
@@ -520,9 +520,9 @@ def dump_to_dataframe(
             ):
                 sufficiency_mask = sufficiency_mask[0].cpu().numpy()
             explanation_confidence = exp.class_explanation_confidences[key]
-            np.save(f"{img_name}/{img_name}_explanation_{key}.npy", sufficiency_mask)
-            print(f"Saving to {img_name}/{img_name}_explanation_{key}.npy")
-            exp_paths.append(f"{img_name}/{img_name}_explanation_{key}.npy")
+            np.save(f"{img_name}_explanation_{key}.npy", sufficiency_mask)
+            print(f"Saving to {img_name}_explanation_{key}.npy")
+            exp_paths.append(f"{img_name}_explanation_{key}.npy")
             new_row[f"explanation_{key}"] = f"{img_name}_explanation_{key}.npy"
             new_row[f"explanation_confidence_{key}"] = explanation_confidence
         new_row["explanations"] = exp_paths
@@ -546,8 +546,8 @@ def dump_to_dataframe(
             ):
                 sufficiency_mask = sufficiency_mask[0].cpu().numpy()
             explanation_confidence = exp.explanation_confidences[c]
-            np.save(f"{img_name}/{img_name}_explanation_{c}.npy", sufficiency_mask)
-            print(f"Saving to {img_name}/{img_name}_explanation_{c}.npy")
+            np.save(f"{img_name}_explanation_{c}.npy", sufficiency_mask)
+            print(f"Saving to {img_name}_explanation_{c}.npy")
             new_row[f"explanation_{c}"] = f"{img_name}_explanation_{c}.npy"
             new_row[f"explanation_confidence_{c}"] = explanation_confidence
 
@@ -560,7 +560,7 @@ def dump_to_dataframe(
             responsibility = responsibility[0].detach().cpu().numpy()
 
         # save the explanation and responsibility as npy files
-        np.save(f"{img_name}/{img_name}_responsibility.npy", responsibility)
+        np.save(f"{img_name}_responsibility.npy", responsibility)
         print(f"Saving to {img_name}_responsibility.npy")
     else:
         logger.info("attempting to dump single-class explanation")
@@ -580,7 +580,7 @@ def dump_to_dataframe(
             responsibility = responsibility[0].detach().cpu().numpy()
 
         # save the explanation and responsibility as npy files
-        np.save(f"{img_name}/{img_name}_responsibility.npy", responsibility)
+        np.save(f"{img_name}_responsibility.npy", responsibility)
         print(f"Saving to {img_name}_responsibility.npy")
         new_row = {
             "path": args.path,
@@ -589,7 +589,7 @@ def dump_to_dataframe(
             "bounding_box": str(
                 target.bounding_box if target.bounding_box is not None else None
             ),
-            "responsibility": f"{img_name}/{img_name}_responsibility.npy",
+            "responsibility": f"{img_name}_responsibility.npy",
         }
 
         analysis_results = exp.run_stats
@@ -604,8 +604,8 @@ def dump_to_dataframe(
             ):
                 sufficiency_mask = sufficiency_mask[0].cpu().numpy()
             explanation_confidence = exp.sufficiency_confidence
-            np.save(f"{img_name}/{img_name}_explanation.npy", sufficiency_mask)
-            new_row["explanation"] = f"{img_name}/{img_name}_explanation.npy"
+            np.save(f"{img_name}_explanation.npy", sufficiency_mask)
+            new_row["explanation"] = f"{img_name}_explanation.npy"
             new_row["explanation_confidence"] = explanation_confidence
 
         if exp.necessity_mask is not None:
@@ -615,8 +615,8 @@ def dump_to_dataframe(
             ):
                 necessity_mask = necessity_mask[0].cpu().numpy()
             necessity_confidence = exp.necessity_confidence
-            np.save(f"{img_name}/{img_name}_necessity.npy", necessity_mask)
-            new_row["necessity_mask"] = f"{img_name}/{img_name}_necessity.npy"
+            np.save(f"{img_name}_necessity.npy", necessity_mask)
+            new_row["necessity_mask"] = f"{img_name}_necessity.npy"
             new_row["necessity_confidence"] = necessity_confidence
 
         if exp.complete_mask is not None:
@@ -626,8 +626,8 @@ def dump_to_dataframe(
             ):
                 complete_mask = complete_mask[0].cpu().numpy()
             completeness_confidence = exp.completeness_confidence
-            np.save(f"{img_name}/{img_name}_complete.npy", complete_mask)
-            new_row["complete_mask"] = f"{img_name}/{img_name}_complete.npy"
+            np.save(f"{img_name}_complete.npy", complete_mask)
+            new_row["complete_mask"] = f"{img_name}_complete.npy"
             new_row["completeness_confidence"] = completeness_confidence
 
         new_row["total_passing"] =  exp.run_stats["total_passing"]
