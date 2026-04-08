@@ -517,11 +517,7 @@ def _explanation(
 
     if args.dump is not None:
         logger.info(f"dumping results to {args.dump}")
-        dirname = os.path.dirname(args.dump)
-        if not os.path.exists(dirname):
-            os.makedirs(args.dump, exist_ok=True)
         import pandas as pd
-
         save_as = "json" if args.dump.endswith(".json") else "csv"
         if os.path.exists(args.dump):
             df_existing = pd.read_csv(args.dump)
