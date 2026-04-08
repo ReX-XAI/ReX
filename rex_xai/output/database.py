@@ -489,9 +489,6 @@ def dump_to_dataframe(
     # create folder:
     if not os.path.exists(img_name):
         os.makedirs(img_name)
-    else:
-        img_name = img_name + "_" + str(uuid.uuid4())
-        os.makedirs(img_name)
     if isinstance(exp, MultiClassExplanation):
         logger.info("attempting to dump multi-class explanation")
         targets = exp.data.targets
