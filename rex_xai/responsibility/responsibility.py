@@ -25,7 +25,7 @@ from rex_xai.mutants.mutant import (
     get_combinations,
     filter_passing_mutants,
 )
-from rex_xai.responsibility.prediction import Predictions
+from rex_xai.responsibility.prediction import Predictions, GANPredictions
 from rex_xai.responsibility.resp_maps import ResponsibilityMaps
 from rex_xai.utils.logger import logger
 
@@ -223,7 +223,6 @@ def causal_explanation(
                 for i, m in enumerate(mutants):
                     # Update the prediction object for this mutant
                     m.predictions = preds[i]
-                    print(f"pred type {m.predictions[0].distances} for {m.predictions.classifications}")
                     m.update_status(data.targets)
 
                 # Filter out passing mutants based on a confidence threshold
