@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 from __future__ import annotations
 
+import os
+import uuid
 import zlib
 from pathlib import Path
 from ast import literal_eval
@@ -484,6 +486,12 @@ def dump_to_dataframe(
     name, ext = args.dump.split(".")
     p = Path(args.path)
     img_name = str(Path(args.dump).parent / p.stem)
+    # create folder:
+    if not os.path.exists(img_name):
+        os.makedirs(img_name)
+    else:
+        img_name = img_name + "_" + str(uuid.uuid4())
+        os.makedirs(img_name)
     if isinstance(exp, MultiClassExplanation):
         logger.info("attempting to dump multi-class explanation")
         targets = exp.data.targets
@@ -496,23 +504,14 @@ def dump_to_dataframe(
             "bounding_box": str(
                 targets.bounding_boxes if targets.bounding_boxes is not None else None
             ),
-            "total_passing": exp.run_stats["total_passing"],
-            "total_failing": exp.run_stats["total_failing"],
-            "max_depth_reached": exp.run_stats["max_depth_reached"],
-            "avg_box_size": exp.run_stats["avg_box_size"],
-            "time": time_taken,
-            "iterations": args.iters,
-            "chunk_size": args.chunk_size,
-            "mask_value": args.mask_value,
-            "output_path": args.output,
         }
         responsibilitys = exp.target_maps  # dict of responsibility maps
         resp_paths = []
         for key, responsibility in responsibilitys.items():
             responsibility = responsibility.detach().cpu().numpy()
-            np.save(f"{img_name}_responsibility_{key}.npy", responsibility)
-            resp_paths.append(f"{img_name}_responsibility_{key}.npy")
-            print(f"Saving to {img_name}_responsibility_{key}.npy")
+            np.save(f"{img_name}/{img_name}_responsibility_{key}.npy", responsibility)
+            resp_paths.append(f"{img_name}/{img_name}_responsibility_{key}.npy")
+            print(f"Saving to {img_name}/{img_name}_responsibility_{key}.npy")
 
         new_row["responsibility"] = resp_paths
 
@@ -524,13 +523,48 @@ def dump_to_dataframe(
             ):
                 sufficiency_mask = sufficiency_mask[0].cpu().numpy()
             explanation_confidence = exp.class_explanation_confidences[key]
-            np.save(f"{img_name}_explanation_{key}.npy", sufficiency_mask)
-            print(f"Saving to {img_name}_explanation_{key}.npy")
-            exp_paths.append(f"{img_name}_explanation_{key}.npy")
+            np.save(f"{img_name}/{img_name}_explanation_{key}.npy", sufficiency_mask)
+            print(f"Saving to {img_name}/{img_name}_explanation_{key}.npy")
+            exp_paths.append(f"{img_name}/{img_name}_explanation_{key}.npy")
             new_row[f"explanation_{key}"] = f"{img_name}_explanation_{key}.npy"
             new_row[f"explanation_confidence_{key}"] = explanation_confidence
         new_row["explanations"] = exp_paths
+    elif isinstance(exp, MultiExplanation):
+        logger.info("attempting to dump multi-explanation")
+        targets = exp.data.targets
+        confidences = targets.confidences
+        classifications = targets.classifications
+        new_row = {
+            "path": args.path,
+            "target": classifications,
+            "confidence": confidences,
+            "bounding_box": str(
+                targets.bounding_boxes if targets.bounding_boxes is not None else None
+            )
+        }
+        for c, explanation in enumerate(exp.explanations):
+            sufficiency_mask = try_detach(explanation)
+            if isinstance(sufficiency_mask, list) and isinstance(
+                sufficiency_mask[0], tt.Tensor
+            ):
+                sufficiency_mask = sufficiency_mask[0].cpu().numpy()
+            explanation_confidence = exp.explanation_confidences[c]
+            np.save(f"{img_name}/{img_name}_explanation_{c}.npy", sufficiency_mask)
+            print(f"Saving to {img_name}/{img_name}_explanation_{c}.npy")
+            new_row[f"explanation_{c}"] = f"{img_name}_explanation_{c}.npy"
+            new_row[f"explanation_confidence_{c}"] = explanation_confidence
 
+        responsibility = exp.target_map
+        if isinstance(responsibility, tt.Tensor):
+            responsibility = responsibility.detach().cpu().numpy()
+        elif isinstance(responsibility, list) and isinstance(
+                responsibility[0], tt.Tensor
+        ):
+            responsibility = responsibility[0].detach().cpu().numpy()
+
+        # save the explanation and responsibility as npy files
+        np.save(f"{img_name}/{img_name}_responsibility.npy", responsibility)
+        print(f"Saving to {img_name}_responsibility.npy")
     else:
         logger.info("attempting to dump single-class explanation")
         target = exp.data.target
@@ -549,7 +583,7 @@ def dump_to_dataframe(
             responsibility = responsibility[0].detach().cpu().numpy()
 
         # save the explanation and responsibility as npy files
-        np.save(f"{img_name}_responsibility.npy", responsibility)
+        np.save(f"{img_name}/{img_name}_responsibility.npy", responsibility)
         print(f"Saving to {img_name}_responsibility.npy")
         new_row = {
             "path": args.path,
@@ -558,20 +592,7 @@ def dump_to_dataframe(
             "bounding_box": str(
                 target.bounding_box if target.bounding_box is not None else None
             ),
-            "responsibility": f"{img_name}_responsibility.npy",
-            "total_passing": exp.run_stats["total_passing"],
-            "total_failing": exp.run_stats["total_failing"],
-            "max_depth_reached": exp.run_stats["max_depth_reached"],
-            "avg_box_size": exp.run_stats["avg_box_size"],
-            "time": time_taken,
-            "iterations": args.iters,
-            "chunk_size": args.chunk_size,
-            "mask_value": args.mask_value,
-            "output_path": args.output,
-            "seed": args.seed,
-            "tree_depth": args.tree_depth,
-            "search_limit": args.search_limit,
-            "min_box_size": args.min_box_size,
+            "responsibility": f"{img_name}/{img_name}_responsibility.npy",
         }
 
         analysis_results = exp.run_stats
@@ -586,8 +607,8 @@ def dump_to_dataframe(
             ):
                 sufficiency_mask = sufficiency_mask[0].cpu().numpy()
             explanation_confidence = exp.sufficiency_confidence
-            np.save(f"{img_name}_explanation.npy", sufficiency_mask)
-            new_row["explanation"] = f"{img_name}_explanation.npy"
+            np.save(f"{img_name}/{img_name}_explanation.npy", sufficiency_mask)
+            new_row["explanation"] = f"{img_name}/{img_name}_explanation.npy"
             new_row["explanation_confidence"] = explanation_confidence
 
         if exp.necessity_mask is not None:
@@ -597,8 +618,8 @@ def dump_to_dataframe(
             ):
                 necessity_mask = necessity_mask[0].cpu().numpy()
             necessity_confidence = exp.necessity_confidence
-            np.save(f"{img_name}_necessity.npy", necessity_mask)
-            new_row["necessity_mask"] = f"{img_name}_necessity.npy"
+            np.save(f"{img_name}/{img_name}_necessity.npy", necessity_mask)
+            new_row["necessity_mask"] = f"{img_name}/{img_name}_necessity.npy"
             new_row["necessity_confidence"] = necessity_confidence
 
         if exp.complete_mask is not None:
@@ -608,9 +629,23 @@ def dump_to_dataframe(
             ):
                 complete_mask = complete_mask[0].cpu().numpy()
             completeness_confidence = exp.completeness_confidence
-            np.save(f"{img_name}_complete.npy", complete_mask)
-            new_row["complete_mask"] = f"{img_name}_complete.npy"
+            np.save(f"{img_name}/{img_name}_complete.npy", complete_mask)
+            new_row["complete_mask"] = f"{img_name}/{img_name}_complete.npy"
             new_row["completeness_confidence"] = completeness_confidence
+
+        new_row["total_passing"] =  exp.run_stats["total_passing"]
+        new_row["total_failing"] = exp.run_stats["total_failing"]
+        new_row["max_depth_reached"]: exp.run_stats["max_depth_reached"]
+        new_row["avg_box_size"] = exp.run_stats["avg_box_size"]
+    new_row["time"] = time_taken
+    new_row["iterations"] = args.iters
+    new_row["chunk_size"] = args.chunk_size
+    new_row["mask_value"] = args.mask_value
+    new_row["output_path"] = args.output
+    new_row["seed"] = args.seed
+    new_row["tree_depth"] = args.tree_depth
+    new_row["search_limit"] = args.search_limit
+    new_row["min_box_size"] = args.min_box_size
 
     df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
     df.to_pickle(name + ".pkl")
