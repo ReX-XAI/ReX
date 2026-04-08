@@ -497,6 +497,7 @@ def _explanation(
                 path = None
             else:
                 path = args.output
+                os.makedirs(args.output, exist_ok=True)
         if args.strategy == Strategy.MultiSpotlight:
             exp.save(path, clauses=clauses)  # type: ignore
         elif args.multi_class and len(data.targets.classifications) > 1:
@@ -514,6 +515,7 @@ def _explanation(
 
     if args.dump is not None:
         logger.info(f"dumping results to {args.dump}")
+        os.makedirs(args.dump, exist_ok=True)
         import pandas as pd
 
         save_as = "json" if args.dump.endswith(".json") else "csv"
