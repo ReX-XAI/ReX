@@ -62,9 +62,9 @@ def try_rounding(n, rounding: int | None) -> float:
 def find_required_prediction(
     target: Prediction,
     threshold: float,
-    insertion_predictions: List[Predictions],
+    insertion_predictions:  Predictions | List[Predictions],
     contrastive_completeness_threshold: float = 0.0,
-    deletion_predictions: List[Predictions] | None = None,
+    deletion_predictions:  Predictions | List[Predictions] | None = None,
     rounding=None,
     sufficiency_found=False,
     bounding_box=False,
@@ -96,32 +96,26 @@ def find_required_prediction(
                 return positions
     else:
         for i in range(0, len(insertion_predictions)):
-            if isinstance(insertion_predictions[i], list) and isinstance(
-                insertion_predictions[i][0], Prediction
-            ):
-                if (
-                    len(insertion_predictions[i]) == 1
-                    and len(deletion_predictions[i]) == 1
-                ):
-                    insertion_pred = insertion_predictions[i][0]
-                    deletion_pred = deletion_predictions[i][0]
-                else:
-                    # dealing with multiple predictions, find the one that matches the target best
-                    insertion_pred = None
-                    best_iou = -1.0
-                    for pred in insertion_predictions[i]:
-                        iou, _ = pred.check_overlap(target)
-                        if iou > best_iou:
-                            best_iou = iou
-                            insertion_pred = pred
+            if isinstance(insertion_predictions[i], Prediction):
+                insertion_pred = insertion_predictions[i]
+                deletion_pred = deletion_predictions[i]
+            else:
+                # dealing with multiple predictions, find the one that matches the target best
+                insertion_pred = None
+                best_iou = -1.0
+                for pred in insertion_predictions[i]:
+                    iou, _ = pred.check_overlap(target)
+                    if iou > best_iou:
+                        best_iou = iou
+                        insertion_pred = pred
 
-                    deletion_pred = None
-                    best_iou = -1.0
-                    for pred in deletion_predictions[i]:
-                        iou, _ = pred.check_overlap(target)
-                        if iou > best_iou:
-                            best_iou = iou
-                            deletion_pred = pred
+                deletion_pred = None
+                best_iou = -1.0
+                for pred in deletion_predictions[i]:
+                    iou, _ = pred.check_overlap(target)
+                    if iou > best_iou:
+                        best_iou = iou
+                        deletion_pred = pred
 
             local_confidence = try_rounding(insertion_pred.confidence, rounding)
             threshold = try_rounding(threshold, rounding)

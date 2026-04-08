@@ -363,9 +363,9 @@ class Explanation:
         ranking,
         ind,
         chunk_pointer,
-        insertion_mask,
+        insertion_mask: Mutant,
         insertion_memo,
-        deletion_mask,
+        deletion_mask: Mutant,
         deletion_memo,
     ):
         chunk = ranking[chunk_pointer : chunk_pointer + self.args.chunk_size]
@@ -375,13 +375,13 @@ class Explanation:
 
         for _, loc in chunk:
             set_boolean_mask_value(
-                insertion_mask[ind],
+                insertion_mask.mask[ind],
                 self.data.mode,
                 self.data.model_order,
                 loc,
             )
             set_boolean_mask_value(
-                deletion_mask[ind],
+                deletion_mask.mask[ind],
                 self.data.mode,
                 self.data.model_order,
                 loc,
@@ -389,14 +389,18 @@ class Explanation:
             )
 
         if ind == 0 and insertion_memo is not None and deletion_memo is not None:
-            insertion_mask[ind] = tt.logical_or(insertion_memo, insertion_mask[ind])
-            deletion_mask[ind] = tt.logical_and(deletion_memo, deletion_mask[ind])
-        if ind > 0:
-            insertion_mask[ind] = tt.logical_or(
-                insertion_mask[ind - 1], insertion_mask[ind]
+            insertion_mask.mask[ind] = tt.logical_or(
+                insertion_memo, insertion_mask.mask[ind]
             )
-            deletion_mask[ind] = tt.logical_and(
-                deletion_mask[ind - 1], deletion_mask[ind]
+            deletion_mask.mask[ind] = tt.logical_and(
+                deletion_memo, deletion_mask.mask[ind]
+            )
+        if ind > 0:
+            insertion_mask.mask[ind] = tt.logical_or(
+                insertion_mask.mask[ind - 1], insertion_mask.mask[ind]
+            )
+            deletion_mask.mask[ind] = tt.logical_and(
+                deletion_mask.mask[ind - 1], deletion_mask.mask[ind]
             )
 
         chunk_pointer += self.args.chunk_size
@@ -474,7 +478,7 @@ class Explanation:
                     if exhausted:
                         insertion_mask = insertion_mask[:ind]
 
-                    complete_predictions = self.prediction_func(
+                    complete_predictions: Predictions | List[Predictions] = self.prediction_func(
                         _apply_to_data(insertion_mask, self.data)
                     )
 
@@ -512,8 +516,23 @@ class Explanation:
         rounding = 4
         mask_shape = update_mask_shape(self.args.batch_size, self.data.model_shape)
 
-        insertion_mask = tt.zeros(mask_shape, dtype=tt.bool).to(self.data.device)
-        deletion_mask = tt.ones(mask_shape, dtype=tt.bool).to(self.data.device)
+        insertion_mask: Mutant = Mutant(
+            data=self.data,
+            static="",
+            active="",
+            masking_func=self.data.mask_value,
+            shape=mask_shape,
+        )
+        insertion_mask.predictions = self.data.targets
+
+        deletion_mask: Mutant = Mutant(
+            data=self.data,
+            static="",
+            active="",
+            masking_func=self.data.mask_value,
+            shape=mask_shape,
+        )
+        deletion_mask.mask = tt.ones(mask_shape, dtype=tt.bool).to(self.data.device)
 
         ranking = get_map_locations(map=map)
 
@@ -556,14 +575,15 @@ class Explanation:
                 # we have filled insertion_mask and deletion_mask with test cases, now time to test
                 if ind == self.args.batch_size or exhausted:
                     if exhausted:
-                        insertion_mask = insertion_mask[:ind]
-                        deletion_mask = deletion_mask[:ind]
+                        insertion_mask.mask = insertion_mask.mask[:ind]
+                        deletion_mask.mask = deletion_mask.mask[:ind]
 
-                    sufficient = self.prediction_func(
-                        _apply_to_data(insertion_mask, self.data)
+                    sufficient: Predictions | List[Predictions] = self.prediction_func(
+                        _apply_to_data(insertion_mask.mask, self.data),
+                        self.data.targets,
                     )
-                    contrastive = self.prediction_func(
-                        _apply_to_data(deletion_mask, self.data)
+                    contrastive: Predictions | List[Predictions] = self.prediction_func(
+                        _apply_to_data(deletion_mask.mask, self.data)
                     )
 
                     positions: ReXPositions = find_required_prediction(
@@ -580,7 +600,7 @@ class Explanation:
                         if not sufficient_found:
                             sufficient_found = True
                             self.sufficiency_mask = (
-                                insertion_mask[positions.sufficient_position]
+                                insertion_mask.mask[positions.sufficient_position]
                                 .detach()
                                 .clone()
                             )
@@ -607,7 +627,7 @@ class Explanation:
                     if positions.contrastive_position is not None:
                         contrastive_found = True
                         self.necessity_mask = (
-                            insertion_mask[positions.contrastive_position]
+                            insertion_mask.mask[positions.contrastive_position]
                             .detach()
                             .clone()
                         )
@@ -646,15 +666,15 @@ class Explanation:
                         if self.args.complete:
                             return self.__complete(
                                 ranking,
-                                insertion_mask,
+                                insertion_mask.mask,
                                 insertion_memo,
                                 mask_shape,
                                 chunk_pointer,
                             )
                         return
 
-                    insertion_memo = insertion_mask[-1]
-                    deletion_memo = deletion_mask[-1]
+                    insertion_memo = insertion_mask.mask[-1]
+                    deletion_memo = deletion_mask.mask[-1]
                     ind = 0
 
     def save(self, path, mask=None):
