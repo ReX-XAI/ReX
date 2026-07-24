@@ -97,6 +97,139 @@ def prune(mutants: List[Mutant], technique=Queue.Intersection, keep=None):
 
     return mutants
 
+# ─── NEW helper for spectral interpolation NB────────────────────────────
+def linear_fill(mask: tt.Tensor, original: tt.Tensor) -> tt.Tensor:
+    """
+    For every contiguous run of False in <mask>, linearly interpolate
+    between the nearest True samples (or spectrum edge) along the
+    spectral axis.
+
+    Works for shapes (L,) and (1,1,L) for *both* mask and original.
+    If everything is masked, falls back to the spectrum mean.
+    """
+    # flatten to 1-D numpy arrays
+    if original.dim() == 3:     # [1,1,L]
+        spec_np = original[0, 0].cpu().numpy()
+    else:                       # [L]
+        spec_np = original.cpu().numpy()
+
+    if mask.dim() == 3:
+        keep = mask[0, 0].cpu().numpy().astype(bool)
+    else:
+        keep = mask.cpu().numpy().astype(bool)
+
+    L = len(spec_np)
+    filled = spec_np.copy()
+
+    if (~keep).all():                 # everything masked → mean
+        filled[:] = spec_np.mean()
+    elif keep.all():                  # nothing masked
+        pass
+    else:
+        x = np.arange(L)
+
+        # indices of kept points; always include spectrum ends
+        anchor_idx = np.concatenate((
+            [0]            if not keep[0] else [],
+            np.where(keep)[0],
+            [L - 1]        if not keep[-1] else []
+        )).astype(int)          # ← ensure integer dtype
+
+        anchor_vals = spec_np[anchor_idx]
+
+        # interpolate *only* the masked points
+        filled[~keep] = np.interp(x[~keep], anchor_idx, anchor_vals)
+
+    out = tt.tensor(filled,
+                    device=original.device,
+                    dtype=original.dtype)
+    if original.dim() == 3:           # restore original shape
+        out = out.unsqueeze(0).unsqueeze(0)
+    return out
+# ───────────────────────────────────────────────────────────────────────
+
+# ----------------------------------------------------------------------
+# NB added: quadratic_fill
+# ----------------------------------------------------------------------
+def quadratic_fill(mask: tt.Tensor,
+                   original: tt.Tensor,
+                   *, sigma: float = 0.0) -> tt.Tensor:
+    """
+    Fill masked spectral segments with concave-up (∪-shaped) quadratics.
+    Exact anchor matching, optional interior Gaussian noise (sigma).
+    Supports shapes [L] or [1,1,L] for both mask and spectrum.
+    """
+
+    # ---- flatten to 1-D numpy --------------------------------------
+    spec_np = (original[0, 0] if original.dim() == 3 else original)\
+              .detach().cpu().numpy()
+    keep    = (mask[0, 0]      if mask.dim() == 3 else mask)\
+              .detach().cpu().numpy().astype(bool)
+
+    L       = len(spec_np)
+    filled  = spec_np.copy()
+
+    # ---- trivial cases ---------------------------------------------
+    if (~keep).all():                         # all masked → mean
+        filled[:] = spec_np.mean()
+        keep[:]   = True
+    elif keep.all():                          # nothing masked
+        out = original.clone()
+        return out
+
+    # ---- anchor indices (same as linear_fill) ----------------------
+    anchor_idx = np.concatenate((
+        [0]          if not keep[0]  else [],
+        np.where(keep)[0],
+        [L - 1]      if not keep[-1] else []
+    )).astype(int)
+
+    # ---- iterate over masked runs ---------------------------------
+    gaps = np.where(~keep)[0]
+    runs = np.split(gaps, np.where(np.diff(gaps) != 1)[0] + 1)
+
+    for run in runs:
+        if run.size == 0:
+            continue
+        i0, i1 = int(run[0]), int(run[-1])
+        n      = i1 - i0 + 1
+
+        left_val  = spec_np[i0 - 1] if i0 > 0     else spec_np[0]
+        right_val = spec_np[i1 + 1] if i1 + 1 < L else spec_np[-1]
+
+        if n == 1:                                 # single-point run
+            curve = np.array([(left_val + right_val) / 2],
+                             dtype=spec_np.dtype)
+        elif left_val == right_val:                # flat anchors
+            curve = np.full(n, left_val, dtype=spec_np.dtype)
+        else:
+            low, high = (left_val, right_val) if left_val < right_val \
+                        else (right_val, left_val)
+            Δ = high - low
+            t = np.linspace(0, 1, n)
+
+            if left_val < right_val:               # low → high
+                curve = low + Δ * t**2             # concave-up
+            else:                                  # high → low
+                curve = high - Δ * (2*t - t**2)    # concave-up
+
+        # optional Gaussian interior noise
+        if sigma > 0 and n > 2:
+            noise = np.random.normal(0.0, sigma, size=n)
+            noise[0] = noise[-1] = 0.0             # keep anchors exact
+            curve += noise
+
+        filled[i0:i1 + 1] = curve
+
+    # ---- reshape back to tensor -----------------------------------
+    out = tt.as_tensor(filled,
+                       device=original.device,
+                       dtype=original.dtype)
+    if original.dim() == 3:          # restore [1,1,L]
+        out = out.unsqueeze(0).unsqueeze(0)
+    return out
+
+
 
 def causal_explanation(
     process, data: Data, args: CausalArgs, prediction_func, current_map=None
@@ -116,16 +249,36 @@ def causal_explanation(
         np.random.seed(args.seed + process)
         tt.manual_seed(args.seed + process)
 
-    if args.mask_value in ("random", "linear"):
-        lower = tt.min(data.data).item()  # type: ignore
-        upper = tt.max(data.data).item()  # type: ignore
+    #if args.mask_value in ("random", "linear"):
+    #    lower = tt.min(data.data).item()  # type: ignore
+    #    upper = tt.max(data.data).item()  # type: ignore
 
-        if args.mask_value == "random":
-            data.mask_value = np.random.uniform(lower, upper)
-        else:
-            steps = np.linspace(lower, upper, args.iters)
-            data.mask_value = steps[process - 1]  # type: ignore
-        logger.info("using %.3f for process %d", data.mask_value, process)
+    #    if args.mask_value == "random":
+    #        data.mask_value = np.random.uniform(lower, upper)
+    #    else:
+    #        steps = np.linspace(lower, upper, args.iters)
+    #        data.mask_value = steps[process - 1]  # type: ignore
+    #    logger.info("using %.3f for process %d", data.mask_value, process)
+
+    # ─── choose masking value / function ───────────────────────────────────
+    if args.mask_value == "random":
+        lower  = tt.min(data.data).item()
+        upper  = tt.max(data.data).item()
+        data.mask_value = np.random.uniform(lower, upper)
+
+    elif args.mask_value == "linear":
+        # set a callable so Mutant.apply_to_data() will invoke it every time
+        data.mask_value = linear_fill
+
+    elif args.mask_value == "mean":
+        data.mask_value = float(tt.mean(data.data).item())
+
+    elif args.mask_value == "quadratic":
+        sigma = getattr(args, "quad_sigma", 0.0)
+        data.mask_value = lambda m, d, s=sigma: quadratic_fill(m, d, sigma=s)
+
+# ───────────────────────────────────────────────────────────────────────
+
 
     if args.use_bounding_box:
         assert data.target.bounding_box is not None
@@ -255,7 +408,10 @@ def causal_explanation(
                         mutants,
                     )
                 )
-
+                #New by NB ─── optional: keep mutants for later notebook inspection ───
+                if args.store_mutants:
+                    local_maps.stored_mutants.extend(mutants)
+# this block for plotting mutants, from command line requires -vvv
                 if args.verbosity > 3:
                     n = 0
                     for m in mutants:

@@ -252,6 +252,10 @@ def calculate_responsibility(
             avg_box_size += avg_bs
             maps.merge(local_maps)
 
+                # keep mutants produced inside causal_explanation
+            if args.store_mutants:
+                maps.stored_mutants.extend(local_maps.stored_mutants)
+
     avg_box_size /= args.iters
 
     logger.info(

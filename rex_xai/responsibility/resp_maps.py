@@ -24,6 +24,9 @@ class ResponsibilityMaps:
         self.height = height
         self.width = width
         self.depth = depth
+        # NEW ───────────────────────────────────────────────────────────
+        # will stay empty unless the user turns the flag on
+        self.stored_mutants: List[Mutant] = []        
 
     def __repr__(self) -> str:
         return str(self.counts)

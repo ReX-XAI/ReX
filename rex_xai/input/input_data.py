@@ -236,6 +236,8 @@ class Data:
                 self.mask_value = 0
             case "linear":
                 self.mask_value = 0
+            case "quadratic":               
+                self.mask_value = 0  
             case "context":
                 self.mask_value = lambda m, d: context_occlusion(
                     m, d, self.context, self.context_noise
