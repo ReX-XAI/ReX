@@ -65,6 +65,8 @@ class Args:
         self.ort_logger = 3
         # verbosity
         self.verbosity = 1
+        # NEW by NB ──────────────────────────────────────────────
+        self.store_mutants: bool = False        # keep every generated Mutant?
         # whether to show progress bar or not
         self.progress_bar = True
         # save explanation to output
@@ -106,6 +108,7 @@ class Args:
         self.analyse = None
         self.insertion_step = 100
         self.normalise_curves = True
+        self.quad_sigma: float = 0.0  # for adding noise to spectral occlusions
 
     def get_dict_repr(self):
         return {
