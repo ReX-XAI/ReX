@@ -11,11 +11,11 @@ ROOT = Path(__file__).resolve().parent
 EXTERNAL_REX_DIR = ROOT.parent
 sys.path.insert(0, str(EXTERNAL_REX_DIR))
 
-from rex_xai.input.input_data import Data
-from rex_xai.input.config import CausalArgs, Strategy, Queue, Distribution
-from rex_xai.responsibility.prediction import Prediction
-from rex_xai.explanation.rex import predict_target, calculate_responsibility
-from rex_xai.explanation.explanation import Explanation
+from rex_xai.input.input_data import Data  # noqa: E402
+from rex_xai.input.config import CausalArgs, Strategy, Queue, Distribution  # noqa: E402
+from rex_xai.responsibility.prediction import Prediction  # noqa: E402
+from rex_xai.explanation.rex import predict_target, calculate_responsibility  # noqa: E402
+from rex_xai.explanation.explanation import Explanation  # noqa: E402
 
 # mode="tabular": a flat feature vector, not an image.
 
