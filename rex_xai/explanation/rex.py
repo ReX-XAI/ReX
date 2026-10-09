@@ -155,7 +155,9 @@ def validate_shape(data: Data, model_shape) -> Data:
         elif input_shape == "D":
             new_shape[i] = data.model_depth
     # Make sure the data dimensions match the model shape
-    if data.model_order == "first":  # model shape is (B, C, H, W) or (B, C, H, W, D)
+    if data.mode == "tabular":  # flat feature vector, already validated in __get_shape
+        pass
+    elif data.model_order == "first":  # model shape is (B, C, H, W) or (B, C, H, W, D)
         assert data.model_height == new_shape[2]
         assert data.model_width == new_shape[3]
         if data.model_depth:
