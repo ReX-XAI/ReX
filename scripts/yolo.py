@@ -15,6 +15,7 @@ def preprocess(path, shape, device) -> Data:
     tensor = tt.tensor(np.asarray(img), dtype=tt.float32).to(device)
     data = Data(img, shape, device, process=False)
     data.data = tensor
+    print("Preprocessing image:", path, "with shape:", tensor.shape, "min of tensor:", tensor.min(), "max of tensor:", tensor.max(), "mean of tensor:", tensor.mean(), "std of tensor:", tensor.std(), "")
     data.mode = "RGB"
     data.model_shape = shape
     data.model_height = img.height
@@ -23,7 +24,7 @@ def preprocess(path, shape, device) -> Data:
     data.transposed = False
     data.model_order = "last"
     data.mask_value = 0
-    data.device = "cuda"
+    data.device = device
     return data
 
 
