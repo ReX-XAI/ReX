@@ -1,0 +1,14 @@
+[project]
+name = "trex"
+version = "0.1.0"
+description = "T-ReX: causal responsibility explanations for tabular classifiers"
+requires-python = ">=3.10"
+dependencies = ["numpy", "torch"]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["trex"]
+package-dir = {"trex" = "."}
