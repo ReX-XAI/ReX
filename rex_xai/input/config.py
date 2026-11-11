@@ -35,6 +35,7 @@ class Args:
         self.config_location: Optional[str] = None
         # input file
         self.path: str = ""
+        self.directory: bool = False
         self.model = None
         self.mode: Optional[str] = None
         self.shape: None = None
@@ -694,9 +695,13 @@ def validate_args(args: CausalArgs):
         args: configuration values for ReX
     """
 
-    # makes sure file exists at path
-    if not os.path.isfile(args.path):
-        raise FileNotFoundError(f"Input file {args.path} does not exist")
+    # Allow ReX to process a directory of files
+    if os.path.isdir(args.path):
+        args.directory = True
+    else:
+        # makes sure file exists at path
+        if not os.path.isfile(args.path):
+            raise FileNotFoundError(f"Input file {args.path} does not exist")
 
     # make sure if provided with context path then path exists
     if args.context and not os.path.isfile(args.context_location):
