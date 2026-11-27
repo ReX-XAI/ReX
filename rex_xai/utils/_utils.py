@@ -259,7 +259,10 @@ def set_boolean_mask_value(
     val: bool = True,
 ):
     if isinstance(coords, Box):
-        if mode in ("spectral", "tabular"):
+        if mode == "spectral":
+            h = coords.col_start
+            w = coords.col_stop
+        elif mode == "tabular":
             h = coords.col_start
             w = coords.col_stop
         elif mode == "voxel":
@@ -269,6 +272,10 @@ def set_boolean_mask_value(
         else:
             h = slice(coords.row_start, coords.row_stop)
             w = slice(coords.col_start, coords.col_stop)
+    elif mode == "tabular":
+        # coords is (row, col); row is meaningless for a flat feature vector
+        col = coords[1]
+        h, w = col, col + 1
     else:
         if mode == "voxel":
             h = coords[0]
@@ -286,7 +293,12 @@ def set_boolean_mask_value(
         # (H, W, C)
         else:
             tensor[h, w, :] = val
-    elif mode in ("spectral", "tabular"):
+    elif mode == "spectral":
+        if len(tensor.shape) == 1:
+            tensor[h:w] = val
+        else:
+            tensor[0, h:w] = val
+    elif mode == "tabular":
         if len(tensor.shape) == 1:
             tensor[h:w] = val
         else:

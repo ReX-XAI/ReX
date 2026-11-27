@@ -42,7 +42,7 @@ def test_preprocess_npy(args, DNA_model, cpu_device, snapshot, caplog):
 
     args.mode = "tabular"
     with pytest.raises(ReXDataError):
-        try_preprocess(args, model_shape, device=cpu_device)
+        try_preprocess(args, (1,), device=cpu_device)
 
 
 def test_preprocess_incompatible_shapes(args, model_shape, cpu_device, caplog):

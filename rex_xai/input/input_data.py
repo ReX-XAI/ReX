@@ -199,6 +199,12 @@ class Data:
             # an array of the form (batch, h, w), so no channel info or order or depth
             if len(self.model_shape) == 3:
                 return self.model_shape[1], self.model_shape[2], 1, None, None
+        if self.mode == "tabular":
+            # flat feature vector: h=1 row, w=n_features
+            if len(self.model_shape) == 2:
+                return self.model_shape[0], self.model_shape[1], 1, None, None
+            if len(self.model_shape) == 3:
+                return self.model_shape[1], self.model_shape[2], 1, None, None
         if self.mode == "RGB":
             if len(self.model_shape) == 4:
                 _, a, b, c = self.model_shape

@@ -154,6 +154,9 @@ class ResponsibilityMaps:
                     if data.mode == "spectral":
                         section = resp_map[0, box.col_start : box.col_stop]
 
+                    elif data.mode == "tabular":
+                        section = resp_map[0, box.col_start : box.col_stop]
+
                     elif data.mode == "RGB":
                         section = resp_map[
                             box.row_start : box.row_stop,
