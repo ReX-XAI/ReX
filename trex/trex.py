@@ -86,7 +86,11 @@ def _explain_tabular_raw(predict, x: np.ndarray, baseline: np.ndarray, args: Cau
     explanation.extract()
 
     if explanation.sufficiency_mask is not None:
-        sufficient_mask = explanation.sufficiency_mask.detach().cpu().numpy().reshape(-1)[:n]
+        sufficient_mask = explanation.sufficiency_mask.detach().cpu().numpy().reshape(-1)
+        if sufficient_mask.shape[0] != n:
+            raise ValueError(
+                f"sufficiency_mask length {sufficient_mask.shape[0]} != expected {n}"
+            )
     else:
         sufficient_mask = np.zeros(n, dtype=bool)
 
@@ -276,20 +280,50 @@ class TReXResult:
         return "\n".join(lines)
 
 
+def _check_groups(groups: dict[str, list[int]], n_features: int) -> dict[str, list[int]]:
+    seen: set[int] = set()
+    for name, cols in groups.items():
+        if len(cols) == 0:
+            raise ValueError(f"group '{name}' is empty")
+        for c in cols:
+            if not 0 <= c < n_features:
+                raise ValueError(f"group '{name}' has column {c}, outside 0..{n_features - 1}")
+            if c in seen:
+                raise ValueError(f"column {c} appears in more than one group")
+            seen.add(c)
+    return groups
+
+
 class TReX:
 
     def __init__(self, X_train: np.ndarray, feat_names: list[str], predict,
-                 measured_suffix: str = "_measured"):
+                 measured_suffix: str = "_measured",
+                 groups: dict[str, list[int]] | None = None,
+                 auto_detect_groups: bool = True,
+                 baseline: np.ndarray | None = None):
         self.feat_names = feat_names
         self.predict = predict
         self.measured_suffix = measured_suffix
-        self.groups = detect_onehot_groups(feat_names, X_train)
+        if groups is not None:
+            self.groups = _check_groups(groups, len(feat_names))
+        elif auto_detect_groups:
+            self.groups = detect_onehot_groups(feat_names, X_train)
+        else:
+            self.groups = {}
         self.units = build_units(len(feat_names), self.groups)
-        self.baseline = decision_boundary_baseline(predict, X_train, self.groups)
+        if baseline is None:
+            self.baseline = decision_boundary_baseline(predict, X_train, self.groups)
+        else:
+            baseline = np.asarray(baseline, dtype=np.float32)
+            if baseline.shape != (len(feat_names),):
+                raise ValueError(f"baseline must have shape ({len(feat_names)},), got {baseline.shape}")
+            if not np.isfinite(baseline).all():
+                raise ValueError("baseline contains NaN or inf")
+            self.baseline = baseline
 
     def explain(self, x: np.ndarray, iters: int = 32, min_conf: float = 0.95,
                 abs_ceiling: float | None = 0.75, prune_tolerance: float = 0.01,
-                seed: int = 1, resp_floor: float = 0.0) -> TReXResult:
+                seed: int = 1, resp_floor: float = 0.0) -> TReXResult:  # resp_floor: opt-in, off by default
         p = float(self.predict(x[None, :])[0])
         cls = 1 if p >= 0.5 else 0
         orig_conf = p if cls == 1 else 1.0 - p
